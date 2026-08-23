@@ -584,10 +584,10 @@ class _DashboardCardsState extends State<DashboardCards> with SingleTickerProvid
     final isLight = Theme.of(context).brightness == Brightness.light;
     final bgColors = isExpense 
         ? (isLight 
-            ? const [Color(0xFF4A1515), Color(0xFF661D1D), Color(0xFF2E0D0D)]
+            ? const [Color(0xFF3B1010), Color(0xFF541717), Color(0xFF240909)]
             : const [Color(0xFF240C0C), Color(0xFF3D1515), Color(0xFF170505)])
         : (isLight 
-            ? const [Color(0xFF12331C), Color(0xFF1A4C29), Color(0xFF0B1F11)]
+            ? const [Color(0xFF0E2815), Color(0xFF143B20), Color(0xFF08170D)]
             : const [Color(0xFF0A120D), Color(0xFF152016), Color(0xFF080A08)]);
             
     final patternColor = isExpense
