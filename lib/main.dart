@@ -315,15 +315,16 @@ class DashboardSwiper extends StatefulWidget {
 
 class _DashboardSwiperState extends State<DashboardSwiper> with SingleTickerProviderStateMixin {
   late PageController _pageController;
-  double _currentPage = 1.0;
+  double _currentPage = 10000.0;
   late AnimationController _animController;
 
   @override
   void initState() {
     super.initState();
-    // viewportFraction 0.88 mengatur agar card tengah mengambil 88% lebar layar,
-    // menyisakan 12% (6% di kiri, 6% di kanan) agar card lain bisa "mengintip" natural.
-    _pageController = PageController(viewportFraction: 0.88, initialPage: 1);
+    // KUNCI UTAMA: viewportFraction = 0.68 (Jarak antar card hanya di-set 68% dari layar).
+    // Tapi lebar visual card di-set 88% di bawah via OverflowBox.
+    // Ini memaksa card menjadi LEBAR, sekaligus SALING MENUMPUK (Overlap) karena visualnya lebih besar dari jaraknya!
+    _pageController = PageController(viewportFraction: 0.68, initialPage: 10000);
     _pageController.addListener(() {
       if (_pageController.page != null) {
         setState(() {
@@ -348,42 +349,53 @@ class _DashboardSwiperState extends State<DashboardSwiper> with SingleTickerProv
         Expanded(
           child: PageView.builder(
             controller: _pageController,
-            clipBehavior: Clip.none,
-            itemCount: 3,
+            clipBehavior: Clip.none, // Mencegah batas luar (bayangan/overlap) terpotong
+            // itemCount sengaja dikosongkan agar infinite loop berjalan (karena start di 10000)
             itemBuilder: (context, index) {
               double value = _currentPage - index;
+              double absValue = value.abs().clamp(0.0, 1.0);
               
-              // Skala menyusut 10% untuk card di samping
-              double scale = (1 - (value.abs() * 0.1)).clamp(0.0, 1.0);
+              // 1. Skala card di samping menyusut sekitar 12%
+              double scale = 1.0 - (absValue * 0.12);
               
-              // Menutup sedikit jarak (gap) akibat scale agar terlihat bertumpuk,
-              // tidak ekstrem agar z-index Flutter tidak menutupi card aktif
+              // 2. Mendorong card di samping turun sedikit ke bawah
+              double translateY = absValue * 22.0; 
+              
+              // 3. Putaran kipas 3D miring ke luar
+              double rotateZ = value * -5 * math.pi / 180; 
+              
+              // 4. Translasi menarik rapat sedikit ke dalam
               double translateX = value * 15.0; 
               
-              // Mendorong card di samping turun sedikit seperti kipas
-              double translateY = value.abs() * 20.0; 
-              
-              // Putaran kipas 3D
-              double rotateZ = value * -4 * math.pi / 180; 
-              
-              // Transparansi card samping
-              double opacity = (1 - (value.abs() * 0.4)).clamp(0.0, 1.0);
+              // 5. Card samping sedikit lebih transparan
+              double opacity = 1.0 - (absValue * 0.4);
 
-              return Transform(
-                transform: Matrix4.identity()
-                  ..translate(translateX, translateY, 0.0)
-                  ..rotateZ(rotateZ)
-                  ..scale(scale),
-                alignment: Alignment.center,
-                child: Opacity(
-                  opacity: opacity,
-                  child: Align(
-                    alignment: Alignment.topCenter,
-                    child: SizedBox(
-                      height: 190.0,
-                      child: _buildCard(index, value.abs() < 0.3),
+              return OverflowBox(
+                // KUNCI UTAMA 2: Mengabaikan perintah lebar paksa PageView (68%).
+                // Memaksa card dirender tetap lebar di 88% layar persis seperti desain aslinya!
+                maxWidth: MediaQuery.of(context).size.width * 0.88,
+                maxHeight: 250.0,
+                child: Transform(
+                  transform: Matrix4.identity()
+                    ..translate(translateX, translateY, 0.0)
+                    ..rotateZ(rotateZ)
+                    ..scale(scale),
+                  alignment: Alignment.center,
+                  child: Opacity(
+                    opacity: opacity,
+                    child: Align(
+                      alignment: Alignment.topCenter,
+                      child: SizedBox(
+                        height: 190.0, // Kunci tinggi card statis persis dengan HTML
+                        child: _buildCard(index % 3, absValue < 0.3),
+                      ),
                     ),
                   ),
+                ),
+              );
+            },
+          ),
+        ),
                 ),
               );
             },
