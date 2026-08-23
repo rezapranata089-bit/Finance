@@ -721,36 +721,50 @@ class _CardBase extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      AnimatedBuilder(
-                        animation: animController,
-                        builder: (context, child) {
-                          return ShaderMask(
-                            shaderCallback: (bounds) => LinearGradient(
-                              colors: amountGradient,
-                              stops: const [0.0, 0.5, 1.0],
-                              transform: isActive
-                                  ? GradientRotation(animController.value * 2 * math.pi)
-                                  : null,
-                            ).createShader(bounds),
-                            child: child,
-                          );
-                        },
-                        child: Text(
-                          amount,
-                          style: const TextStyle(
-                            fontFamily: 'Playfair Display',
-                            color: Colors.white,
-                            fontSize: 30,
-                            fontWeight: FontWeight.w400,
-                            letterSpacing: -0.42,
-                            height: 1.4,
-                            fontFeatures: [
-                              FontFeature.enable('lnum'),
-                              FontFeature.enable('tnum'),
-                            ],
-                          ),
-                        ),
-                      ),
+                      isActive
+                          ? AnimatedBuilder(
+                              animation: animController,
+                              builder: (context, child) {
+                                return ShaderMask(
+                                  shaderCallback: (bounds) => LinearGradient(
+                                    colors: amountGradient,
+                                    stops: const [0.0, 0.5, 1.0],
+                                    transform: GradientRotation(animController.value * 2 * math.pi),
+                                  ).createShader(bounds),
+                                  child: child,
+                                );
+                              },
+                              child: Text(
+                                amount,
+                                style: const TextStyle(
+                                  fontFamily: 'Playfair Display',
+                                  color: Colors.white,
+                                  fontSize: 30,
+                                  fontWeight: FontWeight.w400,
+                                  letterSpacing: -0.42,
+                                  height: 1.4,
+                                  fontFeatures: [
+                                    FontFeature.enable('lnum'),
+                                    FontFeature.enable('tnum'),
+                                  ],
+                                ),
+                              ),
+                            )
+                          : Text(
+                              amount,
+                              style: TextStyle(
+                                fontFamily: 'Playfair Display',
+                                color: amountGradient.first,
+                                fontSize: 30,
+                                fontWeight: FontWeight.w400,
+                                letterSpacing: -0.42,
+                                height: 1.4,
+                                fontFeatures: const [
+                                  FontFeature.enable('lnum'),
+                                  FontFeature.enable('tnum'),
+                                ],
+                              ),
+                            ),
                       const SizedBox(height: 6),
                       Row(
                         children: [
