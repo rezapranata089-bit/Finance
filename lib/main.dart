@@ -1,16 +1,62 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' hide TextDirection;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:solar_icons/solar_icons.dart';
 
-void main() => runApp(const ProviderScope(child: MyFinanceApp()));
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final prefs = await SharedPreferences.getInstance();
+  runApp(ProviderScope(
+    overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+    child: const MyFinanceApp(),
+  ));
+}
+
+final sharedPreferencesProvider = Provider<SharedPreferences>((ref) => throw UnimplementedError());
 
 final transactionsProvider = StateNotifierProvider<TransactionController,
     List<FinanceTransaction>>((ref) => TransactionController());
 
 final selectedTabProvider = StateProvider<int>((ref) => 0);
-final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.dark);
-final accentColorProvider = StateProvider<Color>((ref) => accentPresets.first);
+
+final themeModeProvider = StateNotifierProvider<ThemeModeNotifier, ThemeMode>((ref) {
+  return ThemeModeNotifier(ref.watch(sharedPreferencesProvider));
+});
+
+class ThemeModeNotifier extends StateNotifier<ThemeMode> {
+  final SharedPreferences prefs;
+  ThemeModeNotifier(this.prefs) : super(_load(prefs));
+
+  static ThemeMode _load(SharedPreferences prefs) {
+    final val = prefs.getString('themeMode') ?? 'dark';
+    return ThemeMode.values.firstWhere((e) => e.name == val, orElse: () => ThemeMode.dark);
+  }
+
+  void updateTheme(ThemeMode mode) {
+    state = mode;
+    prefs.setString('themeMode', mode.name);
+  }
+}
+
+final accentColorProvider = StateNotifierProvider<AccentColorNotifier, Color>((ref) {
+  return AccentColorNotifier(ref.watch(sharedPreferencesProvider));
+});
+
+class AccentColorNotifier extends StateNotifier<Color> {
+  final SharedPreferences prefs;
+  AccentColorNotifier(this.prefs) : super(_load(prefs));
+
+  static Color _load(SharedPreferences prefs) {
+    final val = prefs.getInt('accentColor');
+    return val != null ? Color(val) : accentPresets.first;
+  }
+
+  void updateColor(Color color) {
+    state = color;
+    prefs.setInt('accentColor', color.value);
+  }
+}
 
 const accentPresets = <Color>[
   Color(0xFFFF9F43),
@@ -433,7 +479,7 @@ class ProfilePage extends ConsumerWidget {
                 ButtonSegment(value: ThemeMode.system, icon: Icon(SolarIconsOutline.smartphone), label: Text('Sistem')),
               ],
               selected: {themeMode},
-              onSelectionChanged: (value) => ref.read(themeModeProvider.notifier).state = value.first,
+              onSelectionChanged: (value) => ref.read(themeModeProvider.notifier).updateTheme(value.first),
             ),
             const SizedBox(height: 22),
             Text('Warna aksen', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: colors.textPrimary)),
@@ -441,7 +487,7 @@ class ProfilePage extends ConsumerWidget {
             Wrap(spacing: 12, runSpacing: 12, children: accentPresets.map((color) {
               final selected = color.value == accent.value;
               return GestureDetector(
-                onTap: () => ref.read(accentColorProvider.notifier).state = color,
+                onTap: () => ref.read(accentColorProvider.notifier).updateColor(color),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 180),
                   width: 40,
