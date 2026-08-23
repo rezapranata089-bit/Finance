@@ -724,6 +724,8 @@ class _CardBase extends StatelessWidget {
                     children: [
                       Text(
                         amount,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           fontFamily: 'Playfair Display',
                           color: amountGradient.first,
@@ -841,9 +843,9 @@ class DashboardPage extends ConsumerWidget {
         children: [
           pad(Row(children: [
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(DateFormat('EEEE, d MMMM', 'id_ID').format(now), style: TextStyle(color: colors.textMuted, fontSize: 13, fontWeight: FontWeight.w400, letterSpacing: 1.1)),
+              Text(DateFormat('EEEE, d MMMM', 'id_ID').format(now), maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: colors.textMuted, fontSize: 13, fontWeight: FontWeight.w400, letterSpacing: 1.1)),
               const SizedBox(height: 6),
-              Text('${greetingForHour(now)}, ${profile.name}', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600, color: colors.textPrimary)),
+              Text('${greetingForHour(now)}, ${profile.name}', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600, color: colors.textPrimary)),
             ])),
             GestureDetector(
               onTap: () => ref.read(selectedTabProvider.notifier).state = 3,
@@ -926,7 +928,7 @@ class DashboardPage extends ConsumerWidget {
                 Text('35%', style: TextStyle(color: colors.positive, fontWeight: FontWeight.w600)),
               ]),
               const SizedBox(height: 6),
-              Text('Rp 4.200.000 dari Rp 12.000.000', style: TextStyle(color: colors.textMuted, fontSize: 12)),
+              Text('Rp 4.200.000 dari Rp 12.000.000', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: colors.textMuted, fontSize: 12)),
               const SizedBox(height: 12),
               ClipRRect(
                 borderRadius: BorderRadius.circular(6),
@@ -1076,9 +1078,9 @@ class ProfilePage extends ConsumerWidget {
             const SizedBox(width: 16),
             Expanded(
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(profile.name, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: colors.textPrimary)),
+                Text(profile.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: colors.textPrimary)),
                 const SizedBox(height: 4),
-                Text(profile.email, style: TextStyle(color: colors.textMuted, fontSize: 13)),
+                Text(profile.email, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: colors.textMuted, fontSize: 13)),
               ]),
             ),
             IconButton(
@@ -1527,9 +1529,9 @@ class SummaryValue extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: TextStyle(color: colors.textMuted, fontSize: 13)),
+      Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: colors.textMuted, fontSize: 13)),
       const SizedBox(height: 8),
-      Text(value, style: TextStyle(color: color, fontSize: 16, fontWeight: FontWeight.w600)),
+      Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: color, fontSize: 16, fontWeight: FontWeight.w600)),
     ]);
   }
 }
@@ -1575,10 +1577,10 @@ class ReportLine extends StatelessWidget {
       child: Row(children: [
         Container(width: 12, height: 12, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
         const SizedBox(width: 12),
-        Expanded(child: Text(label, style: TextStyle(color: colors.textPrimary, fontSize: 15, fontWeight: FontWeight.w500))),
-        Text(amount, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: colors.textPrimary)),
+        Expanded(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: colors.textPrimary, fontSize: 15, fontWeight: FontWeight.w500))),
+        Text(amount, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: colors.textPrimary)),
         const SizedBox(width: 16),
-        Text(percent, style: TextStyle(color: colors.textMuted, fontSize: 14)),
+        Text(percent, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: colors.textMuted, fontSize: 14)),
       ]),
     );
   }
@@ -1604,9 +1606,9 @@ class SettingRow extends StatelessWidget {
           decoration: BoxDecoration(color: colors.accent.withOpacity(0.1), shape: BoxShape.circle),
           child: Icon(icon, color: colors.accent, size: 20),
         ),
-        title: Text(title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: colors.textPrimary)),
+        title: Text(title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: colors.textPrimary)),
         trailing: value != null
-            ? Text(value!, style: TextStyle(color: colors.textMuted, fontSize: 13))
+            ? Text(value!, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: colors.textMuted, fontSize: 13))
             : Icon(SolarIconsOutline.altArrowRight, color: colors.textMuted, size: 18),
       ),
     );
