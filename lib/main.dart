@@ -681,7 +681,7 @@ class _CardBase extends StatelessWidget {
                       Text(
                         title,
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: 11,
                           fontWeight: FontWeight.w400,
                           color: Colors.white.withOpacity(0.55),
                           letterSpacing: 1.2,
