@@ -230,6 +230,13 @@ class HomeShell extends ConsumerWidget {
     final colors = context.colors;
     return Scaffold(
       body: pages[tab],
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => showAddTransactionChoice(context, ref),
+        backgroundColor: colors.accent,
+        foregroundColor: colors.onAccent,
+        child: const Icon(Icons.add),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
       bottomNavigationBar: NavigationBar(
         selectedIndex: tab,
         onDestinationSelected: (index) =>
@@ -303,13 +310,7 @@ class DashboardPage extends ConsumerWidget {
               ]),
             ]),
           ),
-          const SizedBox(height: 14),
-          Row(children: [
-            Expanded(child: ActionTile(label: 'Pemasukan', icon: Icons.arrow_downward, background: colors.surfaceAlt, iconColor: colors.positive, onTap: () => showTransactionDialog(context, ref, true))),
-            const SizedBox(width: 12),
-            Expanded(child: ActionTile(label: 'Pengeluaran', icon: Icons.arrow_upward, background: colors.surface, iconColor: colors.accent, onTap: () => showTransactionDialog(context, ref, false))),
-          ]),
-                    const SizedBox(height: 28),
+          const SizedBox(height: 28),
                     const SectionHeader(title: 'Ringkasan bulan ini', action: 'Detail'),
                     SurfaceCard(child: Row(children: [
                       Expanded(child: SummaryValue(label: 'Pemasukan', value: rupiah(income), color: colors.positive)),
@@ -683,6 +684,40 @@ class BarChartPainter extends CustomPainter {
 }
 
 String rupiah(double value) => 'Rp ${NumberFormat('#,###', 'id_ID').format(value).replaceAll(',', '.')}';
+
+Future<void> showAddTransactionChoice(BuildContext context, WidgetRef ref) async {
+  final colors = context.colors;
+  await showModalBottomSheet(
+    context: context,
+    backgroundColor: colors.surface,
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+    builder: (context) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Text('Tambah transaksi', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: colors.textPrimary)),
+          const SizedBox(height: 18),
+          ListTile(
+            leading: CircleAvatar(backgroundColor: colors.positive.withOpacity(0.16), child: Icon(Icons.arrow_downward, color: colors.positive)),
+            title: Text('Pemasukan', style: TextStyle(color: colors.textPrimary, fontWeight: FontWeight.w700)),
+            onTap: () {
+              Navigator.pop(context);
+              showTransactionDialog(context, ref, true);
+            },
+          ),
+          ListTile(
+            leading: CircleAvatar(backgroundColor: colors.accent.withOpacity(0.16), child: Icon(Icons.arrow_upward, color: colors.accent)),
+            title: Text('Pengeluaran', style: TextStyle(color: colors.textPrimary, fontWeight: FontWeight.w700)),
+            onTap: () {
+              Navigator.pop(context);
+              showTransactionDialog(context, ref, false);
+            },
+          ),
+        ]),
+      ),
+    ),
+  );
+}
 
 Future<void> showTransactionDialog(BuildContext context, WidgetRef ref, bool income) async {
   final title = TextEditingController();
