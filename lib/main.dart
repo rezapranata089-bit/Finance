@@ -576,7 +576,7 @@ class _DashboardSwiperState extends State<DashboardSwiper> with SingleTickerProv
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: isLight
-              ? const [Color(0xFF4F3527), Color(0xFF38241A), Color(0xFF2B1912)]
+              ? const [Color(0xFF5E3F2C), Color(0xFF43291D), Color(0xFF321C13)]
               : const [Color(0xFF2B1D16), Color(0xFF1A1410), Color(0xFF140E0A)],
         ),
         glowColor: const Color(0xFFE4A98A).withOpacity(0.3),
@@ -601,7 +601,7 @@ class _DashboardSwiperState extends State<DashboardSwiper> with SingleTickerProv
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: isLight
-              ? const [Color(0xFF17301F), Color(0xFF1F3A26), Color(0xFF101E15)]
+              ? const [Color(0xFF1C3823), Color(0xFF25452C), Color(0xFF142819)]
               : const [Color(0xFF0A120D), Color(0xFF152016), Color(0xFF080A08)],
         ),
         glowColor: const Color(0xFF5CC88F).withOpacity(0.3),
@@ -625,7 +625,7 @@ class _DashboardSwiperState extends State<DashboardSwiper> with SingleTickerProv
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: isLight
-            ? const [Color(0xFF441818), Color(0xFF4F1E1E), Color(0xFF2D0F0F)]
+            ? const [Color(0xFF4F1C1C), Color(0xFF5A2222), Color(0xFF331212)]
             : const [Color(0xFF240C0C), Color(0xFF3D1515), Color(0xFF170505)],
       ),
       glowColor: const Color(0xFFEB5757).withOpacity(0.3),
@@ -769,38 +769,28 @@ class _CardBase extends StatelessWidget {
                           ),
                         ],
                       ),
+                      const SizedBox(height: 10),
+                      Text(
+                        statValue,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          color: statColor,
+                          shadows: [BoxShadow(color: statColor.withOpacity(0.4), blurRadius: 12)],
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        statLabel.toUpperCase(),
+                        style: TextStyle(
+                          fontSize: 9,
+                          color: Colors.white.withOpacity(0.4),
+                          letterSpacing: 0.8,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ],
                   ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.start,
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            statLabel.toUpperCase(),
-                            style: TextStyle(
-                              fontSize: 9,
-                              color: Colors.white.withOpacity(0.4),
-                              letterSpacing: 0.8,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            statValue,
-                            style: TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: statColor,
-                              shadows: [BoxShadow(color: statColor.withOpacity(0.4), blurRadius: 12)],
-                            ),
-                          ),
-                        ],
-                      )
-                    ],
-                  )
                 ],
               ),
             ),
