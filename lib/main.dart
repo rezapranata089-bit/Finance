@@ -582,8 +582,8 @@ class _DashboardCardsState extends State<DashboardCards> with SingleTickerProvid
     final trendText = isExpense ? '-3.2%' : '+8.4%';
     
     final bgColors = isExpense 
-        ? const [Color(0xFF341515), Color(0xFF4F2222), Color(0xFF1F0B0B)]
-        : const [Color(0xFF122618), Color(0xFF1E3D27), Color(0xFF0B170F)];
+        ? const [Color(0xFF240C0C), Color(0xFF3D1515), Color(0xFF170505)]
+        : const [Color(0xFF0A120D), Color(0xFF152016), Color(0xFF080A08)];
         
     final patternColor = isExpense
         ? const Color.fromRGBO(235, 87, 87, 0.04)
