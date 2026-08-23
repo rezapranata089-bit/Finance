@@ -264,7 +264,6 @@ class DashboardPage extends ConsumerWidget {
     final colors = context.colors;
     final income = items.where((e) => e.income).fold<double>(0, (s, e) => s + e.amount);
     final expense = items.where((e) => !e.income).fold<double>(0, (s, e) => s + e.amount);
-    final balance = 2500000 + income - expense;
     return SafeArea(
       child: ListView(
         padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
@@ -278,74 +277,7 @@ class DashboardPage extends ConsumerWidget {
             IconButton.filledTonal(onPressed: () {}, icon: const Icon(SolarIconsOutline.bell)),
           ]),
           const SizedBox(height: 22),
-          Container(
-            clipBehavior: Clip.hardEdge,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color.lerp(colors.accent, Colors.black, 0.75)!,
-                  Color.lerp(colors.accent, Colors.black, 0.9)!,
-                ],
-              ),
-              borderRadius: BorderRadius.circular(26),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(Theme.of(context).brightness == Brightness.light ? 0.1 : 0.25),
-                  blurRadius: 16,
-                  offset: const Offset(0, 8),
-                )
-              ],
-            ),
-            child: Stack(
-              children: [
-                Positioned.fill(
-                  child: CustomPaint(
-                    painter: CardPatternPainter(color: colors.accent),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(22),
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                      Text('SALDO TERKINI', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w500, fontSize: 12, letterSpacing: 1.2)),
-                      Icon(SolarIconsOutline.eye, color: Colors.white70, size: 20),
-                    ]),
-                    const SizedBox(height: 12),
-                    Text(
-                      rupiah(balance),
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 34,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 28),
-                    Row(children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: colors.positive.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Row(mainAxisSize: MainAxisSize.min, children: [
-                          Icon(SolarIconsOutline.graphUp, size: 14, color: colors.positive),
-                          const SizedBox(width: 6),
-                          Text('+8.4%', style: TextStyle(color: colors.positive, fontSize: 12, fontWeight: FontWeight.w700)),
-                        ]),
-                      ),
-                      const SizedBox(width: 10),
-                      Text(
-                        'dibanding bulan lalu',
-                        style: TextStyle(color: Colors.white60, fontSize: 13, fontWeight: FontWeight.w500),
-                      ),
-                    ]),
-                  ]),
-                ),
-              ],
-            ),
-          ),
+          DashboardCards(income: income, expense: expense),
           const SizedBox(height: 36),
                     const SectionHeader(title: 'Ringkasan bulan ini', action: 'Detail'),
                     SurfaceCard(child: Row(children: [
@@ -532,6 +464,180 @@ class ProfilePage extends ConsumerWidget {
             SettingRow(icon: SolarIconsOutline.widget, title: 'Kelola kategori'),
             SettingRow(icon: SolarIconsOutline.cardTransfer, title: 'Mata uang', value: 'Rupiah (IDR)'),
           ])),
+        ],
+      ),
+    );
+  }
+}
+
+class _CardData {
+  final String title;
+  final double amount;
+  final bool isIncome;
+  _CardData(this.title, this.amount, this.isIncome);
+}
+
+class DashboardCards extends StatefulWidget {
+  final double income;
+  final double expense;
+  const DashboardCards({super.key, required this.income, required this.expense});
+
+  @override
+  State<DashboardCards> createState() => _DashboardCardsState();
+}
+
+class _DashboardCardsState extends State<DashboardCards> {
+  late PageController _pageController;
+  double _currentPage = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(viewportFraction: 1.0);
+    _pageController.addListener(() {
+      if (mounted && _pageController.position.haveDimensions) {
+        setState(() {
+          _currentPage = _pageController.page ?? 0;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final cards = [
+      _CardData('TOTAL PEMASUKAN', widget.income, true),
+      _CardData('TOTAL PENGELUARAN', widget.expense, false),
+    ];
+
+    return Column(
+      children: [
+        SizedBox(
+          height: 185,
+          child: PageView.builder(
+            controller: _pageController,
+            physics: const BouncingScrollPhysics(),
+            itemCount: cards.length,
+            itemBuilder: (context, index) {
+              final data = cards[index];
+              
+              double scale = 1.0;
+              double opacity = 1.0;
+              if (_pageController.position.haveDimensions) {
+                double diff = _pageController.page! - index;
+                scale = (1 - (diff.abs() * 0.1)).clamp(0.9, 1.0);
+                opacity = (1 - (diff.abs() * 0.4)).clamp(0.0, 1.0);
+              }
+
+              return Transform.scale(
+                scale: scale,
+                child: Opacity(
+                  opacity: opacity,
+                  child: _buildCard(context, data, colors),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(cards.length, (index) {
+            final selected = (_currentPage.round() == index);
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              width: selected ? 24 : 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: selected ? colors.accent : colors.textMuted.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(4),
+              ),
+            );
+          }),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCard(BuildContext context, _CardData data, AppColors colors) {
+    final isExpense = !data.isIncome;
+    final trendColor = isExpense ? const Color(0xFFFF6B81) : colors.positive;
+    final trendIcon = isExpense ? SolarIconsOutline.graphDown : SolarIconsOutline.graphUp;
+    final trendText = isExpense ? '-3.2%' : '+8.4%';
+    
+    return Container(
+      clipBehavior: Clip.hardEdge,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color.lerp(colors.accent, Colors.black, 0.75)!,
+            Color.lerp(colors.accent, Colors.black, 0.9)!,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(26),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(Theme.of(context).brightness == Brightness.light ? 0.1 : 0.25),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          )
+        ],
+      ),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: CustomPaint(
+              painter: CardPatternPainter(color: colors.accent),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(22),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Text(data.title, style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w500, fontSize: 12, letterSpacing: 1.2)),
+                Icon(isExpense ? SolarIconsOutline.wallet : SolarIconsOutline.walletMoney, color: Colors.white70, size: 20),
+              ]),
+              const SizedBox(height: 12),
+              Text(
+                rupiah(data.amount),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 34,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const Spacer(),
+              Row(children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: trendColor.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(trendIcon, size: 14, color: trendColor),
+                    const SizedBox(width: 6),
+                    Text(trendText, style: TextStyle(color: trendColor, fontSize: 12, fontWeight: FontWeight.w700)),
+                  ]),
+                ),
+                const SizedBox(width: 10),
+                const Text(
+                  'dibanding bulan lalu',
+                  style: TextStyle(color: Colors.white60, fontSize: 13, fontWeight: FontWeight.w500),
+                ),
+              ]),
+            ]),
+          ),
         ],
       ),
     );

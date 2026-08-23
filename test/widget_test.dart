@@ -8,6 +8,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Selamat pagi, Raka'), findsOneWidget);
-    expect(find.text('SALDO TERKINI'), findsOneWidget);
+    expect(find.text('TOTAL PEMASUKAN'), findsOneWidget);
   });
 }
