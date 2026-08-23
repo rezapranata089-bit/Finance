@@ -803,7 +803,7 @@ class DashboardPage extends ConsumerWidget {
           const SizedBox(height: 24),
           pad(Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(18),
+              borderRadius: BorderRadius.circular(99),
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(Theme.of(context).brightness == Brightness.light ? 0.05 : 0.2),
@@ -816,28 +816,31 @@ class DashboardPage extends ConsumerWidget {
               decoration: InputDecoration(
                 hintText: 'Tanya AI tentang keuanganmu...',
                 hintStyle: TextStyle(color: colors.textMuted, fontSize: 14),
-                prefixIcon: Icon(Icons.auto_awesome, color: colors.accent, size: 20),
-                suffixIcon: Padding(
-                  padding: const EdgeInsets.all(8.0),
+                prefixIcon: Padding(
+                  padding: const EdgeInsets.only(left: 16.0, right: 8.0),
+                  child: Icon(Icons.auto_awesome, color: colors.accent, size: 20),
+                ),
+                prefixIconConstraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                suffixIconConstraints: const BoxConstraints(minWidth: 44, minHeight: 44),
+                suffixIcon: GestureDetector(
+                  onTap: () {},
                   child: Container(
+                    margin: const EdgeInsets.only(right: 8),
+                    width: 28,
+                    height: 28,
                     decoration: BoxDecoration(
                       color: colors.accent,
                       shape: BoxShape.circle,
                     ),
-                    child: IconButton(
-                      icon: Icon(Icons.send_rounded, color: colors.onAccent, size: 16),
-                      onPressed: () {},
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                    ),
+                    child: Icon(Icons.send_rounded, color: colors.onAccent, size: 14),
                   ),
                 ),
                 filled: true,
                 fillColor: colors.surface,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
-                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
-                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(99), borderSide: BorderSide.none),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(99), borderSide: BorderSide.none),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(99), borderSide: BorderSide.none),
               ),
             ),
           )),
