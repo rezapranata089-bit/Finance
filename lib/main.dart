@@ -724,6 +724,7 @@ class _DashboardCardsState extends State<DashboardCards> with SingleTickerProvid
                 child: Text(
                   rupiah(data.amount),
                   style: TextStyle(
+                    fontFamily: 'Playfair Display',
                     color: Colors.white,
                     fontSize: 34,
                     fontWeight: FontWeight.w700,

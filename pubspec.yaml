@@ -54,3 +54,6 @@ flutter:
     - family: DM Serif Display
       fonts:
         - asset: assets/fonts/dm_serif_display_regular.ttf
+    - family: Playfair Display
+      fonts:
+        - asset: assets/fonts/playfairdisplay_regular.ttf
