@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
@@ -79,6 +80,15 @@ class ProfileState {
   final String? imagePath;
   final double initialBalance;
   const ProfileState({required this.name, required this.email, this.imagePath, required this.initialBalance});
+
+  ImageProvider? get imageProvider {
+    if (imagePath == null || imagePath!.isEmpty) return null;
+    try {
+      return MemoryImage(base64Decode(imagePath!));
+    } catch (e) {
+      return null;
+    }
+  }
 }
 
 final profileProvider = StateNotifierProvider<ProfileNotifier, ProfileState>((ref) {
@@ -850,8 +860,8 @@ class DashboardPage extends ConsumerWidget {
               child: CircleAvatar(
                 radius: 22,
                 backgroundColor: colors.accent,
-                backgroundImage: profile.imagePath != null ? FileImage(File(profile.imagePath!)) : null,
-                child: profile.imagePath == null ? Text(profile.name.isNotEmpty ? profile.name[0].toUpperCase() : 'U', style: TextStyle(color: colors.onAccent, fontSize: 20, fontWeight: FontWeight.w700)) : null,
+                backgroundImage: profile.imageProvider,
+                child: profile.imageProvider == null ? Text(profile.name.isNotEmpty ? profile.name[0].toUpperCase() : 'U', style: TextStyle(color: colors.onAccent, fontSize: 20, fontWeight: FontWeight.w700)) : null,
               ),
             ),
           ])),
@@ -1043,9 +1053,12 @@ class ProfilePage extends ConsumerWidget {
             GestureDetector(
               onTap: () async {
                 final picker = ImagePicker();
-                final picked = await picker.pickImage(source: ImageSource.gallery);
+                // Kompresi otomatis (imageQuality) dan cache via Base64 agar work 100% di Web & Android
+                final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 35);
                 if (picked != null) {
-                  ref.read(profileProvider.notifier).updateProfile(imagePath: picked.path);
+                  final bytes = await picked.readAsBytes();
+                  final base64Str = base64Encode(bytes);
+                  ref.read(profileProvider.notifier).updateProfile(imagePath: base64Str);
                 }
               },
               child: Stack(
@@ -1054,8 +1067,8 @@ class ProfilePage extends ConsumerWidget {
                   CircleAvatar(
                     radius: 32, 
                     backgroundColor: accent,
-                    backgroundImage: profile.imagePath != null ? FileImage(File(profile.imagePath!)) : null, 
-                    child: profile.imagePath == null ? Text(profile.name.isNotEmpty ? profile.name[0].toUpperCase() : 'U', style: TextStyle(color: colors.onAccent, fontSize: 28, fontWeight: FontWeight.w700)) : null
+                    backgroundImage: profile.imageProvider, 
+                    child: profile.imageProvider == null ? Text(profile.name.isNotEmpty ? profile.name[0].toUpperCase() : 'U', style: TextStyle(color: colors.onAccent, fontSize: 28, fontWeight: FontWeight.w700)) : null
                   ),
                   Container(
                     padding: const EdgeInsets.all(4),
@@ -1084,10 +1097,14 @@ class ProfilePage extends ConsumerWidget {
                       Text('Tema', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: colors.textPrimary)),
             const SizedBox(height: 10),
             SegmentedButton<ThemeMode>(
+              style: SegmentedButton.styleFrom(
+                textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                padding: const EdgeInsets.symmetric(horizontal: 8),
+              ),
               segments: const [
-                ButtonSegment(value: ThemeMode.light, icon: Icon(SolarIconsOutline.sun), label: Text('Terang')),
-                ButtonSegment(value: ThemeMode.dark, icon: Icon(SolarIconsOutline.moon), label: Text('Gelap')),
-                ButtonSegment(value: ThemeMode.system, icon: Icon(SolarIconsOutline.smartphone), label: Text('Sistem')),
+                ButtonSegment(value: ThemeMode.light, icon: Icon(SolarIconsOutline.sun, size: 18), label: Text('Terang')),
+                ButtonSegment(value: ThemeMode.dark, icon: Icon(SolarIconsOutline.moon, size: 18), label: Text('Gelap')),
+                ButtonSegment(value: ThemeMode.system, icon: Icon(SolarIconsOutline.smartphone, size: 18), label: Text('Sistem')),
               ],
               selected: {themeMode},
               onSelectionChanged: (value) => ref.read(themeModeProvider.notifier).updateTheme(value.first),
