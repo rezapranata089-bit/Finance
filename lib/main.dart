@@ -287,7 +287,13 @@ class DashboardPage extends ConsumerWidget {
                 colors: [colors.accent, Color.lerp(colors.accent, Colors.black, 0.25)!],
               ),
               borderRadius: BorderRadius.circular(26),
-              boxShadow: [BoxShadow(color: colors.accent.withOpacity(0.35), blurRadius: 24, offset: const Offset(0, 12))],
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(Theme.of(context).brightness == Brightness.light ? 0.1 : 0.25),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                )
+              ],
             ),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
@@ -369,15 +375,27 @@ class TransactionsPage extends ConsumerWidget {
         const SizedBox(height: 8),
         Text('Semua aktivitas keuanganmu', style: TextStyle(color: colors.textMuted)),
         const SizedBox(height: 32),
-        TextField(
-          decoration: InputDecoration(
-            hintText: 'Cari transaksi',
-            prefixIcon: const Icon(SolarIconsOutline.magnifier),
-            filled: true,
-            fillColor: colors.surface,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(Theme.of(context).brightness == Brightness.light ? 0.05 : 0.25),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
+              )
+            ],
+          ),
+          child: TextField(
+            decoration: InputDecoration(
+              hintText: 'Cari transaksi',
+              prefixIcon: const Icon(SolarIconsOutline.magnifier),
+              filled: true,
+              fillColor: colors.surface,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+            ),
           ),
         ),
         const SizedBox(height: 24),
@@ -511,13 +529,24 @@ class ActionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
+    final isLight = Theme.of(context).brightness == Brightness.light;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(20),
       child: Container(
         height: 70,
         padding: const EdgeInsets.symmetric(horizontal: 16),
-        decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(20)),
+        decoration: BoxDecoration(
+          color: background,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isLight ? 0.05 : 0.25),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            )
+          ],
+        ),
         child: Row(children: [
           CircleAvatar(radius: 17, backgroundColor: iconColor.withOpacity(0.16), child: Icon(icon, size: 19, color: iconColor)),
           const SizedBox(width: 12),
@@ -560,9 +589,13 @@ class SurfaceCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: color ?? colors.surface,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: isLight
-            ? [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))]
-            : null,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isLight ? 0.05 : 0.25),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          )
+        ],
       ),
       child: child,
     );
