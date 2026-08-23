@@ -714,40 +714,36 @@ class CardPatternPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint1 = Paint()
-      ..color = color.withOpacity(0.1)
+      ..color = color.withOpacity(0.08)
       ..style = PaintingStyle.fill;
       
     final paint2 = Paint()
-      ..color = color.withOpacity(0.06)
+      ..color = color.withOpacity(0.04)
       ..style = PaintingStyle.fill;
 
-    // Top right wave
     final path1 = Path()
-      ..moveTo(size.width * 0.5, 0)
-      ..quadraticBezierTo(size.width * 0.8, size.height * 0.4, size.width, size.height * 0.2)
-      ..lineTo(size.width, 0)
+      ..moveTo(0, size.height)
+      ..lineTo(0, size.height * 0.4)
+      ..cubicTo(
+        size.width * 0.375, size.height * 0.8,
+        size.width * 0.625, -size.height * 0.1,
+        size.width, size.height * 0.5,
+      )
+      ..lineTo(size.width, size.height)
       ..close();
     canvas.drawPath(path1, paint1);
 
-    // Right side circles
-    canvas.drawCircle(Offset(size.width * 0.95, size.height * 0.7), size.width * 0.15, paint2);
-    canvas.drawCircle(Offset(size.width * 0.8, size.height * 1.1), size.width * 0.2, paint1);
-
-    // Bottom left wave
     final path2 = Path()
-      ..moveTo(0, size.height * 0.5)
-      ..quadraticBezierTo(size.width * 0.3, size.height * 0.6, size.width * 0.4, size.height)
-      ..lineTo(0, size.height)
+      ..moveTo(0, size.height)
+      ..lineTo(0, size.height * 0.65)
+      ..cubicTo(
+        size.width * 0.3, size.height * 0.9,
+        size.width * 0.75, size.height * 0.25,
+        size.width, size.height * 0.7,
+      )
+      ..lineTo(size.width, size.height)
       ..close();
-    canvas.drawPath(path2, paint1);
-    
-    // Bottom left smaller wave
-    final path3 = Path()
-      ..moveTo(0, size.height * 0.75)
-      ..quadraticBezierTo(size.width * 0.15, size.height * 0.8, size.width * 0.2, size.height)
-      ..lineTo(0, size.height)
-      ..close();
-    canvas.drawPath(path3, paint2);
+    canvas.drawPath(path2, paint2);
   }
 
   @override
