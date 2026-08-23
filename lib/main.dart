@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:solar_icons/solar_icons.dart';
@@ -14,6 +15,7 @@ import 'package:solar_icons/solar_icons.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+  await initializeDateFormatting('id_ID', null);
   final prefs = await SharedPreferences.getInstance();
   runApp(ProviderScope(
     overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
@@ -27,6 +29,19 @@ final transactionsProvider = StateNotifierProvider<TransactionController,
     List<FinanceTransaction>>((ref) => TransactionController());
 
 final selectedTabProvider = StateProvider<int>((ref) => 0);
+
+final currentTimeProvider = StreamProvider<DateTime>((ref) async* {
+  yield DateTime.now();
+  yield* Stream.periodic(const Duration(seconds: 30), (_) => DateTime.now());
+});
+
+String greetingForHour(DateTime now) {
+  final hour = now.hour;
+  if (hour >= 4 && hour < 11) return 'Selamat pagi';
+  if (hour >= 11 && hour < 15) return 'Selamat siang';
+  if (hour >= 15 && hour < 18) return 'Selamat sore';
+  return 'Selamat malam';
+}
 
 final themeModeProvider = StateNotifierProvider<ThemeModeNotifier, ThemeMode>((ref) {
   return ThemeModeNotifier(ref.watch(sharedPreferencesProvider));
@@ -840,6 +855,7 @@ class DashboardPage extends ConsumerWidget {
     final items = ref.watch(transactionsProvider);
     final profile = ref.watch(profileProvider);
     final colors = context.colors;
+    final now = ref.watch(currentTimeProvider).value ?? DateTime.now();
     final income = items.where((e) => e.income).fold<double>(0, (s, e) => s + e.amount);
     final expense = items.where((e) => !e.income).fold<double>(0, (s, e) => s + e.amount);
     
@@ -853,9 +869,9 @@ class DashboardPage extends ConsumerWidget {
         children: [
           pad(Row(children: [
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('MINGGU, 23 AGUSTUS', style: TextStyle(color: colors.textMuted, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.1)),
+              Text(DateFormat('EEEE, d MMMM', 'id_ID').format(now), style: TextStyle(color: colors.textMuted, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.1)),
               const SizedBox(height: 6),
-              Text('Selamat pagi, ${profile.name}', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600, color: colors.textPrimary)),
+              Text('${greetingForHour(now)}, ${profile.name}', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600, color: colors.textPrimary)),
             ])),
             GestureDetector(
               onTap: () => ref.read(selectedTabProvider.notifier).state = 3,
