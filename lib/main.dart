@@ -800,7 +800,48 @@ class DashboardPage extends ConsumerWidget {
             ])),
             IconButton.filledTonal(onPressed: () {}, icon: const Icon(SolarIconsOutline.bell)),
           ])),
-          const SizedBox(height: 22),
+          const SizedBox(height: 24),
+          pad(Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(Theme.of(context).brightness == Brightness.light ? 0.05 : 0.2),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                )
+              ],
+            ),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: 'Tanya AI tentang keuanganmu...',
+                hintStyle: TextStyle(color: colors.textMuted, fontSize: 14),
+                prefixIcon: Icon(Icons.auto_awesome, color: colors.accent, size: 20),
+                suffixIcon: Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: colors.accent,
+                      shape: BoxShape.circle,
+                    ),
+                    child: IconButton(
+                      icon: Icon(Icons.send_rounded, color: colors.onAccent, size: 16),
+                      onPressed: () {},
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                    ),
+                  ),
+                ),
+                filled: true,
+                fillColor: colors.surface,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
+                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
+                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none),
+              ),
+            ),
+          )),
+          const SizedBox(height: 28),
           // Swiper tidak di-padding agar bisa bebas mengambil ruang kiri-kanan layar penuh
           SizedBox(
             height: 230,
