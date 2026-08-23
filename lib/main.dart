@@ -1552,9 +1552,9 @@ class TransactionRow extends StatelessWidget {
         ),
         const SizedBox(width: 12),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(item.title, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: colors.textPrimary)),
+          Text(item.title, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: colors.textPrimary)),
           const SizedBox(height: 6),
-          Text('${item.category} · ${DateFormat('dd MMM yyyy').format(item.date)}', style: TextStyle(color: colors.textMuted, fontSize: 12)),
+          Text('${item.category} · ${DateFormat('dd MMM yyyy').format(item.date)}', maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: colors.textMuted, fontSize: 12)),
         ])),
         Text('${item.income ? '+' : '-'}${rupiah(item.amount)}', style: TextStyle(color: item.income ? colors.positive : colors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
       ]),
