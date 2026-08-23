@@ -576,7 +576,7 @@ class _DashboardSwiperState extends State<DashboardSwiper> with SingleTickerProv
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: isLight
-              ? const [Color(0xFF6B4A35), Color(0xFF4A2F22), Color(0xFF3A2318)]
+              ? const [Color(0xFF4F3527), Color(0xFF38241A), Color(0xFF2B1912)]
               : const [Color(0xFF2B1D16), Color(0xFF1A1410), Color(0xFF140E0A)],
         ),
         glowColor: const Color(0xFFE4A98A).withOpacity(0.3),
@@ -601,7 +601,7 @@ class _DashboardSwiperState extends State<DashboardSwiper> with SingleTickerProv
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: isLight
-              ? const [Color(0xFF1F3D28), Color(0xFF2A4F32), Color(0xFF16281C)]
+              ? const [Color(0xFF17301F), Color(0xFF1F3A26), Color(0xFF101E15)]
               : const [Color(0xFF0A120D), Color(0xFF152016), Color(0xFF080A08)],
         ),
         glowColor: const Color(0xFF5CC88F).withOpacity(0.3),
@@ -625,7 +625,7 @@ class _DashboardSwiperState extends State<DashboardSwiper> with SingleTickerProv
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
         colors: isLight
-            ? const [Color(0xFF5C2020), Color(0xFF6B2828), Color(0xFF3D1414)]
+            ? const [Color(0xFF441818), Color(0xFF4F1E1E), Color(0xFF2D0F0F)]
             : const [Color(0xFF240C0C), Color(0xFF3D1515), Color(0xFF170505)],
       ),
       glowColor: const Color(0xFFEB5757).withOpacity(0.3),
@@ -772,28 +772,11 @@ class _CardBase extends StatelessWidget {
                     ],
                   ),
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    mainAxisAlignment: MainAxisAlignment.start,
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(99),
-                          border: Border.all(color: Colors.white.withOpacity(0.1)),
-                        ),
-                        child: Text(
-                          btnText,
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
-                            fontSize: 10,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.4,
-                          ),
-                        ),
-                      ),
                       Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             statLabel.toUpperCase(),
