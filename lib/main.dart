@@ -1053,8 +1053,13 @@ class ProfilePage extends ConsumerWidget {
             GestureDetector(
               onTap: () async {
                 final picker = ImagePicker();
-                // Kompresi otomatis (imageQuality) dan cache via Base64 agar work 100% di Web & Android
-                final picked = await picker.pickImage(source: ImageSource.gallery, imageQuality: 35);
+                // Kompresi otomatis (resolusi dan kualitas) agar size sangat kecil dan aman disimpan di cache SharedPreferences (Web & Android)
+                final picked = await picker.pickImage(
+                  source: ImageSource.gallery, 
+                  imageQuality: 50,
+                  maxWidth: 400,
+                  maxHeight: 400,
+                );
                 if (picked != null) {
                   final bytes = await picked.readAsBytes();
                   final base64Str = base64Encode(bytes);
