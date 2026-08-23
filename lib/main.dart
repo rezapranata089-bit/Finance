@@ -841,7 +841,7 @@ class DashboardPage extends ConsumerWidget {
         children: [
           pad(Row(children: [
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(DateFormat('EEEE, d MMMM', 'id_ID').format(now), style: TextStyle(color: colors.textMuted, fontSize: 11, fontWeight: FontWeight.w500, letterSpacing: 1.1)),
+              Text(DateFormat('EEEE, d MMMM', 'id_ID').format(now), style: TextStyle(color: colors.textMuted, fontSize: 13, fontWeight: FontWeight.w500, letterSpacing: 1.1)),
               const SizedBox(height: 6),
               Text('${greetingForHour(now)}, ${profile.name}', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600, color: colors.textPrimary)),
             ])),
