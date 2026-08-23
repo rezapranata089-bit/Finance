@@ -318,7 +318,7 @@ class DashboardPage extends ConsumerWidget {
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('MINGGU, 23 AGUSTUS', style: TextStyle(color: colors.textMuted, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.1)),
               const SizedBox(height: 6),
-              Text('Selamat pagi, Raka', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600, color: colors.textPrimary)),
+              Text('Selamat pagi, Andi', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600, color: colors.textPrimary)),
             ])),
             IconButton.filledTonal(onPressed: () {}, icon: const Icon(SolarIconsOutline.bell)),
           ]),
