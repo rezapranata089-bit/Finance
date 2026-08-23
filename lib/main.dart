@@ -1,8 +1,10 @@
+import 'dart:io';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:solar_icons/solar_icons.dart';
@@ -70,6 +72,50 @@ const accentPresets = <Color>[
   Color(0xFFFFC24B),
   Color(0xFF4FD1E8),
 ];
+
+class ProfileState {
+  final String name;
+  final String email;
+  final String? imagePath;
+  final double initialBalance;
+  const ProfileState({required this.name, required this.email, this.imagePath, required this.initialBalance});
+}
+
+final profileProvider = StateNotifierProvider<ProfileNotifier, ProfileState>((ref) {
+  return ProfileNotifier(ref.watch(sharedPreferencesProvider));
+});
+
+class ProfileNotifier extends StateNotifier<ProfileState> {
+  final SharedPreferences prefs;
+  ProfileNotifier(this.prefs) : super(ProfileState(
+    name: prefs.getString('profile_name') ?? 'Raka',
+    email: prefs.getString('profile_email') ?? 'Kelola profil dan preferensi',
+    imagePath: prefs.getString('profile_image'),
+    initialBalance: prefs.getDouble('profile_balance') ?? 2500000.0,
+  ));
+
+  void updateProfile({String? name, String? email, String? imagePath}) {
+    if (name != null) prefs.setString('profile_name', name);
+    if (email != null) prefs.setString('profile_email', email);
+    if (imagePath != null) prefs.setString('profile_image', imagePath);
+    state = ProfileState(
+      name: name ?? state.name,
+      email: email ?? state.email,
+      imagePath: imagePath ?? state.imagePath,
+      initialBalance: state.initialBalance,
+    );
+  }
+
+  void updateBalance(double balance) {
+    prefs.setDouble('profile_balance', balance);
+    state = ProfileState(
+      name: state.name,
+      email: state.email,
+      imagePath: state.imagePath,
+      initialBalance: balance,
+    );
+  }
+}
 
 class FinanceTransaction {
   final String title;
@@ -780,6 +826,7 @@ class DashboardPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final items = ref.watch(transactionsProvider);
+    final profile = ref.watch(profileProvider);
     final colors = context.colors;
     final income = items.where((e) => e.income).fold<double>(0, (s, e) => s + e.amount);
     final expense = items.where((e) => !e.income).fold<double>(0, (s, e) => s + e.amount);
@@ -796,14 +843,15 @@ class DashboardPage extends ConsumerWidget {
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('MINGGU, 23 AGUSTUS', style: TextStyle(color: colors.textMuted, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.1)),
               const SizedBox(height: 6),
-              Text('Selamat pagi, Raka', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600, color: colors.textPrimary)),
+              Text('Selamat pagi, ${profile.name}', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600, color: colors.textPrimary)),
             ])),
             GestureDetector(
               onTap: () => ref.read(selectedTabProvider.notifier).state = 3,
               child: CircleAvatar(
                 radius: 22,
                 backgroundColor: colors.accent,
-                child: Text('R', style: TextStyle(color: colors.onAccent, fontSize: 20, fontWeight: FontWeight.w700)),
+                backgroundImage: profile.imagePath != null ? FileImage(File(profile.imagePath!)) : null,
+                child: profile.imagePath == null ? Text(profile.name.isNotEmpty ? profile.name[0].toUpperCase() : 'U', style: TextStyle(color: colors.onAccent, fontSize: 20, fontWeight: FontWeight.w700)) : null,
               ),
             ),
           ])),
@@ -984,6 +1032,7 @@ class ProfilePage extends ConsumerWidget {
     final colors = context.colors;
     final themeMode = ref.watch(themeModeProvider);
     final accent = ref.watch(accentColorProvider);
+    final profile = ref.watch(profileProvider);
     return SafeArea(
       child: ListView(
         padding: const EdgeInsets.all(20),
@@ -991,13 +1040,43 @@ class ProfilePage extends ConsumerWidget {
           Text('Profil', style: TextStyle(fontSize: 27, fontWeight: FontWeight.w700, color: colors.textPrimary)),
           const SizedBox(height: 32),
           SurfaceCard(child: Row(children: [
-            CircleAvatar(radius: 28, backgroundColor: accent, child: Text('R', style: TextStyle(color: colors.onAccent, fontSize: 24, fontWeight: FontWeight.w700))),
+            GestureDetector(
+              onTap: () async {
+                final picker = ImagePicker();
+                final picked = await picker.pickImage(source: ImageSource.gallery);
+                if (picked != null) {
+                  ref.read(profileProvider.notifier).updateProfile(imagePath: picked.path);
+                }
+              },
+              child: Stack(
+                alignment: Alignment.bottomRight,
+                children: [
+                  CircleAvatar(
+                    radius: 32, 
+                    backgroundColor: accent,
+                    backgroundImage: profile.imagePath != null ? FileImage(File(profile.imagePath!)) : null, 
+                    child: profile.imagePath == null ? Text(profile.name.isNotEmpty ? profile.name[0].toUpperCase() : 'U', style: TextStyle(color: colors.onAccent, fontSize: 28, fontWeight: FontWeight.w700)) : null
+                  ),
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(color: colors.surface, shape: BoxShape.circle),
+                    child: Icon(SolarIconsOutline.camera, size: 14, color: colors.textPrimary),
+                  ),
+                ]
+              ),
+            ),
             const SizedBox(width: 16),
-            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Raka', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: colors.textPrimary)),
-              const SizedBox(height: 4),
-              Text('Kelola profil dan preferensi', style: TextStyle(color: colors.textMuted, fontSize: 13)),
-            ]),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(profile.name, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: colors.textPrimary)),
+                const SizedBox(height: 4),
+                Text(profile.email, style: TextStyle(color: colors.textMuted, fontSize: 13)),
+              ]),
+            ),
+            IconButton(
+              icon: Icon(SolarIconsOutline.pen, color: colors.accent),
+              onPressed: () => showEditProfileDialog(context, ref, profile),
+            ),
           ])),
                     const SizedBox(height: 36),
                     const SectionHeader(title: 'Tampilan'),
@@ -1037,10 +1116,15 @@ class ProfilePage extends ConsumerWidget {
             }).toList()),
           ])),
           const SizedBox(height: 36),
-          SurfaceCard(child: Column(children: const [
-            SettingRow(icon: SolarIconsOutline.wallet, title: 'Saldo awal', value: 'Rp 2.500.000'),
-            SettingRow(icon: SolarIconsOutline.widget, title: 'Kelola kategori'),
-            SettingRow(icon: SolarIconsOutline.cardTransfer, title: 'Mata uang', value: 'Rupiah (IDR)'),
+          SurfaceCard(child: Column(children: [
+            SettingRow(
+              icon: SolarIconsOutline.wallet, 
+              title: 'Saldo awal', 
+              value: rupiah(profile.initialBalance),
+              onTap: () => showEditBalanceDialog(context, ref, profile),
+            ),
+            const SettingRow(icon: SolarIconsOutline.widget, title: 'Kelola kategori'),
+            const SettingRow(icon: SolarIconsOutline.cardTransfer, title: 'Mata uang', value: 'Rupiah (IDR)'),
           ])),
         ],
       ),
@@ -1492,7 +1576,8 @@ class SettingRow extends StatelessWidget {
   final IconData icon;
   final String title;
   final String? value;
-  const SettingRow({super.key, required this.icon, required this.title, this.value});
+  final VoidCallback? onTap;
+  const SettingRow({super.key, required this.icon, required this.title, this.value, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -1500,6 +1585,7 @@ class SettingRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: ListTile(
+        onTap: onTap,
         contentPadding: EdgeInsets.zero,
         leading: Container(
           padding: const EdgeInsets.all(8),
@@ -1677,6 +1763,76 @@ Future<void> showTransactionDialog(BuildContext context, WidgetRef ref, bool inc
               }
             },
             child: const Text('Simpan transaksi'),
+          ),
+        ),
+      ]),
+    ),
+  );
+}
+
+Future<void> showEditProfileDialog(BuildContext context, WidgetRef ref, ProfileState profile) async {
+  final nameCtrl = TextEditingController(text: profile.name);
+  final emailCtrl = TextEditingController(text: profile.email);
+  final colors = context.colors;
+  await showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: colors.surface,
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+    builder: (context) => Padding(
+      padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 28),
+      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('Edit Profil', style: TextStyle(fontSize: 21, fontWeight: FontWeight.w800, color: colors.textPrimary)),
+        const SizedBox(height: 20),
+        TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Nama Lengkap')),
+        const SizedBox(height: 12),
+        TextField(controller: emailCtrl, decoration: const InputDecoration(labelText: 'Deskripsi / Email')),
+        const SizedBox(height: 20),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton(
+            onPressed: () {
+              if (nameCtrl.text.isNotEmpty) {
+                ref.read(profileProvider.notifier).updateProfile(name: nameCtrl.text, email: emailCtrl.text);
+              }
+              Navigator.pop(context);
+            },
+            child: const Text('Simpan Perubahan'),
+          ),
+        ),
+      ]),
+    ),
+  );
+}
+
+Future<void> showEditBalanceDialog(BuildContext context, WidgetRef ref, ProfileState profile) async {
+  final balanceCtrl = TextEditingController(text: profile.initialBalance.toInt().toString());
+  final colors = context.colors;
+  await showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: colors.surface,
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+    builder: (context) => Padding(
+      padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 28),
+      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('Atur Saldo Awal', style: TextStyle(fontSize: 21, fontWeight: FontWeight.w800, color: colors.textPrimary)),
+        const SizedBox(height: 20),
+        TextField(
+          controller: balanceCtrl, 
+          keyboardType: TextInputType.number, 
+          decoration: const InputDecoration(labelText: 'Nominal Saldo', prefixText: 'Rp ')
+        ),
+        const SizedBox(height: 20),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton(
+            onPressed: () {
+              final val = double.tryParse(balanceCtrl.text.replaceAll('.', '')) ?? 0;
+              ref.read(profileProvider.notifier).updateBalance(val);
+              Navigator.pop(context);
+            },
+            child: const Text('Simpan Saldo'),
           ),
         ),
       ]),
