@@ -297,17 +297,26 @@ class DashboardPage extends ConsumerWidget {
               const SizedBox(height: 16),
               Text(rupiah(balance), style: TextStyle(color: colors.onAccent, fontSize: 36, fontWeight: FontWeight.w700)),
               const SizedBox(height: 28),
-              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              Row(children: [
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(color: colors.onAccent.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
-                  child: Row(children: [
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
                     Icon(SolarIconsOutline.graphUp, size: 16, color: colors.onAccent),
                     const SizedBox(width: 6),
                     Text('8,4% bulan ini', style: TextStyle(color: colors.onAccent, fontSize: 12, fontWeight: FontWeight.w600)),
                   ]),
                 ),
-                Text('Saldo awal ${rupiah(2500000)}', style: TextStyle(color: colors.onAccent.withOpacity(0.8), fontSize: 12, fontWeight: FontWeight.w500)),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Saldo awal ${rupiah(2500000)}',
+                    textAlign: TextAlign.right,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: colors.onAccent.withOpacity(0.8), fontSize: 12, fontWeight: FontWeight.w500),
+                  ),
+                ),
               ]),
             ]),
           ),
@@ -530,7 +539,7 @@ class SectionHeader extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
       child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        Text(title, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: colors.textPrimary, fontFamily: 'DM Serif Display')),
+        Text(title, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w400, color: colors.textPrimary, fontFamily: 'DM Serif Display')),
         if (action != null) Text(action!, style: TextStyle(color: colors.accent, fontSize: 13, fontWeight: FontWeight.w600)),
       ]),
     );
