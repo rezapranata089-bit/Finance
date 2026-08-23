@@ -567,14 +567,17 @@ class _DashboardSwiperState extends State<DashboardSwiper> with SingleTickerProv
   }
 
   Widget _buildCard(int index, bool isActive) {
+    final isLight = Theme.of(context).brightness == Brightness.light;
     if (index == 0) {
       return _CardBase(
         isActive: isActive,
         animController: _animController,
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF2B1D16), Color(0xFF1A1410), Color(0xFF140E0A)],
+          colors: isLight
+              ? const [Color(0xFF6B4A35), Color(0xFF4A2F22), Color(0xFF3A2318)]
+              : const [Color(0xFF2B1D16), Color(0xFF1A1410), Color(0xFF140E0A)],
         ),
         glowColor: const Color(0xFFE4A98A).withOpacity(0.3),
         patternColor: Colors.white.withOpacity(0.04), // Sesuai HTML
@@ -594,10 +597,12 @@ class _DashboardSwiperState extends State<DashboardSwiper> with SingleTickerProv
       return _CardBase(
         isActive: isActive,
         animController: _animController,
-        gradient: const LinearGradient(
+        gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF0A120D), Color(0xFF152016), Color(0xFF080A08)],
+          colors: isLight
+              ? const [Color(0xFF1F3D28), Color(0xFF2A4F32), Color(0xFF16281C)]
+              : const [Color(0xFF0A120D), Color(0xFF152016), Color(0xFF080A08)],
         ),
         glowColor: const Color(0xFF5CC88F).withOpacity(0.3),
         patternColor: const Color.fromRGBO(92, 200, 143, 0.04),
@@ -616,10 +621,12 @@ class _DashboardSwiperState extends State<DashboardSwiper> with SingleTickerProv
     return _CardBase(
       isActive: isActive,
       animController: _animController,
-      gradient: const LinearGradient(
+      gradient: LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [Color(0xFF240C0C), Color(0xFF3D1515), Color(0xFF170505)],
+        colors: isLight
+            ? const [Color(0xFF5C2020), Color(0xFF6B2828), Color(0xFF3D1414)]
+            : const [Color(0xFF240C0C), Color(0xFF3D1515), Color(0xFF170505)],
       ),
       glowColor: const Color(0xFFEB5757).withOpacity(0.3),
       patternColor: const Color.fromRGBO(235, 87, 87, 0.04),
