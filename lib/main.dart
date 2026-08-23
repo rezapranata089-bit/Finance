@@ -569,9 +569,17 @@ class _DashboardCardsState extends State<DashboardCards> {
 
   Widget _buildCard(BuildContext context, _CardData data, AppColors colors) {
     final isExpense = !data.isIncome;
-    final trendColor = isExpense ? const Color(0xFFFF6B81) : colors.positive;
+    final trendColor = isExpense ? const Color(0xFFEB5757) : const Color(0xFF5CC88F);
     final trendIcon = isExpense ? SolarIconsOutline.graphDown : SolarIconsOutline.graphUp;
     final trendText = isExpense ? '-3.2%' : '+8.4%';
+    
+    final bgColors = isExpense 
+        ? const [Color(0xFF240C0C), Color(0xFF3D1515), Color(0xFF170505)]
+        : const [Color(0xFF0A120D), Color(0xFF152016), Color(0xFF080A08)];
+        
+    final patternColor = isExpense
+        ? const Color.fromRGBO(235, 87, 87, 0.04)
+        : const Color.fromRGBO(92, 200, 143, 0.04);
     
     return Container(
       clipBehavior: Clip.hardEdge,
@@ -579,10 +587,8 @@ class _DashboardCardsState extends State<DashboardCards> {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Color.lerp(colors.accent, Colors.black, 0.75)!,
-            Color.lerp(colors.accent, Colors.black, 0.9)!,
-          ],
+          colors: bgColors,
+          stops: const [0.0, 0.6, 1.0],
         ),
         borderRadius: BorderRadius.circular(26),
         boxShadow: [
@@ -597,7 +603,7 @@ class _DashboardCardsState extends State<DashboardCards> {
         children: [
           Positioned.fill(
             child: CustomPaint(
-              painter: CardPatternPainter(color: colors.accent),
+              painter: CardPatternPainter(patternColor: patternColor),
             ),
           ),
           Padding(
@@ -608,12 +614,29 @@ class _DashboardCardsState extends State<DashboardCards> {
                 Icon(isExpense ? SolarIconsOutline.wallet : SolarIconsOutline.walletMoney, color: Colors.white70, size: 20),
               ]),
               const SizedBox(height: 12),
-              Text(
-                rupiah(data.amount),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 34,
-                  fontWeight: FontWeight.w700,
+              ShaderMask(
+                shaderCallback: (bounds) => LinearGradient(
+                  colors: isExpense 
+                      ? const [Color(0xFFEB5757), Color(0xFFFAD4D4), Color(0xFFEB5757)]
+                      : const [Color(0xFF5CC88F), Color(0xFFD4FADF), Color(0xFF5CC88F)],
+                  stops: const [0.4, 0.5, 0.6],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ).createShader(bounds),
+                child: Text(
+                  rupiah(data.amount),
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 34,
+                    fontWeight: FontWeight.w700,
+                    shadows: [
+                      Shadow(
+                        color: isExpense ? const Color.fromRGBO(235, 87, 87, 0.2) : const Color.fromRGBO(92, 200, 143, 0.2),
+                        offset: const Offset(0, 2),
+                        blurRadius: 8,
+                      )
+                    ],
+                  ),
                 ),
               ),
               const Spacer(),
@@ -822,13 +845,13 @@ class SettingRow extends StatelessWidget {
 }
 
 class CardPatternPainter extends CustomPainter {
-  final Color color;
-  const CardPatternPainter({required this.color});
+  final Color patternColor;
+  const CardPatternPainter({required this.patternColor});
 
   @override
   void paint(Canvas canvas, Size size) {
     final paint1 = Paint()
-      ..color = color.withOpacity(0.05)
+      ..color = patternColor
       ..style = PaintingStyle.fill;
       
     final path1 = Path()
@@ -844,7 +867,7 @@ class CardPatternPainter extends CustomPainter {
     canvas.drawPath(path1, paint1);
 
     final paint2 = Paint()
-      ..color = Colors.white.withOpacity(0.03)
+      ..color = const Color.fromRGBO(255, 255, 255, 0.02)
       ..style = PaintingStyle.fill;
       
     final path2 = Path()
@@ -861,7 +884,7 @@ class CardPatternPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CardPatternPainter oldDelegate) => oldDelegate.color != color;
+  bool shouldRepaint(covariant CardPatternPainter oldDelegate) => oldDelegate.patternColor != patternColor;
 }
 
 class SparklinePainter extends CustomPainter {
