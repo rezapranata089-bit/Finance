@@ -321,7 +321,8 @@ class _DashboardSwiperState extends State<DashboardSwiper> with SingleTickerProv
   @override
   void initState() {
     super.initState();
-    _pageController = PageController(viewportFraction: 0.85, initialPage: 1);
+    // 0.80 membuat card mengambil 80% dari lebar layar (Lebih besar/lebar)
+    _pageController = PageController(viewportFraction: 0.80, initialPage: 1);
     _pageController.addListener(() {
       if (_pageController.page != null) {
         setState(() {
@@ -329,7 +330,7 @@ class _DashboardSwiperState extends State<DashboardSwiper> with SingleTickerProv
         });
       }
     });
-    _animController = AnimationController(vsync: this, duration: const Duration(seconds: 3))..repeat(reverse: true);
+    _animController = AnimationController(vsync: this, duration: const Duration(seconds: 4))..repeat(reverse: true);
   }
 
   @override
@@ -350,19 +351,23 @@ class _DashboardSwiperState extends State<DashboardSwiper> with SingleTickerProv
             itemCount: 3,
             itemBuilder: (context, index) {
               double value = _currentPage - index;
-              double scale = (1 - (value.abs() * 0.08)).clamp(0.0, 1.0);
-              double rotationY = value * -0.15;
-              double opacity = (1 - (value.abs() * 0.4)).clamp(0.0, 1.0);
+              
+              // Rumus Animasi Coverflow (Saling Tumpuk)
+              double scale = (1 - (value.abs() * 0.12)).clamp(0.0, 1.0);
+              double rotationY = value * -0.3; // Putaran 3D
+              double translateX = value * 45.0; // Menarik card ke tengah agar menumpuk
+              double opacity = (1 - (value.abs() * 0.3)).clamp(0.0, 1.0); // Transparansi card samping
 
               return Transform(
                 transform: Matrix4.identity()
-                  ..setEntry(3, 2, 0.001)
+                  ..setEntry(3, 2, 0.0015) // Perspektif 3D
+                  ..translate(translateX, 0.0, 0.0) // Tumpukan
                   ..rotateY(rotationY)
                   ..scale(scale),
                 alignment: Alignment.center,
                 child: Opacity(
                   opacity: opacity,
-                  child: _buildCard(index, value.abs() < 0.5),
+                  child: _buildCard(index, value.abs() < 0.3),
                 ),
               );
             },
@@ -399,12 +404,12 @@ class _DashboardSwiperState extends State<DashboardSwiper> with SingleTickerProv
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF3A261D), Color(0xFF1A1410), Color(0xFF0D0A08)],
+          colors: [Color(0xFF2B1D16), Color(0xFF1A1410), Color(0xFF140E0A)],
         ),
-        glowColor: const Color(0xFFE4A98A).withOpacity(0.15),
+        glowColor: const Color(0xFFE4A98A).withOpacity(0.3),
+        glowAlign: Alignment.bottomLeft,
         title: 'TOTAL STOK BATU',
         amount: '15.000',
-        isCurrency: false,
         subLabel: 'Modal Bakar',
         subValue: 'Rp 4.500.000',
         btnText: 'Lihat Detail',
@@ -421,12 +426,12 @@ class _DashboardSwiperState extends State<DashboardSwiper> with SingleTickerProv
         gradient: const LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [Color(0xFF0A120D), Color(0xFF152016), Color(0xFF080A08)],
+          colors: [Color(0xFF0F1812), Color(0xFF090D0A), Color(0xFF060907)],
         ),
-        glowColor: const Color(0xFF5CC88F).withOpacity(0.15),
+        glowColor: const Color(0xFF5CC88F).withOpacity(0.3),
+        glowAlign: Alignment.bottomLeft,
         title: 'KEUNTUNGAN BERSIH',
         amount: NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0).format(widget.income),
-        isCurrency: false,
         subLabel: 'Sisa Modal Usaha',
         subValue: 'Rp 12.000.000',
         btnText: 'Tarik Dana',
@@ -442,12 +447,12 @@ class _DashboardSwiperState extends State<DashboardSwiper> with SingleTickerProv
       gradient: const LinearGradient(
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
-        colors: [Color(0xFF240C0C), Color(0xFF3D1515), Color(0xFF170505)],
+        colors: [Color(0xFF2B1010), Color(0xFF1F0C0C), Color(0xFF140808)],
       ),
-      glowColor: const Color(0xFFEB5757).withOpacity(0.15),
+      glowColor: const Color(0xFFEB5757).withOpacity(0.3),
+      glowAlign: Alignment.bottomRight,
       title: 'TOTAL PENGELUARAN',
       amount: NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0).format(widget.expense),
-      isCurrency: false,
       subLabel: 'Bulan Ini',
       subValue: 'Kayu Bakar & Gaji',
       btnText: 'Cek Laporan',
@@ -464,9 +469,9 @@ class _CardBase extends StatelessWidget {
   final AnimationController animController;
   final Gradient gradient;
   final Color glowColor;
+  final Alignment glowAlign;
   final String title;
   final String amount;
-  final bool isCurrency;
   final String subLabel;
   final String subValue;
   final String btnText;
@@ -480,9 +485,9 @@ class _CardBase extends StatelessWidget {
     required this.animController,
     required this.gradient,
     required this.glowColor,
+    required this.glowAlign,
     required this.title,
     required this.amount,
-    required this.isCurrency,
     required this.subLabel,
     required this.subValue,
     required this.btnText,
@@ -495,18 +500,18 @@ class _CardBase extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 250),
+      duration: const Duration(milliseconds: 300),
       curve: Curves.easeOutQuad,
-      margin: EdgeInsets.symmetric(vertical: isActive ? 0 : 8),
+      margin: EdgeInsets.symmetric(vertical: isActive ? 0 : 10),
       decoration: BoxDecoration(
         gradient: gradient,
         borderRadius: BorderRadius.circular(28),
         boxShadow: isActive
             ? [
-                BoxShadow(color: Colors.black.withOpacity(0.4), blurRadius: 24, offset: const Offset(0, 12)),
-                const BoxShadow(color: Colors.white10, spreadRadius: 1, blurStyle: BlurStyle.inner),
+                BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 20, offset: const Offset(0, 10)),
+                BoxShadow(color: glowColor.withOpacity(0.2), spreadRadius: 1, blurRadius: 0),
               ]
-            : [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 12, offset: const Offset(0, 6))],
+            : [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 5))],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(28),
@@ -515,15 +520,15 @@ class _CardBase extends StatelessWidget {
             if (isActive)
               Positioned(
                 bottom: -80,
-                right: title.contains('PENGELUARAN') ? -40 : null,
-                left: title.contains('KEUNTUNGAN') ? -40 : (title.contains('STOK') ? 0 : null),
+                left: glowAlign == Alignment.bottomLeft ? -40 : null,
+                right: glowAlign == Alignment.bottomRight ? -40 : null,
                 child: AnimatedBuilder(
                   animation: animController,
                   builder: (context, child) {
                     return Transform.scale(
-                      scale: 1.0 + (animController.value * 0.12),
+                      scale: 1.0 + (animController.value * 0.1),
                       child: Opacity(
-                        opacity: 0.6 + (animController.value * 0.4),
+                        opacity: 0.5 + (animController.value * 0.3),
                         child: Container(
                           width: 240,
                           height: 240,
@@ -531,7 +536,7 @@ class _CardBase extends StatelessWidget {
                             shape: BoxShape.circle,
                             gradient: RadialGradient(
                               colors: [glowColor, Colors.transparent],
-                              stops: const [0.0, 0.65],
+                              stops: const [0.0, 0.6],
                             ),
                           ),
                         ),
@@ -553,9 +558,9 @@ class _CardBase extends StatelessWidget {
                       Text(
                         title,
                         style: TextStyle(
-                          fontSize: 10,
+                          fontSize: 11,
                           fontWeight: FontWeight.w600,
-                          color: Colors.white.withOpacity(0.55),
+                          color: Colors.white.withOpacity(0.5),
                           letterSpacing: 1.2,
                         ),
                       ),
@@ -563,26 +568,25 @@ class _CardBase extends StatelessWidget {
                         width: 32,
                         height: 24,
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(5),
+                          borderRadius: BorderRadius.circular(6),
                           gradient: const LinearGradient(
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
-                            colors: [Color(0xFFe8c97a), Color(0xFFc9a85c), Color(0xFFa07840)],
+                            colors: [Color(0xFFD6B26A), Color(0xFFB58E41)],
                           ),
-                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 6, offset: const Offset(0, 2))],
                         ),
                         child: Center(
                           child: Container(
-                            width: 20,
-                            height: 14,
+                            width: 18,
+                            height: 12,
                             decoration: BoxDecoration(
-                              border: Border.all(color: Colors.black.withOpacity(0.3)),
+                              border: Border.all(color: Colors.black.withOpacity(0.3), width: 1.5),
                               borderRadius: BorderRadius.circular(2),
                             ),
                             child: Center(
                               child: Container(
-                                width: 1,
-                                color: Colors.black.withOpacity(0.25),
+                                width: 1.5,
+                                color: Colors.black.withOpacity(0.3),
                               ),
                             ),
                           ),
@@ -605,21 +609,21 @@ class _CardBase extends StatelessWidget {
                           amount,
                           style: const TextStyle(
                             fontFamily: 'Playfair Display',
-                            fontSize: 32,
+                            fontSize: 34,
                             fontWeight: FontWeight.w600,
                             color: Colors.white,
                             letterSpacing: -0.5,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 6),
                       Row(
                         children: [
                           Text(
                             subLabel,
                             style: TextStyle(
-                              fontSize: 10,
-                              color: Colors.white.withOpacity(0.45),
+                              fontSize: 11,
+                              color: Colors.white.withOpacity(0.4),
                               fontWeight: FontWeight.w400,
                             ),
                           ),
@@ -627,8 +631,8 @@ class _CardBase extends StatelessWidget {
                           Text(
                             subValue,
                             style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.white.withOpacity(0.75),
+                              fontSize: 12,
+                              color: Colors.white.withOpacity(0.8),
                               fontWeight: FontWeight.w600,
                               letterSpacing: 0.2,
                             ),
@@ -642,17 +646,17 @@ class _CardBase extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
+                          color: Colors.white.withOpacity(0.12),
                           borderRadius: BorderRadius.circular(99),
-                          border: Border.all(color: Colors.white.withOpacity(0.1)),
+                          border: Border.all(color: Colors.white.withOpacity(0.15)),
                         ),
                         child: Text(
                           btnText,
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
-                            fontSize: 10,
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
                             fontWeight: FontWeight.w600,
                             letterSpacing: 0.4,
                           ),
@@ -667,16 +671,17 @@ class _CardBase extends StatelessWidget {
                               fontSize: 9,
                               color: Colors.white.withOpacity(0.4),
                               letterSpacing: 0.8,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: 4),
                           Text(
                             statValue,
                             style: TextStyle(
-                              fontSize: 15,
+                              fontSize: 16,
                               fontWeight: FontWeight.w600,
                               color: statColor,
-                              shadows: [BoxShadow(color: statColor.withOpacity(0.4), blurRadius: 12)],
+                              shadows: [BoxShadow(color: statColor.withOpacity(0.3), blurRadius: 10)],
                             ),
                           ),
                         ],
@@ -715,7 +720,16 @@ class DashboardPage extends ConsumerWidget {
             IconButton.filledTonal(onPressed: () {}, icon: const Icon(SolarIconsOutline.bell)),
           ]),
           const SizedBox(height: 22),
-          SizedBox(height: 240, child: DashboardSwiper(income: income, expense: expense)),
+          // Memaksa Swiper melewati batas padding 20px dari body luar 
+          // agar lebarnya maksimal dari ujung ke ujung HP
+          Transform.translate(
+            offset: const Offset(-20, 0),
+            child: SizedBox(
+              height: 230,
+              width: MediaQuery.of(context).size.width,
+              child: DashboardSwiper(income: income, expense: expense),
+            ),
+          ),
           const SizedBox(height: 36),
                     const SectionHeader(title: 'Ringkasan bulan ini', action: 'Detail'),
                     SurfaceCard(child: Row(children: [
