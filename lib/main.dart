@@ -161,25 +161,25 @@ AppColors _palette(Brightness brightness, Color accent) {
     return AppColors(
       accent: accent,
       onAccent: onAccent,
-      background: const Color(0xFF11151B),
-      surface: const Color(0xFF1A2029),
-      surfaceAlt: const Color(0xFF202D2A),
-      border: const Color(0xFF2B3542),
-      textPrimary: Colors.white,
-      textMuted: const Color(0xFF94A0B2),
-      positive: const Color(0xFF65D7A9),
+      background: const Color(0xFF0F1115),
+      surface: const Color(0xFF181B21),
+      surfaceAlt: const Color(0xFF22262E),
+      border: Colors.transparent,
+      textPrimary: const Color(0xFFF1F3F5),
+      textMuted: const Color(0xFF8B929D),
+      positive: const Color(0xFF4ADE80),
     );
   }
   return AppColors(
     accent: accent,
     onAccent: onAccent,
-    background: const Color(0xFFF4F5F8),
+    background: const Color(0xFFF4F6F8),
     surface: Colors.white,
-    surfaceAlt: const Color(0xFFEAF7F1),
-    border: const Color(0xFFE3E7EE),
-    textPrimary: const Color(0xFF171B22),
-    textMuted: const Color(0xFF6C7686),
-    positive: const Color(0xFF2E9E75),
+    surfaceAlt: const Color(0xFFEEF0F4),
+    border: Colors.transparent,
+    textPrimary: const Color(0xFF1A1D21),
+    textMuted: const Color(0xFF6B7280),
+    positive: const Color(0xFF10B981),
   );
 }
 
@@ -273,7 +273,7 @@ class DashboardPage extends ConsumerWidget {
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('MINGGU, 23 AGUSTUS', style: TextStyle(color: colors.textMuted, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.1)),
               const SizedBox(height: 6),
-              Text('Selamat pagi, Raka', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: colors.textPrimary)),
+              Text('Selamat pagi, Raka', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600, color: colors.textPrimary)),
             ])),
             IconButton.filledTonal(onPressed: () {}, icon: const Icon(SolarIconsOutline.bell)),
           ]),
@@ -291,53 +291,53 @@ class DashboardPage extends ConsumerWidget {
             ),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                Text('SALDO TERKINI', style: TextStyle(color: colors.onAccent.withOpacity(0.75), fontWeight: FontWeight.w800, fontSize: 11, letterSpacing: 1.1)),
-                Icon(SolarIconsOutline.eye, color: colors.onAccent.withOpacity(0.8), size: 19),
+                Text('SALDO TERKINI', style: TextStyle(color: colors.onAccent.withOpacity(0.8), fontWeight: FontWeight.w600, fontSize: 12, letterSpacing: 1.2)),
+                Icon(SolarIconsOutline.eye, color: colors.onAccent.withOpacity(0.9), size: 20),
               ]),
-              const SizedBox(height: 12),
-              Text(rupiah(balance), style: TextStyle(color: colors.onAccent, fontSize: 32, fontWeight: FontWeight.w900)),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
+              Text(rupiah(balance), style: TextStyle(color: colors.onAccent, fontSize: 36, fontWeight: FontWeight.w700)),
+              const SizedBox(height: 28),
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(color: colors.onAccent.withOpacity(0.16), borderRadius: BorderRadius.circular(10)),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(color: colors.onAccent.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
                   child: Row(children: [
-                    Icon(SolarIconsOutline.graphUp, size: 15, color: colors.onAccent),
-                    const SizedBox(width: 4),
-                    Text('8,4% bulan ini', style: TextStyle(color: colors.onAccent, fontSize: 11, fontWeight: FontWeight.w700)),
+                    Icon(SolarIconsOutline.graphUp, size: 16, color: colors.onAccent),
+                    const SizedBox(width: 6),
+                    Text('8,4% bulan ini', style: TextStyle(color: colors.onAccent, fontSize: 12, fontWeight: FontWeight.w600)),
                   ]),
                 ),
-                Text('Saldo awal ${rupiah(2500000)}', style: TextStyle(color: colors.onAccent.withOpacity(0.75), fontSize: 11)),
+                Text('Saldo awal ${rupiah(2500000)}', style: TextStyle(color: colors.onAccent.withOpacity(0.8), fontSize: 12, fontWeight: FontWeight.w500)),
               ]),
             ]),
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 36),
                     const SectionHeader(title: 'Ringkasan bulan ini', action: 'Detail'),
                     SurfaceCard(child: Row(children: [
                       Expanded(child: SummaryValue(label: 'Pemasukan', value: rupiah(income), color: colors.positive)),
-            const SizedBox(width: 18), Container(width: 1, height: 53, color: colors.border), const SizedBox(width: 18),
+            const SizedBox(width: 18), Container(width: 1, height: 53, color: colors.textMuted.withOpacity(0.2)), const SizedBox(width: 18),
             Expanded(child: SummaryValue(label: 'Pengeluaran', value: rupiah(expense), color: colors.textPrimary)),
           ])),
 
-                    const SizedBox(height: 26),
+                    const SizedBox(height: 36),
                     const SectionHeader(title: 'Transaksi terbaru', action: 'Lihat semua'),
                     SurfaceCard(child: Column(children: items.take(4).map((e) => TransactionRow(item: e)).toList())),
-                    const SizedBox(height: 26),
+                    const SizedBox(height: 36),
                     const SectionHeader(title: 'Target tabungan', action: 'Kelola'),
                     SurfaceCard(color: colors.surfaceAlt, child: Row(children: [
             CircleAvatar(backgroundColor: colors.positive.withOpacity(0.18), child: Icon(SolarIconsOutline.sun, color: colors.positive)),
             const SizedBox(width: 12),
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                Text('Dana liburan', style: TextStyle(fontWeight: FontWeight.w700, color: colors.textPrimary)),
-                Text('35%', style: TextStyle(color: colors.positive, fontWeight: FontWeight.w800)),
+                Text('Dana liburan', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: colors.textPrimary)),
+                Text('35%', style: TextStyle(color: colors.positive, fontWeight: FontWeight.w600)),
               ]),
-              const SizedBox(height: 5),
-              Text('Rp 4.200.000 dari Rp 12.000.000', style: TextStyle(color: colors.textMuted, fontSize: 11)),
-              const SizedBox(height: 10),
+              const SizedBox(height: 6),
+              Text('Rp 4.200.000 dari Rp 12.000.000', style: TextStyle(color: colors.textMuted, fontSize: 12)),
+              const SizedBox(height: 12),
               ClipRRect(
                 borderRadius: BorderRadius.circular(6),
-                child: LinearProgressIndicator(value: .35, minHeight: 6, backgroundColor: colors.border, color: colors.positive),
+                child: LinearProgressIndicator(value: .35, minHeight: 8, backgroundColor: colors.textMuted.withOpacity(0.2), color: colors.positive),
               ),
             ])),
           ])),
@@ -356,27 +356,30 @@ class TransactionsPage extends ConsumerWidget {
     final colors = context.colors;
     return SafeArea(
       child: ListView(padding: const EdgeInsets.all(20), children: [
-        Text('Transaksi', style: TextStyle(fontSize: 27, fontWeight: FontWeight.w800, color: colors.textPrimary)),
-        const SizedBox(height: 6),
+        Text('Transaksi', style: TextStyle(fontSize: 27, fontWeight: FontWeight.w700, color: colors.textPrimary)),
+        const SizedBox(height: 8),
         Text('Semua aktivitas keuanganmu', style: TextStyle(color: colors.textMuted)),
-        const SizedBox(height: 20),
+        const SizedBox(height: 32),
         TextField(
           decoration: InputDecoration(
             hintText: 'Cari transaksi',
             prefixIcon: const Icon(SolarIconsOutline.magnifier),
             filled: true,
             fillColor: colors.surface,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: colors.border)),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 24),
         Wrap(spacing: 8, children: ['Semua', 'Pemasukan', 'Pengeluaran'].map((e) => Chip(
           label: Text(e),
           backgroundColor: e == 'Semua' ? colors.accent : colors.surface,
-          labelStyle: TextStyle(color: e == 'Semua' ? colors.onAccent : colors.textPrimary),
-          side: BorderSide(color: colors.border),
+          labelStyle: TextStyle(color: e == 'Semua' ? colors.onAccent : colors.textPrimary, fontWeight: FontWeight.w600),
+          side: BorderSide.none,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         )).toList()),
-        const SizedBox(height: 18),
+        const SizedBox(height: 32),
         SurfaceCard(child: Column(children: items.map((e) => TransactionRow(item: e)).toList())),
       ]),
     );
@@ -393,18 +396,18 @@ class ReportsPage extends ConsumerWidget {
     final expense = items.where((e) => !e.income).fold<double>(0, (s, e) => s + e.amount);
     return SafeArea(
       child: ListView(padding: const EdgeInsets.all(20), children: [
-        Text('Laporan', style: TextStyle(fontSize: 27, fontWeight: FontWeight.w800, color: colors.textPrimary)),
-        const SizedBox(height: 6),
+        Text('Laporan', style: TextStyle(fontSize: 27, fontWeight: FontWeight.w700, color: colors.textPrimary)),
+        const SizedBox(height: 8),
         Text('Lihat pola keuanganmu', style: TextStyle(color: colors.textMuted)),
-        const SizedBox(height: 22),
+        const SizedBox(height: 32),
         SurfaceCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Text('Pengeluaran bulan ini', style: TextStyle(color: colors.textMuted)),
           const SizedBox(height: 7),
-          Text(rupiah(expense), style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: colors.textPrimary)),
+          Text(rupiah(expense), style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: colors.textPrimary)),
           const SizedBox(height: 20),
           SizedBox(height: 145, width: double.infinity, child: CustomPaint(painter: BarChartPainter(primary: colors.accent, secondary: colors.positive))),
         ])),
-                const SizedBox(height: 20),
+                const SizedBox(height: 36),
                 const SectionHeader(title: 'Kategori terbesar', action: 'Bulan ini'),
                 SurfaceCard(child: Column(children: [
                   ReportLine(label: 'Belanja', amount: 'Rp 680.000', percent: '57%', color: colors.accent),
@@ -428,18 +431,18 @@ class ProfilePage extends ConsumerWidget {
       child: ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          Text('Profil', style: TextStyle(fontSize: 27, fontWeight: FontWeight.w800, color: colors.textPrimary)),
-          const SizedBox(height: 22),
+          Text('Profil', style: TextStyle(fontSize: 27, fontWeight: FontWeight.w700, color: colors.textPrimary)),
+          const SizedBox(height: 32),
           SurfaceCard(child: Row(children: [
-            CircleAvatar(radius: 28, backgroundColor: accent, child: Text('R', style: TextStyle(color: colors.onAccent, fontSize: 24, fontWeight: FontWeight.w900))),
-            const SizedBox(width: 14),
+            CircleAvatar(radius: 28, backgroundColor: accent, child: Text('R', style: TextStyle(color: colors.onAccent, fontSize: 24, fontWeight: FontWeight.w700))),
+            const SizedBox(width: 16),
             Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text('Raka', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: colors.textPrimary)),
+              Text('Raka', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: colors.textPrimary)),
               const SizedBox(height: 4),
-              Text('Kelola profil dan preferensi', style: TextStyle(color: colors.textMuted, fontSize: 12)),
+              Text('Kelola profil dan preferensi', style: TextStyle(color: colors.textMuted, fontSize: 13)),
             ]),
           ])),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 36),
                     const SectionHeader(title: 'Tampilan'),
                     SurfaceCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text('Tema', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: colors.textPrimary)),
@@ -476,7 +479,7 @@ class ProfilePage extends ConsumerWidget {
               );
             }).toList()),
           ])),
-          const SizedBox(height: 20),
+          const SizedBox(height: 36),
           SurfaceCard(child: Column(children: const [
             SettingRow(icon: SolarIconsOutline.wallet, title: 'Saldo awal', value: 'Rp 2.500.000'),
             SettingRow(icon: SolarIconsOutline.widget, title: 'Kelola kategori'),
@@ -501,15 +504,15 @@ class ActionTile extends StatelessWidget {
     final colors = context.colors;
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(20),
       child: Container(
         height: 70,
-        padding: const EdgeInsets.symmetric(horizontal: 14),
-        decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(18), border: Border.all(color: colors.border)),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(20)),
         child: Row(children: [
           CircleAvatar(radius: 17, backgroundColor: iconColor.withOpacity(0.16), child: Icon(icon, size: 19, color: iconColor)),
-          const SizedBox(width: 10),
-          Flexible(child: Text(label, style: TextStyle(fontWeight: FontWeight.w700, color: colors.textPrimary))),
+          const SizedBox(width: 12),
+          Flexible(child: Text(label, style: TextStyle(fontWeight: FontWeight.w600, color: colors.textPrimary))),
         ]),
       ),
     );
@@ -525,10 +528,10 @@ class SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.only(bottom: 20),
       child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        Text(title, style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: colors.textPrimary, fontFamily: 'DM Serif Display')),
-        if (action != null) Text(action!, style: TextStyle(color: colors.accent, fontSize: 12, fontWeight: FontWeight.w700)),
+        Text(title, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: colors.textPrimary)),
+        if (action != null) Text(action!, style: TextStyle(color: colors.accent, fontSize: 13, fontWeight: FontWeight.w600)),
       ]),
     );
   }
@@ -542,12 +545,15 @@ class SurfaceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
+    final isLight = Theme.of(context).brightness == Brightness.light;
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: color ?? colors.surface,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: colors.border),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: isLight
+            ? [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 4))]
+            : null,
       ),
       child: child,
     );
@@ -563,9 +569,9 @@ class SummaryValue extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(label, style: TextStyle(color: colors.textMuted, fontSize: 12)),
-      const SizedBox(height: 7),
-      Text(value, style: TextStyle(color: color, fontSize: 15, fontWeight: FontWeight.w800)),
+      Text(label, style: TextStyle(color: colors.textMuted, fontSize: 13)),
+      const SizedBox(height: 8),
+      Text(value, style: TextStyle(color: color, fontSize: 16, fontWeight: FontWeight.w600)),
     ]);
   }
 }
@@ -588,11 +594,11 @@ class TransactionRow extends StatelessWidget {
         ),
         const SizedBox(width: 12),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(item.title, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: colors.textPrimary)),
-          const SizedBox(height: 4),
-          Text('${item.category} · ${DateFormat('dd MMM yyyy').format(item.date)}', style: TextStyle(color: colors.textMuted, fontSize: 11)),
+          Text(item.title, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: colors.textPrimary)),
+          const SizedBox(height: 6),
+          Text('${item.category} · ${DateFormat('dd MMM yyyy').format(item.date)}', style: TextStyle(color: colors.textMuted, fontSize: 12)),
         ])),
-        Text('${item.income ? '+' : '-'}${rupiah(item.amount)}', style: TextStyle(color: item.income ? colors.positive : colors.textPrimary, fontSize: 12, fontWeight: FontWeight.w700)),
+        Text('${item.income ? '+' : '-'}${rupiah(item.amount)}', style: TextStyle(color: item.income ? colors.positive : colors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
       ]),
     );
   }
@@ -607,14 +613,14 @@ class ReportLine extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 9),
+      padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(children: [
-        Container(width: 9, height: 9, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
-        const SizedBox(width: 10),
-        Expanded(child: Text(label, style: TextStyle(color: colors.textPrimary))),
-        Text(amount, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: colors.textPrimary)),
+        Container(width: 12, height: 12, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
         const SizedBox(width: 12),
-        Text(percent, style: TextStyle(color: colors.textMuted, fontSize: 12)),
+        Expanded(child: Text(label, style: TextStyle(color: colors.textPrimary, fontSize: 15, fontWeight: FontWeight.w500))),
+        Text(amount, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: colors.textPrimary)),
+        const SizedBox(width: 16),
+        Text(percent, style: TextStyle(color: colors.textMuted, fontSize: 14)),
       ]),
     );
   }
@@ -629,13 +635,20 @@ class SettingRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
-    return ListTile(
-      contentPadding: EdgeInsets.zero,
-      leading: Icon(icon, color: colors.accent),
-      title: Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: colors.textPrimary)),
-      trailing: value != null
-          ? Text(value!, style: TextStyle(color: colors.textMuted, fontSize: 12))
-          : Icon(SolarIconsOutline.altArrowRight, color: colors.textMuted),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(color: colors.accent.withOpacity(0.1), shape: BoxShape.circle),
+          child: Icon(icon, color: colors.accent, size: 20),
+        ),
+        title: Text(title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: colors.textPrimary)),
+        trailing: value != null
+            ? Text(value!, style: TextStyle(color: colors.textMuted, fontSize: 13))
+            : Icon(SolarIconsOutline.altArrowRight, color: colors.textMuted, size: 18),
+      ),
     );
   }
 }
