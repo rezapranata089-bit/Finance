@@ -284,12 +284,15 @@ class DashboardPage extends ConsumerWidget {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [colors.accent, Color.lerp(colors.accent, Colors.black, 0.25)!],
+                colors: [
+                  Color.lerp(colors.accent, Colors.black, 0.75)!,
+                  Color.lerp(colors.accent, Colors.black, 0.9)!,
+                ],
               ),
               borderRadius: BorderRadius.circular(26),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(Theme.of(context).brightness == Brightness.light ? 0.1 : 0.25),
+                  color: colors.accent.withOpacity(0.25),
                   blurRadius: 16,
                   offset: const Offset(0, 8),
                 )
@@ -299,27 +302,50 @@ class DashboardPage extends ConsumerWidget {
               children: [
                 Positioned.fill(
                   child: CustomPaint(
-                    painter: CardPatternPainter(color: colors.onAccent),
+                    painter: CardPatternPainter(color: colors.accent),
                   ),
                 ),
                 Padding(
                   padding: const EdgeInsets.all(22),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                      Text('SALDO TERKINI', style: TextStyle(color: colors.onAccent.withOpacity(0.8), fontWeight: FontWeight.w600, fontSize: 12, letterSpacing: 1.2)),
-                      Icon(SolarIconsOutline.eye, color: colors.onAccent.withOpacity(0.9), size: 20),
+                      Text('SALDO TERKINI', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w600, fontSize: 12, letterSpacing: 1.2)),
+                      Icon(SolarIconsOutline.eye, color: Colors.white70, size: 20),
                     ]),
                     const SizedBox(height: 16),
-                    Text(rupiah(balance), style: TextStyle(color: colors.onAccent, fontSize: 36, fontWeight: FontWeight.w700)),
+                    ShaderMask(
+                      shaderCallback: (bounds) => LinearGradient(
+                        colors: [
+                          colors.accent,
+                          Color.lerp(colors.accent, Colors.white, 0.6)!,
+                          colors.accent,
+                        ],
+                        stops: const [0.4, 0.5, 0.6],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ).createShader(bounds),
+                      child: Text(
+                        rupiah(balance),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 34,
+                          fontWeight: FontWeight.w400,
+                          fontFamily: 'DM Serif Display',
+                          shadows: [
+                            Shadow(color: colors.accent.withOpacity(0.25), offset: const Offset(0, 2), blurRadius: 8),
+                          ],
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 28),
                     Row(children: [
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(color: colors.onAccent.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
+                        decoration: BoxDecoration(color: colors.accent.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
                         child: Row(mainAxisSize: MainAxisSize.min, children: [
-                          Icon(SolarIconsOutline.graphUp, size: 16, color: colors.onAccent),
+                          Icon(SolarIconsOutline.graphUp, size: 16, color: colors.accent),
                           const SizedBox(width: 6),
-                          Text('8,4% bulan ini', style: TextStyle(color: colors.onAccent, fontSize: 12, fontWeight: FontWeight.w600)),
+                          Text('8,4% bulan ini', style: TextStyle(color: colors.accent, fontSize: 12, fontWeight: FontWeight.w600)),
                         ]),
                       ),
                       const SizedBox(width: 12),
@@ -329,7 +355,7 @@ class DashboardPage extends ConsumerWidget {
                           textAlign: TextAlign.right,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: TextStyle(color: colors.onAccent.withOpacity(0.8), fontSize: 12, fontWeight: FontWeight.w500),
+                          style: TextStyle(color: Colors.white60, fontSize: 12, fontWeight: FontWeight.w500),
                         ),
                       ),
                     ]),
@@ -713,14 +739,18 @@ class CardPatternPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    final glowRect = Rect.fromLTWH(-40, size.height - 80, 240, 240);
+    final glowPaint = Paint()
+      ..shader = RadialGradient(
+        colors: [color.withOpacity(0.2), Colors.transparent],
+        stops: const [0.0, 0.65],
+      ).createShader(glowRect);
+    canvas.drawRect(glowRect, glowPaint);
+
     final paint1 = Paint()
-      ..color = color.withOpacity(0.08)
+      ..color = color.withOpacity(0.05)
       ..style = PaintingStyle.fill;
       
-    final paint2 = Paint()
-      ..color = color.withOpacity(0.04)
-      ..style = PaintingStyle.fill;
-
     final path1 = Path()
       ..moveTo(0, size.height)
       ..lineTo(0, size.height * 0.4)
@@ -733,6 +763,10 @@ class CardPatternPainter extends CustomPainter {
       ..close();
     canvas.drawPath(path1, paint1);
 
+    final paint2 = Paint()
+      ..color = Colors.white.withOpacity(0.03)
+      ..style = PaintingStyle.fill;
+      
     final path2 = Path()
       ..moveTo(0, size.height)
       ..lineTo(0, size.height * 0.65)
