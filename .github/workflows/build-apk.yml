@@ -24,12 +24,6 @@ jobs:
           flutter-version: '3.24.0'
           channel: 'stable'
 
-      - name: Ensure Android platform exists
-        run: |
-          if [ ! -d "android" ]; then
-            flutter create . --platforms=android --project-name my_finance --org com.example
-          fi
-
       - name: Get dependencies
         run: flutter pub get
 
