@@ -191,8 +191,8 @@ ThemeData _buildTheme(Brightness brightness, Color accent) {
     scaffoldBackgroundColor: palette.background,
     colorScheme: ColorScheme.fromSeed(seedColor: accent, brightness: brightness),
     extensions: [palette],
-    textTheme: base.textTheme.apply(fontFamily: 'Satoshi'),
-    primaryTextTheme: base.primaryTextTheme.apply(fontFamily: 'Satoshi'),
+    textTheme: base.textTheme.apply(fontFamily: 'DM Serif Display'),
+    primaryTextTheme: base.primaryTextTheme.apply(fontFamily: 'DM Serif Display'),
   );
 }
 
@@ -310,30 +310,18 @@ class DashboardPage extends ConsumerWidget {
             Expanded(child: ActionTile(label: 'Pengeluaran', icon: Icons.arrow_upward, background: colors.surface, iconColor: colors.accent, onTap: () => showTransactionDialog(context, ref, false))),
           ]),
           const SizedBox(height: 28),
-          const SectionHeader(title: 'Ringkasan bulan ini', action: 'Detail'),
+
           SurfaceCard(child: Row(children: [
             Expanded(child: SummaryValue(label: 'Pemasukan', value: rupiah(income), color: colors.positive)),
             const SizedBox(width: 18), Container(width: 1, height: 53, color: colors.border), const SizedBox(width: 18),
             Expanded(child: SummaryValue(label: 'Pengeluaran', value: rupiah(expense), color: colors.textPrimary)),
           ])),
+
           const SizedBox(height: 26),
-          const SectionHeader(title: 'Perkembangan saldo', action: '30 hari'),
-          SurfaceCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(rupiah(balance), style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: colors.textPrimary)),
-            const SizedBox(height: 12),
-            SizedBox(height: 62, width: double.infinity, child: CustomPaint(painter: SparklinePainter(color: colors.accent))),
-            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Text('01 Agu', style: TextStyle(color: colors.textMuted, fontSize: 10)),
-              Text('10 Agu', style: TextStyle(color: colors.textMuted, fontSize: 10)),
-              Text('20 Agu', style: TextStyle(color: colors.textMuted, fontSize: 10)),
-              Text('Hari ini', style: TextStyle(color: colors.textMuted, fontSize: 10)),
-            ]),
-          ])),
-          const SizedBox(height: 26),
-          const SectionHeader(title: 'Transaksi terbaru', action: 'Lihat semua'),
+
           SurfaceCard(child: Column(children: items.take(4).map((e) => TransactionRow(item: e)).toList())),
           const SizedBox(height: 26),
-          const SectionHeader(title: 'Target tabungan', action: 'Kelola'),
+
           SurfaceCard(color: colors.surfaceAlt, child: Row(children: [
             CircleAvatar(backgroundColor: colors.positive.withOpacity(0.18), child: Icon(Icons.wb_sunny_outlined, color: colors.positive)),
             const SizedBox(width: 12),
@@ -415,7 +403,7 @@ class ReportsPage extends ConsumerWidget {
           SizedBox(height: 145, width: double.infinity, child: CustomPaint(painter: BarChartPainter(primary: colors.accent, secondary: colors.positive))),
         ])),
         const SizedBox(height: 20),
-        const SectionHeader(title: 'Kategori terbesar', action: 'Bulan ini'),
+
         SurfaceCard(child: Column(children: [
           ReportLine(label: 'Belanja', amount: 'Rp 680.000', percent: '57%', color: colors.accent),
           ReportLine(label: 'Transportasi', amount: 'Rp 120.000', percent: '10%', color: colors.positive),
@@ -450,7 +438,7 @@ class ProfilePage extends ConsumerWidget {
             ]),
           ])),
           const SizedBox(height: 20),
-          const SectionHeader(title: 'Tampilan'),
+
           SurfaceCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text('Tema', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: colors.textPrimary)),
             const SizedBox(height: 10),
