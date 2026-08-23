@@ -530,7 +530,7 @@ class SectionHeader extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 20),
       child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        Text(title, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600, color: colors.textPrimary)),
+        Text(title, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: colors.textPrimary, fontFamily: 'DM Serif Display')),
         if (action != null) Text(action!, style: TextStyle(color: colors.accent, fontSize: 13, fontWeight: FontWeight.w600)),
       ]),
     );
