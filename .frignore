@@ -6,3 +6,7 @@
 #   ekstensi: .bak, .log, .orig, .pyc, .swp, .tmp
 #
 # Tambahan kamu (baris di bawah ini yang aktif dibaca tool):
+geser kartu dashboard dengan RepaintBoundary
+:file lib/main.dart
+:find
+return Transform.scale(

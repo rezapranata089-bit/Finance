@@ -594,7 +594,9 @@ class _DashboardCardsState extends State<DashboardCards> with SingleTickerProvid
                 scale: scale,
                 child: Opacity(
                   opacity: opacity,
-                  child: _buildCard(context, data, colors),
+                  child: RepaintBoundary(
+                    child: _buildCard(context, data, colors),
+                  ),
                 ),
               );
             },
