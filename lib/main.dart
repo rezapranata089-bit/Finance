@@ -321,8 +321,9 @@ class _DashboardSwiperState extends State<DashboardSwiper> with SingleTickerProv
   @override
   void initState() {
     super.initState();
-    // Viewport 1.0 agar lebar penuh, overlap diatur murni via Translasi X & Z
-    _pageController = PageController(viewportFraction: 1.0, initialPage: 1);
+    // viewportFraction 0.88 mengatur agar card tengah mengambil 88% lebar layar,
+    // menyisakan 12% (6% di kiri, 6% di kanan) agar card lain bisa "mengintip" natural.
+    _pageController = PageController(viewportFraction: 0.88, initialPage: 1);
     _pageController.addListener(() {
       if (_pageController.page != null) {
         setState(() {
@@ -345,44 +346,47 @@ class _DashboardSwiperState extends State<DashboardSwiper> with SingleTickerProv
     return Column(
       children: [
         Expanded(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              return PageView.builder(
-                controller: _pageController,
-                clipBehavior: Clip.none,
-                itemCount: 3,
-                itemBuilder: (context, index) {
-                  double value = _currentPage - index;
-                  double w = constraints.maxWidth;
-                  double h = 190.0; // Tinggi Card persis seperti di CSS
-                  
-                  // Rumus Animasi Coverflow 3D ala Swiper HTML
-                  double translateX = value * w * 0.12; // Slide ditarik 12% agar menumpuk
-                  double translateY = value.abs() * h * 0.14; // Slide didorong turun
-                  double rotateZ = value * -8 * math.pi / 180; // Slide diputar mirip kipas
-                  double scale = (1 - (value.abs() * 0.08)).clamp(0.0, 1.0);
-                  double opacity = (1 - (value.abs() * 0.4)).clamp(0.0, 1.0);
+          child: PageView.builder(
+            controller: _pageController,
+            clipBehavior: Clip.none,
+            itemCount: 3,
+            itemBuilder: (context, index) {
+              double value = _currentPage - index;
+              
+              // Skala menyusut 10% untuk card di samping
+              double scale = (1 - (value.abs() * 0.1)).clamp(0.0, 1.0);
+              
+              // Menutup sedikit jarak (gap) akibat scale agar terlihat bertumpuk,
+              // tidak ekstrem agar z-index Flutter tidak menutupi card aktif
+              double translateX = value * 15.0; 
+              
+              // Mendorong card di samping turun sedikit seperti kipas
+              double translateY = value.abs() * 20.0; 
+              
+              // Putaran kipas 3D
+              double rotateZ = value * -4 * math.pi / 180; 
+              
+              // Transparansi card samping
+              double opacity = (1 - (value.abs() * 0.4)).clamp(0.0, 1.0);
 
-                  return Transform(
-                    transform: Matrix4.identity()
-                      ..translate(translateX, translateY, 0.0)
-                      ..rotateZ(rotateZ)
-                      ..scale(scale),
-                    alignment: Alignment.center,
-                    child: Opacity(
-                      opacity: opacity,
-                      child: Align(
-                        alignment: Alignment.topCenter,
-                        child: SizedBox(
-                          height: h,
-                          child: _buildCard(index, value.abs() < 0.3),
-                        ),
-                      ),
+              return Transform(
+                transform: Matrix4.identity()
+                  ..translate(translateX, translateY, 0.0)
+                  ..rotateZ(rotateZ)
+                  ..scale(scale),
+                alignment: Alignment.center,
+                child: Opacity(
+                  opacity: opacity,
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: SizedBox(
+                      height: 190.0,
+                      child: _buildCard(index, value.abs() < 0.3),
                     ),
-                  );
-                },
+                  ),
+                ),
               );
-            }
+            },
           ),
         ),
         const SizedBox(height: 12),
@@ -719,37 +723,42 @@ class DashboardPage extends ConsumerWidget {
     final colors = context.colors;
     final income = items.where((e) => e.income).fold<double>(0, (s, e) => s + e.amount);
     final expense = items.where((e) => !e.income).fold<double>(0, (s, e) => s + e.amount);
+    
+    // Helper untuk mengembalikan padding ke elemen di luar Swiper
+    Widget pad(Widget child) => Padding(padding: const EdgeInsets.symmetric(horizontal: 20), child: child);
+
     return SafeArea(
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
+        padding: const EdgeInsets.only(top: 18, bottom: 28),
+        clipBehavior: Clip.none,
         children: [
-          Row(children: [
+          pad(Row(children: [
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text('MINGGU, 23 AGUSTUS', style: TextStyle(color: colors.textMuted, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.1)),
               const SizedBox(height: 6),
               Text('Selamat pagi, Andi', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600, color: colors.textPrimary)),
             ])),
             IconButton.filledTonal(onPressed: () {}, icon: const Icon(SolarIconsOutline.bell)),
-          ]),
-const SizedBox(height: 22),
-SizedBox(
-  height: 230, // Cukup untuk tinggi card 190px + bayangan + translasi sumbu Y (14%)
-  child: DashboardSwiper(income: income, expense: expense),
-),
-const SizedBox(height: 36),
-                    const SectionHeader(title: 'Ringkasan bulan ini', action: 'Detail'),
-                    SurfaceCard(child: Row(children: [
-                      Expanded(child: SummaryValue(label: 'Pemasukan', value: rupiah(income), color: colors.positive)),
+          ])),
+          const SizedBox(height: 22),
+          // Swiper tidak di-padding agar bisa bebas mengambil ruang kiri-kanan layar penuh
+          SizedBox(
+            height: 230,
+            child: DashboardSwiper(income: income, expense: expense),
+          ),
+          const SizedBox(height: 36),
+          pad(const SectionHeader(title: 'Ringkasan bulan ini', action: 'Detail')),
+          pad(SurfaceCard(child: Row(children: [
+            Expanded(child: SummaryValue(label: 'Pemasukan', value: rupiah(income), color: colors.positive)),
             const SizedBox(width: 18), Container(width: 1, height: 53, color: colors.textMuted.withOpacity(0.2)), const SizedBox(width: 18),
             Expanded(child: SummaryValue(label: 'Pengeluaran', value: rupiah(expense), color: colors.textPrimary)),
-          ])),
-
-                    const SizedBox(height: 36),
-                    const SectionHeader(title: 'Transaksi terbaru', action: 'Lihat semua'),
-                    SurfaceCard(child: Column(children: items.take(4).map((e) => TransactionRow(item: e)).toList())),
-                    const SizedBox(height: 36),
-                    const SectionHeader(title: 'Target tabungan', action: 'Kelola'),
-                    SurfaceCard(color: colors.surfaceAlt, child: Row(children: [
+          ]))),
+          const SizedBox(height: 36),
+          pad(const SectionHeader(title: 'Transaksi terbaru', action: 'Lihat semua')),
+          pad(SurfaceCard(child: Column(children: items.take(4).map((e) => TransactionRow(item: e)).toList()))),
+          const SizedBox(height: 36),
+          pad(const SectionHeader(title: 'Target tabungan', action: 'Kelola')),
+          pad(SurfaceCard(color: colors.surfaceAlt, child: Row(children: [
             CircleAvatar(backgroundColor: colors.positive.withOpacity(0.18), child: Icon(SolarIconsOutline.sun, color: colors.positive)),
             const SizedBox(width: 12),
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -765,7 +774,7 @@ const SizedBox(height: 36),
                 child: LinearProgressIndicator(value: .35, minHeight: 8, backgroundColor: colors.textMuted.withOpacity(0.2), color: colors.positive),
               ),
             ])),
-          ])),
+          ]))),
         ],
       ),
     );
