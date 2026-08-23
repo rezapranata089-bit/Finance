@@ -798,9 +798,16 @@ class DashboardPage extends ConsumerWidget {
               const SizedBox(height: 6),
               Text('Selamat pagi, Raka', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600, color: colors.textPrimary)),
             ])),
-            IconButton.filledTonal(onPressed: () {}, icon: const Icon(SolarIconsOutline.bell)),
+            GestureDetector(
+              onTap: () => ref.read(selectedTabProvider.notifier).state = 3,
+              child: CircleAvatar(
+                radius: 22,
+                backgroundColor: colors.accent,
+                child: Text('R', style: TextStyle(color: colors.onAccent, fontSize: 20, fontWeight: FontWeight.w700)),
+              ),
+            ),
           ])),
-          const SizedBox(height: 24),
+          const SizedBox(height: 36),
           pad(Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(99),
