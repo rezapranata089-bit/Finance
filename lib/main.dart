@@ -589,13 +589,14 @@ class _DashboardCardsState extends State<DashboardCards> with SingleTickerProvid
                 scale = (1 - (diff.abs() * 0.1)).clamp(0.9, 1.0);
                 opacity = (1 - (diff.abs() * 0.4)).clamp(0.0, 1.0);
               }
+              final isActive = _currentPage.round() == index;
 
               return Transform.scale(
                 scale: scale,
                 child: Opacity(
                   opacity: opacity,
                   child: RepaintBoundary(
-                    child: _buildCard(context, data, colors),
+                    child: _buildCard(context, data, colors, isActive),
                   ),
                 ),
               );
@@ -623,7 +624,7 @@ class _DashboardCardsState extends State<DashboardCards> with SingleTickerProvid
     );
   }
 
-  Widget _buildCard(BuildContext context, _CardData data, AppColors colors) {
+  Widget _buildCard(BuildContext context, _CardData data, AppColors colors, bool isActive) {
     final isExpense = !data.isIncome;
     final trendColor = isExpense ? const Color(0xFFEB5757) : const Color(0xFF5CC88F);
     final trendIcon = isExpense ? SolarIconsOutline.graphDown : SolarIconsOutline.graphUp;
@@ -705,47 +706,7 @@ class _DashboardCardsState extends State<DashboardCards> with SingleTickerProvid
                 ),
               ]),
               const SizedBox(height: 12),
-              AnimatedBuilder(
-                animation: _shimmerController,
-                builder: (context, child) {
-                  return ShaderMask(
-                    shaderCallback: (bounds) => LinearGradient(
-                      colors: isExpense 
-                          ? const [Color(0xFFEB5757), Color(0xFFFAD4D4), Color(0xFFEB5757)]
-                          : const [Color(0xFF5CC88F), Color(0xFFD4FADF), Color(0xFF5CC88F)],
-                      stops: const [0.35, 0.5, 0.65],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      transform: _SlidingGradientTransform(
-                        slidePercent: -1.5 + (_shimmerController.value * 3.0),
-                      ),
-                    ).createShader(bounds),
-                    child: child,
-                  );
-                },
-                child: Text(
-                  rupiah(data.amount),
-                  style: TextStyle(
-                    fontFamily: 'Playfair Display',
-                    color: Colors.white,
-                    fontSize: 36,
-                    fontWeight: FontWeight.w400,
-                    letterSpacing: -0.42,
-                    height: 1,
-                    fontFeatures: const [
-                      FontFeature.enable('lnum'),
-                      FontFeature.enable('tnum'),
-                    ],
-                    shadows: [
-                      Shadow(
-                        color: isExpense ? const Color.fromRGBO(235, 87, 87, 0.2) : const Color.fromRGBO(92, 200, 143, 0.2),
-                        offset: const Offset(0, 2),
-                        blurRadius: 8,
-                      )
-                    ],
-                  ),
-                ),
-              ),
+              _buildAmount(isExpense, isActive, data.amount),
               const Spacer(),
               Row(children: [
                 Container(
@@ -770,6 +731,65 @@ class _DashboardCardsState extends State<DashboardCards> with SingleTickerProvid
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildAmount(bool isExpense, bool isActive, double amount) {
+    final baseStyle = TextStyle(
+      fontFamily: 'Playfair Display',
+      color: Colors.white,
+      fontSize: 36,
+      fontWeight: FontWeight.w400,
+      letterSpacing: -0.42,
+      height: 1,
+      fontFeatures: const [
+        FontFeature.enable('lnum'),
+        FontFeature.enable('tnum'),
+      ],
+    );
+    final shadowColor = isExpense
+        ? const Color.fromRGBO(235, 87, 87, 0.2)
+        : const Color.fromRGBO(92, 200, 143, 0.2);
+    final restColor = isExpense ? const Color(0xFFEB5757) : const Color(0xFF5CC88F);
+
+    return Stack(
+      children: [
+        Text(
+          rupiah(amount),
+          style: baseStyle.copyWith(
+            color: Colors.transparent,
+            shadows: [
+              Shadow(color: shadowColor, offset: const Offset(0, 2), blurRadius: 8),
+            ],
+          ),
+        ),
+        if (isActive)
+          AnimatedBuilder(
+            animation: _shimmerController,
+            builder: (context, child) {
+              return ShaderMask(
+                shaderCallback: (bounds) => LinearGradient(
+                  colors: isExpense
+                      ? const [Color(0xFFEB5757), Color(0xFFFAD4D4), Color(0xFFEB5757)]
+                      : const [Color(0xFF5CC88F), Color(0xFFD4FADF), Color(0xFF5CC88F)],
+                  stops: const [0.35, 0.5, 0.65],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  transform: _SlidingGradientTransform(
+                    slidePercent: -1.5 + (_shimmerController.value * 3.0),
+                  ),
+                ).createShader(bounds),
+                child: child,
+              );
+            },
+            child: Text(rupiah(amount), style: baseStyle),
+          )
+        else
+          Text(
+            rupiah(amount),
+            style: baseStyle.copyWith(color: restColor),
+          ),
+      ],
     );
   }
 }
