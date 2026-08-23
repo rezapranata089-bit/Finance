@@ -730,6 +730,10 @@ class _DashboardCardsState extends State<DashboardCards> with SingleTickerProvid
                     fontWeight: FontWeight.w400,
                     letterSpacing: -0.42,
                     height: 1,
+                    fontFeatures: const [
+                      FontFeature.enable('lnum'),
+                      FontFeature.enable('tnum'),
+                    ],
                     shadows: [
                       Shadow(
                         color: isExpense ? const Color.fromRGBO(235, 87, 87, 0.2) : const Color.fromRGBO(92, 200, 143, 0.2),
