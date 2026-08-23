@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart' hide TextDirection;
@@ -12,6 +13,7 @@ import 'package:solar_icons/solar_icons.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   final prefs = await SharedPreferences.getInstance();
   runApp(ProviderScope(
     overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
@@ -309,13 +311,25 @@ class MyFinanceApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final themeMode = ref.watch(themeModeProvider);
     final accent = ref.watch(accentColorProvider);
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'My Finance',
-      themeMode: themeMode,
-      theme: _buildTheme(Brightness.light, accent),
-      darkTheme: _buildTheme(Brightness.dark, accent),
-      home: const HomeShell(),
+    final platformBrightness = MediaQuery.platformBrightnessOf(context);
+    final isDark = themeMode == ThemeMode.dark ||
+        (themeMode == ThemeMode.system && platformBrightness == Brightness.dark);
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+        statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+      ),
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'My Finance',
+        themeMode: themeMode,
+        theme: _buildTheme(Brightness.light, accent),
+        darkTheme: _buildTheme(Brightness.dark, accent),
+        home: const HomeShell(),
+      ),
     );
   }
 }
