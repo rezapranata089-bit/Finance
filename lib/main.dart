@@ -742,7 +742,7 @@ class _DashboardCardsState extends State<DashboardCards> with SingleTickerProvid
       fontSize: 36,
       fontWeight: FontWeight.w400,
       letterSpacing: -0.42,
-      height: 1.2,
+      height: 1.4,
       fontFeatures: const [
         FontFeature.enable('lnum'),
         FontFeature.enable('tnum'),
