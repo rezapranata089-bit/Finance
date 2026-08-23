@@ -537,7 +537,7 @@ class DashboardCards extends StatefulWidget {
 class _DashboardCardsState extends State<DashboardCards> with SingleTickerProviderStateMixin {
   late PageController _pageController;
   late AnimationController _shimmerController;
-  double _currentPage = 0;
+  int _activeIndex = 0;
 
   @override
   void initState() {
@@ -548,17 +548,20 @@ class _DashboardCardsState extends State<DashboardCards> with SingleTickerProvid
     )..repeat();
 
     _pageController = PageController(viewportFraction: 1.0);
-    _pageController.addListener(() {
-      if (mounted && _pageController.position.haveDimensions) {
-        setState(() {
-          _currentPage = _pageController.page ?? 0;
-        });
-      }
-    });
+    _pageController.addListener(_handlePageChange);
+  }
+
+  void _handlePageChange() {
+    if (!mounted || !_pageController.position.haveDimensions) return;
+    final rounded = _pageController.page!.round();
+    if (rounded != _activeIndex) {
+      setState(() => _activeIndex = rounded);
+    }
   }
 
   @override
   void dispose() {
+    _pageController.removeListener(_handlePageChange);
     _shimmerController.dispose();
     _pageController.dispose();
     super.dispose();
@@ -583,44 +586,55 @@ class _DashboardCardsState extends State<DashboardCards> with SingleTickerProvid
             itemCount: cards.length,
             itemBuilder: (context, index) {
               final data = cards[index];
-              
-              double scale = 1.0;
-              double opacity = 1.0;
-              if (_pageController.position.haveDimensions) {
-                double diff = _pageController.page! - index;
-                scale = (1 - (diff.abs() * 0.1)).clamp(0.9, 1.0);
-                opacity = (1 - (diff.abs() * 0.4)).clamp(0.0, 1.0);
-              }
-              final isActive = _currentPage.round() == index;
+              final isActive = index == _activeIndex;
+              final cardChild = RepaintBoundary(
+                child: _buildCard(context, data, colors, isActive),
+              );
 
-              return Transform.scale(
-                scale: scale,
-                child: Opacity(
-                  opacity: opacity,
-                  child: RepaintBoundary(
-                    child: _buildCard(context, data, colors, isActive),
-                  ),
-                ),
+              return AnimatedBuilder(
+                animation: _pageController,
+                child: cardChild,
+                builder: (context, child) {
+                  double scale = 1.0;
+                  double opacity = 1.0;
+                  if (_pageController.position.haveDimensions) {
+                    final diff = _pageController.page! - index;
+                    scale = (1 - (diff.abs() * 0.1)).clamp(0.9, 1.0);
+                    opacity = (1 - (diff.abs() * 0.4)).clamp(0.0, 1.0);
+                  }
+                  return Transform.scale(
+                    scale: scale,
+                    child: Opacity(opacity: opacity, child: child),
+                  );
+                },
               );
             },
           ),
         ),
         const SizedBox(height: 16),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(cards.length, (index) {
-            final selected = (_currentPage.round() == index);
-            return AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              width: selected ? 24 : 8,
-              height: 8,
-              decoration: BoxDecoration(
-                color: selected ? colors.accent : colors.textMuted.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(4),
-              ),
+        AnimatedBuilder(
+          animation: _pageController,
+          builder: (context, _) {
+            final page = _pageController.position.haveDimensions
+                ? (_pageController.page ?? _activeIndex.toDouble())
+                : _activeIndex.toDouble();
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(cards.length, (index) {
+                final selected = page.round() == index;
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  width: selected ? 24 : 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: selected ? colors.accent : colors.textMuted.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                );
+              }),
             );
-          }),
+          },
         ),
       ],
     );
