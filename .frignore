@@ -1,0 +1,8 @@
+# Folder/ekstensi tambahan yang di-skip FR Tool saat scan & patch
+# Format: satu nama folder per baris, atau *.ext untuk ekstensi
+#
+# BAWAAN TOOL (selalu di-skip, sudah otomatis - tidak perlu ditulis manual):
+#   folder : .cache, .env, .expo, .git, .next, .patch_backups, .turbo, .venv, .vercel, __pycache__, android, auth_info, build, dist, env, ios, node_modules, venv
+#   ekstensi: .bak, .log, .orig, .pyc, .swp, .tmp
+#
+# Tambahan kamu (baris di bawah ini yang aktif dibaca tool):

@@ -200,6 +200,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  solar_icons:
+    dependency: "direct main"
+    description:
+      name: solar_icons
+      sha256: "88774d1c65630eb1a6b70919c8639badb0e9132385b6de593a8c304b9ed3a6f7"
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.0"
   source_span:
     dependency: transitive
     description:

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:solar_icons/solar_icons.dart';
 
 void main() => runApp(const ProviderScope(child: MyFinanceApp()));
 
@@ -244,10 +245,10 @@ class HomeShell extends ConsumerWidget {
         backgroundColor: colors.surface,
         indicatorColor: colors.accent.withOpacity(0.18),
         destinations: const [
-          NavigationDestination(icon: Icon(Icons.home_outlined), selectedIcon: Icon(Icons.home), label: 'Dashboard'),
-          NavigationDestination(icon: Icon(Icons.receipt_long_outlined), selectedIcon: Icon(Icons.receipt_long), label: 'Transaksi'),
-          NavigationDestination(icon: Icon(Icons.bar_chart_outlined), selectedIcon: Icon(Icons.bar_chart), label: 'Laporan'),
-          NavigationDestination(icon: Icon(Icons.person_outline), selectedIcon: Icon(Icons.person), label: 'Profil'),
+          NavigationDestination(icon: Icon(SolarIconsOutline.home), selectedIcon: Icon(SolarIconsBold.home), label: 'Dashboard'),
+          NavigationDestination(icon: Icon(SolarIconsOutline.billList), selectedIcon: Icon(SolarIconsBold.billList), label: 'Transaksi'),
+          NavigationDestination(icon: Icon(SolarIconsOutline.chartSquare), selectedIcon: Icon(SolarIconsBold.chartSquare), label: 'Laporan'),
+          NavigationDestination(icon: Icon(SolarIconsOutline.user), selectedIcon: Icon(SolarIconsBold.user), label: 'Profil'),
         ],
       ),
     );
@@ -274,7 +275,7 @@ class DashboardPage extends ConsumerWidget {
               const SizedBox(height: 6),
               Text('Selamat pagi, Raka', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: colors.textPrimary)),
             ])),
-            IconButton.filledTonal(onPressed: () {}, icon: const Icon(Icons.notifications_none)),
+            IconButton.filledTonal(onPressed: () {}, icon: const Icon(SolarIconsOutline.bell)),
           ]),
           const SizedBox(height: 22),
           Container(
@@ -291,7 +292,7 @@ class DashboardPage extends ConsumerWidget {
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                 Text('SALDO TERKINI', style: TextStyle(color: colors.onAccent.withOpacity(0.75), fontWeight: FontWeight.w800, fontSize: 11, letterSpacing: 1.1)),
-                Icon(Icons.visibility_outlined, color: colors.onAccent.withOpacity(0.8), size: 19),
+                Icon(SolarIconsOutline.eye, color: colors.onAccent.withOpacity(0.8), size: 19),
               ]),
               const SizedBox(height: 12),
               Text(rupiah(balance), style: TextStyle(color: colors.onAccent, fontSize: 32, fontWeight: FontWeight.w900)),
@@ -301,7 +302,7 @@ class DashboardPage extends ConsumerWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(color: colors.onAccent.withOpacity(0.16), borderRadius: BorderRadius.circular(10)),
                   child: Row(children: [
-                    Icon(Icons.trending_up, size: 15, color: colors.onAccent),
+                    Icon(SolarIconsOutline.graphUp, size: 15, color: colors.onAccent),
                     const SizedBox(width: 4),
                     Text('8,4% bulan ini', style: TextStyle(color: colors.onAccent, fontSize: 11, fontWeight: FontWeight.w700)),
                   ]),
@@ -324,7 +325,7 @@ class DashboardPage extends ConsumerWidget {
                     const SizedBox(height: 26),
                     const SectionHeader(title: 'Target tabungan', action: 'Kelola'),
                     SurfaceCard(color: colors.surfaceAlt, child: Row(children: [
-            CircleAvatar(backgroundColor: colors.positive.withOpacity(0.18), child: Icon(Icons.wb_sunny_outlined, color: colors.positive)),
+            CircleAvatar(backgroundColor: colors.positive.withOpacity(0.18), child: Icon(SolarIconsOutline.sun, color: colors.positive)),
             const SizedBox(width: 12),
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
@@ -362,7 +363,7 @@ class TransactionsPage extends ConsumerWidget {
         TextField(
           decoration: InputDecoration(
             hintText: 'Cari transaksi',
-            prefixIcon: const Icon(Icons.search),
+            prefixIcon: const Icon(SolarIconsOutline.magnifier),
             filled: true,
             fillColor: colors.surface,
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide(color: colors.border)),
@@ -445,9 +446,9 @@ class ProfilePage extends ConsumerWidget {
             const SizedBox(height: 10),
             SegmentedButton<ThemeMode>(
               segments: const [
-                ButtonSegment(value: ThemeMode.light, icon: Icon(Icons.light_mode_outlined), label: Text('Terang')),
-                ButtonSegment(value: ThemeMode.dark, icon: Icon(Icons.dark_mode_outlined), label: Text('Gelap')),
-                ButtonSegment(value: ThemeMode.system, icon: Icon(Icons.smartphone_outlined), label: Text('Sistem')),
+                ButtonSegment(value: ThemeMode.light, icon: Icon(SolarIconsOutline.sun), label: Text('Terang')),
+                ButtonSegment(value: ThemeMode.dark, icon: Icon(SolarIconsOutline.moon), label: Text('Gelap')),
+                ButtonSegment(value: ThemeMode.system, icon: Icon(SolarIconsOutline.smartphone), label: Text('Sistem')),
               ],
               selected: {themeMode},
               onSelectionChanged: (value) => ref.read(themeModeProvider.notifier).state = value.first,
@@ -477,9 +478,9 @@ class ProfilePage extends ConsumerWidget {
           ])),
           const SizedBox(height: 20),
           SurfaceCard(child: Column(children: const [
-            SettingRow(icon: Icons.account_balance_wallet_outlined, title: 'Saldo awal', value: 'Rp 2.500.000'),
-            SettingRow(icon: Icons.category_outlined, title: 'Kelola kategori'),
-            SettingRow(icon: Icons.currency_exchange, title: 'Mata uang', value: 'Rupiah (IDR)'),
+            SettingRow(icon: SolarIconsOutline.wallet, title: 'Saldo awal', value: 'Rp 2.500.000'),
+            SettingRow(icon: SolarIconsOutline.widget, title: 'Kelola kategori'),
+            SettingRow(icon: SolarIconsOutline.cardTransfer, title: 'Mata uang', value: 'Rupiah (IDR)'),
           ])),
         ],
       ),
@@ -583,7 +584,7 @@ class TransactionRow extends StatelessWidget {
         CircleAvatar(
           radius: 21,
           backgroundColor: tint.withOpacity(0.16),
-          child: Icon(item.income ? Icons.arrow_downward : Icons.shopping_bag_outlined, size: 18, color: tint),
+          child: Icon(item.income ? SolarIconsOutline.arrowDown : SolarIconsOutline.bag, size: 18, color: tint),
         ),
         const SizedBox(width: 12),
         Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -634,7 +635,7 @@ class SettingRow extends StatelessWidget {
       title: Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: colors.textPrimary)),
       trailing: value != null
           ? Text(value!, style: TextStyle(color: colors.textMuted, fontSize: 12))
-          : Icon(Icons.chevron_right, color: colors.textMuted),
+          : Icon(SolarIconsOutline.altArrowRight, color: colors.textMuted),
     );
   }
 }
