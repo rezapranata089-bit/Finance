@@ -321,9 +321,8 @@ class _DashboardSwiperState extends State<DashboardSwiper> with SingleTickerProv
   @override
   void initState() {
     super.initState();
-    // KUNCI UTAMA: viewportFraction = 0.68 (Jarak antar card hanya di-set 68% dari layar).
-    // Tapi lebar visual card di-set 88% di bawah via OverflowBox.
-    // Ini memaksa card menjadi LEBAR, sekaligus SALING MENUMPUK (Overlap) karena visualnya lebih besar dari jaraknya!
+    // KUNCI UTAMA 1: viewportFraction 0.68 agar jarak titik tengah antar-kartu lebih sempit.
+    // initialPage 10000 agar pengguna dapat melakukan Infinite Swipe/Loop ke kiri dan kanan.
     _pageController = PageController(viewportFraction: 0.68, initialPage: 10000);
     _pageController.addListener(() {
       if (_pageController.page != null) {
@@ -349,8 +348,7 @@ class _DashboardSwiperState extends State<DashboardSwiper> with SingleTickerProv
         Expanded(
           child: PageView.builder(
             controller: _pageController,
-            clipBehavior: Clip.none, // Mencegah batas luar (bayangan/overlap) terpotong
-            // itemCount sengaja dikosongkan agar infinite loop berjalan (karena start di 10000)
+            clipBehavior: Clip.none, // Mencegah kartu samping yang mengintip ikut terpotong
             itemBuilder: (context, index) {
               double value = _currentPage - index;
               double absValue = value.abs().clamp(0.0, 1.0);
@@ -358,21 +356,22 @@ class _DashboardSwiperState extends State<DashboardSwiper> with SingleTickerProv
               // 1. Skala card di samping menyusut sekitar 12%
               double scale = 1.0 - (absValue * 0.12);
               
-              // 2. Mendorong card di samping turun sedikit ke bawah
+              // 2. Mendorong card di samping turun sedikit ke bawah (Efek melengkung)
               double translateY = absValue * 22.0; 
               
               // 3. Putaran kipas 3D miring ke luar
               double rotateZ = value * -5 * math.pi / 180; 
               
-              // 4. Translasi menarik rapat sedikit ke dalam
+              // 4. Translasi menarik rapat sedikit ke dalam agar card samping masuk ke belakang card utama
               double translateX = value * 15.0; 
               
               // 5. Card samping sedikit lebih transparan
               double opacity = 1.0 - (absValue * 0.4);
 
               return OverflowBox(
-                // KUNCI UTAMA 2: Mengabaikan perintah lebar paksa PageView (68%).
-                // Memaksa card dirender tetap lebar di 88% layar persis seperti desain aslinya!
+                // KUNCI UTAMA 2: Mengabaikan perintah PageView (0.68) dan memaksa
+                // lebar fisik tiap kartu untuk mengisi 88% layar. Ini yang membuat
+                // kartu saling menumpuk/overlap satu sama lain dengan presisi.
                 maxWidth: MediaQuery.of(context).size.width * 0.88,
                 maxHeight: 250.0,
                 child: Transform(
@@ -386,7 +385,7 @@ class _DashboardSwiperState extends State<DashboardSwiper> with SingleTickerProv
                     child: Align(
                       alignment: Alignment.topCenter,
                       child: SizedBox(
-                        height: 190.0, // Kunci tinggi card statis persis dengan HTML
+                        height: 190.0, // Kunci tinggi card statis persis dengan desain CSS/HTML
                         child: _buildCard(index % 3, absValue < 0.3),
                       ),
                     ),
@@ -396,16 +395,14 @@ class _DashboardSwiperState extends State<DashboardSwiper> with SingleTickerProv
             },
           ),
         ),
-                ),
-              );
-            },
-          ),
-        ),
         const SizedBox(height: 12),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: List.generate(3, (index) {
-            double diff = (_currentPage - index).abs();
+            // Kalkulasi Index Loop (10000 % 3)
+            double diff = (_currentPage % 3 - index).abs();
+            if (diff > 1.5) diff = 3 - diff; // Menyambungkan jarak loop terakhir
+            
             bool isActive = diff < 0.5;
             return AnimatedContainer(
               duration: const Duration(milliseconds: 300),
