@@ -191,7 +191,9 @@ ThemeData _buildTheme(Brightness brightness, Color accent) {
     scaffoldBackgroundColor: palette.background,
     colorScheme: ColorScheme.fromSeed(seedColor: accent, brightness: brightness),
     extensions: [palette],
-  ).apply(fontFamily: 'Satoshi');
+    textTheme: base.textTheme.apply(fontFamily: 'Satoshi'),
+    primaryTextTheme: base.primaryTextTheme.apply(fontFamily: 'Satoshi'),
+  );
 }
 
 class MyFinanceApp extends ConsumerWidget {
