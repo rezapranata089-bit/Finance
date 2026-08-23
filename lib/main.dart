@@ -668,36 +668,8 @@ class _CardBase extends StatelessWidget {
                 painter: CardPatternPainter(patternColor: patternColor),
               ),
             ),
-            if (isActive)
-              Positioned(
-                bottom: -80,
-                left: glowAlign == Alignment.bottomLeft ? -40 : null,
-                right: glowAlign == Alignment.bottomRight ? -40 : null,
-                child: AnimatedBuilder(
-                  animation: animController,
-                  builder: (context, child) {
-                    return Transform.scale(
-                      scale: 1.0 + (animController.value * 0.1),
-                      child: Opacity(
-                        opacity: 0.5 + (animController.value * 0.3),
-                        child: Container(
-                          width: 240,
-                          height: 240,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: RadialGradient(
-                              colors: [glowColor, Colors.transparent],
-                              stops: const [0.0, 0.6],
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
             Padding(
-              padding: const EdgeInsets.all(18.0),
+              padding: const EdgeInsets.all(22.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -709,15 +681,15 @@ class _CardBase extends StatelessWidget {
                       Text(
                         title,
                         style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w400,
                           color: Colors.white.withOpacity(0.55),
                           letterSpacing: 1.2,
                         ),
                       ),
                       Container(
-                        width: 28,
-                        height: 20,
+                        width: 32,
+                        height: 24,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(5),
                           gradient: const LinearGradient(
@@ -729,8 +701,8 @@ class _CardBase extends StatelessWidget {
                         ),
                         child: Center(
                           child: Container(
-                            width: 17,
-                            height: 12,
+                            width: 20,
+                            height: 14,
                             decoration: BoxDecoration(
                               border: Border.all(color: Colors.black.withOpacity(0.3)),
                               borderRadius: BorderRadius.circular(2),
@@ -749,19 +721,34 @@ class _CardBase extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        amount,
-                        style: TextStyle(
-                          fontFamily: 'Playfair Display',
-                          color: amountGradient.first,
-                          fontSize: 32,
-                          fontWeight: FontWeight.w400,
-                          letterSpacing: -0.42,
-                          height: 1.4,
-                          fontFeatures: const [
-                            FontFeature.enable('lnum'),
-                            FontFeature.enable('tnum'),
-                          ],
+                      AnimatedBuilder(
+                        animation: animController,
+                        builder: (context, child) {
+                          return ShaderMask(
+                            shaderCallback: (bounds) => LinearGradient(
+                              colors: amountGradient,
+                              stops: const [0.0, 0.5, 1.0],
+                              transform: isActive
+                                  ? GradientRotation(animController.value * 2 * math.pi)
+                                  : null,
+                            ).createShader(bounds),
+                            child: child,
+                          );
+                        },
+                        child: Text(
+                          amount,
+                          style: const TextStyle(
+                            fontFamily: 'Playfair Display',
+                            color: Colors.white,
+                            fontSize: 38,
+                            fontWeight: FontWeight.w400,
+                            letterSpacing: -0.42,
+                            height: 1.4,
+                            fontFeatures: [
+                              FontFeature.enable('lnum'),
+                              FontFeature.enable('tnum'),
+                            ],
+                          ),
                         ),
                       ),
                       const SizedBox(height: 6),
@@ -770,7 +757,7 @@ class _CardBase extends StatelessWidget {
                           Text(
                             subLabel,
                             style: TextStyle(
-                              fontSize: 9,
+                              fontSize: 10,
                               color: Colors.white.withOpacity(0.45),
                               fontWeight: FontWeight.w400,
                             ),
@@ -779,7 +766,7 @@ class _CardBase extends StatelessWidget {
                           Text(
                             subValue,
                             style: TextStyle(
-                              fontSize: 10,
+                              fontSize: 11,
                               color: Colors.white.withOpacity(0.75),
                               fontWeight: FontWeight.w600,
                               letterSpacing: 0.2,
@@ -794,7 +781,7 @@ class _CardBase extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.15),
                           borderRadius: BorderRadius.circular(99),
@@ -804,7 +791,7 @@ class _CardBase extends StatelessWidget {
                           btnText,
                           style: TextStyle(
                             color: Colors.white.withOpacity(0.9),
-                            fontSize: 9,
+                            fontSize: 10,
                             fontWeight: FontWeight.w600,
                             letterSpacing: 0.4,
                           ),
@@ -816,7 +803,7 @@ class _CardBase extends StatelessWidget {
                           Text(
                             statLabel.toUpperCase(),
                             style: TextStyle(
-                              fontSize: 8,
+                              fontSize: 9,
                               color: Colors.white.withOpacity(0.4),
                               letterSpacing: 0.8,
                               fontWeight: FontWeight.w600,
@@ -826,7 +813,7 @@ class _CardBase extends StatelessWidget {
                           Text(
                             statValue,
                             style: TextStyle(
-                              fontSize: 13,
+                              fontSize: 15,
                               fontWeight: FontWeight.w600,
                               color: statColor,
                               shadows: [BoxShadow(color: statColor.withOpacity(0.4), blurRadius: 12)],
