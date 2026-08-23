@@ -684,7 +684,7 @@ class _CardBase extends StatelessWidget {
                             fontSize: 38,
                             fontWeight: FontWeight.w400,
                             letterSpacing: -0.42,
-                            height: 1,
+                            height: 1.4,
                             fontFeatures: [
                               FontFeature.enable('lnum'),
                               FontFeature.enable('tnum'),
