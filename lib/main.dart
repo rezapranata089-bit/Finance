@@ -555,9 +555,9 @@ class _DashboardSwiperState extends State<DashboardSwiper> with SingleTickerProv
               width: isActive ? 14 : 5,
               height: 5,
               decoration: BoxDecoration(
-                color: isActive ? const Color(0xFFC96343) : Colors.grey.withOpacity(0.3),
+                color: isActive ? context.colors.accent : context.colors.textMuted.withOpacity(0.3),
                 borderRadius: BorderRadius.circular(99),
-                boxShadow: isActive ? [BoxShadow(color: const Color(0xFFC96343).withOpacity(0.4), blurRadius: 8)] : null,
+                boxShadow: isActive ? [BoxShadow(color: context.colors.accent.withOpacity(0.4), blurRadius: 8)] : null,
               ),
             );
           }),
