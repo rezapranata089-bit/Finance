@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -303,6 +304,395 @@ class HomeShell extends ConsumerWidget {
   }
 }
 
+class DashboardSwiper extends StatefulWidget {
+  final double income;
+  final double expense;
+  const DashboardSwiper({super.key, required this.income, required this.expense});
+
+  @override
+  State<DashboardSwiper> createState() => _DashboardSwiperState();
+}
+
+class _DashboardSwiperState extends State<DashboardSwiper> with SingleTickerProviderStateMixin {
+  late PageController _pageController;
+  double _currentPage = 1.0;
+  late AnimationController _animController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(viewportFraction: 0.85, initialPage: 1);
+    _pageController.addListener(() {
+      if (_pageController.page != null) {
+        setState(() {
+          _currentPage = _pageController.page!;
+        });
+      }
+    });
+    _animController = AnimationController(vsync: this, duration: const Duration(seconds: 3))..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    _animController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Expanded(
+          child: PageView.builder(
+            controller: _pageController,
+            clipBehavior: Clip.none,
+            itemCount: 3,
+            itemBuilder: (context, index) {
+              double value = _currentPage - index;
+              double scale = (1 - (value.abs() * 0.08)).clamp(0.0, 1.0);
+              double rotationY = value * -0.15;
+              double opacity = (1 - (value.abs() * 0.4)).clamp(0.0, 1.0);
+
+              return Transform(
+                transform: Matrix4.identity()
+                  ..setEntry(3, 2, 0.001)
+                  ..rotateY(rotationY)
+                  ..scale(scale),
+                alignment: Alignment.center,
+                child: Opacity(
+                  opacity: opacity,
+                  child: _buildCard(index, value.abs() < 0.5),
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(3, (index) {
+            double diff = (_currentPage - index).abs();
+            bool isActive = diff < 0.5;
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              width: isActive ? 14 : 5,
+              height: 5,
+              decoration: BoxDecoration(
+                color: isActive ? const Color(0xFFC96343) : Colors.grey.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(99),
+                boxShadow: isActive ? [BoxShadow(color: const Color(0xFFC96343).withOpacity(0.4), blurRadius: 8)] : null,
+              ),
+            );
+          }),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCard(int index, bool isActive) {
+    if (index == 0) {
+      return _CardBase(
+        isActive: isActive,
+        animController: _animController,
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF3A261D), Color(0xFF1A1410), Color(0xFF0D0A08)],
+        ),
+        glowColor: const Color(0xFFE4A98A).withOpacity(0.15),
+        title: 'TOTAL STOK BATU',
+        amount: '15.000',
+        isCurrency: false,
+        subLabel: 'Modal Bakar',
+        subValue: 'Rp 4.500.000',
+        btnText: 'Lihat Detail',
+        statLabel: 'Status',
+        statValue: 'Standby',
+        statColor: const Color(0xFFFFE270),
+        amountGradient: const [Color(0xFFC9BC75), Colors.white, Color(0xFFC9BC75)],
+      );
+    }
+    if (index == 1) {
+      return _CardBase(
+        isActive: isActive,
+        animController: _animController,
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF0A120D), Color(0xFF152016), Color(0xFF080A08)],
+        ),
+        glowColor: const Color(0xFF5CC88F).withOpacity(0.15),
+        title: 'KEUNTUNGAN BERSIH',
+        amount: NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0).format(widget.income),
+        isCurrency: false,
+        subLabel: 'Sisa Modal Usaha',
+        subValue: 'Rp 12.000.000',
+        btnText: 'Tarik Dana',
+        statLabel: 'Pertumbuhan',
+        statValue: '+24.5%',
+        statColor: const Color(0xFF5CC88F),
+        amountGradient: const [Color(0xFF5CC88F), Color(0xFFD4FADF), Color(0xFF5CC88F)],
+      );
+    }
+    return _CardBase(
+      isActive: isActive,
+      animController: _animController,
+      gradient: const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [Color(0xFF240C0C), Color(0xFF3D1515), Color(0xFF170505)],
+      ),
+      glowColor: const Color(0xFFEB5757).withOpacity(0.15),
+      title: 'TOTAL PENGELUARAN',
+      amount: NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0).format(widget.expense),
+      isCurrency: false,
+      subLabel: 'Bulan Ini',
+      subValue: 'Kayu Bakar & Gaji',
+      btnText: 'Cek Laporan',
+      statLabel: 'Beban',
+      statValue: '-12%',
+      statColor: const Color(0xFFEB5757),
+      amountGradient: const [Color(0xFFEB5757), Color(0xFFFAD4D4), Color(0xFFEB5757)],
+    );
+  }
+}
+
+class _CardBase extends StatelessWidget {
+  final bool isActive;
+  final AnimationController animController;
+  final Gradient gradient;
+  final Color glowColor;
+  final String title;
+  final String amount;
+  final bool isCurrency;
+  final String subLabel;
+  final String subValue;
+  final String btnText;
+  final String statLabel;
+  final String statValue;
+  final Color statColor;
+  final List<Color> amountGradient;
+
+  const _CardBase({
+    required this.isActive,
+    required this.animController,
+    required this.gradient,
+    required this.glowColor,
+    required this.title,
+    required this.amount,
+    required this.isCurrency,
+    required this.subLabel,
+    required this.subValue,
+    required this.btnText,
+    required this.statLabel,
+    required this.statValue,
+    required this.statColor,
+    required this.amountGradient,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOutQuad,
+      margin: EdgeInsets.symmetric(vertical: isActive ? 0 : 8),
+      decoration: BoxDecoration(
+        gradient: gradient,
+        borderRadius: BorderRadius.circular(28),
+        boxShadow: isActive
+            ? [
+                BoxShadow(color: Colors.black.withOpacity(0.4), blurRadius: 24, offset: const Offset(0, 12)),
+                const BoxShadow(color: Colors.white10, spreadRadius: 1, blurStyle: BlurStyle.inner),
+              ]
+            : [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 12, offset: const Offset(0, 6))],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(28),
+        child: Stack(
+          children: [
+            if (isActive)
+              Positioned(
+                bottom: -80,
+                right: title.contains('PENGELUARAN') ? -40 : null,
+                left: title.contains('KEUNTUNGAN') ? -40 : (title.contains('STOK') ? 0 : null),
+                child: AnimatedBuilder(
+                  animation: animController,
+                  builder: (context, child) {
+                    return Transform.scale(
+                      scale: 1.0 + (animController.value * 0.12),
+                      child: Opacity(
+                        opacity: 0.6 + (animController.value * 0.4),
+                        child: Container(
+                          width: 240,
+                          height: 240,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: RadialGradient(
+                              colors: [glowColor, Colors.transparent],
+                              stops: const [0.0, 0.65],
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            Padding(
+              padding: const EdgeInsets.all(22.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        title,
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white.withOpacity(0.55),
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                      Container(
+                        width: 32,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(5),
+                          gradient: const LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [Color(0xFFe8c97a), Color(0xFFc9a85c), Color(0xFFa07840)],
+                          ),
+                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 6, offset: const Offset(0, 2))],
+                        ),
+                        child: Center(
+                          child: Container(
+                            width: 20,
+                            height: 14,
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.black.withOpacity(0.3)),
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                            child: Center(
+                              child: Container(
+                                width: 1,
+                                color: Colors.black.withOpacity(0.25),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ShaderMask(
+                        shaderCallback: (bounds) => LinearGradient(
+                          colors: amountGradient,
+                          stops: const [0.0, 0.5, 1.0],
+                          transform: isActive
+                              ? GradientRotation(animController.value * 2 * math.pi)
+                              : null,
+                        ).createShader(bounds),
+                        child: Text(
+                          amount,
+                          style: const TextStyle(
+                            fontFamily: 'Playfair Display',
+                            fontSize: 32,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                            letterSpacing: -0.5,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Text(
+                            subLabel,
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.white.withOpacity(0.45),
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            subValue,
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.white.withOpacity(0.75),
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 0.2,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(99),
+                          border: Border.all(color: Colors.white.withOpacity(0.1)),
+                        ),
+                        child: Text(
+                          btnText,
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.9),
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.4,
+                          ),
+                        ),
+                      ),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            statLabel.toUpperCase(),
+                            style: TextStyle(
+                              fontSize: 9,
+                              color: Colors.white.withOpacity(0.4),
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            statValue,
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: statColor,
+                              shadows: [BoxShadow(color: statColor.withOpacity(0.4), blurRadius: 12)],
+                            ),
+                          ),
+                        ],
+                      )
+                    ],
+                  )
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class DashboardPage extends ConsumerWidget {
   const DashboardPage({super.key});
 
@@ -325,7 +715,7 @@ class DashboardPage extends ConsumerWidget {
             IconButton.filledTonal(onPressed: () {}, icon: const Icon(SolarIconsOutline.bell)),
           ]),
           const SizedBox(height: 22),
-          DashboardCards(income: income, expense: expense),
+          SizedBox(height: 240, child: DashboardSwiper(income: income, expense: expense)),
           const SizedBox(height: 36),
                     const SectionHeader(title: 'Ringkasan bulan ini', action: 'Detail'),
                     SurfaceCard(child: Row(children: [

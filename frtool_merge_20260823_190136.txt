@@ -1,0 +1,3207 @@
+### PROJECT STRUCTURE
+my_finance
+├── .dart_tool
+│   ├── dartpad
+│   │   └── web_plugin_registrant.dart
+│   ├── package_config.json
+│   ├── package_graph.json
+│   └── version
+├── .github
+│   └── workflows
+│       └── build-apk.yml
+├── android
+│   ├── app
+│   │   ├── src
+│   │   │   ├── debug
+│   │   │   │   └── AndroidManifest.xml
+│   │   │   ├── main
+│   │   │   │   ├── java
+│   │   │   │   │   └── io
+│   │   │   │   │       └── flutter
+│   │   │   │   │           └── plugins
+│   │   │   │   │               └── GeneratedPluginRegistrant.java
+│   │   │   │   ├── kotlin
+│   │   │   │   │   └── com
+│   │   │   │   │       └── example
+│   │   │   │   │           └── my_finance
+│   │   │   │   │               └── MainActivity.kt
+│   │   │   │   ├── res
+│   │   │   │   │   ├── drawable
+│   │   │   │   │   │   └── launch_background.xml
+│   │   │   │   │   ├── drawable-v21
+│   │   │   │   │   │   └── launch_background.xml
+│   │   │   │   │   ├── mipmap-hdpi
+│   │   │   │   │   │   └── ic_launcher.png
+│   │   │   │   │   ├── mipmap-mdpi
+│   │   │   │   │   │   └── ic_launcher.png
+│   │   │   │   │   ├── mipmap-xhdpi
+│   │   │   │   │   │   └── ic_launcher.png
+│   │   │   │   │   ├── mipmap-xxhdpi
+│   │   │   │   │   │   └── ic_launcher.png
+│   │   │   │   │   ├── mipmap-xxxhdpi
+│   │   │   │   │   │   └── ic_launcher.png
+│   │   │   │   │   ├── values
+│   │   │   │   │   │   └── styles.xml
+│   │   │   │   │   └── values-night
+│   │   │   │   │       └── styles.xml
+│   │   │   │   └── AndroidManifest.xml
+│   │   │   └── profile
+│   │   │       └── AndroidManifest.xml
+│   │   └── build.gradle.kts
+│   ├── gradle
+│   │   └── wrapper
+│   │       ├── gradle-wrapper.jar
+│   │       └── gradle-wrapper.properties
+│   ├── .gitignore
+│   ├── build.gradle.kts
+│   ├── gradle.properties
+│   ├── gradlew
+│   ├── gradlew.bat
+│   ├── local.properties
+│   ├── my_finance_android.iml
+│   └── settings.gradle.kts
+├── assets
+│   ├── fonts
+│   │   ├── dm_serif_display_regular.ttf
+│   │   ├── playfairdisplay_regular.ttf
+│   │   ├── satoshi_black.otf
+│   │   ├── satoshi_black_italic.otf
+│   │   ├── satoshi_bold.otf
+│   │   ├── satoshi_bold_italic.otf
+│   │   ├── satoshi_italic.otf
+│   │   ├── satoshi_light.otf
+│   │   ├── satoshi_light_italic.otf
+│   │   ├── satoshi_medium.otf
+│   │   ├── satoshi_medium_italic.otf
+│   │   └── satoshi_regular.otf
+│   ├── icon
+│   │   └── icon.png
+│   └── lottie
+│       └── gym.json
+├── ios
+│   ├── Flutter
+│   │   ├── ephemeral
+│   │   │   ├── Packages
+│   │   │   │   └── FlutterGeneratedPluginSwiftPackage
+│   │   │   │       ├── Sources
+│   │   │   │       │   └── FlutterGeneratedPluginSwiftPackage
+│   │   │   │       │       └── FlutterGeneratedPluginSwiftPackage.swift
+│   │   │   │       └── Package.swift
+│   │   │   ├── .swift_pm.lock
+│   │   │   ├── flutter_lldb_helper.py
+│   │   │   ├── flutter_lldbinit
+│   │   │   └── flutter_native_integration.env
+│   │   ├── AppFrameworkInfo.plist
+│   │   ├── Debug.xcconfig
+│   │   ├── flutter_export_environment.sh
+│   │   ├── Generated.xcconfig
+│   │   └── Release.xcconfig
+│   ├── Runner
+│   │   ├── Assets.xcassets
+│   │   │   ├── AppIcon.appiconset
+│   │   │   │   ├── Contents.json
+│   │   │   │   ├── Icon-App-1024x1024@1x.png
+│   │   │   │   ├── Icon-App-20x20@1x.png
+│   │   │   │   ├── Icon-App-20x20@2x.png
+│   │   │   │   ├── Icon-App-20x20@3x.png
+│   │   │   │   ├── Icon-App-29x29@1x.png
+│   │   │   │   ├── Icon-App-29x29@2x.png
+│   │   │   │   ├── Icon-App-29x29@3x.png
+│   │   │   │   ├── Icon-App-40x40@1x.png
+│   │   │   │   ├── Icon-App-40x40@2x.png
+│   │   │   │   ├── Icon-App-40x40@3x.png
+│   │   │   │   ├── Icon-App-60x60@2x.png
+│   │   │   │   ├── Icon-App-60x60@3x.png
+│   │   │   │   ├── Icon-App-76x76@1x.png
+│   │   │   │   ├── Icon-App-76x76@2x.png
+│   │   │   │   └── Icon-App-83.5x83.5@2x.png
+│   │   │   └── LaunchImage.imageset
+│   │   │       ├── Contents.json
+│   │   │       ├── LaunchImage.png
+│   │   │       ├── LaunchImage@2x.png
+│   │   │       ├── LaunchImage@3x.png
+│   │   │       └── README.md
+│   │   ├── Base.lproj
+│   │   │   ├── LaunchScreen.storyboard
+│   │   │   └── Main.storyboard
+│   │   ├── AppDelegate.swift
+│   │   ├── GeneratedPluginRegistrant.h
+│   │   ├── GeneratedPluginRegistrant.m
+│   │   ├── Info.plist
+│   │   ├── Runner-Bridging-Header.h
+│   │   └── SceneDelegate.swift
+│   ├── Runner.xcodeproj
+│   │   ├── project.xcworkspace
+│   │   │   ├── xcshareddata
+│   │   │   │   ├── IDEWorkspaceChecks.plist
+│   │   │   │   └── WorkspaceSettings.xcsettings
+│   │   │   └── contents.xcworkspacedata
+│   │   ├── xcshareddata
+│   │   │   └── xcschemes
+│   │   │       └── Runner.xcscheme
+│   │   └── project.pbxproj
+│   ├── Runner.xcworkspace
+│   │   ├── xcshareddata
+│   │   │   ├── IDEWorkspaceChecks.plist
+│   │   │   └── WorkspaceSettings.xcsettings
+│   │   └── contents.xcworkspacedata
+│   ├── RunnerTests
+│   │   └── RunnerTests.swift
+│   └── .gitignore
+├── lib
+│   └── main.dart
+├── linux
+│   ├── flutter
+│   │   ├── CMakeLists.txt
+│   │   ├── generated_plugin_registrant.cc
+│   │   ├── generated_plugin_registrant.h
+│   │   └── generated_plugins.cmake
+│   ├── runner
+│   │   ├── CMakeLists.txt
+│   │   ├── main.cc
+│   │   ├── my_application.cc
+│   │   └── my_application.h
+│   ├── .gitignore
+│   └── CMakeLists.txt
+├── macos
+│   ├── Flutter
+│   │   ├── ephemeral
+│   │   │   ├── Packages
+│   │   │   │   └── FlutterGeneratedPluginSwiftPackage
+│   │   │   │       ├── Sources
+│   │   │   │       │   └── FlutterGeneratedPluginSwiftPackage
+│   │   │   │       │       └── FlutterGeneratedPluginSwiftPackage.swift
+│   │   │   │       └── Package.swift
+│   │   │   ├── .swift_pm.lock
+│   │   │   ├── Flutter-Generated.xcconfig
+│   │   │   ├── flutter_export_environment.sh
+│   │   │   └── flutter_native_integration.env
+│   │   ├── Flutter-Debug.xcconfig
+│   │   ├── Flutter-Release.xcconfig
+│   │   └── GeneratedPluginRegistrant.swift
+│   ├── Runner
+│   │   ├── Assets.xcassets
+│   │   │   └── AppIcon.appiconset
+│   │   │       ├── app_icon_1024.png
+│   │   │       ├── app_icon_128.png
+│   │   │       ├── app_icon_16.png
+│   │   │       ├── app_icon_256.png
+│   │   │       ├── app_icon_32.png
+│   │   │       ├── app_icon_512.png
+│   │   │       ├── app_icon_64.png
+│   │   │       └── Contents.json
+│   │   ├── Base.lproj
+│   │   │   └── MainMenu.xib
+│   │   ├── Configs
+│   │   │   ├── AppInfo.xcconfig
+│   │   │   ├── Debug.xcconfig
+│   │   │   ├── Release.xcconfig
+│   │   │   └── Warnings.xcconfig
+│   │   ├── AppDelegate.swift
+│   │   ├── DebugProfile.entitlements
+│   │   ├── Info.plist
+│   │   ├── MainFlutterWindow.swift
+│   │   └── Release.entitlements
+│   ├── Runner.xcodeproj
+│   │   ├── project.xcworkspace
+│   │   │   └── xcshareddata
+│   │   │       └── IDEWorkspaceChecks.plist
+│   │   ├── xcshareddata
+│   │   │   └── xcschemes
+│   │   │       └── Runner.xcscheme
+│   │   └── project.pbxproj
+│   ├── Runner.xcworkspace
+│   │   ├── xcshareddata
+│   │   │   └── IDEWorkspaceChecks.plist
+│   │   └── contents.xcworkspacedata
+│   ├── RunnerTests
+│   │   └── RunnerTests.swift
+│   └── .gitignore
+├── test
+│   └── widget_test.dart
+├── web
+│   ├── icons
+│   │   ├── Icon-192.png
+│   │   ├── Icon-512.png
+│   │   ├── Icon-maskable-192.png
+│   │   └── Icon-maskable-512.png
+│   ├── favicon.png
+│   ├── index.html
+│   └── manifest.json
+├── windows
+│   ├── flutter
+│   │   ├── CMakeLists.txt
+│   │   ├── generated_plugin_registrant.cc
+│   │   ├── generated_plugin_registrant.h
+│   │   └── generated_plugins.cmake
+│   ├── runner
+│   │   ├── resources
+│   │   │   └── app_icon.ico
+│   │   ├── CMakeLists.txt
+│   │   ├── flutter_window.cpp
+│   │   ├── flutter_window.h
+│   │   ├── main.cpp
+│   │   ├── resource.h
+│   │   ├── runner.exe.manifest
+│   │   ├── Runner.rc
+│   │   ├── utils.cpp
+│   │   ├── utils.h
+│   │   ├── win32_window.cpp
+│   │   └── win32_window.h
+│   ├── .gitignore
+│   └── CMakeLists.txt
+├── .flutter-plugins-dependencies
+├── .frignore
+├── .gitignore
+├── .metadata
+├── analysis_options.yaml
+├── my_finance.iml
+├── pubspec.lock
+├── pubspec.yaml
+└── README.md
+
+### FILE: .dart_tool/dartpad/web_plugin_registrant.dart
+// Flutter web plugin registrant file.
+//
+// Generated file. Do not edit.
+//
+
+// @dart = 2.13
+// ignore_for_file: type=lint
+
+import 'package:shared_preferences_web/shared_preferences_web.dart';
+import 'package:flutter_web_plugins/flutter_web_plugins.dart';
+
+void registerPlugins([final Registrar? pluginRegistrar]) {
+  final Registrar registrar = pluginRegistrar ?? webPluginRegistrar;
+  SharedPreferencesPlugin.registerWith(registrar);
+  registrar.registerMessageHandler();
+}
+
+
+### FILE: .dart_tool/package_config.json
+{
+  "configVersion": 2,
+  "packages": [
+    {
+      "name": "async",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/async-2.13.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "boolean_selector",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/boolean_selector-2.1.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.1"
+    },
+    {
+      "name": "characters",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/characters-1.4.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "clock",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/clock-1.1.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "collection",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/collection-1.19.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "cupertino_icons",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/cupertino_icons-1.0.9",
+      "packageUri": "lib/",
+      "languageVersion": "3.9"
+    },
+    {
+      "name": "equatable",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/equatable-2.1.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
+      "name": "fake_async",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/fake_async-1.3.3",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
+    },
+    {
+      "name": "ffi",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/ffi-2.2.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.7"
+    },
+    {
+      "name": "file",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/file-7.0.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
+      "name": "fl_chart",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/fl_chart-0.69.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
+      "name": "flutter",
+      "rootUri": "file:///root/flutter/packages/flutter",
+      "packageUri": "lib/",
+      "languageVersion": "3.11"
+    },
+    {
+      "name": "flutter_lints",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/flutter_lints-5.0.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "flutter_riverpod",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/flutter_riverpod-2.6.1",
+      "packageUri": "lib/",
+      "languageVersion": "2.17"
+    },
+    {
+      "name": "flutter_test",
+      "rootUri": "file:///root/flutter/packages/flutter_test",
+      "packageUri": "lib/",
+      "languageVersion": "3.11"
+    },
+    {
+      "name": "flutter_web_plugins",
+      "rootUri": "file:///root/flutter/packages/flutter_web_plugins",
+      "packageUri": "lib/",
+      "languageVersion": "3.11"
+    },
+    {
+      "name": "intl",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/intl-0.19.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
+      "name": "leak_tracker",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/leak_tracker-11.0.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
+      "name": "leak_tracker_flutter_testing",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/leak_tracker_flutter_testing-3.0.10",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
+      "name": "leak_tracker_testing",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/leak_tracker_testing-3.0.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
+      "name": "lints",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/lints-5.1.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.6"
+    },
+    {
+      "name": "matcher",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/matcher-0.12.20",
+      "packageUri": "lib/",
+      "languageVersion": "3.10"
+    },
+    {
+      "name": "material_color_utilities",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/material_color_utilities-0.13.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "meta",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/meta-1.18.3",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "path",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/path-1.9.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "path_provider_linux",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/path_provider_linux-2.2.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.10"
+    },
+    {
+      "name": "path_provider_platform_interface",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/path_provider_platform_interface-2.1.3",
+      "packageUri": "lib/",
+      "languageVersion": "3.10"
+    },
+    {
+      "name": "path_provider_windows",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/path_provider_windows-2.3.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
+      "name": "platform",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/platform-3.1.6",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
+      "name": "plugin_platform_interface",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/plugin_platform_interface-2.1.8",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
+      "name": "riverpod",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/riverpod-2.6.1",
+      "packageUri": "lib/",
+      "languageVersion": "2.17"
+    },
+    {
+      "name": "shared_preferences",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/shared_preferences-2.5.5",
+      "packageUri": "lib/",
+      "languageVersion": "3.9"
+    },
+    {
+      "name": "shared_preferences_android",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/shared_preferences_android-2.4.27",
+      "packageUri": "lib/",
+      "languageVersion": "3.12"
+    },
+    {
+      "name": "shared_preferences_foundation",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/shared_preferences_foundation-2.5.6",
+      "packageUri": "lib/",
+      "languageVersion": "3.9"
+    },
+    {
+      "name": "shared_preferences_linux",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/shared_preferences_linux-2.4.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
+    },
+    {
+      "name": "shared_preferences_platform_interface",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/shared_preferences_platform_interface-2.4.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.9"
+    },
+    {
+      "name": "shared_preferences_web",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/shared_preferences_web-2.4.3",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "shared_preferences_windows",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/shared_preferences_windows-2.4.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
+    },
+    {
+      "name": "sky_engine",
+      "rootUri": "file:///root/flutter/bin/cache/pkg/sky_engine",
+      "packageUri": "lib/",
+      "languageVersion": "3.11"
+    },
+    {
+      "name": "solar_icons",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/solar_icons-0.1.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
+      "name": "source_span",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/source_span-1.10.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.1"
+    },
+    {
+      "name": "sqflite",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/sqflite-2.4.3",
+      "packageUri": "lib/",
+      "languageVersion": "3.12"
+    },
+    {
+      "name": "sqflite_android",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/sqflite_android-2.4.3",
+      "packageUri": "lib/",
+      "languageVersion": "3.12"
+    },
+    {
+      "name": "sqflite_common",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/sqflite_common-2.5.11",
+      "packageUri": "lib/",
+      "languageVersion": "3.12"
+    },
+    {
+      "name": "sqflite_darwin",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/sqflite_darwin-2.4.3+1",
+      "packageUri": "lib/",
+      "languageVersion": "3.12"
+    },
+    {
+      "name": "sqflite_platform_interface",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/sqflite_platform_interface-2.4.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.12"
+    },
+    {
+      "name": "stack_trace",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/stack_trace-1.12.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "state_notifier",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/state_notifier-1.0.0",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
+      "name": "stream_channel",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/stream_channel-2.1.4",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
+    },
+    {
+      "name": "string_scanner",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/string_scanner-1.4.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.1"
+    },
+    {
+      "name": "synchronized",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/synchronized-3.4.1+2",
+      "packageUri": "lib/",
+      "languageVersion": "3.12"
+    },
+    {
+      "name": "term_glyph",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/term_glyph-1.2.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.1"
+    },
+    {
+      "name": "test_api",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/test_api-0.7.12",
+      "packageUri": "lib/",
+      "languageVersion": "3.10"
+    },
+    {
+      "name": "vector_math",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/vector_math-2.4.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.10"
+    },
+    {
+      "name": "vm_service",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/vm_service-15.3.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "web",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/web-1.1.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "xdg_directories",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/xdg_directories-1.1.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
+    },
+    {
+      "name": "my_finance",
+      "rootUri": "../",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    }
+  ],
+  "generator": "pub",
+  "generatorVersion": "3.13.1",
+  "flutterRoot": "file:///root/flutter",
+  "flutterVersion": "3.47.1",
+  "pubCache": "file:///root/.pub-cache"
+}
+
+
+### FILE: .dart_tool/package_graph.json
+{
+  "roots": [
+    "my_finance"
+  ],
+  "packages": [
+    {
+      "name": "my_finance",
+      "version": "1.0.0+1",
+      "dependencies": [
+        "cupertino_icons",
+        "fl_chart",
+        "flutter",
+        "flutter_riverpod",
+        "intl",
+        "path",
+        "shared_preferences",
+        "solar_icons",
+        "sqflite"
+      ],
+      "devDependencies": [
+        "flutter_lints",
+        "flutter_test"
+      ]
+    },
+    {
+      "name": "flutter_lints",
+      "version": "5.0.0",
+      "dependencies": [
+        "lints"
+      ]
+    },
+    {
+      "name": "flutter_test",
+      "version": "0.0.0",
+      "dependencies": [
+        "clock",
+        "collection",
+        "fake_async",
+        "flutter",
+        "leak_tracker_flutter_testing",
+        "matcher",
+        "meta",
+        "path",
+        "stack_trace",
+        "stream_channel",
+        "test_api",
+        "vector_math"
+      ]
+    },
+    {
+      "name": "shared_preferences",
+      "version": "2.5.5",
+      "dependencies": [
+        "flutter",
+        "shared_preferences_android",
+        "shared_preferences_foundation",
+        "shared_preferences_linux",
+        "shared_preferences_platform_interface",
+        "shared_preferences_web",
+        "shared_preferences_windows"
+      ]
+    },
+    {
+      "name": "intl",
+      "version": "0.19.0",
+      "dependencies": [
+        "clock",
+        "meta",
+        "path"
+      ]
+    },
+    {
+      "name": "fl_chart",
+      "version": "0.69.2",
+      "dependencies": [
+        "equatable",
+        "flutter"
+      ]
+    },
+    {
+      "name": "path",
+      "version": "1.9.1",
+      "dependencies": []
+    },
+    {
+      "name": "sqflite",
+      "version": "2.4.3",
+      "dependencies": [
+        "flutter",
+        "path",
+        "sqflite_android",
+        "sqflite_common",
+        "sqflite_darwin",
+        "sqflite_platform_interface"
+      ]
+    },
+    {
+      "name": "flutter_riverpod",
+      "version": "2.6.1",
+      "dependencies": [
+        "collection",
+        "flutter",
+        "meta",
+        "riverpod",
+        "state_notifier"
+      ]
+    },
+    {
+      "name": "solar_icons",
+      "version": "0.1.0",
+      "dependencies": [
+        "flutter"
+      ]
+    },
+    {
+      "name": "cupertino_icons",
+      "version": "1.0.9",
+      "dependencies": []
+    },
+    {
+      "name": "flutter",
+      "version": "0.0.0",
+      "dependencies": [
+        "characters",
+        "collection",
+        "material_color_utilities",
+        "meta",
+        "sky_engine",
+        "vector_math"
+      ]
+    },
+    {
+      "name": "lints",
+      "version": "5.1.1",
+      "dependencies": []
+    },
+    {
+      "name": "stream_channel",
+      "version": "2.1.4",
+      "dependencies": [
+        "async"
+      ]
+    },
+    {
+      "name": "meta",
+      "version": "1.18.3",
+      "dependencies": []
+    },
+    {
+      "name": "collection",
+      "version": "1.19.1",
+      "dependencies": []
+    },
+    {
+      "name": "leak_tracker_flutter_testing",
+      "version": "3.0.10",
+      "dependencies": [
+        "flutter",
+        "leak_tracker",
+        "leak_tracker_testing",
+        "matcher",
+        "meta"
+      ]
+    },
+    {
+      "name": "vector_math",
+      "version": "2.4.0",
+      "dependencies": []
+    },
+    {
+      "name": "stack_trace",
+      "version": "1.12.1",
+      "dependencies": [
+        "path"
+      ]
+    },
+    {
+      "name": "clock",
+      "version": "1.1.2",
+      "dependencies": []
+    },
+    {
+      "name": "fake_async",
+      "version": "1.3.3",
+      "dependencies": [
+        "clock",
+        "collection"
+      ]
+    },
+    {
+      "name": "matcher",
+      "version": "0.12.20",
+      "dependencies": [
+        "async",
+        "meta",
+        "stack_trace",
+        "term_glyph",
+        "test_api"
+      ]
+    },
+    {
+      "name": "test_api",
+      "version": "0.7.12",
+      "dependencies": [
+        "async",
+        "boolean_selector",
+        "collection",
+        "meta",
+        "source_span",
+        "stack_trace",
+        "stream_channel",
+        "string_scanner",
+        "term_glyph"
+      ]
+    },
+    {
+      "name": "shared_preferences_windows",
+      "version": "2.4.1",
+      "dependencies": [
+        "file",
+        "flutter",
+        "path",
+        "path_provider_platform_interface",
+        "path_provider_windows",
+        "shared_preferences_platform_interface"
+      ]
+    },
+    {
+      "name": "shared_preferences_web",
+      "version": "2.4.3",
+      "dependencies": [
+        "flutter",
+        "flutter_web_plugins",
+        "shared_preferences_platform_interface",
+        "web"
+      ]
+    },
+    {
+      "name": "shared_preferences_platform_interface",
+      "version": "2.4.2",
+      "dependencies": [
+        "flutter",
+        "plugin_platform_interface"
+      ]
+    },
+    {
+      "name": "shared_preferences_linux",
+      "version": "2.4.1",
+      "dependencies": [
+        "file",
+        "flutter",
+        "path",
+        "path_provider_linux",
+        "path_provider_platform_interface",
+        "shared_preferences_platform_interface"
+      ]
+    },
+    {
+      "name": "shared_preferences_foundation",
+      "version": "2.5.6",
+      "dependencies": [
+        "flutter",
+        "shared_preferences_platform_interface"
+      ]
+    },
+    {
+      "name": "shared_preferences_android",
+      "version": "2.4.27",
+      "dependencies": [
+        "flutter",
+        "meta",
+        "shared_preferences_platform_interface"
+      ]
+    },
+    {
+      "name": "equatable",
+      "version": "2.1.0",
+      "dependencies": [
+        "collection",
+        "meta"
+      ]
+    },
+    {
+      "name": "sqflite_common",
+      "version": "2.5.11",
+      "dependencies": [
+        "meta",
+        "path",
+        "synchronized"
+      ]
+    },
+    {
+      "name": "sqflite_platform_interface",
+      "version": "2.4.1",
+      "dependencies": [
+        "flutter",
+        "meta",
+        "platform",
+        "plugin_platform_interface",
+        "sqflite_common"
+      ]
+    },
+    {
+      "name": "sqflite_darwin",
+      "version": "2.4.3+1",
+      "dependencies": [
+        "flutter",
+        "meta",
+        "path",
+        "sqflite_common",
+        "sqflite_platform_interface"
+      ]
+    },
+    {
+      "name": "sqflite_android",
+      "version": "2.4.3",
+      "dependencies": [
+        "flutter",
+        "path",
+        "sqflite_common",
+        "sqflite_platform_interface"
+      ]
+    },
+    {
+      "name": "state_notifier",
+      "version": "1.0.0",
+      "dependencies": [
+        "meta"
+      ]
+    },
+    {
+      "name": "riverpod",
+      "version": "2.6.1",
+      "dependencies": [
+        "collection",
+        "meta",
+        "stack_trace",
+        "state_notifier"
+      ]
+    },
+    {
+      "name": "sky_engine",
+      "version": "0.0.0",
+      "dependencies": []
+    },
+    {
+      "name": "material_color_utilities",
+      "version": "0.13.0",
+      "dependencies": [
+        "collection"
+      ]
+    },
+    {
+      "name": "characters",
+      "version": "1.4.1",
+      "dependencies": []
+    },
+    {
+      "name": "async",
+      "version": "2.13.1",
+      "dependencies": [
+        "collection",
+        "meta"
+      ]
+    },
+    {
+      "name": "leak_tracker_testing",
+      "version": "3.0.2",
+      "dependencies": [
+        "leak_tracker",
+        "matcher",
+        "meta"
+      ]
+    },
+    {
+      "name": "leak_tracker",
+      "version": "11.0.2",
+      "dependencies": [
+        "clock",
+        "collection",
+        "meta",
+        "path",
+        "vm_service"
+      ]
+    },
+    {
+      "name": "term_glyph",
+      "version": "1.2.2",
+      "dependencies": []
+    },
+    {
+      "name": "string_scanner",
+      "version": "1.4.1",
+      "dependencies": [
+        "source_span"
+      ]
+    },
+    {
+      "name": "source_span",
+      "version": "1.10.2",
+      "dependencies": [
+        "collection",
+        "path",
+        "term_glyph"
+      ]
+    },
+    {
+      "name": "boolean_selector",
+      "version": "2.1.2",
+      "dependencies": [
+        "source_span",
+        "string_scanner"
+      ]
+    },
+    {
+      "name": "path_provider_windows",
+      "version": "2.3.0",
+      "dependencies": [
+        "ffi",
+        "flutter",
+        "path",
+        "path_provider_platform_interface"
+      ]
+    },
+    {
+      "name": "path_provider_platform_interface",
+      "version": "2.1.3",
+      "dependencies": [
+        "flutter",
+        "platform",
+        "plugin_platform_interface"
+      ]
+    },
+    {
+      "name": "file",
+      "version": "7.0.1",
+      "dependencies": [
+        "meta",
+        "path"
+      ]
+    },
+    {
+      "name": "web",
+      "version": "1.1.1",
+      "dependencies": []
+    },
+    {
+      "name": "flutter_web_plugins",
+      "version": "0.0.0",
+      "dependencies": [
+        "flutter"
+      ]
+    },
+    {
+      "name": "plugin_platform_interface",
+      "version": "2.1.8",
+      "dependencies": [
+        "meta"
+      ]
+    },
+    {
+      "name": "path_provider_linux",
+      "version": "2.2.2",
+      "dependencies": [
+        "ffi",
+        "flutter",
+        "path",
+        "path_provider_platform_interface",
+        "xdg_directories"
+      ]
+    },
+    {
+      "name": "synchronized",
+      "version": "3.4.1+2",
+      "dependencies": []
+    },
+    {
+      "name": "platform",
+      "version": "3.1.6",
+      "dependencies": []
+    },
+    {
+      "name": "vm_service",
+      "version": "15.3.0",
+      "dependencies": []
+    },
+    {
+      "name": "ffi",
+      "version": "2.2.0",
+      "dependencies": []
+    },
+    {
+      "name": "xdg_directories",
+      "version": "1.1.0",
+      "dependencies": [
+        "meta",
+        "path"
+      ]
+    }
+  ],
+  "configVersion": 1
+}
+
+### FILE: .github/workflows/build-apk.yml
+name: Build APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.1'
+          channel: 'stable'
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: my-finance-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+
+### FILE: analysis_options.yaml
+# This file configures the analyzer, which statically analyzes Dart code to
+# check for errors, warnings, and lints.
+#
+# The issues identified by the analyzer are surfaced in the UI of Dart-enabled
+# IDEs (https://dart.dev/tools#ides-and-editors). The analyzer can also be
+# invoked from the command line by running `flutter analyze`.
+
+# The following line activates a set of recommended lints for Flutter apps,
+# packages, and plugins designed to encourage good coding practices.
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
+
+linter:
+  # The lint rules applied to this project can be customized in the
+  # section below to disable rules from the `package:flutter_lints/flutter.yaml`
+  # included above or to enable additional rules. A list of all available lints
+  # and their documentation is published at https://dart.dev/lints.
+  #
+  # Instead of disabling a lint rule for the entire project in the
+  # section below, it can also be suppressed for a single line of code
+  # or a specific dart file by using the `// ignore: name_of_lint` and
+  # `// ignore_for_file: name_of_lint` syntax on the line or in the file
+  # producing the lint.
+  rules:
+    # avoid_print: false  # Uncomment to disable the `avoid_print` rule
+    # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
+
+# Additional information about this file can be found at
+# https://dart.dev/guides/language/analysis-options
+
+
+### FILE: android/app/build.gradle.kts
+plugins {
+    id("com.android.application")
+    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    id("dev.flutter.flutter-gradle-plugin")
+}
+
+android {
+    namespace = "com.example.my_finance"
+    compileSdk = flutter.compileSdkVersion
+    ndkVersion = flutter.ndkVersion
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    defaultConfig {
+        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        applicationId = "com.example.my_finance"
+        // You can update the following values to match your application needs.
+        // For more information, see: https://flutter.dev/to/review-gradle-config.
+        minSdk = flutter.minSdkVersion
+        targetSdk = flutter.targetSdkVersion
+        // Uses the version code from pubspec.yaml. When using split APKs, 1000 * ABI_VERSION
+        // is added automatically by Flutter. (https://developer.android.com/studio/build/configure-apk-splits#configure-APK-versions)
+        // You can force using the value of versionCode by specifying the `-P force-version-code-ignoring-abi=true`
+        // flag during build.
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
+    }
+
+    buildTypes {
+        release {
+            // TODO: Add your own signing config for the release build.
+            // Signing with the debug keys for now, so `flutter run --release` works.
+            signingConfig = signingConfigs.getByName("debug")
+        }
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+    }
+}
+
+flutter {
+    source = "../.."
+}
+
+
+### FILE: android/app/src/debug/AndroidManifest.xml
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- The INTERNET permission is required for development. Specifically,
+         the Flutter tool needs it to communicate with the running application
+         to allow setting breakpoints, to provide hot reload, etc.
+    -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+</manifest>
+
+
+### FILE: android/app/src/main/AndroidManifest.xml
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application
+        android:label="my_finance"
+        android:name="${applicationName}"
+        android:icon="@mipmap/ic_launcher">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:taskAffinity=""
+            android:theme="@style/LaunchTheme"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+            android:hardwareAccelerated="true"
+            android:windowSoftInputMode="adjustResize">
+            <!-- Specifies an Android theme to apply to this Activity as soon as
+                 the Android process has started. This theme is visible to the user
+                 while the Flutter UI initializes. After that, this theme continues
+                 to determine the Window background behind the Flutter UI. -->
+            <meta-data
+              android:name="io.flutter.embedding.android.NormalTheme"
+              android:resource="@style/NormalTheme"
+              />
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+        <!-- Don't delete the meta-data below.
+             This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
+        <meta-data
+            android:name="flutterEmbedding"
+            android:value="2" />
+    </application>
+    <!-- Required to query activities that can process text, see:
+         https://developer.android.com/training/package-visibility and
+         https://developer.android.com/reference/android/content/Intent#ACTION_PROCESS_TEXT.
+
+         In particular, this is used by the Flutter engine in io.flutter.plugin.text.ProcessTextPlugin. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.PROCESS_TEXT"/>
+            <data android:mimeType="text/plain"/>
+        </intent>
+    </queries>
+</manifest>
+
+
+### FILE: android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
+package io.flutter.plugins;
+
+import androidx.annotation.Keep;
+import androidx.annotation.NonNull;
+import io.flutter.Log;
+
+import io.flutter.embedding.engine.FlutterEngine;
+
+/**
+ * Generated file. Do not edit.
+ * This file is generated by the Flutter tool based on the
+ * plugins that support the Android platform.
+ */
+@Keep
+public final class GeneratedPluginRegistrant {
+  private static final String TAG = "GeneratedPluginRegistrant";
+  public static void registerWith(@NonNull FlutterEngine flutterEngine) {
+    try {
+      flutterEngine.getPlugins().add(new io.flutter.plugins.sharedpreferences.SharedPreferencesPlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin shared_preferences_android, io.flutter.plugins.sharedpreferences.SharedPreferencesPlugin", e);
+    }
+    try {
+      flutterEngine.getPlugins().add(new com.tekartik.sqflite.SqflitePlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin sqflite_android, com.tekartik.sqflite.SqflitePlugin", e);
+    }
+  }
+}
+
+
+### FILE: android/app/src/main/kotlin/com/example/my_finance/MainActivity.kt
+package com.example.my_finance
+
+import io.flutter.embedding.android.FlutterActivity
+
+class MainActivity : FlutterActivity()
+
+
+### FILE: android/app/src/main/res/drawable-v21/launch_background.xml
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Modify this file to customize your launch splash screen -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="?android:colorBackground" />
+
+    <!-- You can insert your own image assets here -->
+    <!-- <item>
+        <bitmap
+            android:gravity="center"
+            android:src="@mipmap/launch_image" />
+    </item> -->
+</layer-list>
+
+
+### FILE: android/app/src/main/res/drawable/launch_background.xml
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Modify this file to customize your launch splash screen -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@android:color/white" />
+
+    <!-- You can insert your own image assets here -->
+    <!-- <item>
+        <bitmap
+            android:gravity="center"
+            android:src="@mipmap/launch_image" />
+    </item> -->
+</layer-list>
+
+
+### FILE: android/app/src/main/res/values-night/styles.xml
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Theme applied to the Android Window while the process is starting when the OS's Dark Mode setting is on -->
+    <style name="LaunchTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <!-- Show a splash screen on the activity. Automatically removed when
+             the Flutter engine draws its first frame -->
+        <item name="android:windowBackground">@drawable/launch_background</item>
+    </style>
+    <!-- Theme applied to the Android Window as soon as the process has started.
+         This theme determines the color of the Android Window while your
+         Flutter UI initializes, as well as behind your Flutter UI while its
+         running.
+
+         This Theme is only used starting with V2 of Flutter's Android embedding. -->
+    <style name="NormalTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <item name="android:windowBackground">?android:colorBackground</item>
+    </style>
+</resources>
+
+
+### FILE: android/app/src/main/res/values/styles.xml
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Theme applied to the Android Window while the process is starting when the OS's Dark Mode setting is off -->
+    <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
+        <!-- Show a splash screen on the activity. Automatically removed when
+             the Flutter engine draws its first frame -->
+        <item name="android:windowBackground">@drawable/launch_background</item>
+    </style>
+    <!-- Theme applied to the Android Window as soon as the process has started.
+         This theme determines the color of the Android Window while your
+         Flutter UI initializes, as well as behind your Flutter UI while its
+         running.
+
+         This Theme is only used starting with V2 of Flutter's Android embedding. -->
+    <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
+        <item name="android:windowBackground">?android:colorBackground</item>
+    </style>
+</resources>
+
+
+### FILE: android/app/src/profile/AndroidManifest.xml
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- The INTERNET permission is required for development. Specifically,
+         the Flutter tool needs it to communicate with the running application
+         to allow setting breakpoints, to provide hot reload, etc.
+    -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+</manifest>
+
+
+### FILE: android/build.gradle.kts
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+val newBuildDir: Directory =
+    rootProject.layout.buildDirectory
+        .dir("../../build")
+        .get()
+rootProject.layout.buildDirectory.value(newBuildDir)
+
+subprojects {
+    val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
+    project.layout.buildDirectory.value(newSubprojectBuildDir)
+}
+subprojects {
+    project.evaluationDependsOn(":app")
+}
+
+tasks.register<Delete>("clean") {
+    delete(rootProject.layout.buildDirectory)
+}
+
+
+### FILE: android/gradle.properties
+org.gradle.jvmargs=-Xmx8G -XX:MaxMetaspaceSize=4G -XX:ReservedCodeCacheSize=512m -XX:+HeapDumpOnOutOfMemoryError
+android.useAndroidX=true
+# This newDsl flag was added by the Flutter template
+android.newDsl=false
+# This builtInKotlin flag was added by the Flutter template
+android.builtInKotlin=false
+
+
+### FILE: android/gradle/wrapper/gradle-wrapper.properties
+distributionBase=GRADLE_USER_HOME
+distributionPath=wrapper/dists
+zipStoreBase=GRADLE_USER_HOME
+zipStorePath=wrapper/dists
+distributionUrl=https\://services.gradle.org/distributions/gradle-9.3.1-all.zip
+
+
+### FILE: android/local.properties
+sdk.dir=/root/android-sdk
+flutter.sdk=/root/flutter
+
+### FILE: android/settings.gradle.kts
+pluginManagement {
+    val flutterSdkPath =
+        run {
+            val properties = java.util.Properties()
+            file("local.properties").inputStream().use { properties.load(it) }
+            val flutterSdkPath = properties.getProperty("flutter.sdk")
+            require(flutterSdkPath != null) { "flutter.sdk not set in local.properties" }
+            flutterSdkPath
+        }
+
+    includeBuild("$flutterSdkPath/packages/flutter_tools/gradle")
+
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+plugins {
+    id("dev.flutter.flutter-plugin-loader") version "1.0.0"
+    id("com.android.application") version "9.1.0" apply false
+    id("org.jetbrains.kotlin.android") version "2.4.0" apply false
+}
+
+include(":app")
+
+
+### FILE: ios/Flutter/AppFrameworkInfo.plist
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleDevelopmentRegion</key>
+  <string>en</string>
+  <key>CFBundleExecutable</key>
+  <string>App</string>
+  <key>CFBundleIdentifier</key>
+  <string>io.flutter.flutter.app</string>
+  <key>CFBundleInfoDictionaryVersion</key>
+  <string>6.0</string>
+  <key>CFBundleName</key>
+  <string>App</string>
+  <key>CFBundlePackageType</key>
+  <string>FMWK</string>
+  <key>CFBundleShortVersionString</key>
+  <string>1.0</string>
+  <key>CFBundleSignature</key>
+  <string>????</string>
+  <key>CFBundleVersion</key>
+  <string>1.0</string>
+</dict>
+</plist>
+
+
+### FILE: ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDEDidComputeMac32BitWarning</key>
+	<true/>
+</dict>
+</plist>
+
+
+### FILE: ios/Runner.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDEDidComputeMac32BitWarning</key>
+	<true/>
+</dict>
+</plist>
+
+
+### FILE: ios/Runner/Assets.xcassets/AppIcon.appiconset/Contents.json
+{
+  "images" : [
+    {
+      "size" : "20x20",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-20x20@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "20x20",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-20x20@3x.png",
+      "scale" : "3x"
+    },
+    {
+      "size" : "29x29",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-29x29@1x.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "29x29",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-29x29@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "29x29",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-29x29@3x.png",
+      "scale" : "3x"
+    },
+    {
+      "size" : "40x40",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-40x40@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "40x40",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-40x40@3x.png",
+      "scale" : "3x"
+    },
+    {
+      "size" : "60x60",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-60x60@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "60x60",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-60x60@3x.png",
+      "scale" : "3x"
+    },
+    {
+      "size" : "20x20",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-20x20@1x.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "20x20",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-20x20@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "29x29",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-29x29@1x.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "29x29",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-29x29@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "40x40",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-40x40@1x.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "40x40",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-40x40@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "76x76",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-76x76@1x.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "76x76",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-76x76@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "83.5x83.5",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-83.5x83.5@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "1024x1024",
+      "idiom" : "ios-marketing",
+      "filename" : "Icon-App-1024x1024@1x.png",
+      "scale" : "1x"
+    }
+  ],
+  "info" : {
+    "version" : 1,
+    "author" : "xcode"
+  }
+}
+
+
+### FILE: ios/Runner/Assets.xcassets/LaunchImage.imageset/Contents.json
+{
+  "images" : [
+    {
+      "idiom" : "universal",
+      "filename" : "LaunchImage.png",
+      "scale" : "1x"
+    },
+    {
+      "idiom" : "universal",
+      "filename" : "LaunchImage@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "idiom" : "universal",
+      "filename" : "LaunchImage@3x.png",
+      "scale" : "3x"
+    }
+  ],
+  "info" : {
+    "version" : 1,
+    "author" : "xcode"
+  }
+}
+
+
+### FILE: ios/Runner/Info.plist
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>My Finance</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>my_finance</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(FLUTTER_BUILD_NAME)</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneClassName</key>
+					<string>UIWindowScene</string>
+					<key>UISceneConfigurationName</key>
+					<string>flutter</string>
+					<key>UISceneDelegateClassName</key>
+					<string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
+					<key>UISceneStoryboardFile</key>
+					<string>Main</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>UIMainStoryboardFile</key>
+	<string>Main</string>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+</dict>
+</plist>
+
+
+### FILE: lib/main.dart
+import 'dart:ui' as ui;
+
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart' hide TextDirection;
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:solar_icons/solar_icons.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final prefs = await SharedPreferences.getInstance();
+  runApp(ProviderScope(
+    overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+    child: const MyFinanceApp(),
+  ));
+}
+
+final sharedPreferencesProvider = Provider<SharedPreferences>((ref) => throw UnimplementedError());
+
+final transactionsProvider = StateNotifierProvider<TransactionController,
+    List<FinanceTransaction>>((ref) => TransactionController());
+
+final selectedTabProvider = StateProvider<int>((ref) => 0);
+
+final themeModeProvider = StateNotifierProvider<ThemeModeNotifier, ThemeMode>((ref) {
+  return ThemeModeNotifier(ref.watch(sharedPreferencesProvider));
+});
+
+class ThemeModeNotifier extends StateNotifier<ThemeMode> {
+  final SharedPreferences prefs;
+  ThemeModeNotifier(this.prefs) : super(_load(prefs));
+
+  static ThemeMode _load(SharedPreferences prefs) {
+    final val = prefs.getString('themeMode') ?? 'dark';
+    return ThemeMode.values.firstWhere((e) => e.name == val, orElse: () => ThemeMode.dark);
+  }
+
+  void updateTheme(ThemeMode mode) {
+    state = mode;
+    prefs.setString('themeMode', mode.name);
+  }
+}
+
+final accentColorProvider = StateNotifierProvider<AccentColorNotifier, Color>((ref) {
+  return AccentColorNotifier(ref.watch(sharedPreferencesProvider));
+});
+
+class AccentColorNotifier extends StateNotifier<Color> {
+  final SharedPreferences prefs;
+  AccentColorNotifier(this.prefs) : super(_load(prefs));
+
+  static Color _load(SharedPreferences prefs) {
+    final val = prefs.getInt('accentColor');
+    return val != null ? Color(val) : accentPresets.first;
+  }
+
+  void updateColor(Color color) {
+    state = color;
+    prefs.setInt('accentColor', color.value);
+  }
+}
+
+const accentPresets = <Color>[
+  Color(0xFFFF9F43),
+  Color(0xFF5B8DEF),
+  Color(0xFF9B8AFB),
+  Color(0xFF65D7A9),
+  Color(0xFFFF6B81),
+  Color(0xFFFFC24B),
+  Color(0xFF4FD1E8),
+];
+
+class FinanceTransaction {
+  final String title;
+  final String category;
+  final double amount;
+  final bool income;
+  final DateTime date;
+  const FinanceTransaction({
+    required this.title,
+    required this.category,
+    required this.amount,
+    required this.income,
+    required this.date,
+  });
+}
+
+class TransactionController extends StateNotifier<List<FinanceTransaction>> {
+  TransactionController()
+      : super([
+          FinanceTransaction(
+            title: 'Gaji Bulanan',
+            category: 'Gaji',
+            amount: 8500000,
+            income: true,
+            date: DateTime(2026, 8, 23),
+          ),
+          FinanceTransaction(
+            title: 'Makan siang',
+            category: 'Makanan',
+            amount: 45000,
+            income: false,
+            date: DateTime(2026, 8, 23),
+          ),
+          FinanceTransaction(
+            title: 'Transportasi',
+            category: 'Transportasi',
+            amount: 120000,
+            income: false,
+            date: DateTime(2026, 8, 22),
+          ),
+          FinanceTransaction(
+            title: 'Belanja bulanan',
+            category: 'Belanja',
+            amount: 680000,
+            income: false,
+            date: DateTime(2026, 8, 20),
+          ),
+        ]);
+
+  void add(String title, double amount, bool income) {
+    state = [
+      FinanceTransaction(
+        title: title,
+        category: 'Lainnya',
+        amount: amount,
+        income: income,
+        date: DateTime.now(),
+      ),
+      ...state,
+    ];
+  }
+}
+
+class AppColors extends ThemeExtension<AppColors> {
+  final Color accent;
+  final Color onAccent;
+  final Color background;
+  final Color surface;
+  final Color surfaceAlt;
+  final Color border;
+  final Color textPrimary;
+  final Color textMuted;
+  final Color positive;
+
+  const AppColors({
+    required this.accent,
+    required this.onAccent,
+    required this.background,
+    required this.surface,
+    required this.surfaceAlt,
+    required this.border,
+    required this.textPrimary,
+    required this.textMuted,
+    required this.positive,
+  });
+
+  @override
+  AppColors copyWith({
+    Color? accent,
+    Color? onAccent,
+    Color? background,
+    Color? surface,
+    Color? surfaceAlt,
+    Color? border,
+    Color? textPrimary,
+    Color? textMuted,
+    Color? positive,
+  }) {
+    return AppColors(
+      accent: accent ?? this.accent,
+      onAccent: onAccent ?? this.onAccent,
+      background: background ?? this.background,
+      surface: surface ?? this.surface,
+      surfaceAlt: surfaceAlt ?? this.surfaceAlt,
+      border: border ?? this.border,
+      textPrimary: textPrimary ?? this.textPrimary,
+      textMuted: textMuted ?? this.textMuted,
+      positive: positive ?? this.positive,
+    );
+  }
+
+  @override
+  AppColors lerp(ThemeExtension<AppColors>? other, double t) {
+    if (other is! AppColors) return this;
+    return AppColors(
+      accent: Color.lerp(accent, other.accent, t)!,
+      onAccent: Color.lerp(onAccent, other.onAccent, t)!,
+      background: Color.lerp(background, other.background, t)!,
+      surface: Color.lerp(surface, other.surface, t)!,
+      surfaceAlt: Color.lerp(surfaceAlt, other.surfaceAlt, t)!,
+      border: Color.lerp(border, other.border, t)!,
+      textPrimary: Color.lerp(textPrimary, other.textPrimary, t)!,
+      textMuted: Color.lerp(textMuted, other.textMuted, t)!,
+      positive: Color.lerp(positive, other.positive, t)!,
+    );
+  }
+}
+
+extension AppColorsX on BuildContext {
+  AppColors get colors => Theme.of(this).extension<AppColors>()!;
+}
+
+AppColors _palette(Brightness brightness, Color accent) {
+  final onAccent = ThemeData.estimateBrightnessForColor(accent) == Brightness.dark
+      ? Colors.white
+      : const Color(0xFF241708);
+  if (brightness == Brightness.dark) {
+    return AppColors(
+      accent: accent,
+      onAccent: onAccent,
+      background: const Color(0xFF0F1115),
+      surface: const Color(0xFF181B21),
+      surfaceAlt: const Color(0xFF22262E),
+      border: Colors.transparent,
+      textPrimary: const Color(0xFFF1F3F5),
+      textMuted: const Color(0xFF8B929D),
+      positive: const Color(0xFF4ADE80),
+    );
+  }
+  return AppColors(
+    accent: accent,
+    onAccent: onAccent,
+    background: const Color(0xFFF4F6F8),
+    surface: Colors.white,
+    surfaceAlt: const Color(0xFFEEF0F4),
+    border: Colors.transparent,
+    textPrimary: const Color(0xFF1A1D21),
+    textMuted: const Color(0xFF6B7280),
+    positive: const Color(0xFF10B981),
+  );
+}
+
+ThemeData _buildTheme(Brightness brightness, Color accent) {
+  final palette = _palette(brightness, accent);
+  final base = brightness == Brightness.dark ? ThemeData.dark() : ThemeData.light();
+  return base.copyWith(
+    brightness: brightness,
+    useMaterial3: true,
+    scaffoldBackgroundColor: palette.background,
+    colorScheme: ColorScheme.fromSeed(seedColor: accent, brightness: brightness),
+    extensions: [palette],
+    textTheme: base.textTheme.apply(fontFamily: 'Satoshi'),
+    primaryTextTheme: base.primaryTextTheme.apply(fontFamily: 'Satoshi'),
+  );
+}
+
+class MyFinanceApp extends ConsumerWidget {
+  const MyFinanceApp({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final themeMode = ref.watch(themeModeProvider);
+    final accent = ref.watch(accentColorProvider);
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'My Finance',
+      themeMode: themeMode,
+      theme: _buildTheme(Brightness.light, accent),
+      darkTheme: _buildTheme(Brightness.dark, accent),
+      home: const HomeShell(),
+    );
+  }
+}
+
+class HomeShell extends ConsumerWidget {
+  const HomeShell({super.key});
+
+  static const pages = <Widget>[
+    DashboardPage(),
+    TransactionsPage(),
+    ReportsPage(),
+    ProfilePage(),
+  ];
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final tab = ref.watch(selectedTabProvider);
+    final colors = context.colors;
+    return Scaffold(
+      body: pages[tab],
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => showAddTransactionChoice(context, ref),
+        backgroundColor: colors.accent,
+        foregroundColor: colors.onAccent,
+        child: const Icon(Icons.add),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: tab,
+        onDestinationSelected: (index) =>
+            ref.read(selectedTabProvider.notifier).state = index,
+        backgroundColor: colors.surface,
+        indicatorColor: colors.accent.withOpacity(0.18),
+        destinations: const [
+          NavigationDestination(icon: Icon(SolarIconsOutline.home), selectedIcon: Icon(SolarIconsBold.home), label: 'Dashboard'),
+          NavigationDestination(icon: Icon(SolarIconsOutline.billList), selectedIcon: Icon(SolarIconsBold.billList), label: 'Transaksi'),
+          NavigationDestination(icon: Icon(SolarIconsOutline.chartSquare), selectedIcon: Icon(SolarIconsBold.chartSquare), label: 'Laporan'),
+          NavigationDestination(icon: Icon(SolarIconsOutline.user), selectedIcon: Icon(SolarIconsBold.user), label: 'Profil'),
+        ],
+      ),
+    );
+  }
+}
+
+class DashboardPage extends ConsumerWidget {
+  const DashboardPage({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final items = ref.watch(transactionsProvider);
+    final colors = context.colors;
+    final income = items.where((e) => e.income).fold<double>(0, (s, e) => s + e.amount);
+    final expense = items.where((e) => !e.income).fold<double>(0, (s, e) => s + e.amount);
+    return SafeArea(
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
+        children: [
+          Row(children: [
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('MINGGU, 23 AGUSTUS', style: TextStyle(color: colors.textMuted, fontSize: 11, fontWeight: FontWeight.w700, letterSpacing: 1.1)),
+              const SizedBox(height: 6),
+              Text('Selamat pagi, Andi', style: TextStyle(fontSize: 24, fontWeight: FontWeight.w600, color: colors.textPrimary)),
+            ])),
+            IconButton.filledTonal(onPressed: () {}, icon: const Icon(SolarIconsOutline.bell)),
+          ]),
+          const SizedBox(height: 22),
+          DashboardCards(income: income, expense: expense),
+          const SizedBox(height: 36),
+                    const SectionHeader(title: 'Ringkasan bulan ini', action: 'Detail'),
+                    SurfaceCard(child: Row(children: [
+                      Expanded(child: SummaryValue(label: 'Pemasukan', value: rupiah(income), color: colors.positive)),
+            const SizedBox(width: 18), Container(width: 1, height: 53, color: colors.textMuted.withOpacity(0.2)), const SizedBox(width: 18),
+            Expanded(child: SummaryValue(label: 'Pengeluaran', value: rupiah(expense), color: colors.textPrimary)),
+          ])),
+
+                    const SizedBox(height: 36),
+                    const SectionHeader(title: 'Transaksi terbaru', action: 'Lihat semua'),
+                    SurfaceCard(child: Column(children: items.take(4).map((e) => TransactionRow(item: e)).toList())),
+                    const SizedBox(height: 36),
+                    const SectionHeader(title: 'Target tabungan', action: 'Kelola'),
+                    SurfaceCard(color: colors.surfaceAlt, child: Row(children: [
+            CircleAvatar(backgroundColor: colors.positive.withOpacity(0.18), child: Icon(SolarIconsOutline.sun, color: colors.positive)),
+            const SizedBox(width: 12),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Text('Dana liburan', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: colors.textPrimary)),
+                Text('35%', style: TextStyle(color: colors.positive, fontWeight: FontWeight.w600)),
+              ]),
+              const SizedBox(height: 6),
+              Text('Rp 4.200.000 dari Rp 12.000.000', style: TextStyle(color: colors.textMuted, fontSize: 12)),
+              const SizedBox(height: 12),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: LinearProgressIndicator(value: .35, minHeight: 8, backgroundColor: colors.textMuted.withOpacity(0.2), color: colors.positive),
+              ),
+            ])),
+          ])),
+        ],
+      ),
+    );
+  }
+}
+
+class TransactionsPage extends ConsumerWidget {
+  const TransactionsPage({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final items = ref.watch(transactionsProvider);
+    final colors = context.colors;
+    return SafeArea(
+      child: ListView(padding: const EdgeInsets.all(20), children: [
+        Text('Transaksi', style: TextStyle(fontSize: 27, fontWeight: FontWeight.w700, color: colors.textPrimary)),
+        const SizedBox(height: 8),
+        Text('Semua aktivitas keuanganmu', style: TextStyle(color: colors.textMuted)),
+        const SizedBox(height: 32),
+        Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(Theme.of(context).brightness == Brightness.light ? 0.05 : 0.25),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
+              )
+            ],
+          ),
+          child: TextField(
+            decoration: InputDecoration(
+              hintText: 'Cari transaksi',
+              prefixIcon: const Icon(SolarIconsOutline.magnifier),
+              filled: true,
+              fillColor: colors.surface,
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+              enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+              focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+            ),
+          ),
+        ),
+        const SizedBox(height: 24),
+        Wrap(spacing: 8, children: ['Semua', 'Pemasukan', 'Pengeluaran'].map((e) => Chip(
+          label: Text(e),
+          backgroundColor: e == 'Semua' ? colors.accent : colors.surface,
+          labelStyle: TextStyle(color: e == 'Semua' ? colors.onAccent : colors.textPrimary, fontWeight: FontWeight.w600),
+          side: BorderSide.none,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        )).toList()),
+        const SizedBox(height: 32),
+        SurfaceCard(child: Column(children: items.map((e) => TransactionRow(item: e)).toList())),
+      ]),
+    );
+  }
+}
+
+class ReportsPage extends ConsumerWidget {
+  const ReportsPage({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final items = ref.watch(transactionsProvider);
+    final colors = context.colors;
+    final expense = items.where((e) => !e.income).fold<double>(0, (s, e) => s + e.amount);
+    return SafeArea(
+      child: ListView(padding: const EdgeInsets.all(20), children: [
+        Text('Laporan', style: TextStyle(fontSize: 27, fontWeight: FontWeight.w700, color: colors.textPrimary)),
+        const SizedBox(height: 8),
+        Text('Lihat pola keuanganmu', style: TextStyle(color: colors.textMuted)),
+        const SizedBox(height: 32),
+        SurfaceCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Pengeluaran bulan ini', style: TextStyle(color: colors.textMuted)),
+          const SizedBox(height: 7),
+          Text(rupiah(expense), style: TextStyle(fontSize: 24, fontWeight: FontWeight.w700, color: colors.textPrimary)),
+          const SizedBox(height: 20),
+          SizedBox(height: 145, width: double.infinity, child: CustomPaint(painter: BarChartPainter(primary: colors.accent, secondary: colors.positive))),
+        ])),
+                const SizedBox(height: 36),
+                const SectionHeader(title: 'Kategori terbesar', action: 'Bulan ini'),
+                SurfaceCard(child: Column(children: [
+                  ReportLine(label: 'Belanja', amount: 'Rp 680.000', percent: '57%', color: colors.accent),
+          ReportLine(label: 'Transportasi', amount: 'Rp 120.000', percent: '10%', color: colors.positive),
+          ReportLine(label: 'Makanan', amount: 'Rp 45.000', percent: '4%', color: const Color(0xFF9B8AFB)),
+        ])),
+      ]),
+    );
+  }
+}
+
+class ProfilePage extends ConsumerWidget {
+  const ProfilePage({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final colors = context.colors;
+    final themeMode = ref.watch(themeModeProvider);
+    final accent = ref.watch(accentColorProvider);
+    return SafeArea(
+      child: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          Text('Profil', style: TextStyle(fontSize: 27, fontWeight: FontWeight.w700, color: colors.textPrimary)),
+          const SizedBox(height: 32),
+          SurfaceCard(child: Row(children: [
+            CircleAvatar(radius: 28, backgroundColor: accent, child: Text('R', style: TextStyle(color: colors.onAccent, fontSize: 24, fontWeight: FontWeight.w700))),
+            const SizedBox(width: 16),
+            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text('Raka', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: colors.textPrimary)),
+              const SizedBox(height: 4),
+              Text('Kelola profil dan preferensi', style: TextStyle(color: colors.textMuted, fontSize: 13)),
+            ]),
+          ])),
+                    const SizedBox(height: 36),
+                    const SectionHeader(title: 'Tampilan'),
+                    SurfaceCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('Tema', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: colors.textPrimary)),
+            const SizedBox(height: 10),
+            SegmentedButton<ThemeMode>(
+              segments: const [
+                ButtonSegment(value: ThemeMode.light, icon: Icon(SolarIconsOutline.sun), label: Text('Terang')),
+                ButtonSegment(value: ThemeMode.dark, icon: Icon(SolarIconsOutline.moon), label: Text('Gelap')),
+                ButtonSegment(value: ThemeMode.system, icon: Icon(SolarIconsOutline.smartphone), label: Text('Sistem')),
+              ],
+              selected: {themeMode},
+              onSelectionChanged: (value) => ref.read(themeModeProvider.notifier).updateTheme(value.first),
+            ),
+            const SizedBox(height: 22),
+            Text('Warna aksen', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: colors.textPrimary)),
+            const SizedBox(height: 12),
+            Wrap(spacing: 12, runSpacing: 12, children: accentPresets.map((color) {
+              final selected = color.value == accent.value;
+              return GestureDetector(
+                onTap: () => ref.read(accentColorProvider.notifier).updateColor(color),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 180),
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: color,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: selected ? colors.textPrimary : Colors.transparent, width: 2.5),
+                  ),
+                  child: selected
+                      ? Icon(Icons.check, size: 18, color: ThemeData.estimateBrightnessForColor(color) == Brightness.dark ? Colors.white : Colors.black87)
+                      : null,
+                ),
+              );
+            }).toList()),
+          ])),
+          const SizedBox(height: 36),
+          SurfaceCard(child: Column(children: const [
+            SettingRow(icon: SolarIconsOutline.wallet, title: 'Saldo awal', value: 'Rp 2.500.000'),
+            SettingRow(icon: SolarIconsOutline.widget, title: 'Kelola kategori'),
+            SettingRow(icon: SolarIconsOutline.cardTransfer, title: 'Mata uang', value: 'Rupiah (IDR)'),
+          ])),
+        ],
+      ),
+    );
+  }
+}
+
+class _CardData {
+  final String title;
+  final double amount;
+  final bool isIncome;
+  _CardData(this.title, this.amount, this.isIncome);
+}
+
+class DashboardCards extends StatefulWidget {
+  final double income;
+  final double expense;
+  const DashboardCards({super.key, required this.income, required this.expense});
+
+  @override
+  State<DashboardCards> createState() => _DashboardCardsState();
+}
+
+class _DashboardCardsState extends State<DashboardCards> with SingleTickerProviderStateMixin {
+  late PageController _pageController;
+  late AnimationController _shimmerController;
+  int _activeIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _shimmerController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 4),
+    )..repeat();
+
+    _pageController = PageController(viewportFraction: 1.0);
+    _pageController.addListener(_handlePageChange);
+  }
+
+  void _handlePageChange() {
+    if (!mounted || !_pageController.position.haveDimensions) return;
+    final rounded = _pageController.page!.round();
+    if (rounded != _activeIndex) {
+      setState(() => _activeIndex = rounded);
+    }
+  }
+
+  @override
+  void dispose() {
+    _pageController.removeListener(_handlePageChange);
+    _shimmerController.dispose();
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final cards = [
+      _CardData('TOTAL PEMASUKAN', widget.income, true),
+      _CardData('TOTAL PENGELUARAN', widget.expense, false),
+    ];
+
+    return Column(
+      children: [
+        SizedBox(
+          height: 185,
+          child: PageView.builder(
+            clipBehavior: Clip.none,
+            controller: _pageController,
+            physics: const BouncingScrollPhysics(),
+            itemCount: cards.length,
+            itemBuilder: (context, index) {
+              final data = cards[index];
+              final isActive = index == _activeIndex;
+              final cardChild = RepaintBoundary(
+                child: _buildCard(context, data, colors, isActive),
+              );
+
+              return AnimatedBuilder(
+                animation: _pageController,
+                child: cardChild,
+                builder: (context, child) {
+                  double scale = 1.0;
+                  double opacity = 1.0;
+                  if (_pageController.position.haveDimensions) {
+                    final diff = _pageController.page! - index;
+                    scale = (1 - (diff.abs() * 0.1)).clamp(0.9, 1.0);
+                    opacity = (1 - (diff.abs() * 0.4)).clamp(0.0, 1.0);
+                  }
+                  return Transform.scale(
+                    scale: scale,
+                    child: Opacity(opacity: opacity, child: child),
+                  );
+                },
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 16),
+        AnimatedBuilder(
+          animation: _pageController,
+          builder: (context, _) {
+            final page = _pageController.position.haveDimensions
+                ? (_pageController.page ?? _activeIndex.toDouble())
+                : _activeIndex.toDouble();
+            return Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(cards.length, (index) {
+                final selected = page.round() == index;
+                return AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  width: selected ? 24 : 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: selected ? colors.accent : colors.textMuted.withOpacity(0.3),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                );
+              }),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCard(BuildContext context, _CardData data, AppColors colors, bool isActive) {
+    final isExpense = !data.isIncome;
+    final trendColor = isExpense ? const Color(0xFFEB5757) : const Color(0xFF5CC88F);
+    final trendIcon = isExpense ? SolarIconsOutline.graphDown : SolarIconsOutline.graphUp;
+    final trendText = isExpense ? '-3.2%' : '+8.4%';
+    
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    final bgColors = isExpense 
+        ? (isLight 
+            ? const [Color(0xFF3B1010), Color(0xFF541717), Color(0xFF240909)]
+            : const [Color(0xFF240C0C), Color(0xFF3D1515), Color(0xFF170505)])
+        : (isLight 
+            ? const [Color(0xFF0E2815), Color(0xFF143B20), Color(0xFF08170D)]
+            : const [Color(0xFF0A120D), Color(0xFF152016), Color(0xFF080A08)]);
+            
+    final patternColor = isExpense
+        ? const Color.fromRGBO(235, 87, 87, 0.04)
+        : const Color.fromRGBO(92, 200, 143, 0.04);
+    
+    return Container(
+      clipBehavior: Clip.hardEdge,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: bgColors,
+          stops: const [0.0, 0.6, 1.0],
+        ),
+        borderRadius: BorderRadius.circular(26),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(Theme.of(context).brightness == Brightness.light ? 0.1 : 0.25),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          )
+        ],
+      ),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: CustomPaint(
+              painter: CardPatternPainter(patternColor: patternColor),
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(22),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                Text(data.title, style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w500, fontSize: 12, letterSpacing: 1.2)),
+                Opacity(
+                  opacity: 0.9,
+                  child: Container(
+                    width: 32,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(5),
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Color(0xFFE8C97A), Color(0xFFC9A85C), Color(0xFFA07840)],
+                      ),
+                      boxShadow: const [
+                        BoxShadow(color: Colors.black54, blurRadius: 6, offset: Offset(0, 2)),
+                      ],
+                    ),
+                    child: Center(
+                      child: Container(
+                        width: 32 * 0.7,
+                        height: 24 * 0.7,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.black38, width: 1),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                        child: Center(
+                          child: Container(width: 1, color: Colors.black26),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ]),
+              const SizedBox(height: 12),
+              _buildAmount(isExpense, isActive, data.amount),
+              const Spacer(),
+              Row(children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: trendColor.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(trendIcon, size: 14, color: trendColor),
+                    const SizedBox(width: 6),
+                    Text(trendText, style: TextStyle(color: trendColor, fontSize: 12, fontWeight: FontWeight.w700)),
+                  ]),
+                ),
+                const SizedBox(width: 10),
+                const Text(
+                  'dibanding bulan lalu',
+                  style: TextStyle(color: Colors.white60, fontSize: 13, fontWeight: FontWeight.w500),
+                ),
+              ]),
+            ]),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAmount(bool isExpense, bool isActive, double amount) {
+    final baseStyle = TextStyle(
+      fontFamily: 'Playfair Display',
+      fontSize: 36,
+      fontWeight: FontWeight.w400,
+      letterSpacing: -0.42,
+      height: 1.4,
+      fontFeatures: const [
+        FontFeature.enable('lnum'),
+        FontFeature.enable('tnum'),
+      ],
+    );
+    final themeColor = isExpense ? const Color(0xFFEB5757) : const Color(0xFF5CC88F);
+    final text = rupiah(amount);
+
+    final glyphs = isActive
+        ? AnimatedBuilder(
+            animation: _shimmerController,
+            builder: (context, child) {
+              return ShaderMask(
+                shaderCallback: (bounds) => LinearGradient(
+                  colors: isExpense
+                      ? const [Color(0xFFEB5757), Color(0xFFFAD4D4), Color(0xFFEB5757)]
+                      : const [Color(0xFF5CC88F), Color(0xFFD4FADF), Color(0xFF5CC88F)],
+                  stops: const [0.35, 0.5, 0.65],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  transform: _SlidingGradientTransform(
+                    slidePercent: -1.5 + (_shimmerController.value * 3.0),
+                  ),
+                ).createShader(bounds),
+                child: child,
+              );
+            },
+            child: Text(text, style: baseStyle.copyWith(color: Colors.white)),
+          )
+        : Text(text, style: baseStyle.copyWith(color: themeColor));
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Positioned(
+          top: 3,
+          left: 0,
+          child: ImageFiltered(
+            imageFilter: ui.ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+            child: Text(
+              text,
+              style: baseStyle.copyWith(color: themeColor.withOpacity(0.35)),
+            ),
+          ),
+        ),
+        glyphs,
+      ],
+    );
+  }
+}
+
+class ActionTile extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final Color background;
+  final Color iconColor;
+  final VoidCallback onTap;
+  const ActionTile({super.key, required this.label, required this.icon, required this.background, required this.iconColor, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        height: 70,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: background,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isLight ? 0.05 : 0.25),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            )
+          ],
+        ),
+        child: Row(children: [
+          CircleAvatar(radius: 17, backgroundColor: iconColor.withOpacity(0.16), child: Icon(icon, size: 19, color: iconColor)),
+          const SizedBox(width: 12),
+          Flexible(child: Text(label, style: TextStyle(fontWeight: FontWeight.w600, color: colors.textPrimary))),
+        ]),
+      ),
+    );
+  }
+}
+
+class SectionHeader extends StatelessWidget {
+  final String title;
+  final String? action;
+  const SectionHeader({super.key, required this.title, this.action});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 20),
+      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+        Text(title, style: TextStyle(fontSize: 22, fontWeight: FontWeight.w400, color: colors.textPrimary, fontFamily: 'DM Serif Display')),
+        if (action != null) Text(action!, style: TextStyle(color: colors.accent, fontSize: 13, fontWeight: FontWeight.w600)),
+      ]),
+    );
+  }
+}
+
+class SurfaceCard extends StatelessWidget {
+  final Widget child;
+  final Color? color;
+  const SurfaceCard({super.key, required this.child, this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final isLight = Theme.of(context).brightness == Brightness.light;
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: color ?? colors.surface,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isLight ? 0.05 : 0.25),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          )
+        ],
+      ),
+      child: child,
+    );
+  }
+}
+
+class SummaryValue extends StatelessWidget {
+  final String label, value;
+  final Color color;
+  const SummaryValue({super.key, required this.label, required this.value, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(label, style: TextStyle(color: colors.textMuted, fontSize: 13)),
+      const SizedBox(height: 8),
+      Text(value, style: TextStyle(color: color, fontSize: 16, fontWeight: FontWeight.w600)),
+    ]);
+  }
+}
+
+class TransactionRow extends StatelessWidget {
+  final FinanceTransaction item;
+  const TransactionRow({super.key, required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final tint = item.income ? colors.positive : colors.accent;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(children: [
+        CircleAvatar(
+          radius: 21,
+          backgroundColor: tint.withOpacity(0.16),
+          child: Icon(item.income ? SolarIconsOutline.arrowDown : SolarIconsOutline.bag, size: 18, color: tint),
+        ),
+        const SizedBox(width: 12),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(item.title, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15, color: colors.textPrimary)),
+          const SizedBox(height: 6),
+          Text('${item.category} · ${DateFormat('dd MMM yyyy').format(item.date)}', style: TextStyle(color: colors.textMuted, fontSize: 12)),
+        ])),
+        Text('${item.income ? '+' : '-'}${rupiah(item.amount)}', style: TextStyle(color: item.income ? colors.positive : colors.textPrimary, fontSize: 14, fontWeight: FontWeight.w600)),
+      ]),
+    );
+  }
+}
+
+class ReportLine extends StatelessWidget {
+  final String label, amount, percent;
+  final Color color;
+  const ReportLine({super.key, required this.label, required this.amount, required this.percent, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      child: Row(children: [
+        Container(width: 12, height: 12, decoration: BoxDecoration(color: color, shape: BoxShape.circle)),
+        const SizedBox(width: 12),
+        Expanded(child: Text(label, style: TextStyle(color: colors.textPrimary, fontSize: 15, fontWeight: FontWeight.w500))),
+        Text(amount, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: colors.textPrimary)),
+        const SizedBox(width: 16),
+        Text(percent, style: TextStyle(color: colors.textMuted, fontSize: 14)),
+      ]),
+    );
+  }
+}
+
+class SettingRow extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String? value;
+  const SettingRow({super.key, required this.icon, required this.title, this.value});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: ListTile(
+        contentPadding: EdgeInsets.zero,
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(color: colors.accent.withOpacity(0.1), shape: BoxShape.circle),
+          child: Icon(icon, color: colors.accent, size: 20),
+        ),
+        title: Text(title, style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500, color: colors.textPrimary)),
+        trailing: value != null
+            ? Text(value!, style: TextStyle(color: colors.textMuted, fontSize: 13))
+            : Icon(SolarIconsOutline.altArrowRight, color: colors.textMuted, size: 18),
+      ),
+    );
+  }
+}
+
+class _SlidingGradientTransform extends GradientTransform {
+  final double slidePercent;
+  const _SlidingGradientTransform({required this.slidePercent});
+
+  @override
+  Matrix4? transform(Rect bounds, {TextDirection? textDirection}) {
+    return Matrix4.translationValues(bounds.width * slidePercent, 0.0, 0.0);
+  }
+}
+
+class CardPatternPainter extends CustomPainter {
+  final Color patternColor;
+  const CardPatternPainter({required this.patternColor});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint1 = Paint()
+      ..color = patternColor
+      ..style = PaintingStyle.fill;
+      
+    final path1 = Path()
+      ..moveTo(0, size.height)
+      ..lineTo(0, size.height * 0.4)
+      ..cubicTo(
+        size.width * 0.375, size.height * 0.8,
+        size.width * 0.625, -size.height * 0.1,
+        size.width, size.height * 0.5,
+      )
+      ..lineTo(size.width, size.height)
+      ..close();
+    canvas.drawPath(path1, paint1);
+
+    final paint2 = Paint()
+      ..color = const Color.fromRGBO(255, 255, 255, 0.02)
+      ..style = PaintingStyle.fill;
+      
+    final path2 = Path()
+      ..moveTo(0, size.height)
+      ..lineTo(0, size.height * 0.65)
+      ..cubicTo(
+        size.width * 0.3, size.height * 0.9,
+        size.width * 0.75, size.height * 0.25,
+        size.width, size.height * 0.7,
+      )
+      ..lineTo(size.width, size.height)
+      ..close();
+    canvas.drawPath(path2, paint2);
+  }
+
+  @override
+  bool shouldRepaint(covariant CardPatternPainter oldDelegate) => oldDelegate.patternColor != patternColor;
+}
+
+class SparklinePainter extends CustomPainter {
+  final Color color;
+  const SparklinePainter({required this.color});
+
+  @override
+  void paint(Canvas c, Size s) {
+    final p = Paint()
+      ..color = color
+      ..strokeWidth = 3
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+    final path = Path()
+      ..moveTo(0, s.height * .78)
+      ..lineTo(s.width * .58, s.height * .46)
+      ..lineTo(s.width * .72, s.height * .53)
+      ..lineTo(s.width, s.height * .18);
+    c.drawPath(path, p);
+  }
+
+  @override
+  bool shouldRepaint(covariant SparklinePainter oldDelegate) => oldDelegate.color != color;
+}
+
+class BarChartPainter extends CustomPainter {
+  final Color primary;
+  final Color secondary;
+  const BarChartPainter({required this.primary, required this.secondary});
+
+  @override
+  void paint(Canvas c, Size s) {
+    final p = Paint()..strokeWidth = 18..strokeCap = StrokeCap.round;
+    final values = [0.46, 0.74, 0.34, 0.9, 0.58, 0.7, 0.43];
+    for (var i = 0; i < values.length; i++) {
+      p.color = i.isEven ? primary : secondary;
+      final x = 18.0 + i * (s.width - 36) / 6;
+      c.drawLine(Offset(x, s.height), Offset(x, s.height * (1 - values[i])), p);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant BarChartPainter oldDelegate) =>
+      oldDelegate.primary != primary || oldDelegate.secondary != secondary;
+}
+
+String rupiah(double value) => 'Rp ${NumberFormat('#,###', 'id_ID').format(value).replaceAll(',', '.')}';
+
+Future<void> showAddTransactionChoice(BuildContext context, WidgetRef ref) async {
+  final colors = context.colors;
+  await showModalBottomSheet(
+    context: context,
+    backgroundColor: colors.surface,
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+    builder: (context) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Text('Tambah transaksi', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: colors.textPrimary)),
+          const SizedBox(height: 18),
+          ListTile(
+            leading: CircleAvatar(backgroundColor: colors.positive.withOpacity(0.16), child: Icon(Icons.arrow_downward, color: colors.positive)),
+            title: Text('Pemasukan', style: TextStyle(color: colors.textPrimary, fontWeight: FontWeight.w700)),
+            onTap: () {
+              Navigator.pop(context);
+              showTransactionDialog(context, ref, true);
+            },
+          ),
+          ListTile(
+            leading: CircleAvatar(backgroundColor: colors.accent.withOpacity(0.16), child: Icon(Icons.arrow_upward, color: colors.accent)),
+            title: Text('Pengeluaran', style: TextStyle(color: colors.textPrimary, fontWeight: FontWeight.w700)),
+            onTap: () {
+              Navigator.pop(context);
+              showTransactionDialog(context, ref, false);
+            },
+          ),
+        ]),
+      ),
+    ),
+  );
+}
+
+Future<void> showTransactionDialog(BuildContext context, WidgetRef ref, bool income) async {
+  final title = TextEditingController();
+  final amount = TextEditingController();
+  final colors = context.colors;
+  await showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: colors.surface,
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
+    builder: (context) => Padding(
+      padding: EdgeInsets.fromLTRB(20, 20, 20, MediaQuery.of(context).viewInsets.bottom + 28),
+      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text('Tambah ${income ? 'pemasukan' : 'pengeluaran'}', style: TextStyle(fontSize: 21, fontWeight: FontWeight.w800, color: colors.textPrimary)),
+        const SizedBox(height: 20),
+        TextField(controller: amount, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Nominal', prefixText: 'Rp ')),
+        const SizedBox(height: 12),
+        TextField(controller: title, decoration: const InputDecoration(labelText: 'Keterangan')),
+        const SizedBox(height: 20),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton(
+            onPressed: () {
+              final value = double.tryParse(amount.text.replaceAll('.', '')) ?? 0;
+              if (title.text.isNotEmpty && value > 0) {
+                ref.read(transactionsProvider.notifier).add(title.text, value, income);
+                Navigator.pop(context);
+              }
+            },
+            child: const Text('Simpan transaksi'),
+          ),
+        ),
+      ]),
+    ),
+  );
+}
+
+
+### FILE: macos/Runner.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDEDidComputeMac32BitWarning</key>
+	<true/>
+</dict>
+</plist>
+
+
+### FILE: macos/Runner.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDEDidComputeMac32BitWarning</key>
+	<true/>
+</dict>
+</plist>
+
+
+### FILE: macos/Runner/Assets.xcassets/AppIcon.appiconset/Contents.json
+{
+  "images" : [
+    {
+      "size" : "16x16",
+      "idiom" : "mac",
+      "filename" : "app_icon_16.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "16x16",
+      "idiom" : "mac",
+      "filename" : "app_icon_32.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "32x32",
+      "idiom" : "mac",
+      "filename" : "app_icon_32.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "32x32",
+      "idiom" : "mac",
+      "filename" : "app_icon_64.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "128x128",
+      "idiom" : "mac",
+      "filename" : "app_icon_128.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "128x128",
+      "idiom" : "mac",
+      "filename" : "app_icon_256.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "256x256",
+      "idiom" : "mac",
+      "filename" : "app_icon_256.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "256x256",
+      "idiom" : "mac",
+      "filename" : "app_icon_512.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "512x512",
+      "idiom" : "mac",
+      "filename" : "app_icon_512.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "512x512",
+      "idiom" : "mac",
+      "filename" : "app_icon_1024.png",
+      "scale" : "2x"
+    }
+  ],
+  "info" : {
+    "version" : 1,
+    "author" : "xcode"
+  }
+}
+
+
+### FILE: macos/Runner/Info.plist
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIconFile</key>
+	<string></string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(FLUTTER_BUILD_NAME)</string>
+	<key>CFBundleVersion</key>
+	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>$(PRODUCT_COPYRIGHT)</string>
+	<key>NSMainNibFile</key>
+	<string>MainMenu</string>
+	<key>NSPrincipalClass</key>
+	<string>NSApplication</string>
+</dict>
+</plist>
+
+
+### FILE: pubspec.yaml
+name: my_finance
+description: Aplikasi catatan keuangan personal offline-first.
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  solar_icons: ^0.1.0
+  flutter_riverpod: ^2.6.1
+  sqflite: ^2.4.1
+  path: ^1.9.0
+  fl_chart: ^0.69.2
+  intl: ^0.19.0
+  shared_preferences: ^2.3.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  fonts:
+    - family: Satoshi
+      fonts:
+        - asset: assets/fonts/satoshi_light.otf
+          weight: 300
+        - asset: assets/fonts/satoshi_light_italic.otf
+          weight: 300
+          style: italic
+        - asset: assets/fonts/satoshi_regular.otf
+        - asset: assets/fonts/satoshi_italic.otf
+          style: italic
+        - asset: assets/fonts/satoshi_medium.otf
+          weight: 500
+        - asset: assets/fonts/satoshi_medium_italic.otf
+          weight: 500
+          style: italic
+        - asset: assets/fonts/satoshi_bold.otf
+          weight: 700
+        - asset: assets/fonts/satoshi_bold_italic.otf
+          weight: 700
+          style: italic
+        - asset: assets/fonts/satoshi_black.otf
+          weight: 900
+        - asset: assets/fonts/satoshi_black_italic.otf
+          weight: 900
+          style: italic
+    - family: DM Serif Display
+      fonts:
+        - asset: assets/fonts/dm_serif_display_regular.ttf
+    - family: Playfair Display
+      fonts:
+        - asset: assets/fonts/playfairdisplay_regular.ttf
+
+
+### FILE: test/widget_test.dart
+import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:my_finance/main.dart';
+
+void main() {
+  testWidgets('My Finance opens dashboard', (tester) async {
+    await tester.pumpWidget(const ProviderScope(child: MyFinanceApp()));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Selamat pagi, Raka'), findsOneWidget);
+    expect(find.text('TOTAL PEMASUKAN'), findsOneWidget);
+  });
+}
+
+### FILE: web/manifest.json
+{
+    "name": "my_finance",
+    "short_name": "my_finance",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#0175C2",
+    "theme_color": "#0175C2",
+    "description": "A new Flutter project.",
+    "orientation": "portrait-primary",
+    "prefer_related_applications": false,
+    "icons": [
+        {
+            "src": "icons/Icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-maskable-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "icons/Icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ]
+}
