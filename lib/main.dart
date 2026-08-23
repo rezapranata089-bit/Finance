@@ -726,8 +726,10 @@ class _DashboardCardsState extends State<DashboardCards> with SingleTickerProvid
                   style: TextStyle(
                     fontFamily: 'Playfair Display',
                     color: Colors.white,
-                    fontSize: 34,
-                    fontWeight: FontWeight.w700,
+                    fontSize: 42,
+                    fontWeight: FontWeight.w400,
+                    letterSpacing: -0.42,
+                    height: 1,
                     shadows: [
                       Shadow(
                         color: isExpense ? const Color.fromRGBO(235, 87, 87, 0.2) : const Color.fromRGBO(92, 200, 143, 0.2),
