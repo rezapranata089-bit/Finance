@@ -740,7 +740,7 @@ class _CardBase extends StatelessWidget {
                           style: const TextStyle(
                             fontFamily: 'Playfair Display',
                             color: Colors.white,
-                            fontSize: 38,
+                            fontSize: 30,
                             fontWeight: FontWeight.w400,
                             letterSpacing: -0.42,
                             height: 1.4,
