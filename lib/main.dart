@@ -338,12 +338,8 @@ class HomeShell extends ConsumerWidget {
       backgroundColor: colors.background,
       body: Stack(
         children: [
-          // Latar belakang gradasi cantik di bagian bawah
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
-            height: MediaQuery.of(context).size.height * 0.45,
+          // Latar belakang gradasi membaur ke seluruh layar, menipis ke atas
+          Positioned.fill(
             child: IgnorePointer(
               child: Container(
                 decoration: BoxDecoration(
@@ -352,8 +348,11 @@ class HomeShell extends ConsumerWidget {
                     end: Alignment.bottomCenter,
                     colors: [
                       colors.accent.withOpacity(0.0),
-                      colors.accent.withOpacity(0.18),
+                      colors.accent.withOpacity(0.04),
+                      colors.accent.withOpacity(0.10),
+                      colors.accent.withOpacity(0.22),
                     ],
+                    stops: const [0.0, 0.35, 0.65, 1.0],
                   ),
                 ),
               ),
