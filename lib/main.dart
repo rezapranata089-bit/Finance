@@ -191,8 +191,8 @@ ThemeData _buildTheme(Brightness brightness, Color accent) {
     scaffoldBackgroundColor: palette.background,
     colorScheme: ColorScheme.fromSeed(seedColor: accent, brightness: brightness),
     extensions: [palette],
-    textTheme: base.textTheme.apply(fontFamily: 'DM Serif Display'),
-    primaryTextTheme: base.primaryTextTheme.apply(fontFamily: 'DM Serif Display'),
+    textTheme: base.textTheme.apply(fontFamily: 'Satoshi'),
+    primaryTextTheme: base.primaryTextTheme.apply(fontFamily: 'Satoshi'),
   );
 }
 
@@ -309,20 +309,20 @@ class DashboardPage extends ConsumerWidget {
             const SizedBox(width: 12),
             Expanded(child: ActionTile(label: 'Pengeluaran', icon: Icons.arrow_upward, background: colors.surface, iconColor: colors.accent, onTap: () => showTransactionDialog(context, ref, false))),
           ]),
-          const SizedBox(height: 28),
-
-          SurfaceCard(child: Row(children: [
-            Expanded(child: SummaryValue(label: 'Pemasukan', value: rupiah(income), color: colors.positive)),
+                    const SizedBox(height: 28),
+                    const SectionHeader(title: 'Ringkasan bulan ini', action: 'Detail'),
+                    SurfaceCard(child: Row(children: [
+                      Expanded(child: SummaryValue(label: 'Pemasukan', value: rupiah(income), color: colors.positive)),
             const SizedBox(width: 18), Container(width: 1, height: 53, color: colors.border), const SizedBox(width: 18),
             Expanded(child: SummaryValue(label: 'Pengeluaran', value: rupiah(expense), color: colors.textPrimary)),
           ])),
 
-          const SizedBox(height: 26),
-
-          SurfaceCard(child: Column(children: items.take(4).map((e) => TransactionRow(item: e)).toList())),
-          const SizedBox(height: 26),
-
-          SurfaceCard(color: colors.surfaceAlt, child: Row(children: [
+                    const SizedBox(height: 26),
+                    const SectionHeader(title: 'Transaksi terbaru', action: 'Lihat semua'),
+                    SurfaceCard(child: Column(children: items.take(4).map((e) => TransactionRow(item: e)).toList())),
+                    const SizedBox(height: 26),
+                    const SectionHeader(title: 'Target tabungan', action: 'Kelola'),
+                    SurfaceCard(color: colors.surfaceAlt, child: Row(children: [
             CircleAvatar(backgroundColor: colors.positive.withOpacity(0.18), child: Icon(Icons.wb_sunny_outlined, color: colors.positive)),
             const SizedBox(width: 12),
             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -402,10 +402,10 @@ class ReportsPage extends ConsumerWidget {
           const SizedBox(height: 20),
           SizedBox(height: 145, width: double.infinity, child: CustomPaint(painter: BarChartPainter(primary: colors.accent, secondary: colors.positive))),
         ])),
-        const SizedBox(height: 20),
-
-        SurfaceCard(child: Column(children: [
-          ReportLine(label: 'Belanja', amount: 'Rp 680.000', percent: '57%', color: colors.accent),
+                const SizedBox(height: 20),
+                const SectionHeader(title: 'Kategori terbesar', action: 'Bulan ini'),
+                SurfaceCard(child: Column(children: [
+                  ReportLine(label: 'Belanja', amount: 'Rp 680.000', percent: '57%', color: colors.accent),
           ReportLine(label: 'Transportasi', amount: 'Rp 120.000', percent: '10%', color: colors.positive),
           ReportLine(label: 'Makanan', amount: 'Rp 45.000', percent: '4%', color: const Color(0xFF9B8AFB)),
         ])),
@@ -437,10 +437,10 @@ class ProfilePage extends ConsumerWidget {
               Text('Kelola profil dan preferensi', style: TextStyle(color: colors.textMuted, fontSize: 12)),
             ]),
           ])),
-          const SizedBox(height: 20),
-
-          SurfaceCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Tema', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: colors.textPrimary)),
+                    const SizedBox(height: 20),
+                    const SectionHeader(title: 'Tampilan'),
+                    SurfaceCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text('Tema', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: colors.textPrimary)),
             const SizedBox(height: 10),
             SegmentedButton<ThemeMode>(
               segments: const [
@@ -525,7 +525,7 @@ class SectionHeader extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        Text(title, style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: colors.textPrimary)),
+        Text(title, style: TextStyle(fontSize: 17, fontWeight: FontWeight.w700, color: colors.textPrimary, fontFamily: 'DM Serif Display')),
         if (action != null) Text(action!, style: TextStyle(color: colors.accent, fontSize: 12, fontWeight: FontWeight.w700)),
       ]),
     );
