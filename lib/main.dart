@@ -486,13 +486,19 @@ class DashboardCards extends StatefulWidget {
   State<DashboardCards> createState() => _DashboardCardsState();
 }
 
-class _DashboardCardsState extends State<DashboardCards> {
+class _DashboardCardsState extends State<DashboardCards> with SingleTickerProviderStateMixin {
   late PageController _pageController;
+  late AnimationController _shimmerController;
   double _currentPage = 0;
 
   @override
   void initState() {
     super.initState();
+    _shimmerController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 4),
+    )..repeat();
+
     _pageController = PageController(viewportFraction: 1.0);
     _pageController.addListener(() {
       if (mounted && _pageController.position.haveDimensions) {
@@ -505,6 +511,7 @@ class _DashboardCardsState extends State<DashboardCards> {
 
   @override
   void dispose() {
+    _shimmerController.dispose();
     _pageController.dispose();
     super.dispose();
   }
@@ -645,15 +652,24 @@ class _DashboardCardsState extends State<DashboardCards> {
                 ),
               ]),
               const SizedBox(height: 12),
-              ShaderMask(
-                shaderCallback: (bounds) => LinearGradient(
-                  colors: isExpense 
-                      ? const [Color(0xFFEB5757), Color(0xFFFAD4D4), Color(0xFFEB5757)]
-                      : const [Color(0xFF5CC88F), Color(0xFFD4FADF), Color(0xFF5CC88F)],
-                  stops: const [0.4, 0.5, 0.6],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ).createShader(bounds),
+              AnimatedBuilder(
+                animation: _shimmerController,
+                builder: (context, child) {
+                  return ShaderMask(
+                    shaderCallback: (bounds) => LinearGradient(
+                      colors: isExpense 
+                          ? const [Color(0xFFEB5757), Color(0xFFFAD4D4), Color(0xFFEB5757)]
+                          : const [Color(0xFF5CC88F), Color(0xFFD4FADF), Color(0xFF5CC88F)],
+                      stops: const [0.35, 0.5, 0.65],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      transform: _SlidingGradientTransform(
+                        slidePercent: -1.5 + (_shimmerController.value * 3.0),
+                      ),
+                    ).createShader(bounds),
+                    child: child,
+                  );
+                },
                 child: Text(
                   rupiah(data.amount),
                   style: TextStyle(
@@ -872,6 +888,16 @@ class SettingRow extends StatelessWidget {
             : Icon(SolarIconsOutline.altArrowRight, color: colors.textMuted, size: 18),
       ),
     );
+  }
+}
+
+class _SlidingGradientTransform extends GradientTransform {
+  final double slidePercent;
+  const _SlidingGradientTransform({required this.slidePercent});
+
+  @override
+  Matrix4? transform(Rect bounds, {TextDirection? textDirection}) {
+    return Matrix4.translationValues(bounds.width * slidePercent, 0.0, 0.0);
   }
 }
 
