@@ -522,6 +522,7 @@ class _DashboardCardsState extends State<DashboardCards> {
         SizedBox(
           height: 185,
           child: PageView.builder(
+            clipBehavior: Clip.none,
             controller: _pageController,
             physics: const BouncingScrollPhysics(),
             itemCount: cards.length,
@@ -611,7 +612,37 @@ class _DashboardCardsState extends State<DashboardCards> {
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
                 Text(data.title, style: const TextStyle(color: Colors.white70, fontWeight: FontWeight.w500, fontSize: 12, letterSpacing: 1.2)),
-                Icon(isExpense ? SolarIconsOutline.wallet : SolarIconsOutline.walletMoney, color: Colors.white70, size: 20),
+                Opacity(
+                  opacity: 0.9,
+                  child: Container(
+                    width: 32,
+                    height: 24,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(5),
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [Color(0xFFE8C97A), Color(0xFFC9A85C), Color(0xFFA07840)],
+                      ),
+                      boxShadow: const [
+                        BoxShadow(color: Colors.black54, blurRadius: 6, offset: Offset(0, 2)),
+                      ],
+                    ),
+                    child: Center(
+                      child: Container(
+                        width: 32 * 0.7,
+                        height: 24 * 0.7,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.black38, width: 1),
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                        child: Center(
+                          child: Container(width: 1, color: Colors.black26),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               ]),
               const SizedBox(height: 12),
               ShaderMask(
