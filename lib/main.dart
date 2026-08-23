@@ -191,7 +191,7 @@ ThemeData _buildTheme(Brightness brightness, Color accent) {
     scaffoldBackgroundColor: palette.background,
     colorScheme: ColorScheme.fromSeed(seedColor: accent, brightness: brightness),
     extensions: [palette],
-  );
+  ).apply(fontFamily: 'Satoshi');
 }
 
 class MyFinanceApp extends ConsumerWidget {
@@ -319,7 +319,7 @@ class DashboardPage extends ConsumerWidget {
           SurfaceCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(rupiah(balance), style: TextStyle(fontSize: 22, fontWeight: FontWeight.w800, color: colors.textPrimary)),
             const SizedBox(height: 12),
-            SizedBox(height: 62, child: CustomPaint(painter: SparklinePainter(color: colors.accent))),
+            SizedBox(height: 62, width: double.infinity, child: CustomPaint(painter: SparklinePainter(color: colors.accent))),
             Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
               Text('01 Agu', style: TextStyle(color: colors.textMuted, fontSize: 10)),
               Text('10 Agu', style: TextStyle(color: colors.textMuted, fontSize: 10)),
@@ -410,7 +410,7 @@ class ReportsPage extends ConsumerWidget {
           const SizedBox(height: 7),
           Text(rupiah(expense), style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: colors.textPrimary)),
           const SizedBox(height: 20),
-          SizedBox(height: 145, child: CustomPaint(painter: BarChartPainter(primary: colors.accent, secondary: colors.positive))),
+          SizedBox(height: 145, width: double.infinity, child: CustomPaint(painter: BarChartPainter(primary: colors.accent, secondary: colors.positive))),
         ])),
         const SizedBox(height: 20),
         const SectionHeader(title: 'Kategori terbesar', action: 'Bulan ini'),
