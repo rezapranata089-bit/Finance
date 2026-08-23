@@ -726,7 +726,7 @@ class _DashboardCardsState extends State<DashboardCards> with SingleTickerProvid
                   style: TextStyle(
                     fontFamily: 'Playfair Display',
                     color: Colors.white,
-                    fontSize: 42,
+                    fontSize: 36,
                     fontWeight: FontWeight.w400,
                     letterSpacing: -0.42,
                     height: 1,
