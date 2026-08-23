@@ -85,8 +85,8 @@ const accentPresets = <Color>[
   Color(0xFFFF9F43),
   Color(0xFF5B8DEF),
   Color(0xFF9B8AFB),
-  Color(0xFF65D7A9),
-  Color(0xFFFF6B81),
+  Color(0xFFC96343),
+  Color(0xFFD4A574),
   Color(0xFFFFC24B),
   Color(0xFF4FD1E8),
 ];
