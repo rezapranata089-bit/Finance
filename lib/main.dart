@@ -292,7 +292,7 @@ class DashboardPage extends ConsumerWidget {
               borderRadius: BorderRadius.circular(26),
               boxShadow: [
                 BoxShadow(
-                  color: colors.accent.withOpacity(0.25),
+                  color: Colors.black.withOpacity(Theme.of(context).brightness == Brightness.light ? 0.1 : 0.25),
                   blurRadius: 16,
                   offset: const Offset(0, 8),
                 )
@@ -309,54 +309,36 @@ class DashboardPage extends ConsumerWidget {
                   padding: const EdgeInsets.all(22),
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                      Text('SALDO TERKINI', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w600, fontSize: 12, letterSpacing: 1.2)),
+                      Text('SALDO TERKINI', style: TextStyle(color: Colors.white70, fontWeight: FontWeight.w500, fontSize: 12, letterSpacing: 1.2)),
                       Icon(SolarIconsOutline.eye, color: Colors.white70, size: 20),
                     ]),
-                    const SizedBox(height: 16),
-                    ShaderMask(
-                      shaderCallback: (bounds) => LinearGradient(
-                        colors: [
-                          colors.accent,
-                          Color.lerp(colors.accent, Colors.white, 0.6)!,
-                          colors.accent,
-                        ],
-                        stops: const [0.4, 0.5, 0.6],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ).createShader(bounds),
-                      child: Text(
-                        rupiah(balance),
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 34,
-                          fontWeight: FontWeight.w400,
-                          fontFamily: 'DM Serif Display',
-                          shadows: [
-                            Shadow(color: colors.accent.withOpacity(0.25), offset: const Offset(0, 2), blurRadius: 8),
-                          ],
-                        ),
+                    const SizedBox(height: 12),
+                    Text(
+                      rupiah(balance),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 34,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: 28),
                     Row(children: [
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(color: colors.accent.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: colors.positive.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
                         child: Row(mainAxisSize: MainAxisSize.min, children: [
-                          Icon(SolarIconsOutline.graphUp, size: 16, color: colors.accent),
+                          Icon(SolarIconsOutline.graphUp, size: 14, color: colors.positive),
                           const SizedBox(width: 6),
-                          Text('8,4% bulan ini', style: TextStyle(color: colors.accent, fontSize: 12, fontWeight: FontWeight.w600)),
+                          Text('+8.4%', style: TextStyle(color: colors.positive, fontSize: 12, fontWeight: FontWeight.w700)),
                         ]),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Saldo awal ${rupiah(2500000)}',
-                          textAlign: TextAlign.right,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(color: Colors.white60, fontSize: 12, fontWeight: FontWeight.w500),
-                        ),
+                      const SizedBox(width: 10),
+                      Text(
+                        'dibanding bulan lalu',
+                        style: TextStyle(color: Colors.white60, fontSize: 13, fontWeight: FontWeight.w500),
                       ),
                     ]),
                   ]),
@@ -739,14 +721,6 @@ class CardPatternPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final glowRect = Rect.fromLTWH(-40, size.height - 80, 240, 240);
-    final glowPaint = Paint()
-      ..shader = RadialGradient(
-        colors: [color.withOpacity(0.2), Colors.transparent],
-        stops: const [0.0, 0.65],
-      ).createShader(glowRect);
-    canvas.drawRect(glowRect, glowPaint);
-
     final paint1 = Paint()
       ..color = color.withOpacity(0.05)
       ..style = PaintingStyle.fill;
