@@ -321,8 +321,7 @@ class _DashboardSwiperState extends State<DashboardSwiper> with SingleTickerProv
   @override
   void initState() {
     super.initState();
-    // KUNCI UTAMA 1: viewportFraction 0.68 agar jarak titik tengah antar-kartu lebih sempit.
-    // initialPage 10000 agar pengguna dapat melakukan Infinite Swipe/Loop ke kiri dan kanan.
+    // viewportFraction 0.68 menentukan jarak antar kartu.
     _pageController = PageController(viewportFraction: 0.68, initialPage: 10000);
     _pageController.addListener(() {
       if (_pageController.page != null) {
@@ -346,51 +345,87 @@ class _DashboardSwiperState extends State<DashboardSwiper> with SingleTickerProv
     return Column(
       children: [
         Expanded(
-          child: PageView.builder(
-            controller: _pageController,
-            clipBehavior: Clip.none, // Mencegah kartu samping yang mengintip ikut terpotong
-            itemBuilder: (context, index) {
-              double value = _currentPage - index;
-              double absValue = value.abs().clamp(0.0, 1.0);
-              
-              // 1. Skala card di samping menyusut sekitar 12%
-              double scale = 1.0 - (absValue * 0.12);
-              
-              // 2. Mendorong card di samping turun sedikit ke bawah (Efek melengkung)
-              double translateY = absValue * 22.0; 
-              
-              // 3. Putaran kipas 3D miring ke luar
-              double rotateZ = value * -5 * math.pi / 180; 
-              
-              // 4. Translasi menarik rapat sedikit ke dalam agar card samping masuk ke belakang card utama
-              double translateX = value * 15.0; 
-              
-              // 5. Card samping sedikit lebih transparan
-              double opacity = 1.0 - (absValue * 0.4);
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              return Stack(
+                children: [
+                  // 1. LAPISAN VISUAL KARTU (Z-INDEX DIATUR MANUAL)
+                  AnimatedBuilder(
+                    animation: _pageController,
+                    builder: (context, child) {
+                      int centerIndex = _currentPage.round();
+                      // Mempersiapkan 5 index di sekitar pusat agar aman saat swipe cepat
+                      List<int> indices = [
+                        centerIndex - 2,
+                        centerIndex - 1,
+                        centerIndex + 1,
+                        centerIndex + 2,
+                        centerIndex, // Pastikan yang tengah dievaluasi
+                      ];
+                      
+                      // KUNCI UTAMA: Urutkan kartu berdasarkan Jarak ke Tengah.
+                      // Kartu dengan jarak terdekat (0) diletakkan di akhir list agar di-render paling atas!
+                      indices.sort((a, b) {
+                        double distA = (_currentPage - a).abs();
+                        double distB = (_currentPage - b).abs();
+                        return distB.compareTo(distA);
+                      });
 
-              return OverflowBox(
-                // KUNCI UTAMA 2: Mengabaikan perintah PageView (0.68) dan memaksa
-                // lebar fisik tiap kartu untuk mengisi 88% layar. Ini yang membuat
-                // kartu saling menumpuk/overlap satu sama lain dengan presisi.
-                maxWidth: MediaQuery.of(context).size.width * 0.88,
-                maxHeight: 250.0,
-                child: Transform(
-                  transform: Matrix4.identity()
-                    ..translate(translateX, translateY, 0.0)
-                    ..rotateZ(rotateZ)
-                    ..scale(scale),
-                  alignment: Alignment.center,
-                  child: Opacity(
-                    opacity: opacity,
-                    child: Align(
-                      alignment: Alignment.topCenter,
-                      child: SizedBox(
-                        height: 190.0, // Kunci tinggi card statis persis dengan desain CSS/HTML
-                        child: _buildCard(index % 3, absValue < 0.3),
-                      ),
-                    ),
+                      return Stack(
+                        alignment: Alignment.center,
+                        children: indices.map((index) {
+                          double value = _currentPage - index;
+                          double absValue = value.abs();
+                          
+                          // Sembunyikan jika terlalu jauh untuk menghemat performa
+                          if (absValue > 2.5) return const SizedBox.shrink();
+
+                          // Posisi dasar seakan-akan ditaruh di PageView normal
+                          double baseX = -value * constraints.maxWidth * 0.68;
+                          
+                          // Tarik kartu ke arah tengah agar saling menumpuk/overlap
+                          double translateX = baseX + (value * 28.0);
+                          
+                          // Mendorong kartu turun sedikit membentuk kipas
+                          double translateY = absValue * 20.0; 
+                          double rotateZ = value * -4 * math.pi / 180; 
+                          
+                          // Efek mengecil dan transparan saat ke pinggir
+                          double scale = (1.0 - (absValue * 0.1)).clamp(0.0, 1.0);
+                          double opacity = (1.0 - (absValue * 0.4)).clamp(0.0, 1.0);
+
+                          return Transform(
+                            transform: Matrix4.identity()
+                              ..translate(translateX, translateY, 0.0)
+                              ..rotateZ(rotateZ)
+                              ..scale(scale),
+                            alignment: Alignment.center,
+                            child: Opacity(
+                              opacity: opacity,
+                              child: Align(
+                                alignment: Alignment.topCenter,
+                                child: SizedBox(
+                                  width: constraints.maxWidth * 0.88,
+                                  height: 190.0,
+                                  child: _buildCard(index % 3, absValue < 0.3),
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      );
+                    },
                   ),
-                ),
+                  // 2. LAPISAN DETEKSI SWIPE (PAGE VIEW TRANSPARAN)
+                  PageView.builder(
+                    controller: _pageController,
+                    physics: const BouncingScrollPhysics(),
+                    // Container transparan berguna untuk menangkap usapan jari secara penuh
+                    itemBuilder: (context, index) {
+                      return Container(color: Colors.transparent);
+                    },
+                  ),
+                ],
               );
             },
           ),
@@ -399,9 +434,8 @@ class _DashboardSwiperState extends State<DashboardSwiper> with SingleTickerProv
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: List.generate(3, (index) {
-            // Kalkulasi Index Loop (10000 % 3)
             double diff = (_currentPage % 3 - index).abs();
-            if (diff > 1.5) diff = 3 - diff; // Menyambungkan jarak loop terakhir
+            if (diff > 1.5) diff = 3 - diff; 
             
             bool isActive = diff < 0.5;
             return AnimatedContainer(
@@ -432,6 +466,7 @@ class _DashboardSwiperState extends State<DashboardSwiper> with SingleTickerProv
           colors: [Color(0xFF2B1D16), Color(0xFF1A1410), Color(0xFF140E0A)],
         ),
         glowColor: const Color(0xFFE4A98A).withOpacity(0.3),
+        patternColor: Colors.white.withOpacity(0.04), // Sesuai HTML
         glowAlign: Alignment.bottomLeft,
         title: 'TOTAL STOK BATU',
         amount: '15.000',
@@ -454,6 +489,7 @@ class _DashboardSwiperState extends State<DashboardSwiper> with SingleTickerProv
           colors: [Color(0xFF0A120D), Color(0xFF152016), Color(0xFF080A08)],
         ),
         glowColor: const Color(0xFF5CC88F).withOpacity(0.3),
+        patternColor: const Color.fromRGBO(92, 200, 143, 0.04),
         glowAlign: Alignment.bottomLeft,
         title: 'KEUNTUNGAN BERSIH',
         amount: NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0).format(widget.income),
@@ -475,6 +511,7 @@ class _DashboardSwiperState extends State<DashboardSwiper> with SingleTickerProv
         colors: [Color(0xFF240C0C), Color(0xFF3D1515), Color(0xFF170505)],
       ),
       glowColor: const Color(0xFFEB5757).withOpacity(0.3),
+      patternColor: const Color.fromRGBO(235, 87, 87, 0.04),
       glowAlign: Alignment.bottomRight,
       title: 'TOTAL PENGELUARAN',
       amount: NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0).format(widget.expense),
@@ -494,6 +531,7 @@ class _CardBase extends StatelessWidget {
   final AnimationController animController;
   final Gradient gradient;
   final Color glowColor;
+  final Color patternColor;
   final Alignment glowAlign;
   final String title;
   final String amount;
@@ -510,6 +548,7 @@ class _CardBase extends StatelessWidget {
     required this.animController,
     required this.gradient,
     required this.glowColor,
+    required this.patternColor,
     required this.glowAlign,
     required this.title,
     required this.amount,
@@ -541,6 +580,12 @@ class _CardBase extends StatelessWidget {
         borderRadius: BorderRadius.circular(28),
         child: Stack(
           children: [
+            // Memasang kembali Efek SVG Pattern (Wave) di background Card
+            Positioned.fill(
+              child: CustomPaint(
+                painter: CardPatternPainter(patternColor: patternColor),
+              ),
+            ),
             if (isActive)
               Positioned(
                 bottom: -80,
