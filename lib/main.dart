@@ -496,19 +496,14 @@ class _DashboardSwiperState extends State<DashboardSwiper> with SingleTickerProv
                           // Tarik kartu ke arah tengah agar saling menumpuk/overlap secara natural
                           double translateX = baseX + (value * 12.0);
                           
-                          // Mendorong kartu turun sedikit membentuk kipas
-                          double translateY = absValue * 20.0; 
-                          double rotateZ = value * -4 * math.pi / 180; 
-                          
-                          // Efek mengecil dan transparan saat ke pinggir
-                          double scale = (1.0 - (absValue * 0.1)).clamp(0.0, 1.0);
+                          // Efek mengecil dan transparan saat ke pinggir (stacking bersih, tanpa rotasi/kipas)
+                          double scale = (1.0 - (absValue * 0.08)).clamp(0.0, 1.0);
                           double opacity = (1.0 - (absValue * 0.4)).clamp(0.0, 1.0);
 
                           return Transform(
                             key: ValueKey(index), // KUNCI UTAMA: Memastikan Flutter tidak menukar-nukar warna/konten card saat Z-Index berubah
                             transform: Matrix4.identity()
-                              ..translate(translateX, translateY, 0.0)
-                              ..rotateZ(rotateZ)
+                              ..translate(translateX, 0.0, 0.0)
                               ..scale(scale),
                             alignment: Alignment.center,
                             child: Opacity(
@@ -577,7 +572,7 @@ class _DashboardSwiperState extends State<DashboardSwiper> with SingleTickerProv
           colors: [Color(0xFF2B1D16), Color(0xFF1A1410), Color(0xFF140E0A)],
         ),
         glowColor: const Color(0xFFE4A98A).withOpacity(0.3),
-        patternColor: Colors.white.withOpacity(0.04), // Sesuai HTML
+        patternColor: Colors.white.withOpacity(0.02), // Sesuai HTML
         glowAlign: Alignment.bottomLeft,
         title: 'TOTAL PIUTANG',
         amount: 'Rp 4.500.000',
@@ -600,7 +595,7 @@ class _DashboardSwiperState extends State<DashboardSwiper> with SingleTickerProv
           colors: [Color(0xFF0A120D), Color(0xFF152016), Color(0xFF080A08)],
         ),
         glowColor: const Color(0xFF5CC88F).withOpacity(0.3),
-        patternColor: const Color.fromRGBO(92, 200, 143, 0.04),
+        patternColor: const Color.fromRGBO(92, 200, 143, 0.02),
         glowAlign: Alignment.bottomLeft,
         title: 'TOTAL PEMASUKAN',
         amount: NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0).format(widget.income),
@@ -622,7 +617,7 @@ class _DashboardSwiperState extends State<DashboardSwiper> with SingleTickerProv
         colors: [Color(0xFF240C0C), Color(0xFF3D1515), Color(0xFF170505)],
       ),
       glowColor: const Color(0xFFEB5757).withOpacity(0.3),
-      patternColor: const Color.fromRGBO(235, 87, 87, 0.04),
+      patternColor: const Color.fromRGBO(235, 87, 87, 0.02),
       glowAlign: Alignment.bottomRight,
       title: 'TOTAL PENGELUARAN',
       amount: NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0).format(widget.expense),
@@ -683,9 +678,9 @@ class _CardBase extends StatelessWidget {
         border: Border.all(color: Colors.white.withOpacity(0.08)),
         boxShadow: isActive
             ? [
-                BoxShadow(color: Colors.black.withOpacity(0.4), blurRadius: 48, offset: const Offset(0, 24)),
+                BoxShadow(color: Colors.black.withOpacity(0.25), blurRadius: 24, offset: const Offset(0, 12)),
               ]
-            : [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 5))],
+            : [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 8, offset: const Offset(0, 4))],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(28),
@@ -716,35 +711,7 @@ class _CardBase extends StatelessWidget {
                           letterSpacing: 1.2,
                         ),
                       ),
-                      Container(
-                        width: 32,
-                        height: 24,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(5),
-                          gradient: const LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [Color(0xFFe8c97a), Color(0xFFc9a85c), Color(0xFFa07840)],
-                          ),
-                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 6, offset: const Offset(0, 2))],
-                        ),
-                        child: Center(
-                          child: Container(
-                            width: 20,
-                            height: 14,
-                            decoration: BoxDecoration(
-                              border: Border.all(color: Colors.black.withOpacity(0.3)),
-                              borderRadius: BorderRadius.circular(2),
-                            ),
-                            child: Center(
-                              child: Container(
-                                width: 1,
-                                color: Colors.black.withOpacity(0.25),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
+                      const SizedBox.shrink(),
                     ],
                   ),
                   Column(
