@@ -335,7 +335,33 @@ class HomeShell extends ConsumerWidget {
     final tab = ref.watch(selectedTabProvider);
     final colors = context.colors;
     return Scaffold(
-      body: pages[tab],
+      backgroundColor: colors.background,
+      body: Stack(
+        children: [
+          // Latar belakang gradasi cantik di bagian bawah
+          Positioned(
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: MediaQuery.of(context).size.height * 0.45,
+            child: IgnorePointer(
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      colors.accent.withOpacity(0.0),
+                      colors.accent.withOpacity(0.18),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+          pages[tab],
+        ],
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => showAddTransactionChoice(context, ref),
         backgroundColor: colors.accent,
