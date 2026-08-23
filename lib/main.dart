@@ -190,7 +190,6 @@ ThemeData _buildTheme(Brightness brightness, Color accent) {
     useMaterial3: true,
     scaffoldBackgroundColor: palette.background,
     colorScheme: ColorScheme.fromSeed(seedColor: accent, brightness: brightness),
-    fontFamily: 'sans',
     extensions: [palette],
   );
 }
