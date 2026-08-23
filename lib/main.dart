@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' hide TextDirection;
@@ -737,34 +739,20 @@ class _DashboardCardsState extends State<DashboardCards> with SingleTickerProvid
   Widget _buildAmount(bool isExpense, bool isActive, double amount) {
     final baseStyle = TextStyle(
       fontFamily: 'Playfair Display',
-      color: Colors.white,
       fontSize: 36,
       fontWeight: FontWeight.w400,
       letterSpacing: -0.42,
-      height: 1,
+      height: 1.2,
       fontFeatures: const [
         FontFeature.enable('lnum'),
         FontFeature.enable('tnum'),
       ],
     );
-    final shadowColor = isExpense
-        ? const Color.fromRGBO(235, 87, 87, 0.2)
-        : const Color.fromRGBO(92, 200, 143, 0.2);
-    final restColor = isExpense ? const Color(0xFFEB5757) : const Color(0xFF5CC88F);
+    final themeColor = isExpense ? const Color(0xFFEB5757) : const Color(0xFF5CC88F);
+    final text = rupiah(amount);
 
-    return Stack(
-      children: [
-        Text(
-          rupiah(amount),
-          style: baseStyle.copyWith(
-            color: Colors.transparent,
-            shadows: [
-              Shadow(color: shadowColor, offset: const Offset(0, 2), blurRadius: 8),
-            ],
-          ),
-        ),
-        if (isActive)
-          AnimatedBuilder(
+    final glyphs = isActive
+        ? AnimatedBuilder(
             animation: _shimmerController,
             builder: (context, child) {
               return ShaderMask(
@@ -782,13 +770,25 @@ class _DashboardCardsState extends State<DashboardCards> with SingleTickerProvid
                 child: child,
               );
             },
-            child: Text(rupiah(amount), style: baseStyle),
+            child: Text(text, style: baseStyle.copyWith(color: Colors.white)),
           )
-        else
-          Text(
-            rupiah(amount),
-            style: baseStyle.copyWith(color: restColor),
+        : Text(text, style: baseStyle.copyWith(color: themeColor));
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Positioned(
+          top: 3,
+          left: 0,
+          child: ImageFiltered(
+            imageFilter: ui.ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+            child: Text(
+              text,
+              style: baseStyle.copyWith(color: themeColor.withOpacity(0.35)),
+            ),
           ),
+        ),
+        glyphs,
       ],
     );
   }
