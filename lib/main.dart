@@ -279,7 +279,7 @@ class DashboardPage extends ConsumerWidget {
           ]),
           const SizedBox(height: 22),
           Container(
-            padding: const EdgeInsets.all(22),
+            clipBehavior: Clip.hardEdge,
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
@@ -295,36 +295,48 @@ class DashboardPage extends ConsumerWidget {
                 )
               ],
             ),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                Text('SALDO TERKINI', style: TextStyle(color: colors.onAccent.withOpacity(0.8), fontWeight: FontWeight.w600, fontSize: 12, letterSpacing: 1.2)),
-                Icon(SolarIconsOutline.eye, color: colors.onAccent.withOpacity(0.9), size: 20),
-              ]),
-              const SizedBox(height: 16),
-              Text(rupiah(balance), style: TextStyle(color: colors.onAccent, fontSize: 36, fontWeight: FontWeight.w700)),
-              const SizedBox(height: 28),
-              Row(children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(color: colors.onAccent.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    Icon(SolarIconsOutline.graphUp, size: 16, color: colors.onAccent),
-                    const SizedBox(width: 6),
-                    Text('8,4% bulan ini', style: TextStyle(color: colors.onAccent, fontSize: 12, fontWeight: FontWeight.w600)),
-                  ]),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Saldo awal ${rupiah(2500000)}',
-                    textAlign: TextAlign.right,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(color: colors.onAccent.withOpacity(0.8), fontSize: 12, fontWeight: FontWeight.w500),
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: CustomPaint(
+                    painter: CardPatternPainter(color: colors.onAccent),
                   ),
                 ),
-              ]),
-            ]),
+                Padding(
+                  padding: const EdgeInsets.all(22),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                      Text('SALDO TERKINI', style: TextStyle(color: colors.onAccent.withOpacity(0.8), fontWeight: FontWeight.w600, fontSize: 12, letterSpacing: 1.2)),
+                      Icon(SolarIconsOutline.eye, color: colors.onAccent.withOpacity(0.9), size: 20),
+                    ]),
+                    const SizedBox(height: 16),
+                    Text(rupiah(balance), style: TextStyle(color: colors.onAccent, fontSize: 36, fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 28),
+                    Row(children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(color: colors.onAccent.withOpacity(0.15), borderRadius: BorderRadius.circular(12)),
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
+                          Icon(SolarIconsOutline.graphUp, size: 16, color: colors.onAccent),
+                          const SizedBox(width: 6),
+                          Text('8,4% bulan ini', style: TextStyle(color: colors.onAccent, fontSize: 12, fontWeight: FontWeight.w600)),
+                        ]),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Saldo awal ${rupiah(2500000)}',
+                          textAlign: TextAlign.right,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(color: colors.onAccent.withOpacity(0.8), fontSize: 12, fontWeight: FontWeight.w500),
+                        ),
+                      ),
+                    ]),
+                  ]),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 36),
                     const SectionHeader(title: 'Ringkasan bulan ini', action: 'Detail'),
@@ -693,6 +705,53 @@ class SettingRow extends StatelessWidget {
       ),
     );
   }
+}
+
+class CardPatternPainter extends CustomPainter {
+  final Color color;
+  const CardPatternPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint1 = Paint()
+      ..color = color.withOpacity(0.1)
+      ..style = PaintingStyle.fill;
+      
+    final paint2 = Paint()
+      ..color = color.withOpacity(0.06)
+      ..style = PaintingStyle.fill;
+
+    // Top right wave
+    final path1 = Path()
+      ..moveTo(size.width * 0.5, 0)
+      ..quadraticBezierTo(size.width * 0.8, size.height * 0.4, size.width, size.height * 0.2)
+      ..lineTo(size.width, 0)
+      ..close();
+    canvas.drawPath(path1, paint1);
+
+    // Right side circles
+    canvas.drawCircle(Offset(size.width * 0.95, size.height * 0.7), size.width * 0.15, paint2);
+    canvas.drawCircle(Offset(size.width * 0.8, size.height * 1.1), size.width * 0.2, paint1);
+
+    // Bottom left wave
+    final path2 = Path()
+      ..moveTo(0, size.height * 0.5)
+      ..quadraticBezierTo(size.width * 0.3, size.height * 0.6, size.width * 0.4, size.height)
+      ..lineTo(0, size.height)
+      ..close();
+    canvas.drawPath(path2, paint1);
+    
+    // Bottom left smaller wave
+    final path3 = Path()
+      ..moveTo(0, size.height * 0.75)
+      ..quadraticBezierTo(size.width * 0.15, size.height * 0.8, size.width * 0.2, size.height)
+      ..lineTo(0, size.height)
+      ..close();
+    canvas.drawPath(path3, paint2);
+  }
+
+  @override
+  bool shouldRepaint(covariant CardPatternPainter oldDelegate) => oldDelegate.color != color;
 }
 
 class SparklinePainter extends CustomPainter {
