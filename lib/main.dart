@@ -858,14 +858,14 @@ class DashboardPage extends ConsumerWidget {
             GestureDetector(
               onTap: () => ref.read(selectedTabProvider.notifier).state = 3,
               child: CircleAvatar(
-                radius: 22,
+                radius: 26,
                 backgroundColor: colors.accent,
                 backgroundImage: profile.imageProvider,
-                child: profile.imageProvider == null ? Text(profile.name.isNotEmpty ? profile.name[0].toUpperCase() : 'U', style: TextStyle(color: colors.onAccent, fontSize: 20, fontWeight: FontWeight.w700)) : null,
+                child: profile.imageProvider == null ? Text(profile.name.isNotEmpty ? profile.name[0].toUpperCase() : 'U', style: TextStyle(color: colors.onAccent, fontSize: 22, fontWeight: FontWeight.w700)) : null,
               ),
             ),
           ])),
-          const SizedBox(height: 36),
+          const SizedBox(height: 48),
           pad(Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(99),
