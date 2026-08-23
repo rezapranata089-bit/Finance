@@ -321,8 +321,8 @@ class _DashboardSwiperState extends State<DashboardSwiper> with SingleTickerProv
   @override
   void initState() {
     super.initState();
-    // viewportFraction 0.68 menentukan jarak antar kartu.
-    _pageController = PageController(viewportFraction: 0.68, initialPage: 10000);
+    // viewportFraction 0.74 memperlebar jarak antar pusat kartu agar tumpukan tidak terlalu dalam.
+    _pageController = PageController(viewportFraction: 0.74, initialPage: 10000);
     _pageController.addListener(() {
       if (_pageController.page != null) {
         setState(() {
@@ -380,11 +380,11 @@ class _DashboardSwiperState extends State<DashboardSwiper> with SingleTickerProv
                           // Sembunyikan jika terlalu jauh untuk menghemat performa
                           if (absValue > 2.5) return const SizedBox.shrink();
 
-                          // Posisi dasar seakan-akan ditaruh di PageView normal
-                          double baseX = -value * constraints.maxWidth * 0.68;
+                          // Posisi dasar seakan-akan ditaruh di PageView normal (dengan jarak 74%)
+                          double baseX = -value * constraints.maxWidth * 0.74;
                           
-                          // Tarik kartu ke arah tengah agar saling menumpuk/overlap
-                          double translateX = baseX + (value * 28.0);
+                          // Tarik kartu ke arah tengah agar saling menumpuk/overlap secara natural
+                          double translateX = baseX + (value * 12.0);
                           
                           // Mendorong kartu turun sedikit membentuk kipas
                           double translateY = absValue * 20.0; 
@@ -395,6 +395,7 @@ class _DashboardSwiperState extends State<DashboardSwiper> with SingleTickerProv
                           double opacity = (1.0 - (absValue * 0.4)).clamp(0.0, 1.0);
 
                           return Transform(
+                            key: ValueKey(index), // KUNCI UTAMA: Memastikan Flutter tidak menukar-nukar warna/konten card saat Z-Index berubah
                             transform: Matrix4.identity()
                               ..translate(translateX, translateY, 0.0)
                               ..rotateZ(rotateZ)
