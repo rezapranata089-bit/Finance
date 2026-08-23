@@ -680,10 +680,15 @@ class _CardBase extends StatelessWidget {
                           amount,
                           style: const TextStyle(
                             fontFamily: 'Playfair Display',
-                            fontSize: 34,
-                            fontWeight: FontWeight.w600,
                             color: Colors.white,
-                            letterSpacing: -0.5,
+                            fontSize: 38,
+                            fontWeight: FontWeight.w400,
+                            letterSpacing: -0.42,
+                            height: 1,
+                            fontFeatures: [
+                              FontFeature.enable('lnum'),
+                              FontFeature.enable('tnum'),
+                            ],
                           ),
                         ),
                       ),
