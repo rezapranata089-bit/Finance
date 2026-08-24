@@ -672,7 +672,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
     final all = ref.watch(transactionsProvider);
     final lang = ref.watch(langProvider);
     final items = all.where((e) => (filter == 'all' || (filter == 'income' ? e.income : !e.income)) && e.title.toLowerCase().contains(query.toLowerCase())).toList();
-    return SafeArea(child: ListView(padding: const EdgeInsets.fromLTRB(20, 22, 20, 24), children: [
+    return SafeArea(top: false, child: ListView(padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 22, 20, 24), children: [
       Text(Strings.t(lang, 'transactions_title'), style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 32, color: context.textPrimary)),
       Text(Strings.t(lang, 'transactions_subtitle'), style: TextStyle(color: context.textMuted)),
       const SizedBox(height: 22),
@@ -711,7 +711,7 @@ class ReportsPage extends ConsumerWidget {
     final expense = items.where((e) => !e.income).fold<double>(0, (a, b) => a + b.amount);
     final groups = <String, double>{};
     for (final item in items.where((e) => !e.income)) groups[item.category] = (groups[item.category] ?? 0) + item.amount;
-    return SafeArea(child: ListView(padding: const EdgeInsets.fromLTRB(20, 22, 20, 24), children: [
+    return SafeArea(top: false, child: ListView(padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 22, 20, 24), children: [
       Text(Strings.t(lang, 'reports_title'), style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 32, color: context.textPrimary)),
       Text(DateFormat('MMMM yyyy', lang == AppLang.id ? 'id_ID' : 'en_US').format(DateTime(2026, 8, 24)), style: TextStyle(color: context.textMuted)),
       const SizedBox(height: 22),
@@ -733,7 +733,7 @@ class ProfilePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final lang = ref.watch(langProvider);
-    return SafeArea(child: ListView(padding: const EdgeInsets.fromLTRB(20, 22, 20, 24), children: [
+    return SafeArea(top: false, child: ListView(padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 22, 20, 24), children: [
       Text(Strings.t(lang, 'profile_title'), style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 32, color: context.textPrimary)),
       const SizedBox(height: 22),
       Container(
