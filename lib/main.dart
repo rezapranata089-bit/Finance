@@ -426,7 +426,9 @@ class HomePage extends ConsumerWidget {
     final tertiary = Theme.of(context).colorScheme.tertiary;
     final isDark = context.isDark;
 
+    final topInset = MediaQuery.of(context).padding.top;
     return SafeArea(
+      top: false,
       child: ListView(
         padding: EdgeInsets.zero,
         children: [
@@ -442,7 +444,7 @@ class HomePage extends ConsumerWidget {
               ],
             ),
             child: Container(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+                  padding: EdgeInsets.fromLTRB(20, topInset + 12, 20, 32),
                   decoration: BoxDecoration(
                     borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
                     gradient: LinearGradient(
