@@ -283,7 +283,7 @@ class MyFinanceApp extends ConsumerWidget {
           child: MediaQuery(
             data: MediaQuery.of(context).copyWith(
               textScaler: TextScaler.linear(
-                MediaQuery.textScalerOf(context).scale(1.0).clamp(0.9, 1.1),
+                MediaQuery.textScalerOf(context).scale(0.9).clamp(0.85, 1.0),
               ),
             ),
             child: child!,
