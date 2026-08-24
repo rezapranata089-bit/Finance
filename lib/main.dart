@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -63,7 +64,8 @@ class LiquidGlass extends StatelessWidget {
   final Color? tint;
   final double blur;
   final double intensity;
-  const LiquidGlass({super.key, required this.child, this.borderRadius = 20, this.tint, this.blur = 6, this.intensity = 1.0});
+  final bool useBlur;
+  const LiquidGlass({super.key, required this.child, this.borderRadius = 20, this.tint, this.blur = 6, this.intensity = 1.0, this.useBlur = false});
 
   @override
   Widget build(BuildContext context) {
@@ -71,6 +73,24 @@ class LiquidGlass extends StatelessWidget {
     final base = tint ?? Colors.white;
     final topOpacity = ((isDark ? 0.34 : 0.44) * intensity).clamp(0.0, 1.0);
     final bottomOpacity = ((isDark ? 0.16 : 0.20) * intensity).clamp(0.0, 1.0);
+    final glassBody = Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(borderRadius),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            base.withOpacity(topOpacity),
+            base.withOpacity(bottomOpacity),
+          ],
+        ),
+        border: Border.all(
+          color: Colors.white.withOpacity(isDark ? 0.16 : 0.55),
+          width: 1,
+        ),
+      ),
+      child: child,
+    );
     return RepaintBoundary(
       child: Container(
         decoration: BoxDecoration(
@@ -90,24 +110,12 @@ class LiquidGlass extends StatelessWidget {
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(borderRadius),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(borderRadius),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  base.withOpacity(topOpacity),
-                  base.withOpacity(bottomOpacity),
-                ],
-              ),
-              border: Border.all(
-                color: Colors.white.withOpacity(isDark ? 0.16 : 0.55),
-                width: 1,
-              ),
-            ),
-            child: child,
-          ),
+          child: useBlur
+              ? BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+                  child: glassBody,
+                )
+              : glassBody,
         ),
       ),
     );
@@ -859,6 +867,7 @@ class _CardGlassPopup extends StatelessWidget {
         borderRadius: 18,
         tint: context.cardColor,
         intensity: 1.6,
+        useBlur: true,
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 4),
           child: Column(
