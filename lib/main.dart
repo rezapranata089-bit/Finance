@@ -314,7 +314,7 @@ class ProfilePage extends StatelessWidget {
     const SectionTitle('Aplikasi'),
     const SizedBox(height: 10),
     SettingList(items: const [['Tampilan', Icons.palette_outlined], ['Notifikasi', Icons.notifications_none], ['Backup data', Icons.cloud_upload_outlined]]),
-  ]);
+  ]));
 }
 
 class SectionTitle extends StatelessWidget {
