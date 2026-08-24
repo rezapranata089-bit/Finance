@@ -376,9 +376,9 @@ class HomePage extends ConsumerWidget {
               borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
               boxShadow: [
                 BoxShadow(
-                  color: isDark ? Colors.black.withOpacity(0.18) : Colors.black.withOpacity(0.05),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
+                  color: isDark ? Colors.black.withOpacity(0.28) : Colors.black.withOpacity(0.07),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
                 ),
               ],
             ),
