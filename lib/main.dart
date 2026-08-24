@@ -34,6 +34,7 @@ const appPalettes = [
 final tabProvider = StateProvider<int>((ref) => 0);
 final onboardingProvider = StateProvider<bool>((ref) => ref.watch(prefsProvider).getBool('onboarding_done') ?? false);
 final themeProvider = StateProvider<AppThemePalette>((ref) => appPalettes[0]);
+final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.light);
 
 class FinanceTransaction {
   final String title, category, note;
@@ -77,10 +78,12 @@ class MyFinanceApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final seen = ref.watch(onboardingProvider);
     final theme = ref.watch(themeProvider);
+    final themeMode = ref.watch(themeModeProvider);
     
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'My Finance',
+      themeMode: themeMode,
       theme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.light,
@@ -96,6 +99,24 @@ class MyFinanceApp extends ConsumerWidget {
         appBarTheme: const AppBarTheme(backgroundColor: Colors.transparent, elevation: 0),
         inputDecorationTheme: InputDecorationTheme(
           filled: true, fillColor: Colors.white,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+        ),
+      ),
+      darkTheme: ThemeData(
+        useMaterial3: true,
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: const Color(0xFF121212),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: theme.primary,
+          primary: theme.primary,
+          secondary: theme.secondary,
+          tertiary: theme.tertiary,
+          brightness: Brightness.dark,
+        ),
+        fontFamily: 'Satoshi',
+        appBarTheme: const AppBarTheme(backgroundColor: Colors.transparent, elevation: 0),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true, fillColor: const Color(0xFF1E1E1E),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
         ),
       ),
@@ -622,85 +643,142 @@ class ThemeSelectionPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final currentTheme = ref.watch(themeProvider);
-    
+    final currentMode = ref.watch(themeModeProvider);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bg = isDark ? const Color(0xFF121212) : const Color(0xFFF8F7FB);
+    final cardBg = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Tema Tampilan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-        centerTitle: true,
-        leading: IconButton(
-          icon: const Icon(SolarIconsOutline.arrowLeft),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
-      body: ListView.separated(
-        padding: const EdgeInsets.all(24),
-        itemCount: appPalettes.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 16),
-        itemBuilder: (context, index) {
-          final palette = appPalettes[index];
-          final isSelected = currentTheme.name == palette.name;
-          
-          return GestureDetector(
-            onTap: () => ref.read(themeProvider.notifier).state = palette,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 300),
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: isSelected ? palette.primary : Colors.grey.shade200, width: isSelected ? 2 : 1),
-                boxShadow: isSelected ? [BoxShadow(color: palette.primary.withOpacity(0.15), blurRadius: 15, offset: const Offset(0, 5))] : [],
-              ),
+      backgroundColor: bg,
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
               child: Row(
                 children: [
-                  Container(
-                    width: 56, height: 56,
-                    decoration: BoxDecoration(color: palette.tertiary, shape: BoxShape.circle),
-                    child: Center(
-                      child: Container(
-                        width: 28, height: 28,
-                        decoration: BoxDecoration(color: palette.primary, shape: BoxShape.circle),
-                        child: isSelected ? const Icon(Icons.check, color: Colors.white, size: 18) : null,
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: cardBg,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: isDark ? Colors.white12 : Colors.grey.shade200),
                       ),
+                      child: const Icon(SolarIconsOutline.arrowLeft, size: 20),
                     ),
                   ),
-                  const SizedBox(width: 20),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  const SizedBox(width: 16),
+                  const Text('Tampilan', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                ],
+              ),
+            ),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                children: [
+                  const Text('MODE LAYAR', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1.2)),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: cardBg,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: isDark ? Colors.white12 : Colors.grey.shade200),
+                    ),
+                    child: Row(
                       children: [
-                        Text(palette.name, style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: palette.primary)),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            _colorDot(palette.primary),
-                            const SizedBox(width: 8),
-                            _colorDot(palette.secondary),
-                            const SizedBox(width: 8),
-                            _colorDot(palette.tertiary),
-                          ],
-                        ),
+                        _modeBtn(context, ref, 'Terang', SolarIconsOutline.sun, ThemeMode.light, currentMode),
+                        _modeBtn(context, ref, 'Gelap', SolarIconsOutline.moon, ThemeMode.dark, currentMode),
+                        _modeBtn(context, ref, 'Sistem', SolarIconsOutline.monitor, ThemeMode.system, currentMode),
                       ],
                     ),
                   ),
+                  const SizedBox(height: 36),
+                  const Text('WARNA TEMA', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey, letterSpacing: 1.2)),
+                  const SizedBox(height: 12),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                    decoration: BoxDecoration(color: palette.secondary, borderRadius: BorderRadius.circular(12)),
-                    child: Text('Aksen', style: TextStyle(color: palette.primary, fontSize: 11, fontWeight: FontWeight.bold)),
+                    decoration: BoxDecoration(
+                      color: cardBg,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: isDark ? Colors.white12 : Colors.grey.shade200),
+                    ),
+                    child: Column(
+                      children: appPalettes.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final palette = entry.value;
+                        final isSelected = currentTheme.name == palette.name;
+                        
+                        return Column(
+                          children: [
+                            ListTile(
+                              onTap: () => ref.read(themeProvider.notifier).state = palette,
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+                              leading: Container(
+                                width: 44, height: 44,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: isDark ? Colors.white24 : Colors.black12, width: 0.5),
+                                  gradient: SweepGradient(
+                                    colors: [
+                                      palette.primary, palette.primary,
+                                      palette.secondary, palette.secondary,
+                                      palette.tertiary, palette.tertiary
+                                    ],
+                                    stops: const [0.0, 0.33, 0.33, 0.66, 0.66, 1.0],
+                                  ),
+                                ),
+                              ),
+                              title: Text(palette.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
+                              trailing: isSelected 
+                                  ? Icon(SolarIconsBold.checkCircle, color: palette.primary, size: 28)
+                                  : Icon(SolarIconsOutline.roundAltArrowRight, color: Colors.grey.shade400, size: 24),
+                            ),
+                            if (index != appPalettes.length - 1)
+                              Divider(height: 1, indent: 80, endIndent: 20, color: isDark ? Colors.white12 : Colors.grey.shade100),
+                          ],
+                        );
+                      }).toList(),
+                    ),
                   ),
                 ],
               ),
             ),
-          );
-        },
+          ],
+        ),
       ),
     );
   }
 
-  Widget _colorDot(Color color) => Container(
-    width: 16, height: 16,
-    decoration: BoxDecoration(color: color, shape: BoxShape.circle, border: Border.all(color: Colors.grey.shade300, width: 0.5)),
-  );
+  Widget _modeBtn(BuildContext context, WidgetRef ref, String title, IconData icon, ThemeMode mode, ThemeMode currentMode) {
+    final isSelected = currentMode == mode;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final primary = Theme.of(context).colorScheme.primary;
+    
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => ref.read(themeModeProvider.notifier).state = mode,
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          decoration: BoxDecoration(
+            color: isSelected ? (isDark ? Colors.white12 : primary.withOpacity(0.08)) : Colors.transparent,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Column(
+            children: [
+              Icon(icon, color: isSelected ? primary : Colors.grey, size: 24),
+              const SizedBox(height: 8),
+              Text(title, style: TextStyle(fontSize: 12, fontWeight: isSelected ? FontWeight.bold : FontWeight.w500, color: isSelected ? primary : Colors.grey)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
 class SimpleChartPainter extends CustomPainter {
