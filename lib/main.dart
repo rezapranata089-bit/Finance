@@ -569,7 +569,7 @@ class HomePage extends ConsumerWidget {
                           width: 22, height: 16,
                           alignment: Alignment.center,
                           decoration: BoxDecoration(color: accent, borderRadius: BorderRadius.circular(4)),
-                          child: const Icon(SolarIconsBold.simCard, size: 12, color: Colors.black87),
+                          child: const Icon(SolarIconsBold.wallet, size: 12, color: Colors.black87),
                         ),
                         const SizedBox(width: 8),
                         Text('**** 3425', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: context.textPrimary)),
