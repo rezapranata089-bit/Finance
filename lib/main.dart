@@ -372,7 +372,7 @@ class HomePage extends ConsumerWidget {
           Container(
             padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
             decoration: BoxDecoration(
-              color: context.cardColor,
+              color: Color.alphaBlend(primary.withOpacity(isDark ? 0.12 : 0.05), context.cardColor),
               borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
               boxShadow: [
                 BoxShadow(
