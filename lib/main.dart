@@ -33,6 +33,7 @@ const appPalettes = [
 ];
 
 final tabProvider = StateProvider<int>((ref) => 0);
+final selectedCardProvider = StateProvider<int>((ref) => 0);
 final onboardingProvider = StateProvider<bool>((ref) => ref.watch(prefsProvider).getBool('onboarding_done') ?? false);
 final themeProvider = StateProvider<AppThemePalette>((ref) => appPalettes[0]);
 final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.light);
@@ -560,27 +561,7 @@ class HomePage extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(height: 24),
-                Center(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(20), border: Border.all(color: context.borderColor)),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 22, height: 16,
-                          alignment: Alignment.center,
-                          decoration: BoxDecoration(color: accent, borderRadius: BorderRadius.circular(4)),
-                          child: const Icon(SolarIconsBold.wallet, size: 12, color: Colors.black87),
-                        ),
-                        const SizedBox(width: 8),
-                        Text('**** 3425', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: context.textPrimary)),
-                        const SizedBox(width: 4),
-                        Icon(SolarIconsOutline.altArrowDown, size: 16, color: context.iconMuted),
-                      ],
-                    ),
-                  ),
-                ),
+                const Center(child: CardSelectorButton()),
                 const SizedBox(height: 24),
                 Center(child: Text(Strings.t(lang, 'your_balance'), style: TextStyle(color: context.textMuted, fontSize: 13, fontWeight: FontWeight.w500))),
                 const SizedBox(height: 8),
@@ -733,6 +714,163 @@ class HomePage extends ConsumerWidget {
           const SizedBox(height: 8),
           Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: context.textPrimary)),
         ],
+      ),
+    );
+  }
+}
+
+class CardSelectorButton extends ConsumerStatefulWidget {
+  const CardSelectorButton({super.key});
+  @override
+  ConsumerState<CardSelectorButton> createState() => _CardSelectorButtonState();
+}
+
+class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with SingleTickerProviderStateMixin {
+  final LayerLink _link = LayerLink();
+  OverlayEntry? _entry;
+  late final AnimationController _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 220));
+  late final Animation<double> _scale = CurvedAnimation(parent: _controller, curve: Curves.easeOutBack);
+  late final Animation<double> _fade = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
+
+  static const _cards = [
+    ('**** 3425', 'Main Wallet'),
+    ('**** 7810', 'Savings'),
+    ('**** 2290', 'Business'),
+  ];
+
+  @override
+  void dispose() {
+    _removeOverlay();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _removeOverlay() {
+    _entry?.remove();
+    _entry = null;
+  }
+
+  Future<void> _toggle() async {
+    if (_entry != null) {
+      await _controller.reverse();
+      _removeOverlay();
+      return;
+    }
+    final selected = ref.read(selectedCardProvider);
+    _entry = OverlayEntry(
+      builder: (overlayContext) => Stack(
+        children: [
+          Positioned.fill(
+            child: GestureDetector(behavior: HitTestBehavior.translucent, onTap: _toggle),
+          ),
+          CompositedTransformFollower(
+            link: _link,
+            targetAnchor: Alignment.bottomCenter,
+            followerAnchor: Alignment.topCenter,
+            offset: const Offset(0, 10),
+            child: FadeTransition(
+              opacity: _fade,
+              child: ScaleTransition(
+                scale: _scale,
+                alignment: Alignment.topCenter,
+                child: Material(
+                  color: Colors.transparent,
+                  child: _CardGlassPopup(
+                    cards: _cards,
+                    selected: selected,
+                    onSelect: (i) {
+                      ref.read(selectedCardProvider.notifier).state = i;
+                      _toggle();
+                    },
+                    onAdd: _toggle,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    Overlay.of(context).insert(_entry!);
+    _controller.forward(from: 0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final selected = ref.watch(selectedCardProvider);
+    final accent = Theme.of(context).colorScheme.secondary;
+    return CompositedTransformTarget(
+      link: _link,
+      child: GestureDetector(
+        onTap: _toggle,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+          decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(20), border: Border.all(color: context.borderColor)),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 22, height: 16,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(color: accent, borderRadius: BorderRadius.circular(4)),
+                child: const Icon(SolarIconsBold.wallet, size: 12, color: Colors.black87),
+              ),
+              const SizedBox(width: 8),
+              Text(_cards[selected].$1, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: context.textPrimary)),
+              const SizedBox(width: 4),
+              Icon(SolarIconsOutline.altArrowDown, size: 16, color: context.iconMuted),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CardGlassPopup extends StatelessWidget {
+  final List<(String, String)> cards;
+  final int selected;
+  final ValueChanged<int> onSelect;
+  final VoidCallback onAdd;
+  const _CardGlassPopup({required this.cards, required this.selected, required this.onSelect, required this.onAdd});
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
+    return SizedBox(
+      width: 230,
+      child: LiquidGlass(
+        borderRadius: 22,
+        tint: context.cardColor,
+        intensity: 1.6,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ...cards.asMap().entries.map((e) {
+                final isSelected = e.key == selected;
+                return ListTile(
+                  dense: true,
+                  onTap: () => onSelect(e.key),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+                  leading: Icon(SolarIconsOutline.card, size: 18, color: isSelected ? primary : context.iconMuted),
+                  title: Text(e.value.$1, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: context.textPrimary)),
+                  subtitle: Text(e.value.$2, style: TextStyle(fontSize: 11, color: context.textMuted)),
+                  trailing: isSelected ? Icon(SolarIconsBold.checkCircle, size: 18, color: primary) : null,
+                );
+              }),
+              Divider(height: 1, indent: 14, endIndent: 14, color: context.borderColor),
+              ListTile(
+                dense: true,
+                onTap: onAdd,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+                leading: Icon(SolarIconsOutline.addCircle, size: 18, color: primary),
+                title: Text('Tambah kartu', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: primary)),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
