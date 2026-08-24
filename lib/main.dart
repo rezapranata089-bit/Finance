@@ -45,7 +45,7 @@ final langProvider = StateProvider<AppLang>((ref) {
 
 extension AppColors on BuildContext {
   bool get isDark => Theme.of(this).brightness == Brightness.dark;
-  Color get cardColor => isDark ? const Color(0xFF1E1B27) : Colors.white;
+  Color get cardColor => isDark ? const Color(0xFF121016) : const Color(0xFFF8F7FB);
   Color get borderColor => isDark ? Colors.white.withOpacity(0.08) : Colors.grey.shade200;
   Color get textPrimary => isDark ? Colors.white : const Color(0xFF25212E);
   Color get textMuted => isDark ? Colors.white60 : Colors.grey.shade600;
@@ -183,7 +183,7 @@ class MyFinanceApp extends ConsumerWidget {
       theme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.light,
-        scaffoldBackgroundColor: const Color(0xFFF8F7FB),
+        scaffoldBackgroundColor: Colors.white,
         colorScheme: ColorScheme.fromSeed(
           seedColor: theme.primary,
           primary: theme.primary,
@@ -201,7 +201,7 @@ class MyFinanceApp extends ConsumerWidget {
       darkTheme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF121016),
+        scaffoldBackgroundColor: const Color(0xFF1E1B27),
         colorScheme: ColorScheme.fromSeed(
           seedColor: theme.primary,
           brightness: Brightness.dark,
@@ -209,7 +209,7 @@ class MyFinanceApp extends ConsumerWidget {
           primary: theme.primary,
           secondary: theme.secondary,
           tertiary: theme.tertiary,
-          surface: const Color(0xFF1E1B27),
+          surface: const Color(0xFF121016),
           onSurface: Colors.white,
         ),
         fontFamily: 'Satoshi',
