@@ -546,37 +546,40 @@ class HomePage extends ConsumerWidget {
                       ),
                     ),
                     Text(Strings.t(lang, 'my_account'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: context.textPrimary)),
-                    Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(isDark ? 0.22 : 0.07),
-                                blurRadius: 10,
-                                offset: const Offset(0, 4),
+                    GestureDetector(
+                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsPage())),
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(isDark ? 0.22 : 0.07),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: LiquidGlass(
+                              borderRadius: 999,
+                              child: Padding(
+                                padding: const EdgeInsets.all(10),
+                                child: Icon(SolarIconsOutline.bell, size: 20, color: context.textPrimary),
                               ),
-                            ],
-                          ),
-                          child: LiquidGlass(
-                            borderRadius: 999,
-                            child: Padding(
-                              padding: const EdgeInsets.all(10),
-                              child: Icon(SolarIconsOutline.bell, size: 20, color: context.textPrimary),
                             ),
                           ),
-                        ),
-                        Positioned(
-                          right: -2, top: -2,
-                          child: Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(color: accent, shape: BoxShape.circle),
-                            child: const Text('2', style: TextStyle(color: Colors.black, fontSize: 8, fontWeight: FontWeight.bold)),
-                          ),
-                        )
-                      ],
+                          Positioned(
+                            right: -2, top: -2,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(color: accent, shape: BoxShape.circle),
+                              child: const Text('2', style: TextStyle(color: Colors.black, fontSize: 8, fontWeight: FontWeight.bold)),
+                            ),
+                          )
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -1354,6 +1357,97 @@ class LanguageSelectionPage extends ConsumerWidget {
                   ),
                 ],
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class NotificationsPage extends ConsumerWidget {
+  const NotificationsPage({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(langProvider);
+    final isDark = context.isDark;
+    final bg = isDark ? const Color(0xFF121016) : const Color(0xFFF8F7FB);
+    final primary = Theme.of(context).colorScheme.primary;
+    final tertiary = Theme.of(context).colorScheme.tertiary;
+    final notifications = [
+      (SolarIconsBold.wallet, 'Pemasukan diterima', 'Gaji bulanan sebesar Rp 8.500.000 telah masuk', '08:30'),
+      (SolarIconsBold.bag2, 'Diskon spesial', 'Diskon hingga 80% untuk musim perayaan', 'Kemarin'),
+      (SolarIconsBold.stars, 'Target tabungan', 'Kamu berhasil menghemat Rp 290.000 bulan lalu', '2 hari lalu'),
+    ];
+
+    return Scaffold(
+      backgroundColor: bg,
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: LiquidGlass(
+                      borderRadius: 999,
+                      child: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Icon(SolarIconsOutline.arrowLeft, size: 20, color: context.textPrimary),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Text(Strings.t(lang, 'notifications'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: context.textPrimary)),
+                ],
+              ),
+            ),
+            Expanded(
+              child: notifications.isEmpty
+                  ? Center(child: Text(Strings.t(lang, 'not_available').replaceAll('{name}', Strings.t(lang, 'notifications')), style: TextStyle(color: context.textMuted)))
+                  : ListView.separated(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      itemCount: notifications.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      itemBuilder: (context, i) {
+                        final item = notifications[i];
+                        return Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: context.cardColor,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: context.borderColor),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                width: 44, height: 44,
+                                decoration: BoxDecoration(color: isDark ? primary.withOpacity(0.18) : tertiary, shape: BoxShape.circle),
+                                child: Icon(item.$1, color: primary, size: 20),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(item.$2, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: context.textPrimary)),
+                                    const SizedBox(height: 4),
+                                    Text(item.$3, style: TextStyle(color: context.textMuted, fontSize: 12, height: 1.4)),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(item.$4, style: TextStyle(color: context.textFaint, fontSize: 11, fontWeight: FontWeight.w500)),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
             ),
           ],
         ),
