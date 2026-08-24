@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -72,18 +74,6 @@ class LiquidGlass extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(borderRadius),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            base.withOpacity(topOpacity),
-            base.withOpacity(bottomOpacity),
-          ],
-        ),
-        border: Border.all(
-          color: Colors.white.withOpacity(isDark ? 0.16 : 0.55),
-          width: 1,
-        ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(isDark ? 0.22 : 0.06),
@@ -97,7 +87,30 @@ class LiquidGlass extends StatelessWidget {
           ),
         ],
       ),
-      child: child,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(borderRadius),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(borderRadius),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  base.withOpacity(topOpacity),
+                  base.withOpacity(bottomOpacity),
+                ],
+              ),
+              border: Border.all(
+                color: Colors.white.withOpacity(isDark ? 0.16 : 0.55),
+                width: 1,
+              ),
+            ),
+            child: child,
+          ),
+        ),
+      ),
     );
   }
 }
