@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -831,7 +832,11 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
               const SizedBox(width: 8),
               Text(_cards[selected].$1, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: context.textPrimary)),
               const SizedBox(width: 4),
-              Icon(SolarIconsOutline.altArrowDown, size: 16, color: context.iconMuted),
+              AnimatedBuilder(
+                animation: _controller,
+                builder: (context, child) => Transform.rotate(angle: _controller.value * math.pi, child: child),
+                child: Icon(SolarIconsOutline.altArrowDown, size: 16, color: context.iconMuted),
+              ),
             ],
           ),
         ),
