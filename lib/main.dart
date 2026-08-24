@@ -136,7 +136,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             Row(children: [
               ...List.generate(3, (i) => AnimatedContainer(duration: const Duration(milliseconds: 220), margin: const EdgeInsets.only(right: 6), width: i == page ? 28 : 7, height: 7, decoration: BoxDecoration(color: i == page ? colors.primary : const Color(0xFFD8D2E5), borderRadius: BorderRadius.circular(20)))),
               const Spacer(),
-              FilledButton.icon(onPressed: () => last ? _finish() : setState(() => page++), icon: Icon(last ? SolarIconsOutline.checkRead : SolarIconsOutline.arrowRight), label: Text(last ? 'Mulai sekarang' : 'Lanjutkan')),
+              FilledButton.icon(onPressed: () => last ? _finish() : setState(() => page++), icon: Icon(last ? Icons.check : SolarIconsOutline.arrowRight), label: Text(last ? 'Mulai sekarang' : 'Lanjutkan')),
             ]),
           ]),
         ),
@@ -417,7 +417,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
       const Text('Transaksi', style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 32)),
       Text('Semua aktivitas keuanganmu', style: TextStyle(color: Colors.grey.shade600)),
       const SizedBox(height: 22),
-      TextField(onChanged: (v) => setState(() => query = v), decoration: const InputDecoration(hintText: 'Cari transaksi', prefixIcon: Icon(SolarIconsOutline.magnifer))),
+      TextField(onChanged: (v) => setState(() => query = v), decoration: const InputDecoration(hintText: 'Cari transaksi', prefixIcon: Icon(Icons.search))),
       const SizedBox(height: 14),
       SingleChildScrollView(
         scrollDirection: Axis.horizontal,
