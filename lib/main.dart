@@ -645,7 +645,7 @@ class HomePage extends ConsumerWidget {
                   ];
                   final cardWidth = MediaQuery.of(context).size.width * 0.78;
                   return SizedBox(
-                    height: 92,
+                    height: 74,
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
                       clipBehavior: Clip.none,
@@ -655,9 +655,16 @@ class HomePage extends ConsumerWidget {
                         final promo = promos[i];
                         return Container(
                           width: cardWidth,
-                          padding: const EdgeInsets.all(16),
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                           decoration: BoxDecoration(
-                            color: context.cardColor,
+                            gradient: LinearGradient(
+                              begin: Alignment.centerLeft,
+                              end: Alignment.centerRight,
+                              colors: [
+                                Color.alphaBlend(primary.withOpacity(isDark ? 0.38 : 0.22), context.cardColor),
+                                context.cardColor,
+                              ],
+                            ),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(color: context.borderColor),
                           ),
