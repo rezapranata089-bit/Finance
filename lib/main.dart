@@ -443,7 +443,8 @@ class HomePage extends ConsumerWidget {
                 ),
               ],
             ),
-            child: Container(
+            child: Stack(children: [
+              Container(
                   padding: EdgeInsets.fromLTRB(20, topInset + 12, 20, 32),
                   decoration: BoxDecoration(
                     borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
@@ -454,12 +455,6 @@ class HomePage extends ConsumerWidget {
                         Color.alphaBlend(primary.withOpacity(isDark ? 0.22 : 0.14), context.cardColor).withOpacity(isDark ? 0.86 : 0.82),
                         Color.alphaBlend(primary.withOpacity(isDark ? 0.16 : 0.08), context.cardColor).withOpacity(isDark ? 0.68 : 0.58),
                       ],
-                    ),
-                    border: Border(
-                      bottom: BorderSide(
-                        color: isDark ? Colors.black.withOpacity(0.35) : Colors.white.withOpacity(0.6),
-                        width: 1.2,
-                      ),
                     ),
                   ),
                   child: Column(
@@ -573,6 +568,17 @@ class HomePage extends ConsumerWidget {
               ],
             ),
                 ),
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: CustomPaint(
+                    painter: BottomRoundedBorderPainter(
+                      color: isDark ? Colors.black.withOpacity(0.35) : Colors.white.withOpacity(0.6),
+                      radius: 32,
+                    ),
+                  ),
+                ),
+              ),
+            ]),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
@@ -1132,6 +1138,32 @@ class SimpleChartPainter extends CustomPainter {
   }
   @override
   bool shouldRepaint(covariant SimpleChartPainter oldDelegate) => oldDelegate.primary != primary || oldDelegate.gridColor != gridColor;
+}
+
+class BottomRoundedBorderPainter extends CustomPainter {
+  final Color color;
+  final double radius;
+  final double strokeWidth;
+  const BottomRoundedBorderPainter({required this.color, required this.radius, this.strokeWidth = 1.2});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
+    final path = Path()
+      ..moveTo(0, size.height - radius)
+      ..arcToPoint(Offset(radius, size.height), radius: Radius.circular(radius), clockwise: false)
+      ..lineTo(size.width - radius, size.height)
+      ..arcToPoint(Offset(size.width, size.height - radius), radius: Radius.circular(radius), clockwise: false);
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant BottomRoundedBorderPainter oldDelegate) =>
+      oldDelegate.color != color || oldDelegate.radius != radius || oldDelegate.strokeWidth != strokeWidth;
 }
 
 Future<void> showTransactionForm(BuildContext context, WidgetRef ref, bool income) async {
