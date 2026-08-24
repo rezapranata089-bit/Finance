@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:solar_icons/solar_icons.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -67,7 +68,11 @@ class MyFinanceApp extends ConsumerWidget {
         useMaterial3: true,
         brightness: Brightness.light,
         scaffoldBackgroundColor: const Color(0xFFF8F7FB),
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF7655D8), brightness: Brightness.light),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF7655D8),
+          secondary: const Color(0xFFD6F6A6), // Accent color palette
+          brightness: Brightness.light,
+        ),
         fontFamily: 'Satoshi',
         appBarTheme: const AppBarTheme(backgroundColor: Colors.transparent, elevation: 0),
         inputDecorationTheme: InputDecorationTheme(
@@ -119,7 +124,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                     Positioned(top: 42, left: 28, child: _orb(const Color(0xFFB9A7FF), 54)),
                     Positioned(top: 88, right: 40, child: _orb(const Color(0xFF8D75E9), 90)),
                     Positioned(bottom: 44, left: 80, child: _orb(colors.primary, 120)),
-                    Center(child: Icon(last ? Icons.insights_rounded : page == 1 ? Icons.receipt_long_rounded : Icons.account_balance_wallet_rounded, size: 94, color: Colors.white)),
+                    Center(child: Icon(last ? SolarIconsBold.chart : page == 1 ? SolarIconsBold.billList : SolarIconsBold.wallet, size: 94, color: Colors.white)),
                   ]),
                 ),
                 const SizedBox(height: 40),
@@ -131,7 +136,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             Row(children: [
               ...List.generate(3, (i) => AnimatedContainer(duration: const Duration(milliseconds: 220), margin: const EdgeInsets.only(right: 6), width: i == page ? 28 : 7, height: 7, decoration: BoxDecoration(color: i == page ? colors.primary : const Color(0xFFD8D2E5), borderRadius: BorderRadius.circular(20)))),
               const Spacer(),
-              FilledButton.icon(onPressed: () => last ? _finish() : setState(() => page++), icon: Icon(last ? Icons.check : Icons.arrow_forward), label: Text(last ? 'Mulai sekarang' : 'Lanjutkan')),
+              FilledButton.icon(onPressed: () => last ? _finish() : setState(() => page++), icon: Icon(last ? SolarIconsOutline.checkRead : SolarIconsOutline.arrowRight), label: Text(last ? 'Mulai sekarang' : 'Lanjutkan')),
             ]),
           ]),
         ),
@@ -164,28 +169,28 @@ class FinanceShell extends ConsumerWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _navItem(0, Icons.home_filled, 'Home', tab, ref),
-            _navItem(1, Icons.bar_chart, 'Statistic', tab, ref),
+            _navItem(0, SolarIconsOutline.home, SolarIconsBold.home, 'Home', tab, ref),
+            _navItem(1, SolarIconsOutline.chart, SolarIconsBold.chart, 'Statistic', tab, ref),
             GestureDetector(
               onTap: () {},
               child: Container(
                 width: 48, height: 48,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFD6F6A6),
+                  color: Theme.of(context).colorScheme.secondary,
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: const Icon(Icons.qr_code_scanner, color: Colors.black),
+                child: const Icon(SolarIconsOutline.scanner, color: Colors.black),
               ),
             ),
-            _navItem(2, Icons.credit_card, 'Card', tab, ref),
-            _navItem(3, Icons.person_outline, 'Profile', tab, ref),
+            _navItem(2, SolarIconsOutline.card, SolarIconsBold.card, 'Card', tab, ref),
+            _navItem(3, SolarIconsOutline.user, SolarIconsBold.user, 'Profile', tab, ref),
           ],
         ),
       ),
     );
   }
 
-  Widget _navItem(int index, IconData icon, String label, int currentTab, WidgetRef ref) {
+  Widget _navItem(int index, IconData iconOutline, IconData iconBold, String label, int currentTab, WidgetRef ref) {
     final isSelected = currentTab == index;
     return GestureDetector(
       onTap: () => ref.read(tabProvider.notifier).state = index,
@@ -193,7 +198,7 @@ class FinanceShell extends ConsumerWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, color: isSelected ? Colors.black : Colors.grey, size: 24),
+          Icon(isSelected ? iconBold : iconOutline, color: isSelected ? Colors.black : Colors.grey, size: 24),
           const SizedBox(height: 4),
           Text(label, style: TextStyle(fontSize: 10, color: isSelected ? Colors.black : Colors.grey, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
         ],
@@ -211,6 +216,7 @@ class HomePage extends ConsumerWidget {
     final expense = items.where((e) => !e.income).fold<double>(0, (a, b) => a + b.amount);
     final balance = 50000000 + income - expense;
     final primary = Theme.of(context).colorScheme.primary;
+    final accent = Theme.of(context).colorScheme.secondary;
     
     return SafeArea(
       child: ListView(
@@ -237,7 +243,7 @@ class HomePage extends ConsumerWidget {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: Colors.grey.shade200)),
-                      child: const Icon(Icons.menu, size: 20),
+                      child: const Icon(SolarIconsOutline.hamburgerMenu, size: 20),
                     ),
                     const Text('My Account', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                     Container(
@@ -246,12 +252,12 @@ class HomePage extends ConsumerWidget {
                       child: Stack(
                         clipBehavior: Clip.none,
                         children: [
-                          const Icon(Icons.notifications_none, size: 20),
+                          const Icon(SolarIconsOutline.bell, size: 20),
                           Positioned(
                             right: -2, top: -2,
                             child: Container(
                               padding: const EdgeInsets.all(4),
-                              decoration: const BoxDecoration(color: Color(0xFFD6F6A6), shape: BoxShape.circle),
+                              decoration: BoxDecoration(color: accent, shape: BoxShape.circle),
                               child: const Text('2', style: TextStyle(color: Colors.black, fontSize: 8, fontWeight: FontWeight.bold)),
                             ),
                           )
@@ -270,12 +276,12 @@ class HomePage extends ConsumerWidget {
                       children: [
                         Container(
                           width: 20, height: 14,
-                          decoration: BoxDecoration(color: const Color(0xFFD6F6A6), borderRadius: BorderRadius.circular(3)),
+                          decoration: BoxDecoration(color: accent, borderRadius: BorderRadius.circular(3)),
                         ),
                         const SizedBox(width: 8),
                         const Text('**** 3425', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
                         const SizedBox(width: 4),
-                        const Icon(Icons.keyboard_arrow_down, size: 16, color: Colors.grey),
+                        const Icon(SolarIconsOutline.altArrowDown, size: 16, color: Colors.grey),
                       ],
                     ),
                   ),
@@ -292,7 +298,7 @@ class HomePage extends ConsumerWidget {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.auto_awesome, size: 14, color: primary),
+                        Icon(SolarIconsBold.stars, size: 14, color: primary),
                         const SizedBox(width: 6),
                         Text('You saved Rp 290.000 in last Month >', style: TextStyle(fontSize: 11, color: primary, fontWeight: FontWeight.w600)),
                       ],
@@ -303,10 +309,10 @@ class HomePage extends ConsumerWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _actionBtn(context, Icons.arrow_outward, 'Send', const Color(0xFFD6F6A6), Colors.black, () => showTransactionForm(context, ref, false)),
-                    _actionBtn(context, Icons.south_west, 'Request', Colors.white, Colors.black, () => showTransactionForm(context, ref, true)),
-                    _actionBtn(context, Icons.swap_horiz, 'Exchange', Colors.white, Colors.black, () => ref.read(tabProvider.notifier).state = 2),
-                    _actionBtn(context, Icons.more_horiz, 'More', Colors.white, Colors.black, () => ref.read(tabProvider.notifier).state = 3),
+                    _actionBtn(context, SolarIconsOutline.arrowRightUp, 'Send', accent, Colors.black, () => showTransactionForm(context, ref, false)),
+                    _actionBtn(context, SolarIconsOutline.arrowLeftDown, 'Request', Colors.white, Colors.black, () => showTransactionForm(context, ref, true)),
+                    _actionBtn(context, SolarIconsOutline.transferHorizontal, 'Exchange', Colors.white, Colors.black, () => ref.read(tabProvider.notifier).state = 2),
+                    _actionBtn(context, SolarIconsOutline.menuDots, 'More', Colors.white, Colors.black, () => ref.read(tabProvider.notifier).state = 3),
                   ],
                 ),
               ],
@@ -347,7 +353,7 @@ class HomePage extends ConsumerWidget {
                       Container(
                         padding: const EdgeInsets.all(8),
                         decoration: const BoxDecoration(color: Color(0xFFF4EDFF), shape: BoxShape.circle),
-                        child: Icon(Icons.shopping_bag_rounded, color: primary, size: 24),
+                        child: Icon(SolarIconsBold.bag2, color: primary, size: 24),
                       ),
                     ],
                   ),
@@ -411,7 +417,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
       const Text('Transaksi', style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 32)),
       Text('Semua aktivitas keuanganmu', style: TextStyle(color: Colors.grey.shade600)),
       const SizedBox(height: 22),
-      TextField(onChanged: (v) => setState(() => query = v), decoration: const InputDecoration(hintText: 'Cari transaksi', prefixIcon: Icon(Icons.search))),
+      TextField(onChanged: (v) => setState(() => query = v), decoration: const InputDecoration(hintText: 'Cari transaksi', prefixIcon: Icon(SolarIconsOutline.magnifer))),
       const SizedBox(height: 14),
       SingleChildScrollView(
         scrollDirection: Axis.horizontal,
@@ -472,11 +478,11 @@ class ProfilePage extends StatelessWidget {
     const SizedBox(height: 26),
     const SectionTitle('Keuangan'),
     const SizedBox(height: 10),
-    SettingList(items: const [['Target tabungan', Icons.savings_outlined], ['Kategori', Icons.category_outlined], ['Akun / Dompet', Icons.account_balance_wallet_outlined], ['Piutang', Icons.people_outline]]),
+    SettingList(items: const [['Target tabungan', SolarIconsOutline.safeSquare], ['Kategori', SolarIconsOutline.widget], ['Akun / Dompet', SolarIconsOutline.wallet], ['Piutang', SolarIconsOutline.usersGroupTwoRounded]]),
     const SizedBox(height: 24),
     const SectionTitle('Aplikasi'),
     const SizedBox(height: 10),
-    SettingList(items: const [['Tampilan', Icons.palette_outlined], ['Notifikasi', Icons.notifications_none], ['Backup data', Icons.cloud_upload_outlined]]),
+    SettingList(items: const [['Tampilan', SolarIconsOutline.palette], ['Notifikasi', SolarIconsOutline.bell], ['Backup data', SolarIconsOutline.cloudUpload]]),
   ]));
 }
 
@@ -575,7 +581,7 @@ class SettingList extends StatelessWidget {
                 color: Theme.of(context).colorScheme.primary,
               ),
               title: Text(item[0] as String),
-              trailing: const Icon(Icons.chevron_right, size: 20),
+              trailing: const Icon(SolarIconsOutline.altArrowRight, size: 20),
             ),
           )
           .toList(),
