@@ -526,25 +526,7 @@ class HomePage extends ConsumerWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Container(
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(isDark ? 0.22 : 0.07),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: LiquidGlass(
-                        borderRadius: 999,
-                        child: Padding(
-                          padding: const EdgeInsets.all(10),
-                          child: Icon(SolarIconsOutline.hamburgerMenu, size: 20, color: context.textPrimary),
-                        ),
-                      ),
-                    ),
+                    const HamburgerMorphMenu(),
                     Text(Strings.t(lang, 'my_account'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: context.textPrimary)),
                     GestureDetector(
                       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsPage())),
@@ -737,6 +719,179 @@ class HomePage extends ConsumerWidget {
           const SizedBox(height: 8),
           Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: context.textPrimary)),
         ],
+      ),
+    );
+  }
+}
+
+class HamburgerMorphMenu extends ConsumerStatefulWidget {
+  const HamburgerMorphMenu({super.key});
+  @override
+  ConsumerState<HamburgerMorphMenu> createState() => _HamburgerMorphMenuState();
+}
+
+class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with SingleTickerProviderStateMixin {
+  final LayerLink _link = LayerLink();
+  OverlayEntry? _entry;
+  late final AnimationController _controller = AnimationController(vsync: this, value: 0);
+  bool _open = false;
+
+  static const _closedSize = Size(40, 40);
+  static const _openSize = Size(183, 172);
+  static const _openCurve = Cubic(0.34, 1.25, 0.64, 1.0);
+  static const _closeCurve = Cubic(0.22, 1.0, 0.36, 1.0);
+
+  @override
+  void dispose() {
+    _removeOverlay();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _removeOverlay() {
+    _entry?.remove();
+    _entry = null;
+  }
+
+  Future<void> _toggle() async {
+    if (_open) {
+      setState(() => _open = false);
+      await _controller.animateTo(0, duration: const Duration(milliseconds: 250), curve: _closeCurve);
+      _removeOverlay();
+      return;
+    }
+    setState(() => _open = true);
+    _entry = OverlayEntry(
+      builder: (overlayContext) => Stack(
+        children: [
+          Positioned.fill(child: GestureDetector(behavior: HitTestBehavior.translucent, onTap: _toggle)),
+          CompositedTransformFollower(
+            link: _link,
+            targetAnchor: Alignment.topLeft,
+            followerAnchor: Alignment.topLeft,
+            child: AnimatedBuilder(
+              animation: _controller,
+              builder: (context, child) {
+                final t = _controller.value;
+                final size = Size.lerp(_closedSize, _openSize, t)!;
+                final radius = lerpDouble(20, 20, t)!;
+                final iconOpacity = (1 - t / 0.45).clamp(0.0, 1.0);
+                final menuOpacity = ((t - 0.35) / 0.65).clamp(0.0, 1.0);
+                final menuOffset = (1 - menuOpacity) * 14;
+                return Material(
+                  color: Colors.transparent,
+                  child: Container(
+                    width: size.width,
+                    height: size.height,
+                    decoration: BoxDecoration(
+                      color: context.cardColor,
+                      borderRadius: BorderRadius.circular(radius),
+                      border: Border.all(color: context.borderColor),
+                      boxShadow: [
+                        BoxShadow(color: Colors.black.withOpacity(context.isDark ? 0.3 : 0.1), blurRadius: 20, offset: const Offset(0, 10)),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(radius),
+                      child: Stack(
+                        children: [
+                          Positioned(
+                            top: 0, left: 0, width: 40, height: 40,
+                            child: Opacity(
+                              opacity: iconOpacity,
+                              child: Center(child: Icon(SolarIconsOutline.hamburgerMenu, size: 20, color: context.textPrimary)),
+                            ),
+                          ),
+                          Opacity(
+                            opacity: menuOpacity,
+                            child: Transform.translate(
+                              offset: Offset(menuOffset, menuOffset * -0.3),
+                              child: _MorphMenuContent(onSelect: _select),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+    Overlay.of(context).insert(_entry!);
+    await _controller.animateTo(1, duration: const Duration(milliseconds: 350), curve: _openCurve);
+  }
+
+  void _select(VoidCallback action) {
+    _toggle();
+    action();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return CompositedTransformTarget(
+      link: _link,
+      child: GestureDetector(
+        onTap: _toggle,
+        child: Opacity(
+          opacity: _open ? 0 : 1,
+          child: Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(context.isDark ? 0.22 : 0.07),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: LiquidGlass(
+              borderRadius: 999,
+              child: Padding(
+                padding: const EdgeInsets.all(10),
+                child: Icon(SolarIconsOutline.hamburgerMenu, size: 20, color: context.textPrimary),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MorphMenuContent extends ConsumerWidget {
+  final void Function(VoidCallback action) onSelect;
+  const _MorphMenuContent({required this.onSelect});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(langProvider);
+    final primary = Theme.of(context).colorScheme.primary;
+    final items = [
+      (SolarIconsOutline.user, Strings.t(lang, 'nav_profile'), () => ref.read(tabProvider.notifier).state = 3),
+      (SolarIconsOutline.palette, Strings.t(lang, 'appearance'), () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ThemeSelectionPage()))),
+      (Icons.language, Strings.t(lang, 'language'), () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LanguageSelectionPage()))),
+      (SolarIconsOutline.bell, Strings.t(lang, 'notifications'), () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsPage()))),
+    ];
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: items
+            .map<Widget>((item) => ListTile(
+                  dense: true,
+                  visualDensity: const VisualDensity(horizontal: -4, vertical: -3),
+                  onTap: () => onSelect(item.$3),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+                  minLeadingWidth: 0,
+                  leading: Icon(item.$1, size: 18, color: primary),
+                  title: Text(item.$2, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: context.textPrimary)),
+                ))
+            .toList(),
       ),
     );
   }
