@@ -127,6 +127,8 @@ class Strings {
     'view_all': {AppLang.en: 'View all', AppLang.id: 'Lihat semua'},
     'discount_title': {AppLang.en: 'Discount Up To 80%', AppLang.id: 'Diskon Hingga 80%'},
     'discount_subtitle': {AppLang.en: 'Festive Season Gift', AppLang.id: 'Hadiah Musim Perayaan'},
+    'cashback_title': {AppLang.en: 'Cashback 15%', AppLang.id: 'Cashback 15%'},
+    'cashback_subtitle': {AppLang.en: 'Grocery partners', AppLang.id: 'Merchant belanja'},
     'transaction_history': {AppLang.en: 'Transaction History', AppLang.id: 'Riwayat Transaksi'},
     'today': {AppLang.en: 'TODAY', AppLang.id: 'HARI INI'},
     'receive': {AppLang.en: 'Receive', AppLang.id: 'Terima'},
@@ -636,33 +638,53 @@ class HomePage extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: context.cardColor,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: context.borderColor),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(Strings.t(lang, 'discount_title'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: context.textPrimary)),
-                            const SizedBox(height: 4),
-                            Text(Strings.t(lang, 'discount_subtitle'), style: TextStyle(color: context.textMuted, fontSize: 12)),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(color: isDark ? primary.withOpacity(0.18) : tertiary, shape: BoxShape.circle),
-                        child: Icon(SolarIconsBold.bag2, color: primary, size: 24),
-                      ),
-                    ],
-                  ),
-                ),
+                Builder(builder: (context) {
+                  final promos = [
+                    (Strings.t(lang, 'discount_title'), Strings.t(lang, 'discount_subtitle'), SolarIconsBold.bag2),
+                    (Strings.t(lang, 'cashback_title'), Strings.t(lang, 'cashback_subtitle'), SolarIconsBold.wallet),
+                  ];
+                  final cardWidth = MediaQuery.of(context).size.width * 0.78;
+                  return SizedBox(
+                    height: 92,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      clipBehavior: Clip.none,
+                      itemCount: promos.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 12),
+                      itemBuilder: (context, i) {
+                        final promo = promos[i];
+                        return Container(
+                          width: cardWidth,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: context.cardColor,
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(color: context.borderColor),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(promo.$1, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: context.textPrimary)),
+                                    const SizedBox(height: 4),
+                                    Text(promo.$2, style: TextStyle(color: context.textMuted, fontSize: 12)),
+                                  ],
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(color: isDark ? primary.withOpacity(0.18) : tertiary, shape: BoxShape.circle),
+                                child: Icon(promo.$3, color: primary, size: 24),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+                  );
+                }),
                 const SizedBox(height: 32),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
