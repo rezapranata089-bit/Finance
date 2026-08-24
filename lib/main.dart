@@ -214,134 +214,159 @@ class HomePage extends ConsumerWidget {
     
     return SafeArea(
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+        padding: EdgeInsets.zero,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: Colors.grey.shade200)),
-                child: const Icon(Icons.menu, size: 20),
-              ),
-              const Text('My Account', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: Colors.grey.shade200)),
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    const Icon(Icons.notifications_none, size: 20),
-                    Positioned(
-                      right: -2, top: -2,
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(color: Color(0xFFD6F6A6), shape: BoxShape.circle),
-                        child: const Text('2', style: TextStyle(color: Colors.black, fontSize: 8, fontWeight: FontWeight.bold)),
-                      ),
-                    )
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 24),
-          Center(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey.shade200)),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 20, height: 14,
-                    decoration: BoxDecoration(color: const Color(0xFFD6F6A6), borderRadius: BorderRadius.circular(3)),
-                  ),
-                  const SizedBox(width: 8),
-                  const Text('**** 3425', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-                  const SizedBox(width: 4),
-                  const Icon(Icons.keyboard_arrow_down, size: 16, color: Colors.grey),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          const Center(child: Text('Your Balance', style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.w500))),
-          const SizedBox(height: 8),
-          Center(child: Text(rupiah(balance), style: const TextStyle(fontSize: 38, fontWeight: FontWeight.w900, letterSpacing: -1))),
-          const SizedBox(height: 12),
-          Center(
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(color: primary.withOpacity(0.08), borderRadius: BorderRadius.circular(20)),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(Icons.auto_awesome, size: 14, color: primary),
-                  const SizedBox(width: 6),
-                  Text('You saved Rp 290.000 in last Month >', style: TextStyle(fontSize: 11, color: primary, fontWeight: FontWeight.w600)),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 32),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _actionBtn(context, Icons.arrow_outward, 'Send', const Color(0xFFD6F6A6), Colors.black, () => showTransactionForm(context, ref, false)),
-              _actionBtn(context, Icons.south_west, 'Request', Colors.white, Colors.black, () => showTransactionForm(context, ref, true)),
-              _actionBtn(context, Icons.swap_horiz, 'Exchange', Colors.white, Colors.black, () => ref.read(tabProvider.notifier).state = 2),
-              _actionBtn(context, Icons.more_horiz, 'More', Colors.white, Colors.black, () => ref.read(tabProvider.notifier).state = 3),
-            ],
-          ),
-          const SizedBox(height: 36),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('Top Merchants', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
-              Text('View all >', style: TextStyle(color: Colors.grey.shade500, fontSize: 12, fontWeight: FontWeight.w600)),
-            ],
-          ),
-          const SizedBox(height: 16),
           Container(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: Colors.grey.shade100),
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.03),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
-            child: Row(
+            child: Column(
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('Discount Up To 80%', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                      const SizedBox(height: 4),
-                      Text('Festive Season Gift', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
-                    ],
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: Colors.grey.shade200)),
+                      child: const Icon(Icons.menu, size: 20),
+                    ),
+                    const Text('My Account', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(color: Colors.white, shape: BoxShape.circle, border: Border.all(color: Colors.grey.shade200)),
+                      child: Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          const Icon(Icons.notifications_none, size: 20),
+                          Positioned(
+                            right: -2, top: -2,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(color: Color(0xFFD6F6A6), shape: BoxShape.circle),
+                              child: const Text('2', style: TextStyle(color: Colors.black, fontSize: 8, fontWeight: FontWeight.bold)),
+                            ),
+                          )
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+                Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: Colors.grey.shade200)),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 20, height: 14,
+                          decoration: BoxDecoration(color: const Color(0xFFD6F6A6), borderRadius: BorderRadius.circular(3)),
+                        ),
+                        const SizedBox(width: 8),
+                        const Text('**** 3425', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+                        const SizedBox(width: 4),
+                        const Icon(Icons.keyboard_arrow_down, size: 16, color: Colors.grey),
+                      ],
+                    ),
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: const BoxDecoration(color: Color(0xFFF4EDFF), shape: BoxShape.circle),
-                  child: Icon(Icons.shopping_bag_rounded, color: primary, size: 24),
+                const SizedBox(height: 24),
+                const Center(child: Text('Your Balance', style: TextStyle(color: Colors.grey, fontSize: 13, fontWeight: FontWeight.w500))),
+                const SizedBox(height: 8),
+                Center(child: Text(rupiah(balance), style: const TextStyle(fontSize: 38, fontWeight: FontWeight.w900, letterSpacing: -1))),
+                const SizedBox(height: 12),
+                Center(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(color: primary.withOpacity(0.08), borderRadius: BorderRadius.circular(20)),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.auto_awesome, size: 14, color: primary),
+                        const SizedBox(width: 6),
+                        Text('You saved Rp 290.000 in last Month >', style: TextStyle(fontSize: 11, color: primary, fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 32),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    _actionBtn(context, Icons.arrow_outward, 'Send', const Color(0xFFD6F6A6), Colors.black, () => showTransactionForm(context, ref, false)),
+                    _actionBtn(context, Icons.south_west, 'Request', Colors.white, Colors.black, () => showTransactionForm(context, ref, true)),
+                    _actionBtn(context, Icons.swap_horiz, 'Exchange', Colors.white, Colors.black, () => ref.read(tabProvider.notifier).state = 2),
+                    _actionBtn(context, Icons.more_horiz, 'More', Colors.white, Colors.black, () => ref.read(tabProvider.notifier).state = 3),
+                  ],
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 32),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('Transaction History', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
-              Text('View all >', style: TextStyle(color: Colors.grey.shade500, fontSize: 12, fontWeight: FontWeight.w600)),
-            ],
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Top Merchants', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+                    Text('View all >', style: TextStyle(color: Colors.grey.shade500, fontSize: 12, fontWeight: FontWeight.w600)),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: Colors.grey.shade100),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Discount Up To 80%', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                            const SizedBox(height: 4),
+                            Text('Festive Season Gift', style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: const BoxDecoration(color: Color(0xFFF4EDFF), shape: BoxShape.circle),
+                        child: Icon(Icons.shopping_bag_rounded, color: primary, size: 24),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 32),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Transaction History', style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
+                    Text('View all >', style: TextStyle(color: Colors.grey.shade500, fontSize: 12, fontWeight: FontWeight.w600)),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                const Text('TODAY', style: TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1)),
+                const SizedBox(height: 12),
+                ...items.take(4).map((item) => TransactionTile(item: item)),
+              ],
+            ),
           ),
-          const SizedBox(height: 16),
-          const Text('TODAY', style: TextStyle(color: Colors.grey, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1)),
-          const SizedBox(height: 12),
-          ...items.take(4).map((item) => TransactionTile(item: item)),
         ],
       ),
     );
