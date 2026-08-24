@@ -371,7 +371,13 @@ class FinanceShell extends ConsumerWidget {
     final tab = ref.watch(tabProvider);
     final lang = ref.watch(langProvider);
     return Scaffold(
-      body: IndexedStack(index: tab, children: pages),
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 260),
+        switchInCurve: Curves.easeOut,
+        switchOutCurve: Curves.easeIn,
+        transitionBuilder: (child, animation) => FadeTransition(opacity: animation, child: child),
+        child: KeyedSubtree(key: ValueKey<int>(tab), child: pages[tab]),
+      ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: context.cardColor,
