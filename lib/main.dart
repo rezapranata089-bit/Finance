@@ -19,6 +19,8 @@ void main() async {
 final prefsProvider = Provider<SharedPreferences>((ref) => throw UnimplementedError());
 final tabProvider = StateProvider<int>((ref) => 0);
 final onboardingProvider = StateProvider<bool>((ref) => ref.watch(prefsProvider).getBool('onboarding_done') ?? false);
+final primaryColorProvider = StateProvider<Color>((ref) => const Color(0xFF7655D8));
+final secondaryColorProvider = StateProvider<Color>((ref) => const Color(0xFFD6F6A6));
 
 class FinanceTransaction {
   final String title, category, note;
@@ -61,6 +63,9 @@ class MyFinanceApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final seen = ref.watch(onboardingProvider);
+    final primaryColor = ref.watch(primaryColorProvider);
+    final secondaryColor = ref.watch(secondaryColorProvider);
+    
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'My Finance',
@@ -69,8 +74,8 @@ class MyFinanceApp extends ConsumerWidget {
         brightness: Brightness.light,
         scaffoldBackgroundColor: const Color(0xFFF8F7FB),
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF7655D8),
-          secondary: const Color(0xFFD6F6A6), // Accent color palette
+          seedColor: primaryColor,
+          secondary: secondaryColor,
           brightness: Brightness.light,
         ),
         fontFamily: 'Satoshi',
@@ -561,11 +566,12 @@ class ReportRow extends StatelessWidget {
   Widget build(BuildContext context) => Padding(padding: const EdgeInsets.only(bottom: 16), child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label, style: const TextStyle(fontWeight: FontWeight.w600)), Text('${rupiah(amount)} · ${(amount / total * 100).round()}%', style: TextStyle(color: Colors.grey.shade600, fontSize: 12))]), const SizedBox(height: 8), LinearProgressIndicator(value: amount / total, minHeight: 7, borderRadius: BorderRadius.circular(8), color: Theme.of(context).colorScheme.primary.withOpacity(.75), backgroundColor: const Color(0xFFF0ECF7))]));
 }
 
-class SettingList extends StatelessWidget {
+class SettingList extends ConsumerWidget {
   final List<List<Object>> items;
   const SettingList({super.key, required this.items});
+  
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context, WidgetRef ref) => Container(
     padding: const EdgeInsets.symmetric(horizontal: 16),
     decoration: BoxDecoration(
       color: Colors.white,
@@ -575,6 +581,13 @@ class SettingList extends StatelessWidget {
       children: items
           .map<Widget>(
             (item) => ListTile(
+              onTap: () {
+                if (item[0] == 'Tampilan') {
+                  _showThemePicker(context, ref);
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${item[0]} belum tersedia')));
+                }
+              },
               contentPadding: EdgeInsets.zero,
               leading: Icon(
                 item[1] as IconData,
@@ -585,6 +598,57 @@ class SettingList extends StatelessWidget {
             ),
           )
           .toList(),
+    ),
+  );
+}
+
+void _showThemePicker(BuildContext context, WidgetRef ref) {
+  showModalBottomSheet(
+    context: context,
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+    builder: (context) {
+      return Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Pilih Tema Warna', style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 22)),
+            const SizedBox(height: 24),
+            Wrap(
+              spacing: 20,
+              runSpacing: 20,
+              children: [
+                _colorBtn(ref, context, const Color(0xFF7655D8), const Color(0xFFD6F6A6)),
+                _colorBtn(ref, context, const Color(0xFF24A148), const Color(0xFFD6F6A6)),
+                _colorBtn(ref, context, const Color(0xFFE05270), const Color(0xFFFFD8E4)),
+                _colorBtn(ref, context, const Color(0xFF2196F3), const Color(0xFFD6E4F6)),
+                _colorBtn(ref, context, const Color(0xFFFF9800), const Color(0xFFFFE0B2)),
+              ],
+            ),
+            const SizedBox(height: 32),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+Widget _colorBtn(WidgetRef ref, BuildContext context, Color primary, Color secondary) {
+  final isSelected = ref.read(primaryColorProvider) == primary;
+  return GestureDetector(
+    onTap: () {
+      ref.read(primaryColorProvider.notifier).state = primary;
+      ref.read(secondaryColorProvider.notifier).state = secondary;
+      Navigator.pop(context);
+    },
+    child: Container(
+      width: 50,
+      height: 50,
+      decoration: BoxDecoration(
+        color: primary,
+        shape: BoxShape.circle,
+        border: isSelected ? Border.all(color: Colors.black, width: 3) : null,
+      ),
     ),
   );
 }
