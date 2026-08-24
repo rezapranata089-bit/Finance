@@ -482,7 +482,7 @@ class HomePage extends ConsumerWidget {
     final tertiary = Theme.of(context).colorScheme.tertiary;
     final isDark = context.isDark;
 
-    final topInset = MediaQuery.of(context).padding.top;
+    final topInset = MediaQuery.paddingOf(context).top;
     return SafeArea(
       top: false,
       child: ListView(
@@ -636,7 +636,7 @@ class HomePage extends ConsumerWidget {
                     (Strings.t(lang, 'discount_title'), Strings.t(lang, 'discount_subtitle'), SolarIconsBold.bag2),
                     (Strings.t(lang, 'cashback_title'), Strings.t(lang, 'cashback_subtitle'), SolarIconsBold.wallet),
                   ];
-                  final cardWidth = MediaQuery.of(context).size.width * 0.78;
+                  final cardWidth = MediaQuery.sizeOf(context).width * 0.78;
                   return SizedBox(
                     height: 74,
                     child: ListView.separated(
@@ -909,7 +909,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
     final all = ref.watch(transactionsProvider);
     final lang = ref.watch(langProvider);
     final items = all.where((e) => (filter == 'all' || (filter == 'income' ? e.income : !e.income)) && e.title.toLowerCase().contains(query.toLowerCase())).toList();
-    return SafeArea(top: false, child: ListView(padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 22, 20, 24), children: [
+    return SafeArea(top: false, child: ListView(padding: EdgeInsets.fromLTRB(20, MediaQuery.paddingOf(context).top + 22, 20, 24), children: [
       Text(Strings.t(lang, 'transactions_title'), style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 32, color: context.textPrimary)),
       Text(Strings.t(lang, 'transactions_subtitle'), style: TextStyle(color: context.textMuted)),
       const SizedBox(height: 22),
@@ -948,7 +948,7 @@ class ReportsPage extends ConsumerWidget {
     final expense = items.where((e) => !e.income).fold<double>(0, (a, b) => a + b.amount);
     final groups = <String, double>{};
     for (final item in items.where((e) => !e.income)) groups[item.category] = (groups[item.category] ?? 0) + item.amount;
-    return SafeArea(top: false, child: ListView(padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 22, 20, 24), children: [
+    return SafeArea(top: false, child: ListView(padding: EdgeInsets.fromLTRB(20, MediaQuery.paddingOf(context).top + 22, 20, 24), children: [
       Text(Strings.t(lang, 'reports_title'), style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 32, color: context.textPrimary)),
       Text(DateFormat('MMMM yyyy', lang == AppLang.id ? 'id_ID' : 'en_US').format(DateTime(2026, 8, 24)), style: TextStyle(color: context.textMuted)),
       const SizedBox(height: 22),
@@ -970,7 +970,7 @@ class ProfilePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final lang = ref.watch(langProvider);
-    return SafeArea(top: false, child: ListView(padding: EdgeInsets.fromLTRB(20, MediaQuery.of(context).padding.top + 22, 20, 24), children: [
+    return SafeArea(top: false, child: ListView(padding: EdgeInsets.fromLTRB(20, MediaQuery.paddingOf(context).top + 22, 20, 24), children: [
       Text(Strings.t(lang, 'profile_title'), style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 32, color: context.textPrimary)),
       const SizedBox(height: 22),
       Container(
@@ -1408,7 +1408,7 @@ Future<void> showTransactionForm(BuildContext context, WidgetRef ref, bool incom
     backgroundColor: context.cardColor,
     shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
     builder: (sheetContext) => StatefulBuilder(builder: (context, setModalState) => Padding(
-    padding: EdgeInsets.fromLTRB(20, 22, 20, MediaQuery.of(context).viewInsets.bottom + 24),
+    padding: EdgeInsets.fromLTRB(20, 22, 20, MediaQuery.viewInsetsOf(context).bottom + 24),
     child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text(Strings.t(lang, income ? 'add_income' : 'add_expense'), style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 28, color: context.textPrimary)),
       const SizedBox(height: 18),
