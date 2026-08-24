@@ -9,6 +9,7 @@ import 'package:solar_icons/solar_icons.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   await initializeDateFormatting('id_ID', null);
   final prefs = await SharedPreferences.getInstance();
   runApp(ProviderScope(
@@ -276,6 +277,19 @@ class MyFinanceApp extends ConsumerWidget {
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
         ),
       ),
+      builder: (context, child) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return AnnotatedRegion<SystemUiOverlayStyle>(
+          value: SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+            statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+            systemNavigationBarColor: isDark ? const Color(0xFF1E1B27) : Colors.white,
+            systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+          ),
+          child: child!,
+        );
+      },
       home: seen ? const FinanceShell() : const OnboardingPage(),
     );
   }
