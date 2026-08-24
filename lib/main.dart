@@ -1,3 +1,4 @@
+import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -51,6 +52,56 @@ extension AppColors on BuildContext {
   Color get textMuted => isDark ? Colors.white60 : Colors.grey.shade600;
   Color get textFaint => isDark ? Colors.white38 : Colors.grey.shade500;
   Color get iconMuted => isDark ? Colors.white54 : Colors.grey;
+}
+
+class LiquidGlass extends StatelessWidget {
+  final Widget child;
+  final double borderRadius;
+  final Color? tint;
+  final double blur;
+  const LiquidGlass({super.key, required this.child, this.borderRadius = 20, this.tint, this.blur = 16});
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = context.isDark;
+    final base = tint ?? Colors.white;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(borderRadius),
+      child: BackdropFilter(
+        filter: ui.ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(borderRadius),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                base.withOpacity(isDark ? 0.30 : 0.38),
+                base.withOpacity(isDark ? 0.10 : 0.14),
+              ],
+            ),
+            border: Border.all(
+              color: Colors.white.withOpacity(isDark ? 0.16 : 0.55),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(isDark ? 0.22 : 0.06),
+                blurRadius: 14,
+                offset: const Offset(0, 5),
+              ),
+              BoxShadow(
+                color: Colors.white.withOpacity(isDark ? 0.05 : 0.55),
+                blurRadius: 1,
+                offset: const Offset(0, 1),
+              ),
+            ],
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
 }
 
 class Strings {
@@ -392,29 +443,33 @@ class HomePage extends ConsumerWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(color: context.cardColor, shape: BoxShape.circle, border: Border.all(color: context.borderColor)),
-                      child: Icon(SolarIconsOutline.hamburgerMenu, size: 20, color: context.textPrimary),
+                    LiquidGlass(
+                      borderRadius: 999,
+                      child: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Icon(SolarIconsOutline.hamburgerMenu, size: 20, color: context.textPrimary),
+                      ),
                     ),
                     Text(Strings.t(lang, 'my_account'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: context.textPrimary)),
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(color: context.cardColor, shape: BoxShape.circle, border: Border.all(color: context.borderColor)),
-                      child: Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          Icon(SolarIconsOutline.bell, size: 20, color: context.textPrimary),
-                          Positioned(
-                            right: -2, top: -2,
-                            child: Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: BoxDecoration(color: accent, shape: BoxShape.circle),
-                              child: const Text('2', style: TextStyle(color: Colors.black, fontSize: 8, fontWeight: FontWeight.bold)),
-                            ),
-                          )
-                        ],
-                      ),
+                    Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        LiquidGlass(
+                          borderRadius: 999,
+                          child: Padding(
+                            padding: const EdgeInsets.all(10),
+                            child: Icon(SolarIconsOutline.bell, size: 20, color: context.textPrimary),
+                          ),
+                        ),
+                        Positioned(
+                          right: -2, top: -2,
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(color: accent, shape: BoxShape.circle),
+                            child: const Text('2', style: TextStyle(color: Colors.black, fontSize: 8, fontWeight: FontWeight.bold)),
+                          ),
+                        )
+                      ],
                     ),
                   ],
                 ),
@@ -536,15 +591,16 @@ class HomePage extends ConsumerWidget {
       onTap: onTap,
       child: Column(
         children: [
-          Container(
+          SizedBox(
             width: 68,
             height: 48,
-            decoration: BoxDecoration(
-              color: primaryStyle ? accent : context.cardColor,
-              borderRadius: BorderRadius.circular(16),
-              border: primaryStyle ? null : Border.all(color: context.borderColor),
+            child: LiquidGlass(
+              borderRadius: 16,
+              tint: primaryStyle ? accent : null,
+              child: Center(
+                child: Icon(icon, color: primaryStyle ? Colors.black : context.textPrimary, size: 22),
+              ),
             ),
-            child: Icon(icon, color: primaryStyle ? Colors.black : context.textPrimary, size: 22),
           ),
           const SizedBox(height: 8),
           Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: context.textPrimary)),
@@ -816,14 +872,12 @@ class ThemeSelectionPage extends ConsumerWidget {
                 children: [
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
-                    child: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: cardBg,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: isDark ? Colors.white12 : Colors.grey.shade200),
+                    child: LiquidGlass(
+                      borderRadius: 999,
+                      child: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Icon(SolarIconsOutline.arrowLeft, size: 20, color: isDark ? Colors.white : Colors.black),
                       ),
-                      child: const Icon(SolarIconsOutline.arrowLeft, size: 20),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -962,10 +1016,12 @@ class LanguageSelectionPage extends ConsumerWidget {
                 children: [
                   GestureDetector(
                     onTap: () => Navigator.pop(context),
-                    child: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(color: cardBg, shape: BoxShape.circle, border: Border.all(color: context.borderColor)),
-                      child: Icon(SolarIconsOutline.arrowLeft, size: 20, color: context.textPrimary),
+                    child: LiquidGlass(
+                      borderRadius: 999,
+                      child: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Icon(SolarIconsOutline.arrowLeft, size: 20, color: context.textPrimary),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 16),
