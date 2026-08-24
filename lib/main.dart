@@ -546,7 +546,7 @@ class HomePage extends ConsumerWidget {
                 const SizedBox(height: 24),
                 Center(child: Text(Strings.t(lang, 'your_balance'), style: TextStyle(color: context.textMuted, fontSize: 13, fontWeight: FontWeight.w500))),
                 const SizedBox(height: 8),
-                Center(child: Text(rupiah(balance), style: TextStyle(fontSize: 38, fontWeight: FontWeight.w900, letterSpacing: -1, color: context.textPrimary))),
+                Center(child: Text(rupiah(balance), style: TextStyle(fontSize: 38, fontWeight: FontWeight.w700, letterSpacing: -1, color: context.textPrimary))),
                 const SizedBox(height: 12),
                 Center(
                   child: Container(
