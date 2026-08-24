@@ -755,9 +755,9 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
 
   Future<void> _toggle() async {
     if (_open) {
-      setState(() => _open = false);
       await _controller.animateTo(0, duration: const Duration(milliseconds: 250), curve: _closeCurve);
       _removeOverlay();
+      setState(() => _open = false);
       return;
     }
     setState(() => _open = true);
@@ -774,7 +774,7 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
               builder: (context, child) {
                 final t = _controller.value;
                 final size = Size.lerp(_closedSize, _openSize, t)!;
-                final radius = lerpDouble(20, 20, t)!;
+                final radius = lerpDouble(999, 20, t)!;
                 final iconOpacity = (1 - t / 0.45).clamp(0.0, 1.0);
                 final menuOpacity = ((t - 0.35) / 0.65).clamp(0.0, 1.0);
                 final menuOffset = (1 - menuOpacity) * 14;
