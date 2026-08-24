@@ -17,10 +17,23 @@ void main() async {
 }
 
 final prefsProvider = Provider<SharedPreferences>((ref) => throw UnimplementedError());
+class AppThemePalette {
+  final String name;
+  final Color primary, secondary, tertiary;
+  const AppThemePalette(this.name, this.primary, this.secondary, this.tertiary);
+}
+
+const appPalettes = [
+  AppThemePalette('Lavender Glow', Color(0xFF7655D8), Color(0xFFD6F6A6), Color(0xFFF4EDFF)),
+  AppThemePalette('Emerald City', Color(0xFF24A148), Color(0xFFD6F6A6), Color(0xFFE7F7EA)),
+  AppThemePalette('Rose Petal', Color(0xFFE05270), Color(0xFFFFD8E4), Color(0xFFFBE8ED)),
+  AppThemePalette('Ocean Breeze', Color(0xFF2196F3), Color(0xFFFFC107), Color(0xFFE3F2FD)),
+  AppThemePalette('Sunset Vibes', Color(0xFFFF9800), Color(0xFF4CAF50), Color(0xFFFFF3E0)),
+];
+
 final tabProvider = StateProvider<int>((ref) => 0);
 final onboardingProvider = StateProvider<bool>((ref) => ref.watch(prefsProvider).getBool('onboarding_done') ?? false);
-final primaryColorProvider = StateProvider<Color>((ref) => const Color(0xFF7655D8));
-final secondaryColorProvider = StateProvider<Color>((ref) => const Color(0xFFD6F6A6));
+final themeProvider = StateProvider<AppThemePalette>((ref) => appPalettes[0]);
 
 class FinanceTransaction {
   final String title, category, note;
@@ -63,8 +76,7 @@ class MyFinanceApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final seen = ref.watch(onboardingProvider);
-    final primaryColor = ref.watch(primaryColorProvider);
-    final secondaryColor = ref.watch(secondaryColorProvider);
+    final theme = ref.watch(themeProvider);
     
     return MaterialApp(
       debugShowCheckedModeBanner: false,
@@ -74,8 +86,10 @@ class MyFinanceApp extends ConsumerWidget {
         brightness: Brightness.light,
         scaffoldBackgroundColor: const Color(0xFFF8F7FB),
         colorScheme: ColorScheme.fromSeed(
-          seedColor: primaryColor,
-          secondary: secondaryColor,
+          seedColor: theme.primary,
+          primary: theme.primary,
+          secondary: theme.secondary,
+          tertiary: theme.tertiary,
           brightness: Brightness.light,
         ),
         fontFamily: 'Satoshi',
@@ -122,12 +136,11 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                 Container(
                   height: 330, width: double.infinity,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFE8E1FF), borderRadius: BorderRadius.circular(40),
-                    gradient: const LinearGradient(begin: Alignment.topLeft, end: Alignment.bottomRight, colors: [Color(0xFFF1EDFF), Color(0xFFD4C7FF)]),
+                    color: colors.tertiary, borderRadius: BorderRadius.circular(40),
                   ),
                   child: Stack(children: [
-                    Positioned(top: 42, left: 28, child: _orb(const Color(0xFFB9A7FF), 54)),
-                    Positioned(top: 88, right: 40, child: _orb(const Color(0xFF8D75E9), 90)),
+                    Positioned(top: 42, left: 28, child: _orb(colors.primary.withOpacity(0.4), 54)),
+                    Positioned(top: 88, right: 40, child: _orb(colors.primary.withOpacity(0.7), 90)),
                     Positioned(bottom: 44, left: 80, child: _orb(colors.primary, 120)),
                     Center(child: Icon(last ? SolarIconsBold.chart : page == 1 ? SolarIconsBold.billList : SolarIconsBold.wallet, size: 94, color: Colors.white)),
                   ]),
@@ -139,7 +152,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
               ]),
             ),
             Row(children: [
-              ...List.generate(3, (i) => AnimatedContainer(duration: const Duration(milliseconds: 220), margin: const EdgeInsets.only(right: 6), width: i == page ? 28 : 7, height: 7, decoration: BoxDecoration(color: i == page ? colors.primary : const Color(0xFFD8D2E5), borderRadius: BorderRadius.circular(20)))),
+              ...List.generate(3, (i) => AnimatedContainer(duration: const Duration(milliseconds: 220), margin: const EdgeInsets.only(right: 6), width: i == page ? 28 : 7, height: 7, decoration: BoxDecoration(color: i == page ? colors.primary : colors.tertiary, borderRadius: BorderRadius.circular(20)))),
               const Spacer(),
               FilledButton.icon(onPressed: () => last ? _finish() : setState(() => page++), icon: Icon(last ? Icons.check : SolarIconsOutline.arrowRight), label: Text(last ? 'Mulai sekarang' : 'Lanjutkan')),
             ]),
@@ -222,6 +235,7 @@ class HomePage extends ConsumerWidget {
     final balance = 50000000 + income - expense;
     final primary = Theme.of(context).colorScheme.primary;
     final accent = Theme.of(context).colorScheme.secondary;
+    final tertiary = Theme.of(context).colorScheme.tertiary;
     
     return SafeArea(
       child: ListView(
@@ -357,7 +371,7 @@ class HomePage extends ConsumerWidget {
                       ),
                       Container(
                         padding: const EdgeInsets.all(8),
-                        decoration: const BoxDecoration(color: Color(0xFFF4EDFF), shape: BoxShape.circle),
+                        decoration: BoxDecoration(color: tertiary, shape: BoxShape.circle),
                         child: Icon(SolarIconsBold.bag2, color: primary, size: 24),
                       ),
                     ],
@@ -479,7 +493,7 @@ class ProfilePage extends StatelessWidget {
   Widget build(BuildContext context) => SafeArea(child: ListView(padding: const EdgeInsets.fromLTRB(20, 22, 20, 24), children: [
     const Text('Profil', style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 32)),
     const SizedBox(height: 22),
-    Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24)), child: const Row(children: [CircleAvatar(radius: 31, backgroundColor: Color(0xFF7655D8), child: Text('R', style: TextStyle(color: Colors.white, fontSize: 25, fontWeight: FontWeight.bold))), SizedBox(width: 15), Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Raka', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), SizedBox(height: 4), Text('Kelola akun keuanganmu')])])),
+    Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24)), child: Row(children: [CircleAvatar(radius: 31, backgroundColor: Theme.of(context).colorScheme.primary, child: const Text('R', style: TextStyle(color: Colors.white, fontSize: 25, fontWeight: FontWeight.bold))), const SizedBox(width: 15), const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Raka', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)), SizedBox(height: 4), Text('Kelola akun keuanganmu')])])),
     const SizedBox(height: 26),
     const SectionTitle('Keuangan'),
     const SizedBox(height: 10),
@@ -510,11 +524,11 @@ class TransactionTile extends StatelessWidget {
       children: [
         Container(
           width: 48, height: 48,
-          decoration: const BoxDecoration(color: Color(0xFF1B1B1B), shape: BoxShape.circle),
+          decoration: BoxDecoration(color: Theme.of(context).colorScheme.tertiary, shape: BoxShape.circle),
           child: Center(
             child: Text(
               item.title.substring(0, 1).toUpperCase(),
-              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 18),
+              style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 18),
             ),
           ),
         ),
@@ -563,7 +577,7 @@ class ReportRow extends StatelessWidget {
   final String label; final double amount, total;
   const ReportRow({super.key, required this.label, required this.amount, required this.total});
   @override
-  Widget build(BuildContext context) => Padding(padding: const EdgeInsets.only(bottom: 16), child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label, style: const TextStyle(fontWeight: FontWeight.w600)), Text('${rupiah(amount)} · ${(amount / total * 100).round()}%', style: TextStyle(color: Colors.grey.shade600, fontSize: 12))]), const SizedBox(height: 8), LinearProgressIndicator(value: amount / total, minHeight: 7, borderRadius: BorderRadius.circular(8), color: Theme.of(context).colorScheme.primary.withOpacity(.75), backgroundColor: const Color(0xFFF0ECF7))]));
+  Widget build(BuildContext context) => Padding(padding: const EdgeInsets.only(bottom: 16), child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label, style: const TextStyle(fontWeight: FontWeight.w600)), Text('${rupiah(amount)} · ${(amount / total * 100).round()}%', style: TextStyle(color: Colors.grey.shade600, fontSize: 12))]), const SizedBox(height: 8), LinearProgressIndicator(value: amount / total, minHeight: 7, borderRadius: BorderRadius.circular(8), color: Theme.of(context).colorScheme.primary, backgroundColor: Theme.of(context).colorScheme.tertiary)]));
 }
 
 class SettingList extends ConsumerWidget {
@@ -583,7 +597,7 @@ class SettingList extends ConsumerWidget {
             (item) => ListTile(
               onTap: () {
                 if (item[0] == 'Tampilan') {
-                  _showThemePicker(context, ref);
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const ThemeSelectionPage()));
                 } else {
                   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${item[0]} belum tersedia')));
                 }
@@ -602,54 +616,90 @@ class SettingList extends ConsumerWidget {
   );
 }
 
-void _showThemePicker(BuildContext context, WidgetRef ref) {
-  showModalBottomSheet(
-    context: context,
-    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
-    builder: (context) {
-      return Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Pilih Tema Warna', style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 22)),
-            const SizedBox(height: 24),
-            Wrap(
-              spacing: 20,
-              runSpacing: 20,
-              children: [
-                _colorBtn(ref, context, const Color(0xFF7655D8), const Color(0xFFD6F6A6)),
-                _colorBtn(ref, context, const Color(0xFF24A148), const Color(0xFFD6F6A6)),
-                _colorBtn(ref, context, const Color(0xFFE05270), const Color(0xFFFFD8E4)),
-                _colorBtn(ref, context, const Color(0xFF2196F3), const Color(0xFFD6E4F6)),
-                _colorBtn(ref, context, const Color(0xFFFF9800), const Color(0xFFFFE0B2)),
-              ],
-            ),
-            const SizedBox(height: 32),
-          ],
-        ),
-      );
-    },
-  );
-}
+class ThemeSelectionPage extends ConsumerWidget {
+  const ThemeSelectionPage({super.key});
 
-Widget _colorBtn(WidgetRef ref, BuildContext context, Color primary, Color secondary) {
-  final isSelected = ref.read(primaryColorProvider) == primary;
-  return GestureDetector(
-    onTap: () {
-      ref.read(primaryColorProvider.notifier).state = primary;
-      ref.read(secondaryColorProvider.notifier).state = secondary;
-      Navigator.pop(context);
-    },
-    child: Container(
-      width: 50,
-      height: 50,
-      decoration: BoxDecoration(
-        color: primary,
-        shape: BoxShape.circle,
-        border: isSelected ? Border.all(color: Colors.black, width: 3) : null,
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final currentTheme = ref.watch(themeProvider);
+    
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Tema Tampilan', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        centerTitle: true,
+        leading: IconButton(
+          icon: const Icon(SolarIconsOutline.arrowLeft),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
-    ),
+      body: ListView.separated(
+        padding: const EdgeInsets.all(24),
+        itemCount: appPalettes.length,
+        separatorBuilder: (_, __) => const SizedBox(height: 16),
+        itemBuilder: (context, index) {
+          final palette = appPalettes[index];
+          final isSelected = currentTheme.name == palette.name;
+          
+          return GestureDetector(
+            onTap: () => ref.read(themeProvider.notifier).state = palette,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: isSelected ? palette.primary : Colors.grey.shade200, width: isSelected ? 2 : 1),
+                boxShadow: isSelected ? [BoxShadow(color: palette.primary.withOpacity(0.15), blurRadius: 15, offset: const Offset(0, 5))] : [],
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 56, height: 56,
+                    decoration: BoxDecoration(color: palette.tertiary, shape: BoxShape.circle),
+                    child: Center(
+                      child: Container(
+                        width: 28, height: 28,
+                        decoration: BoxDecoration(color: palette.primary, shape: BoxShape.circle),
+                        child: isSelected ? const Icon(Icons.check, color: Colors.white, size: 18) : null,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 20),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(palette.name, style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: palette.primary)),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            _colorDot(palette.primary),
+                            const SizedBox(width: 8),
+                            _colorDot(palette.secondary),
+                            const SizedBox(width: 8),
+                            _colorDot(palette.tertiary),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(color: palette.secondary, borderRadius: BorderRadius.circular(12)),
+                    child: Text('Aksen', style: TextStyle(color: palette.primary, fontSize: 11, fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _colorDot(Color color) => Container(
+    width: 16, height: 16,
+    decoration: BoxDecoration(color: color, shape: BoxShape.circle, border: Border.all(color: Colors.grey.shade300, width: 0.5)),
   );
 }
 
