@@ -242,8 +242,11 @@ class MyFinanceApp extends ConsumerWidget {
         fontFamily: 'Satoshi',
         appBarTheme: const AppBarTheme(backgroundColor: Colors.transparent, elevation: 0),
         inputDecorationTheme: InputDecorationTheme(
-          filled: true, fillColor: Colors.white,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+          filled: true, fillColor: const Color(0xFFF1EEF7),
+          hintStyle: TextStyle(color: Colors.grey.shade500),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey.shade200)),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey.shade200)),
+          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: theme.primary, width: 1.4)),
         ),
       ),
       darkTheme: ThemeData(
