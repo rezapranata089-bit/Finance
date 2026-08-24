@@ -1373,6 +1373,7 @@ class NotificationsPage extends ConsumerWidget {
     final lang = ref.watch(langProvider);
     final isDark = context.isDark;
     final bg = isDark ? const Color(0xFF121016) : const Color(0xFFF8F7FB);
+    final cardBg = isDark ? const Color(0xFF1E1B27) : Colors.white;
     final primary = Theme.of(context).colorScheme.primary;
     final tertiary = Theme.of(context).colorScheme.tertiary;
     final notifications = [
@@ -1418,9 +1419,9 @@ class NotificationsPage extends ConsumerWidget {
                         return Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: context.cardColor,
+                            color: cardBg,
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: context.borderColor),
+                            border: Border.all(color: isDark ? Colors.white12 : Colors.grey.shade200),
                           ),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
