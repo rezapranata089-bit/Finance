@@ -394,7 +394,7 @@ class FinanceShell extends ConsumerWidget {
                 child: const Icon(SolarIconsOutline.scanner, color: Colors.black),
               ),
             ),
-            _navItem(context, 2, SolarIconsOutline.card, SolarIconsBold.card, Strings.t(lang, 'nav_card'), tab, ref),
+            _navItem(context, 2, Icons.credit_card_outlined, Icons.credit_card, Strings.t(lang, 'nav_card'), tab, ref),
             _navItem(context, 3, SolarIconsOutline.user, SolarIconsBold.user, Strings.t(lang, 'nav_profile'), tab, ref),
           ],
         ),
