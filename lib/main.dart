@@ -63,7 +63,7 @@ class LiquidGlass extends StatelessWidget {
   final Color? tint;
   final double blur;
   final double intensity;
-  const LiquidGlass({super.key, required this.child, this.borderRadius = 20, this.tint, this.blur = 16, this.intensity = 1.0});
+  const LiquidGlass({super.key, required this.child, this.borderRadius = 20, this.tint, this.blur = 6, this.intensity = 1.0});
 
   @override
   Widget build(BuildContext context) {
