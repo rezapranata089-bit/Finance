@@ -451,8 +451,8 @@ class HomePage extends ConsumerWidget {
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Color.alphaBlend(primary.withOpacity(isDark ? 0.16 : 0.08), context.cardColor).withOpacity(isDark ? 0.80 : 0.75),
-                        Color.alphaBlend(primary.withOpacity(isDark ? 0.10 : 0.04), context.cardColor).withOpacity(isDark ? 0.60 : 0.50),
+                        Color.alphaBlend(primary.withOpacity(isDark ? 0.22 : 0.14), context.cardColor).withOpacity(isDark ? 0.86 : 0.82),
+                        Color.alphaBlend(primary.withOpacity(isDark ? 0.16 : 0.08), context.cardColor).withOpacity(isDark ? 0.68 : 0.58),
                       ],
                     ),
                     border: Border.all(
