@@ -1,5 +1,4 @@
 import 'dart:math' as math;
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -72,26 +71,25 @@ class LiquidGlass extends StatelessWidget {
     final base = tint ?? Colors.white;
     final topOpacity = ((isDark ? 0.34 : 0.44) * intensity).clamp(0.0, 1.0);
     final bottomOpacity = ((isDark ? 0.16 : 0.20) * intensity).clamp(0.0, 1.0);
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(borderRadius),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.22 : 0.06),
-            blurRadius: 14,
-            offset: const Offset(0, 5),
-          ),
-          BoxShadow(
-            color: Colors.white.withOpacity(isDark ? 0.05 : 0.55),
-            blurRadius: 1,
-            offset: const Offset(0, 1),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(borderRadius),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+    return RepaintBoundary(
+      child: Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(borderRadius),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(isDark ? 0.22 : 0.06),
+              blurRadius: 14,
+              offset: const Offset(0, 5),
+            ),
+            BoxShadow(
+              color: Colors.white.withOpacity(isDark ? 0.05 : 0.55),
+              blurRadius: 1,
+              offset: const Offset(0, 1),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(borderRadius),
           child: Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(borderRadius),
