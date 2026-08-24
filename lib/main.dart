@@ -838,13 +838,13 @@ class _CardGlassPopup extends StatelessWidget {
   Widget build(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
     return SizedBox(
-      width: 230,
+      width: 190,
       child: LiquidGlass(
-        borderRadius: 22,
+        borderRadius: 18,
         tint: context.cardColor,
         intensity: 1.6,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6),
+          padding: const EdgeInsets.symmetric(vertical: 4),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -852,21 +852,24 @@ class _CardGlassPopup extends StatelessWidget {
                 final isSelected = e.key == selected;
                 return ListTile(
                   dense: true,
+                  visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
                   onTap: () => onSelect(e.key),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14),
-                  leading: Icon(SolarIconsOutline.card, size: 18, color: isSelected ? primary : context.iconMuted),
-                  title: Text(e.value.$1, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: context.textPrimary)),
-                  subtitle: Text(e.value.$2, style: TextStyle(fontSize: 11, color: context.textMuted)),
-                  trailing: isSelected ? Icon(SolarIconsBold.checkCircle, size: 18, color: primary) : null,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                  minLeadingWidth: 0,
+                  leading: Icon(SolarIconsOutline.card, size: 16, color: isSelected ? primary : context.iconMuted),
+                  title: Text(e.value.$2, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: context.textPrimary)),
+                  trailing: isSelected ? Icon(SolarIconsBold.checkCircle, size: 16, color: primary) : null,
                 );
               }),
-              Divider(height: 1, indent: 14, endIndent: 14, color: context.borderColor),
+              Divider(height: 1, indent: 12, endIndent: 12, color: context.borderColor),
               ListTile(
                 dense: true,
+                visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
                 onTap: onAdd,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14),
-                leading: Icon(SolarIconsOutline.addCircle, size: 18, color: primary),
-                title: Text('Tambah kartu', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: primary)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+                minLeadingWidth: 0,
+                leading: Icon(SolarIconsOutline.addCircle, size: 16, color: primary),
+                title: Text('Tambah kartu', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: primary)),
               ),
             ],
           ),
