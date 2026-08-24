@@ -407,13 +407,20 @@ class FinanceShell extends ConsumerWidget {
     return GestureDetector(
       onTap: () => ref.read(tabProvider.notifier).state = index,
       behavior: HitTestBehavior.opaque,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(isSelected ? iconBold : iconOutline, color: isSelected ? context.textPrimary : context.iconMuted, size: 24),
-          const SizedBox(height: 4),
-          Text(label, style: TextStyle(fontSize: 10, color: isSelected ? context.textPrimary : context.iconMuted, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
-        ],
+      child: SizedBox(
+        width: 56,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(isSelected ? iconBold : iconOutline, color: isSelected ? context.textPrimary : context.iconMuted, size: 24),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 10, color: isSelected ? context.textPrimary : context.iconMuted, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal),
+            ),
+          ],
+        ),
       ),
     );
   }
