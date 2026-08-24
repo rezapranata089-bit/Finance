@@ -424,9 +424,7 @@ class HomePage extends ConsumerWidget {
         padding: EdgeInsets.zero,
         children: [
           Container(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
             decoration: BoxDecoration(
-              color: Color.alphaBlend(primary.withOpacity(isDark ? 0.12 : 0.05), context.cardColor),
               borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
               boxShadow: [
                 BoxShadow(
@@ -441,7 +439,22 @@ class HomePage extends ConsumerWidget {
                 ),
               ],
             ),
-            child: Column(
+            child: ClipRRect(
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
+              child: BackdropFilter(
+                filter: ui.ImageFilter.blur(sigmaX: 24, sigmaY: 24),
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+                  decoration: BoxDecoration(
+                    color: Color.alphaBlend(primary.withOpacity(isDark ? 0.14 : 0.06), context.cardColor).withOpacity(isDark ? 0.72 : 0.68),
+                    border: Border(
+                      bottom: BorderSide(
+                        color: Colors.white.withOpacity(isDark ? 0.18 : 0.65),
+                        width: 1.4,
+                      ),
+                    ),
+                  ),
+                  child: Column(
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -550,6 +563,9 @@ class HomePage extends ConsumerWidget {
                   ],
                 ),
               ],
+            ),
+                ),
+              ),
             ),
           ),
           Padding(
