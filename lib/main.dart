@@ -413,6 +413,7 @@ class FinanceShell extends ConsumerWidget {
 
   Widget _navItem(BuildContext context, int index, IconData iconOutline, IconData iconBold, String label, int currentTab, WidgetRef ref) {
     final isSelected = currentTab == index;
+    final color = isSelected ? context.textPrimary : context.iconMuted;
     return GestureDetector(
       onTap: () => ref.read(tabProvider.notifier).state = index,
       behavior: HitTestBehavior.opaque,
@@ -421,12 +422,29 @@ class FinanceShell extends ConsumerWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(isSelected ? iconBold : iconOutline, color: isSelected ? context.textPrimary : context.iconMuted, size: 24),
+            AnimatedScale(
+              scale: isSelected ? 1.12 : 1.0,
+              duration: const Duration(milliseconds: 220),
+              curve: Curves.easeOutBack,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 220),
+                transitionBuilder: (child, animation) => ScaleTransition(
+                  scale: animation,
+                  child: FadeTransition(opacity: animation, child: child),
+                ),
+                child: Icon(
+                  isSelected ? iconBold : iconOutline,
+                  key: ValueKey<bool>(isSelected),
+                  color: color,
+                  size: 24,
+                ),
+              ),
+            ),
             const SizedBox(height: 4),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 10, color: isSelected ? context.textPrimary : context.iconMuted, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal),
+            AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 220),
+              style: TextStyle(fontSize: 10, color: color, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal),
+              child: Text(label, textAlign: TextAlign.center),
             ),
           ],
         ),
