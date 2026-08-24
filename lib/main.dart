@@ -374,15 +374,18 @@ class HomePage extends ConsumerWidget {
             decoration: BoxDecoration(
               color: context.cardColor,
               borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
-              boxShadow: isDark
-                  ? []
-                  : [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.03),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+              boxShadow: [
+                BoxShadow(
+                  color: isDark ? Colors.black.withOpacity(0.45) : Colors.black.withOpacity(0.10),
+                  blurRadius: 28,
+                  offset: const Offset(0, 12),
+                ),
+                BoxShadow(
+                  color: isDark ? Colors.black.withOpacity(0.25) : Colors.black.withOpacity(0.05),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
             child: Column(
               children: [
