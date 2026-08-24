@@ -1,4 +1,3 @@
-import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -67,43 +66,37 @@ class LiquidGlass extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = context.isDark;
     final base = tint ?? Colors.white;
-    final topOpacity = ((isDark ? 0.30 : 0.38) * intensity).clamp(0.0, 1.0);
-    final bottomOpacity = ((isDark ? 0.10 : 0.14) * intensity).clamp(0.0, 1.0);
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(borderRadius),
-      child: BackdropFilter(
-        filter: ui.ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(borderRadius),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                base.withOpacity(topOpacity),
-                base.withOpacity(bottomOpacity),
-              ],
-            ),
-            border: Border.all(
-              color: Colors.white.withOpacity(isDark ? 0.16 : 0.55),
-              width: 1,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(isDark ? 0.22 : 0.06),
-                blurRadius: 14,
-                offset: const Offset(0, 5),
-              ),
-              BoxShadow(
-                color: Colors.white.withOpacity(isDark ? 0.05 : 0.55),
-                blurRadius: 1,
-                offset: const Offset(0, 1),
-              ),
-            ],
-          ),
-          child: child,
+    final topOpacity = ((isDark ? 0.34 : 0.44) * intensity).clamp(0.0, 1.0);
+    final bottomOpacity = ((isDark ? 0.16 : 0.20) * intensity).clamp(0.0, 1.0);
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(borderRadius),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            base.withOpacity(topOpacity),
+            base.withOpacity(bottomOpacity),
+          ],
         ),
+        border: Border.all(
+          color: Colors.white.withOpacity(isDark ? 0.16 : 0.55),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.22 : 0.06),
+            blurRadius: 14,
+            offset: const Offset(0, 5),
+          ),
+          BoxShadow(
+            color: Colors.white.withOpacity(isDark ? 0.05 : 0.55),
+            blurRadius: 1,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
+      child: child,
     );
   }
 }
@@ -448,11 +441,7 @@ class HomePage extends ConsumerWidget {
                 ),
               ],
             ),
-            child: ClipRRect(
-              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
-              child: BackdropFilter(
-                filter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                child: Container(
+            child: Container(
                   padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
                   decoration: BoxDecoration(
                     borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
@@ -580,8 +569,6 @@ class HomePage extends ConsumerWidget {
               ],
             ),
                 ),
-              ),
-            ),
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
