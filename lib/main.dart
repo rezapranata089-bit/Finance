@@ -280,7 +280,14 @@ class MyFinanceApp extends ConsumerWidget {
             systemNavigationBarColor: isDark ? const Color(0xFF1E1B27) : Colors.white,
             systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
           ),
-          child: child!,
+          child: MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              textScaler: TextScaler.linear(
+                MediaQuery.textScalerOf(context).scale(1.0).clamp(0.9, 1.1),
+              ),
+            ),
+            child: child!,
+          ),
         );
       },
       home: seen ? const FinanceShell() : const OnboardingPage(),
