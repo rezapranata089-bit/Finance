@@ -1142,7 +1142,7 @@ Future<void> showTransactionForm(BuildContext context, WidgetRef ref, bool incom
   await showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+    backgroundColor: context.cardColor,
     shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
     builder: (sheetContext) => StatefulBuilder(builder: (context, setModalState) => Padding(
     padding: EdgeInsets.fromLTRB(20, 22, 20, MediaQuery.of(context).viewInsets.bottom + 24),
