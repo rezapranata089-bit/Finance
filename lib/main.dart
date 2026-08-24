@@ -59,12 +59,15 @@ class LiquidGlass extends StatelessWidget {
   final double borderRadius;
   final Color? tint;
   final double blur;
-  const LiquidGlass({super.key, required this.child, this.borderRadius = 20, this.tint, this.blur = 16});
+  final double intensity;
+  const LiquidGlass({super.key, required this.child, this.borderRadius = 20, this.tint, this.blur = 16, this.intensity = 1.0});
 
   @override
   Widget build(BuildContext context) {
     final isDark = context.isDark;
     final base = tint ?? Colors.white;
+    final topOpacity = ((isDark ? 0.30 : 0.38) * intensity).clamp(0.0, 1.0);
+    final bottomOpacity = ((isDark ? 0.10 : 0.14) * intensity).clamp(0.0, 1.0);
     return ClipRRect(
       borderRadius: BorderRadius.circular(borderRadius),
       child: BackdropFilter(
@@ -76,8 +79,8 @@ class LiquidGlass extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                base.withOpacity(isDark ? 0.30 : 0.38),
-                base.withOpacity(isDark ? 0.10 : 0.14),
+                base.withOpacity(topOpacity),
+                base.withOpacity(bottomOpacity),
               ],
             ),
             border: Border.all(
@@ -443,22 +446,46 @@ class HomePage extends ConsumerWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    LiquidGlass(
-                      borderRadius: 999,
-                      child: Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: Icon(SolarIconsOutline.hamburgerMenu, size: 20, color: context.textPrimary),
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(isDark ? 0.22 : 0.07),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: LiquidGlass(
+                        borderRadius: 999,
+                        child: Padding(
+                          padding: const EdgeInsets.all(10),
+                          child: Icon(SolarIconsOutline.hamburgerMenu, size: 20, color: context.textPrimary),
+                        ),
                       ),
                     ),
                     Text(Strings.t(lang, 'my_account'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: context.textPrimary)),
                     Stack(
                       clipBehavior: Clip.none,
                       children: [
-                        LiquidGlass(
-                          borderRadius: 999,
-                          child: Padding(
-                            padding: const EdgeInsets.all(10),
-                            child: Icon(SolarIconsOutline.bell, size: 20, color: context.textPrimary),
+                        Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(isDark ? 0.22 : 0.07),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: LiquidGlass(
+                            borderRadius: 999,
+                            child: Padding(
+                              padding: const EdgeInsets.all(10),
+                              child: Icon(SolarIconsOutline.bell, size: 20, color: context.textPrimary),
+                            ),
                           ),
                         ),
                         Positioned(
@@ -593,10 +620,11 @@ class HomePage extends ConsumerWidget {
         children: [
           SizedBox(
             width: 68,
-            height: 48,
+            height: 42,
             child: LiquidGlass(
               borderRadius: 16,
               tint: primaryStyle ? accent : null,
+              intensity: primaryStyle ? 1.8 : 1.0,
               child: Center(
                 child: Icon(icon, color: primaryStyle ? Colors.black : context.textPrimary, size: 22),
               ),
