@@ -1,3 +1,288 @@
+### PROJECT STRUCTURE
+my_finance
+├── .dart_tool
+│   ├── dartpad
+│   │   └── web_plugin_registrant.dart
+│   ├── package_config.json
+│   ├── package_graph.json
+│   └── version
+├── .github
+│   └── workflows
+│       └── build-apk.yml
+├── android
+│   ├── app
+│   │   ├── src
+│   │   │   ├── debug
+│   │   │   │   └── AndroidManifest.xml
+│   │   │   ├── main
+│   │   │   │   ├── java
+│   │   │   │   │   └── io
+│   │   │   │   │       └── flutter
+│   │   │   │   │           └── plugins
+│   │   │   │   │               └── GeneratedPluginRegistrant.java
+│   │   │   │   ├── kotlin
+│   │   │   │   │   └── com
+│   │   │   │   │       └── example
+│   │   │   │   │           └── my_finance
+│   │   │   │   │               └── MainActivity.kt
+│   │   │   │   ├── res
+│   │   │   │   │   ├── drawable
+│   │   │   │   │   │   └── launch_background.xml
+│   │   │   │   │   ├── drawable-v21
+│   │   │   │   │   │   └── launch_background.xml
+│   │   │   │   │   ├── mipmap-hdpi
+│   │   │   │   │   │   └── ic_launcher.png
+│   │   │   │   │   ├── mipmap-mdpi
+│   │   │   │   │   │   └── ic_launcher.png
+│   │   │   │   │   ├── mipmap-xhdpi
+│   │   │   │   │   │   └── ic_launcher.png
+│   │   │   │   │   ├── mipmap-xxhdpi
+│   │   │   │   │   │   └── ic_launcher.png
+│   │   │   │   │   ├── mipmap-xxxhdpi
+│   │   │   │   │   │   └── ic_launcher.png
+│   │   │   │   │   ├── values
+│   │   │   │   │   │   └── styles.xml
+│   │   │   │   │   └── values-night
+│   │   │   │   │       └── styles.xml
+│   │   │   │   └── AndroidManifest.xml
+│   │   │   └── profile
+│   │   │       └── AndroidManifest.xml
+│   │   ├── build.gradle.kts
+│   │   └── proguard-rules.pro
+│   ├── gradle
+│   │   └── wrapper
+│   │       ├── gradle-wrapper.jar
+│   │       └── gradle-wrapper.properties
+│   ├── .gitignore
+│   ├── build.gradle.kts
+│   ├── gradle.properties
+│   ├── gradlew
+│   ├── gradlew.bat
+│   ├── local.properties
+│   ├── my_finance_android.iml
+│   └── settings.gradle.kts
+├── assets
+│   ├── fonts
+│   │   ├── dm_serif_display_regular.ttf
+│   │   ├── playfairdisplay_regular.ttf
+│   │   ├── satoshi_black.otf
+│   │   ├── satoshi_black_italic.otf
+│   │   ├── satoshi_bold.otf
+│   │   ├── satoshi_bold_italic.otf
+│   │   ├── satoshi_italic.otf
+│   │   ├── satoshi_light.otf
+│   │   ├── satoshi_light_italic.otf
+│   │   ├── satoshi_medium.otf
+│   │   ├── satoshi_medium_italic.otf
+│   │   └── satoshi_regular.otf
+│   ├── icon
+│   │   └── icon.png
+│   └── lottie
+│       └── gym.json
+├── ios
+│   ├── Flutter
+│   │   ├── ephemeral
+│   │   │   ├── Packages
+│   │   │   │   └── FlutterGeneratedPluginSwiftPackage
+│   │   │   │       ├── Sources
+│   │   │   │       │   └── FlutterGeneratedPluginSwiftPackage
+│   │   │   │       │       └── FlutterGeneratedPluginSwiftPackage.swift
+│   │   │   │       └── Package.swift
+│   │   │   ├── .swift_pm.lock
+│   │   │   ├── flutter_lldb_helper.py
+│   │   │   ├── flutter_lldbinit
+│   │   │   └── flutter_native_integration.env
+│   │   ├── AppFrameworkInfo.plist
+│   │   ├── Debug.xcconfig
+│   │   ├── flutter_export_environment.sh
+│   │   ├── Generated.xcconfig
+│   │   └── Release.xcconfig
+│   ├── Runner
+│   │   ├── Assets.xcassets
+│   │   │   ├── AppIcon.appiconset
+│   │   │   │   ├── Contents.json
+│   │   │   │   ├── Icon-App-1024x1024@1x.png
+│   │   │   │   ├── Icon-App-20x20@1x.png
+│   │   │   │   ├── Icon-App-20x20@2x.png
+│   │   │   │   ├── Icon-App-20x20@3x.png
+│   │   │   │   ├── Icon-App-29x29@1x.png
+│   │   │   │   ├── Icon-App-29x29@2x.png
+│   │   │   │   ├── Icon-App-29x29@3x.png
+│   │   │   │   ├── Icon-App-40x40@1x.png
+│   │   │   │   ├── Icon-App-40x40@2x.png
+│   │   │   │   ├── Icon-App-40x40@3x.png
+│   │   │   │   ├── Icon-App-60x60@2x.png
+│   │   │   │   ├── Icon-App-60x60@3x.png
+│   │   │   │   ├── Icon-App-76x76@1x.png
+│   │   │   │   ├── Icon-App-76x76@2x.png
+│   │   │   │   └── Icon-App-83.5x83.5@2x.png
+│   │   │   └── LaunchImage.imageset
+│   │   │       ├── Contents.json
+│   │   │       ├── LaunchImage.png
+│   │   │       ├── LaunchImage@2x.png
+│   │   │       ├── LaunchImage@3x.png
+│   │   │       └── README.md
+│   │   ├── Base.lproj
+│   │   │   ├── LaunchScreen.storyboard
+│   │   │   └── Main.storyboard
+│   │   ├── AppDelegate.swift
+│   │   ├── GeneratedPluginRegistrant.h
+│   │   ├── GeneratedPluginRegistrant.m
+│   │   ├── Info.plist
+│   │   ├── Runner-Bridging-Header.h
+│   │   └── SceneDelegate.swift
+│   ├── Runner.xcodeproj
+│   │   ├── project.xcworkspace
+│   │   │   ├── xcshareddata
+│   │   │   │   ├── IDEWorkspaceChecks.plist
+│   │   │   │   └── WorkspaceSettings.xcsettings
+│   │   │   └── contents.xcworkspacedata
+│   │   ├── xcshareddata
+│   │   │   └── xcschemes
+│   │   │       └── Runner.xcscheme
+│   │   └── project.pbxproj
+│   ├── Runner.xcworkspace
+│   │   ├── xcshareddata
+│   │   │   ├── IDEWorkspaceChecks.plist
+│   │   │   └── WorkspaceSettings.xcsettings
+│   │   └── contents.xcworkspacedata
+│   ├── RunnerTests
+│   │   └── RunnerTests.swift
+│   └── .gitignore
+├── lib
+│   └── main.dart
+├── linux
+│   ├── flutter
+│   │   ├── CMakeLists.txt
+│   │   ├── generated_plugin_registrant.cc
+│   │   ├── generated_plugin_registrant.h
+│   │   └── generated_plugins.cmake
+│   ├── runner
+│   │   ├── CMakeLists.txt
+│   │   ├── main.cc
+│   │   ├── my_application.cc
+│   │   └── my_application.h
+│   ├── .gitignore
+│   └── CMakeLists.txt
+├── macos
+│   ├── Flutter
+│   │   ├── ephemeral
+│   │   │   ├── Packages
+│   │   │   │   └── FlutterGeneratedPluginSwiftPackage
+│   │   │   │       ├── Sources
+│   │   │   │       │   └── FlutterGeneratedPluginSwiftPackage
+│   │   │   │       │       └── FlutterGeneratedPluginSwiftPackage.swift
+│   │   │   │       └── Package.swift
+│   │   │   ├── .swift_pm.lock
+│   │   │   ├── Flutter-Generated.xcconfig
+│   │   │   ├── flutter_export_environment.sh
+│   │   │   └── flutter_native_integration.env
+│   │   ├── Flutter-Debug.xcconfig
+│   │   ├── Flutter-Release.xcconfig
+│   │   └── GeneratedPluginRegistrant.swift
+│   ├── Runner
+│   │   ├── Assets.xcassets
+│   │   │   └── AppIcon.appiconset
+│   │   │       ├── app_icon_1024.png
+│   │   │       ├── app_icon_128.png
+│   │   │       ├── app_icon_16.png
+│   │   │       ├── app_icon_256.png
+│   │   │       ├── app_icon_32.png
+│   │   │       ├── app_icon_512.png
+│   │   │       ├── app_icon_64.png
+│   │   │       └── Contents.json
+│   │   ├── Base.lproj
+│   │   │   └── MainMenu.xib
+│   │   ├── Configs
+│   │   │   ├── AppInfo.xcconfig
+│   │   │   ├── Debug.xcconfig
+│   │   │   ├── Release.xcconfig
+│   │   │   └── Warnings.xcconfig
+│   │   ├── AppDelegate.swift
+│   │   ├── DebugProfile.entitlements
+│   │   ├── Info.plist
+│   │   ├── MainFlutterWindow.swift
+│   │   └── Release.entitlements
+│   ├── Runner.xcodeproj
+│   │   ├── project.xcworkspace
+│   │   │   └── xcshareddata
+│   │   │       └── IDEWorkspaceChecks.plist
+│   │   ├── xcshareddata
+│   │   │   └── xcschemes
+│   │   │       └── Runner.xcscheme
+│   │   └── project.pbxproj
+│   ├── Runner.xcworkspace
+│   │   ├── xcshareddata
+│   │   │   └── IDEWorkspaceChecks.plist
+│   │   └── contents.xcworkspacedata
+│   ├── RunnerTests
+│   │   └── RunnerTests.swift
+│   └── .gitignore
+├── test
+│   └── widget_test.dart
+├── web
+│   ├── icons
+│   │   ├── Icon-192.png
+│   │   ├── Icon-512.png
+│   │   ├── Icon-maskable-192.png
+│   │   └── Icon-maskable-512.png
+│   ├── favicon.png
+│   ├── index.html
+│   └── manifest.json
+├── windows
+│   ├── flutter
+│   │   ├── CMakeLists.txt
+│   │   ├── generated_plugin_registrant.cc
+│   │   ├── generated_plugin_registrant.h
+│   │   └── generated_plugins.cmake
+│   ├── runner
+│   │   ├── resources
+│   │   │   └── app_icon.ico
+│   │   ├── CMakeLists.txt
+│   │   ├── flutter_window.cpp
+│   │   ├── flutter_window.h
+│   │   ├── main.cpp
+│   │   ├── resource.h
+│   │   ├── runner.exe.manifest
+│   │   ├── Runner.rc
+│   │   ├── utils.cpp
+│   │   ├── utils.h
+│   │   ├── win32_window.cpp
+│   │   └── win32_window.h
+│   ├── .gitignore
+│   └── CMakeLists.txt
+├── .flutter-plugins-dependencies
+├── .frignore
+├── .gitignore
+├── .metadata
+├── analysis_options.yaml
+├── my_finance.iml
+├── pubspec.lock
+├── pubspec.yaml
+└── README.md
+
+### FILE: .dart_tool/dartpad/web_plugin_registrant.dart
+// Flutter web plugin registrant file.
+//
+// Generated file. Do not edit.
+//
+
+// @dart = 2.13
+// ignore_for_file: type=lint
+
+import 'package:image_picker_for_web/image_picker_for_web.dart';
+import 'package:shared_preferences_web/shared_preferences_web.dart';
+import 'package:flutter_web_plugins/flutter_web_plugins.dart';
+
+void registerPlugins([final Registrar? pluginRegistrar]) {
+  final Registrar registrar = pluginRegistrar ?? webPluginRegistrar;
+  ImagePickerPlugin.registerWith(registrar);
+  SharedPreferencesPlugin.registerWith(registrar);
+  registrar.registerMessageHandler();
+}
+
+
+### FILE: lib/main.dart
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -428,31 +713,30 @@ class HomePage extends ConsumerWidget {
               borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
               boxShadow: [
                 BoxShadow(
-                  color: isDark ? Colors.black.withOpacity(0.26) : Colors.black.withOpacity(0.08),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
+                  color: isDark ? Colors.black.withOpacity(0.20) : Colors.black.withOpacity(0.05),
+                  blurRadius: 14,
+                  offset: const Offset(0, 4),
+                ),
+                BoxShadow(
+                  color: isDark ? Colors.black.withOpacity(0.22) : Colors.black.withOpacity(0.06),
+                  blurRadius: 40,
+                  offset: const Offset(0, 16),
                 ),
               ],
             ),
             child: ClipRRect(
               borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
               child: BackdropFilter(
-                filter: ui.ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                filter: ui.ImageFilter.blur(sigmaX: 24, sigmaY: 24),
                 child: Container(
                   padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
                   decoration: BoxDecoration(
-                    borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Color.alphaBlend(primary.withOpacity(isDark ? 0.16 : 0.08), context.cardColor).withOpacity(isDark ? 0.80 : 0.75),
-                        Color.alphaBlend(primary.withOpacity(isDark ? 0.10 : 0.04), context.cardColor).withOpacity(isDark ? 0.60 : 0.50),
-                      ],
-                    ),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(isDark ? 0.16 : 0.6),
-                      width: 1.2,
+                    color: Color.alphaBlend(primary.withOpacity(isDark ? 0.14 : 0.06), context.cardColor).withOpacity(isDark ? 0.72 : 0.68),
+                    border: Border(
+                      bottom: BorderSide(
+                        color: Colors.white.withOpacity(isDark ? 0.18 : 0.65),
+                        width: 1.4,
+                      ),
                     ),
                   ),
                   child: Column(
@@ -1165,3 +1449,26 @@ Future<void> showTransactionForm(BuildContext context, WidgetRef ref, bool incom
 }
 
 String rupiah(double value) => 'Rp ${NumberFormat('#,###', 'id_ID').format(value).replaceAll(',', '.')}';
+
+
+### FILE: test/widget_test.dart
+import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:my_finance/main.dart';
+
+void main() {
+  testWidgets('My Finance opens dashboard', (tester) async {
+    SharedPreferences.setMockInitialValues({'onboarding_done': true});
+    final prefs = await SharedPreferences.getInstance();
+    await tester.pumpWidget(ProviderScope(
+      overrides: [prefsProvider.overrideWithValue(prefs)],
+      child: const MyFinanceApp(),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Selamat pagi, Raka'), findsOneWidget);
+    expect(find.text('TOTAL SALDO'), findsOneWidget);
+    expect(find.text('Aksi cepat'), findsOneWidget);
+  });
+}
