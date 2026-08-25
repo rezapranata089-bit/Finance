@@ -319,6 +319,16 @@ class Strings {
     'cat_bills': {AppLang.en: 'Bills', AppLang.id: 'Tagihan'},
     'cat_other': {AppLang.en: 'Other', AppLang.id: 'Lainnya'},
     'field_required': {AppLang.en: 'This field is required', AppLang.id: 'Kolom ini wajib diisi'},
+    'edit_income': {AppLang.en: 'Edit income', AppLang.id: 'Edit pemasukan'},
+    'edit_income_subtitle': {AppLang.en: 'Update the details of this income', AppLang.id: 'Perbarui detail pemasukan ini'},
+    'edit_expense': {AppLang.en: 'Edit expense', AppLang.id: 'Edit pengeluaran'},
+    'edit_expense_subtitle': {AppLang.en: 'Update the details of this expense', AppLang.id: 'Perbarui detail pengeluaran ini'},
+    'save_changes': {AppLang.en: 'Save changes', AppLang.id: 'Simpan perubahan'},
+    'edit': {AppLang.en: 'Edit', AppLang.id: 'Edit'},
+    'delete': {AppLang.en: 'Delete', AppLang.id: 'Hapus'},
+    'cancel': {AppLang.en: 'Cancel', AppLang.id: 'Batal'},
+    'delete_transaction_title': {AppLang.en: 'Delete transaction', AppLang.id: 'Hapus transaksi'},
+    'delete_transaction_confirm': {AppLang.en: 'Delete "{title}"? This cannot be undone.', AppLang.id: 'Hapus "{title}"? Tindakan ini tidak bisa dibatalkan.'},
   };
 
   static String t(AppLang lang, String key) => _s[key]?[lang] ?? key;
@@ -356,6 +366,19 @@ class TransactionNotifier extends StateNotifier<List<FinanceTransaction>> {
 
   void add({required String title, required double amount, required bool income, required String category, required String note, required DateTime date}) {
     state = [FinanceTransaction(title: title, amount: amount, income: income, category: category, note: note, date: date), ...state];
+  }
+
+  void update(FinanceTransaction old, FinanceTransaction updated) {
+    final idx = state.indexOf(old);
+    if (idx == -1) return;
+    final list = [...state];
+    list[idx] = updated;
+    state = list;
+  }
+
+  void remove(FinanceTransaction item) {
+    final list = [...state]..remove(item);
+    state = list;
   }
 }
 
@@ -1425,43 +1448,47 @@ class TransactionTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final lang = ref.watch(langProvider);
     final primary = Theme.of(context).colorScheme.primary;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        children: [
-          Container(
-            width: 48, height: 48,
-            decoration: BoxDecoration(color: context.isDark ? primary.withOpacity(0.18) : Theme.of(context).colorScheme.tertiary, shape: BoxShape.circle),
-            child: Center(
-              child: Text(
-                item.title.substring(0, 1).toUpperCase(),
-                style: TextStyle(color: primary, fontWeight: FontWeight.bold, fontSize: 18),
+    return GestureDetector(
+      onTap: () => showTransactionActions(context, ref, item),
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: Row(
+          children: [
+            Container(
+              width: 48, height: 48,
+              decoration: BoxDecoration(color: context.isDark ? primary.withOpacity(0.18) : Theme.of(context).colorScheme.tertiary, shape: BoxShape.circle),
+              child: Center(
+                child: Text(
+                  item.title.substring(0, 1).toUpperCase(),
+                  style: TextStyle(color: primary, fontWeight: FontWeight.bold, fontSize: 18),
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(item.title, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: context.textPrimary)),
+                  const SizedBox(height: 4),
+                  Text(DateFormat('hh:mm a').format(item.date), style: TextStyle(color: context.textFaint, fontSize: 12, fontWeight: FontWeight.w500)),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(item.title, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: context.textPrimary)),
+                Text(
+                  '${item.income ? '+' : '-'}${rupiah(item.amount)}',
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: context.textPrimary),
+                ),
                 const SizedBox(height: 4),
-                Text(DateFormat('hh:mm a').format(item.date), style: TextStyle(color: context.textFaint, fontSize: 12, fontWeight: FontWeight.w500)),
+                Text(Strings.t(lang, item.income ? 'receive' : 'transfer'), style: TextStyle(color: context.textFaint, fontSize: 12, fontWeight: FontWeight.w500)),
               ],
             ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                '${item.income ? '+' : '-'}${rupiah(item.amount)}',
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: context.textPrimary),
-              ),
-              const SizedBox(height: 4),
-              Text(Strings.t(lang, item.income ? 'receive' : 'transfer'), style: TextStyle(color: context.textFaint, fontSize: 12, fontWeight: FontWeight.w500)),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1901,15 +1928,20 @@ class BottomRoundedBorderPainter extends CustomPainter {
       oldDelegate.color != color || oldDelegate.radius != radius || oldDelegate.strokeWidth != strokeWidth;
 }
 
-Future<void> showTransactionForm(BuildContext context, WidgetRef ref, bool income) async {
-  final amount = TextEditingController(), title = TextEditingController(), note = TextEditingController();
+Future<void> showTransactionForm(BuildContext context, WidgetRef ref, bool income, {FinanceTransaction? existing}) async {
+  final isEdit = existing != null;
+  final effectiveIncome = isEdit ? existing!.income : income;
+  final amount = TextEditingController(text: isEdit ? NumberFormat('#,###', 'id_ID').format(existing!.amount).replaceAll(',', '.') : '');
+  final title = TextEditingController(text: existing?.title ?? '');
+  final note = TextEditingController(text: existing?.note ?? '');
   final amountShakeKey = GlobalKey<ShakeFieldState>();
   final titleShakeKey = GlobalKey<ShakeFieldState>();
   final lang = ref.read(langProvider);
-  final catKeys = income
+  final catKeys = effectiveIncome
       ? ['cat_income', 'cat_freelance', 'cat_bonus']
       : ['cat_food', 'cat_shopping', 'cat_transport', 'cat_bills', 'cat_other'];
-  String category = Strings.t(AppLang.en, catKeys.first);
+  final catEnLabels = catKeys.map((k) => Strings.t(AppLang.en, k)).toList();
+  String category = (existing != null && catEnLabels.contains(existing.category)) ? existing.category : catEnLabels.first;
   String? amountError;
   String? titleError;
   await showModalBottomSheet(
@@ -1920,7 +1952,9 @@ Future<void> showTransactionForm(BuildContext context, WidgetRef ref, bool incom
     builder: (sheetContext) => StatefulBuilder(builder: (context, setModalState) => Padding(
     padding: EdgeInsets.fromLTRB(20, 22, 20, MediaQuery.viewInsetsOf(context).bottom + 24),
     child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Text(Strings.t(lang, income ? 'add_income' : 'add_expense'), style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 28, color: context.textPrimary)),
+      Text(Strings.t(lang, isEdit ? (effectiveIncome ? 'edit_income' : 'edit_expense') : (effectiveIncome ? 'add_income' : 'add_expense')), style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 28, color: context.textPrimary)),
+      const SizedBox(height: 6),
+      Text(Strings.t(lang, isEdit ? (effectiveIncome ? 'edit_income_subtitle' : 'edit_expense_subtitle') : (effectiveIncome ? 'add_income_subtitle' : 'add_expense_subtitle')), style: TextStyle(fontSize: 13, color: context.textMuted)),
       const SizedBox(height: 18),
       ShakeField(
         key: amountShakeKey,
@@ -1957,11 +1991,106 @@ Future<void> showTransactionForm(BuildContext context, WidgetRef ref, bool incom
           });
           return;
         }
-        ref.read(transactionsProvider.notifier).add(title: title.text.trim(), amount: value, income: income, category: category, note: note.text.trim(), date: DateTime.now());
+        if (isEdit) {
+          ref.read(transactionsProvider.notifier).update(existing!, FinanceTransaction(title: title.text.trim(), category: category, note: note.text.trim(), amount: value, income: effectiveIncome, date: existing.date));
+        } else {
+          ref.read(transactionsProvider.notifier).add(title: title.text.trim(), amount: value, income: effectiveIncome, category: category, note: note.text.trim(), date: DateTime.now());
+        }
         Navigator.pop(sheetContext);
-      }, child: Text(Strings.t(lang, 'save_transaction')))),
+      }, child: Text(Strings.t(lang, isEdit ? 'save_changes' : 'save_transaction')))),
     ]),
   )));
+}
+
+void showTransactionActions(BuildContext context, WidgetRef ref, FinanceTransaction item) {
+  final lang = ref.read(langProvider);
+  final primary = Theme.of(context).colorScheme.primary;
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: context.cardColor,
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+    builder: (sheetContext) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 22, 20, 24),
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Container(
+              width: 48, height: 48,
+              decoration: BoxDecoration(color: context.isDark ? primary.withOpacity(0.18) : Theme.of(context).colorScheme.tertiary, shape: BoxShape.circle),
+              child: Center(child: Text(item.title.substring(0, 1).toUpperCase(), style: TextStyle(color: primary, fontWeight: FontWeight.bold, fontSize: 18))),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(item.title, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: context.textPrimary)),
+                const SizedBox(height: 4),
+                Text(DateFormat('d MMM yyyy, hh:mm a').format(item.date), style: TextStyle(color: context.textFaint, fontSize: 12)),
+              ]),
+            ),
+          ]),
+          const SizedBox(height: 18),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(color: context.isDark ? Colors.white.withOpacity(0.04) : const Color(0xFFF1EEF7), borderRadius: BorderRadius.circular(18)),
+            child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              Text(Strings.t(lang, item.income ? 'receive' : 'transfer'), style: TextStyle(color: context.textMuted)),
+              Text('${item.income ? '+' : '-'}${rupiah(item.amount)}', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: item.income ? const Color(0xFF24A148) : context.textPrimary)),
+            ]),
+          ),
+          if (item.note.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(item.note, style: TextStyle(color: context.textMuted, fontSize: 13)),
+          ],
+          const SizedBox(height: 22),
+          Row(children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  Navigator.pop(sheetContext);
+                  showTransactionForm(context, ref, item.income, existing: item);
+                },
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                label: Text(Strings.t(lang, 'edit')),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(foregroundColor: Colors.redAccent, side: const BorderSide(color: Colors.redAccent)),
+                onPressed: () {
+                  Navigator.pop(sheetContext);
+                  _confirmDeleteTransaction(context, ref, item);
+                },
+                icon: const Icon(Icons.delete_outline, size: 18),
+                label: Text(Strings.t(lang, 'delete')),
+              ),
+            ),
+          ]),
+        ]),
+      ),
+    ),
+  );
+}
+
+void _confirmDeleteTransaction(BuildContext context, WidgetRef ref, FinanceTransaction item) {
+  final lang = ref.read(langProvider);
+  showDialog(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: Text(Strings.t(lang, 'delete_transaction_title')),
+      content: Text(Strings.t(lang, 'delete_transaction_confirm').replaceAll('{title}', item.title)),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(Strings.t(lang, 'cancel'))),
+        TextButton(
+          onPressed: () {
+            ref.read(transactionsProvider.notifier).remove(item);
+            Navigator.pop(dialogContext);
+          },
+          child: Text(Strings.t(lang, 'delete'), style: const TextStyle(color: Colors.redAccent)),
+        ),
+      ],
+    ),
+  );
 }
 
 Future<void> showCardForm({
