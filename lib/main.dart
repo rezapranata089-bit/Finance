@@ -822,12 +822,7 @@ class HomePage extends ConsumerWidget {
                                 SizedBox(
                                   width: 50,
                                   height: 50,
-                                  child: ClipRect(
-                                    child: Transform.scale(
-                                      scale: 2.2,
-                                      child: Lottie.asset('assets/lottie/ai.json', repeat: true, fit: BoxFit.contain),
-                                    ),
-                                  ),
+                                  child: Lottie.asset('assets/lottie/ai.json', repeat: true, fit: BoxFit.cover),
                                 )
                               else
                                 Container(
