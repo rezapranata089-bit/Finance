@@ -769,52 +769,58 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
             link: _link,
             targetAnchor: Alignment.topLeft,
             followerAnchor: Alignment.topLeft,
-            child: AnimatedBuilder(
-              animation: _controller,
-              builder: (context, child) {
-                final t = _controller.value.clamp(0.0, 1.0);
-                final size = Size.lerp(_closedSize, _openSize, t)!;
-                final radius = lerpDouble(20, 20, t)!;
-                final iconOpacity = (1 - t / 0.45).clamp(0.0, 1.0);
-                final menuOpacity = ((t - 0.35) / 0.65).clamp(0.0, 1.0);
-                final menuOffset = (1 - menuOpacity) * 14;
-                final glassT = Curves.easeOut.transform(t);
-                return Material(
-                  color: Colors.transparent,
-                  child: SizedBox(
-                    width: size.width,
-                    height: size.height,
-                    child: LiquidGlass(
-                      borderRadius: radius,
-                      tint: context.cardColor,
-                      intensity: lerpDouble(1.0, 1.6, glassT)!,
-                      blur: lerpDouble(0, 6, glassT)!,
-                      useBlur: glassT > 0.02,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(radius),
-                        child: Stack(
-                          children: [
-                            Positioned(
-                              top: 0, left: 0, width: 40, height: 40,
-                              child: Opacity(
-                                opacity: iconOpacity,
-                                child: Center(child: Icon(SolarIconsOutline.hamburgerMenu, size: 20, color: context.textPrimary)),
-                              ),
-                            ),
-                            Opacity(
-                              opacity: menuOpacity,
-                              child: Transform.translate(
-                                offset: Offset(menuOffset, menuOffset * -0.3),
-                                child: _MorphMenuContent(onSelect: _select),
-                              ),
-                            ),
-                          ],
+            child: RepaintBoundary(
+              child: AnimatedBuilder(
+                animation: _controller,
+                child: _MorphMenuContent(onSelect: _select),
+                builder: (context, menuChild) {
+                  final t = _controller.value.clamp(0.0, 1.0);
+                  final size = Size.lerp(_closedSize, _openSize, t)!;
+                  const radius = 20.0;
+                  final iconOpacity = (1 - t / 0.45).clamp(0.0, 1.0);
+                  final menuOpacity = ((t - 0.35) / 0.65).clamp(0.0, 1.0);
+                  final menuOffset = (1 - menuOpacity) * 14;
+                  final glassT = Curves.easeOut.transform(t);
+                  final showBlur = glassT > 0.85;
+                  return Material(
+                    color: Colors.transparent,
+                    child: SizedBox(
+                      width: size.width,
+                      height: size.height,
+                      child: LiquidGlass(
+                        borderRadius: radius,
+                        tint: context.cardColor,
+                        intensity: glassT > 0.85 ? 1.6 : 1.0,
+                        blur: 6,
+                        useBlur: showBlur,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(radius),
+                          child: Stack(
+                            children: [
+                              if (iconOpacity > 0)
+                                Positioned(
+                                  top: 0, left: 0, width: 40, height: 40,
+                                  child: Opacity(
+                                    opacity: iconOpacity,
+                                    child: const Center(child: Icon(SolarIconsOutline.hamburgerMenu, size: 20)),
+                                  ),
+                                ),
+                              if (menuOpacity > 0)
+                                Opacity(
+                                  opacity: menuOpacity,
+                                  child: Transform.translate(
+                                    offset: Offset(menuOffset, menuOffset * -0.3),
+                                    child: menuChild,
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
           ),
         ],
