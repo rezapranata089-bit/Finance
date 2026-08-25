@@ -935,15 +935,19 @@ class CardSelectorButton extends ConsumerStatefulWidget {
 class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with SingleTickerProviderStateMixin {
   final LayerLink _link = LayerLink();
   OverlayEntry? _entry;
-  late final AnimationController _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 280));
-  late final Animation<double> _scale = CurvedAnimation(parent: _controller, curve: Curves.easeOutBack);
-  late final Animation<double> _fade = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
+  late final AnimationController _controller = AnimationController(vsync: this, value: 0);
+  bool _open = false;
 
   static const _cards = [
     ('**** 3425', 'Main Wallet'),
     ('**** 7810', 'Savings'),
     ('**** 2290', 'Business'),
   ];
+
+  static const _closedSize = Size(130, 30);
+  static final _openSize = Size(196, (_cards.length + 1) * 42.0 + 9);
+  static const _openCurve = Cubic(0.34, 1.25, 0.64, 1.0);
+  static const _closeCurve = Cubic(0.22, 1.0, 0.36, 1.0);
 
   @override
   void dispose() {
@@ -958,144 +962,185 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
   }
 
   Future<void> _toggle() async {
-    if (_entry != null) {
-      await _controller.reverse();
+    if (_open) {
+      await _controller.animateTo(0, duration: const Duration(milliseconds: 250), curve: _closeCurve);
       _removeOverlay();
+      setState(() => _open = false);
       return;
     }
+    setState(() => _open = true);
     final selected = ref.read(selectedCardProvider);
     _entry = OverlayEntry(
       builder: (overlayContext) => Stack(
         children: [
-          Positioned.fill(
-            child: GestureDetector(behavior: HitTestBehavior.translucent, onTap: _toggle),
-          ),
+          Positioned.fill(child: GestureDetector(behavior: HitTestBehavior.translucent, onTap: _toggle)),
           CompositedTransformFollower(
             link: _link,
-            targetAnchor: Alignment.bottomCenter,
-            followerAnchor: Alignment.topCenter,
-            offset: const Offset(0, 10),
-            child: AnimatedBuilder(
-              animation: _controller,
-              builder: (context, _) {
-                final t = _controller.value.clamp(0.0, 1.0);
-                final blurAmount = Curves.easeOut.transform(t) * 6;
-                return FadeTransition(
-                  opacity: _fade,
-                  child: ScaleTransition(
-                    scale: _scale,
-                    alignment: Alignment.topCenter,
-                    child: Material(
-                      color: Colors.transparent,
-                      child: _CardGlassPopup(
-                        cards: _cards,
-                        selected: selected,
-                        blurAmount: blurAmount,
-                        onSelect: (i) {
-                          ref.read(selectedCardProvider.notifier).state = i;
-                          _toggle();
-                        },
-                        onAdd: _toggle,
+            targetAnchor: Alignment.topLeft,
+            followerAnchor: Alignment.topLeft,
+            child: RepaintBoundary(
+              child: AnimatedBuilder(
+                animation: _controller,
+                child: _CardMorphContent(
+                  cards: _cards,
+                  selected: selected,
+                  onSelect: _select,
+                  onAdd: _toggle,
+                ),
+                builder: (context, menuChild) {
+                  final t = _controller.value.clamp(0.0, 1.0);
+                  final size = Size.lerp(_closedSize, _openSize, t)!;
+                  const radius = 18.0;
+                  final closedOpacity = (1 - t / 0.4).clamp(0.0, 1.0);
+                  final openOpacity = ((t - 0.35) / 0.65).clamp(0.0, 1.0);
+                  final openOffset = (1 - openOpacity) * 12;
+                  final glassT = Curves.easeOut.transform(t);
+                  final showBlur = glassT > 0.8;
+                  return Material(
+                    color: Colors.transparent,
+                    child: SizedBox(
+                      width: size.width,
+                      height: size.height,
+                      child: LiquidGlass(
+                        borderRadius: radius,
+                        tint: context.cardColor,
+                        intensity: glassT > 0.8 ? 1.6 : 1.0,
+                        blur: 6,
+                        useBlur: showBlur,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(radius),
+                          child: Stack(
+                            children: [
+                              if (closedOpacity > 0)
+                                Positioned(
+                                  left: 0, top: 0, width: _closedSize.width, height: _closedSize.height,
+                                  child: Opacity(
+                                    opacity: closedOpacity,
+                                    child: _ClosedCardChip(cardLabel: _cards[selected].$1),
+                                  ),
+                                ),
+                              if (openOpacity > 0)
+                                Opacity(
+                                  opacity: openOpacity,
+                                  child: Transform.translate(
+                                    offset: Offset(0, openOffset),
+                                    child: menuChild,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                );
-              },
+                  );
+                },
+              ),
             ),
           ),
         ],
       ),
     );
     Overlay.of(context).insert(_entry!);
-    _controller.forward(from: 0);
+    await _controller.animateTo(1, duration: const Duration(milliseconds: 340), curve: _openCurve);
+  }
+
+  void _select(int index) {
+    _toggle();
+    ref.read(selectedCardProvider.notifier).state = index;
   }
 
   @override
   Widget build(BuildContext context) {
     final selected = ref.watch(selectedCardProvider);
-    final accent = Theme.of(context).colorScheme.secondary;
     return CompositedTransformTarget(
       link: _link,
       child: GestureDetector(
         onTap: _toggle,
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-          decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(20), border: Border.all(color: context.borderColor)),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 22, height: 16,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(color: accent, borderRadius: BorderRadius.circular(4)),
-                child: const Icon(SolarIconsBold.wallet, size: 12, color: Colors.black87),
-              ),
-              const SizedBox(width: 8),
-              Text(_cards[selected].$1, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: context.textPrimary)),
-              const SizedBox(width: 4),
-              AnimatedBuilder(
-                animation: _controller,
-                builder: (context, child) => Transform.rotate(angle: _controller.value * math.pi, child: child),
-                child: Icon(SolarIconsOutline.altArrowDown, size: 16, color: context.iconMuted),
-              ),
-            ],
-          ),
+        child: Opacity(
+          opacity: _open ? 0 : 1,
+          child: _ClosedCardChip(cardLabel: _cards[selected].$1, showArrow: true),
         ),
       ),
     );
   }
 }
 
-class _CardGlassPopup extends StatelessWidget {
+class _ClosedCardChip extends StatelessWidget {
+  final String cardLabel;
+  final bool showArrow;
+  const _ClosedCardChip({required this.cardLabel, this.showArrow = false});
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = Theme.of(context).colorScheme.secondary;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: showArrow ? context.cardColor : Colors.transparent,
+        borderRadius: BorderRadius.circular(20),
+        border: showArrow ? Border.all(color: context.borderColor) : null,
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 22, height: 16,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(color: accent, borderRadius: BorderRadius.circular(4)),
+            child: const Icon(SolarIconsBold.wallet, size: 12, color: Colors.black87),
+          ),
+          const SizedBox(width: 8),
+          Text(cardLabel, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: context.textPrimary)),
+          if (showArrow) ...[
+            const SizedBox(width: 4),
+            Icon(SolarIconsOutline.altArrowDown, size: 16, color: context.iconMuted),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _CardMorphContent extends StatelessWidget {
   final List<(String, String)> cards;
   final int selected;
   final ValueChanged<int> onSelect;
   final VoidCallback onAdd;
-  final double blurAmount;
-  const _CardGlassPopup({required this.cards, required this.selected, required this.onSelect, required this.onAdd, this.blurAmount = 6});
+  const _CardMorphContent({required this.cards, required this.selected, required this.onSelect, required this.onAdd});
 
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
-    return SizedBox(
-      width: 190,
-      child: LiquidGlass(
-        borderRadius: 18,
-        tint: context.cardColor,
-        intensity: 1.6,
-        blur: blurAmount,
-        useBlur: true,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 4),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ...cards.asMap().entries.map((e) {
-                final isSelected = e.key == selected;
-                return ListTile(
-                  dense: true,
-                  visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
-                  onTap: () => onSelect(e.key),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                  minLeadingWidth: 0,
-                  leading: Icon(SolarIconsOutline.card, size: 16, color: isSelected ? primary : context.iconMuted),
-                  title: Text(e.value.$2, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: context.textPrimary)),
-                  trailing: isSelected ? Icon(SolarIconsBold.checkCircle, size: 16, color: primary) : null,
-                );
-              }),
-              Divider(height: 1, indent: 12, endIndent: 12, color: context.borderColor),
-              ListTile(
-                dense: true,
-                visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
-                onTap: onAdd,
-                contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-                minLeadingWidth: 0,
-                leading: Icon(SolarIconsOutline.addCircle, size: 16, color: primary),
-                title: Text('Tambah kartu', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: primary)),
-              ),
-            ],
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ...cards.asMap().entries.map((e) {
+            final isSelected = e.key == selected;
+            return ListTile(
+              dense: true,
+              visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+              onTap: () => onSelect(e.key),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+              minLeadingWidth: 0,
+              leading: Icon(SolarIconsOutline.card, size: 16, color: isSelected ? primary : context.iconMuted),
+              title: Text(e.value.$2, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: context.textPrimary)),
+              trailing: isSelected ? Icon(SolarIconsBold.checkCircle, size: 16, color: primary) : null,
+            );
+          }),
+          Divider(height: 1, indent: 12, endIndent: 12, color: context.borderColor),
+          ListTile(
+            dense: true,
+            visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+            onTap: onAdd,
+            contentPadding: const EdgeInsets.symmetric(horizontal: 12),
+            minLeadingWidth: 0,
+            leading: Icon(SolarIconsOutline.addCircle, size: 16, color: primary),
+            title: Text('Tambah kartu', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: primary)),
           ),
-        ),
+        ],
       ),
     );
   }
