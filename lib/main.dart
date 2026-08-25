@@ -778,17 +778,25 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
                 final iconOpacity = (1 - t / 0.45).clamp(0.0, 1.0);
                 final menuOpacity = ((t - 0.35) / 0.65).clamp(0.0, 1.0);
                 final menuOffset = (1 - menuOpacity) * 14;
+                final isDark = context.isDark;
+                final closedBg = Colors.white.withOpacity(isDark ? 0.25 : 0.32);
+                final openBg = isDark ? const Color(0xFF1E1B27) : Colors.white;
+                final closedBorder = Colors.white.withOpacity(isDark ? 0.16 : 0.55);
+                final openBorder = context.borderColor;
+                final shadowAlpha = lerpDouble(isDark ? 0.22 : 0.07, isDark ? 0.3 : 0.1, t)!;
+                final shadowBlur = lerpDouble(10, 20, t)!;
+                final shadowOffsetY = lerpDouble(4, 10, t)!;
                 return Material(
                   color: Colors.transparent,
                   child: Container(
                     width: size.width,
                     height: size.height,
                     decoration: BoxDecoration(
-                      color: context.cardColor,
+                      color: Color.lerp(closedBg, openBg, t),
                       borderRadius: BorderRadius.circular(radius),
-                      border: Border.all(color: context.borderColor),
+                      border: Border.all(color: Color.lerp(closedBorder, openBorder, t)!),
                       boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(context.isDark ? 0.3 : 0.1), blurRadius: 20, offset: const Offset(0, 10)),
+                        BoxShadow(color: Colors.black.withOpacity(shadowAlpha), blurRadius: shadowBlur, offset: Offset(0, shadowOffsetY)),
                       ],
                     ),
                     child: ClipRRect(
