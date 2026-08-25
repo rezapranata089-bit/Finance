@@ -778,36 +778,20 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
                 final iconOpacity = (1 - t / 0.45).clamp(0.0, 1.0);
                 final menuOpacity = ((t - 0.35) / 0.65).clamp(0.0, 1.0);
                 final menuOffset = (1 - menuOpacity) * 14;
-                final isDark = context.isDark;
-                final base = context.cardColor;
                 final glassT = Curves.easeOut.transform(t);
-                final topOpacity = ((isDark ? 0.34 : 0.44) * 1.6 * glassT).clamp(0.0, 1.0);
-                final bottomOpacity = ((isDark ? 0.16 : 0.20) * 1.6 * glassT).clamp(0.0, 1.0);
-                final blurSigma = lerpDouble(0, 16, glassT)!;
                 return Material(
                   color: Colors.transparent,
-                  child: Container(
+                  child: SizedBox(
                     width: size.width,
                     height: size.height,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(radius),
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          base.withOpacity(topOpacity),
-                          base.withOpacity(bottomOpacity),
-                        ],
-                      ),
-                      border: Border.all(color: Colors.white.withOpacity((isDark ? 0.16 : 0.55) * glassT)),
-                      boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity((isDark ? 0.3 : 0.1) * glassT), blurRadius: 20, offset: const Offset(0, 10)),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(radius),
-                      child: BackdropFilter(
-                        filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
+                    child: LiquidGlass(
+                      borderRadius: radius,
+                      tint: context.cardColor,
+                      intensity: lerpDouble(1.0, 1.6, glassT)!,
+                      blur: lerpDouble(0, 6, glassT)!,
+                      useBlur: glassT > 0.02,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(radius),
                         child: Stack(
                           children: [
                             Positioned(
