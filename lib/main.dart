@@ -290,7 +290,10 @@ class MyFinanceApp extends ConsumerWidget {
         fontFamily: 'Satoshi',
         appBarTheme: const AppBarTheme(backgroundColor: Colors.transparent, elevation: 0),
         iconTheme: const IconThemeData(color: Colors.white),
-        textTheme: ThemeData.dark().textTheme.apply(bodyColor: Colors.white, displayColor: Colors.white),
+        fontFamily: 'Satoshi',
+        textTheme: Typography.material2021(platform: TargetPlatform.android)
+            .white
+            .apply(fontFamily: 'Satoshi', bodyColor: Colors.white, displayColor: Colors.white),
         inputDecorationTheme: InputDecorationTheme(
           filled: true, fillColor: const Color(0xFF1E1B27),
           hintStyle: const TextStyle(color: Colors.white38),
