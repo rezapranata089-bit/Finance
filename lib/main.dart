@@ -546,6 +546,8 @@ class HomePage extends ConsumerWidget {
                             ),
                             child: LiquidGlass(
                               borderRadius: 999,
+                              tint: isDark ? Colors.black : null,
+                              intensity: isDark ? 1.6 : 1.0,
                               child: Padding(
                                 padding: const EdgeInsets.all(10),
                                 child: Icon(SolarIconsOutline.bell, size: 20, color: context.textPrimary),
@@ -590,10 +592,10 @@ class HomePage extends ConsumerWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _actionBtn(context, SolarIconsOutline.arrowRightUp, Strings.t(lang, 'send'), primaryStyle: true, onTap: () => showTransactionForm(context, ref, false)),
+                    _actionBtn(context, SolarIconsOutline.arrowRightUp, Strings.t(lang, 'send'), primaryStyle: true, blackGlassInDark: true, onTap: () => showTransactionForm(context, ref, false)),
                     _actionBtn(context, SolarIconsOutline.arrowLeftDown, Strings.t(lang, 'request'), primaryStyle: false, onTap: () => showTransactionForm(context, ref, true)),
                     _actionBtn(context, SolarIconsOutline.transferHorizontal, Strings.t(lang, 'exchange'), primaryStyle: false, onTap: () => ref.read(tabProvider.notifier).state = 2),
-                    _actionBtn(context, SolarIconsOutline.menuDots, Strings.t(lang, 'more'), primaryStyle: false, onTap: () => ref.read(tabProvider.notifier).state = 3),
+                    _actionBtn(context, SolarIconsOutline.menuDots, Strings.t(lang, 'more'), primaryStyle: false, blackGlassInDark: true, onTap: () => ref.read(tabProvider.notifier).state = 3),
                   ],
                 ),
               ],
@@ -698,8 +700,10 @@ class HomePage extends ConsumerWidget {
     );
   }
 
-  Widget _actionBtn(BuildContext context, IconData icon, String label, {required bool primaryStyle, required VoidCallback onTap}) {
+  Widget _actionBtn(BuildContext context, IconData icon, String label, {required bool primaryStyle, required VoidCallback onTap, bool blackGlassInDark = false}) {
     final accent = Theme.of(context).colorScheme.secondary;
+    final isDark = context.isDark;
+    final useBlackGlass = blackGlassInDark && isDark;
     return GestureDetector(
       onTap: onTap,
       child: Column(
@@ -709,10 +713,10 @@ class HomePage extends ConsumerWidget {
             height: 42,
             child: LiquidGlass(
               borderRadius: 16,
-              tint: primaryStyle ? accent : null,
-              intensity: primaryStyle ? 1.8 : 1.0,
+              tint: useBlackGlass ? Colors.black : (primaryStyle ? accent : null),
+              intensity: useBlackGlass ? 1.6 : (primaryStyle ? 1.8 : 1.0),
               child: Center(
-                child: Icon(icon, color: primaryStyle ? Colors.black : context.textPrimary, size: 22),
+                child: Icon(icon, color: useBlackGlass ? Colors.white : (primaryStyle ? Colors.black : context.textPrimary), size: 22),
               ),
             ),
           ),
@@ -1332,6 +1336,8 @@ class ThemeSelectionPage extends ConsumerWidget {
                     onTap: () => Navigator.pop(context),
                     child: LiquidGlass(
                       borderRadius: 999,
+                      tint: isDark ? Colors.black : null,
+                      intensity: isDark ? 1.6 : 1.0,
                       child: Padding(
                         padding: const EdgeInsets.all(10),
                         child: Icon(SolarIconsOutline.arrowLeft, size: 20, color: isDark ? Colors.white : Colors.black),
@@ -1476,6 +1482,8 @@ class LanguageSelectionPage extends ConsumerWidget {
                     onTap: () => Navigator.pop(context),
                     child: LiquidGlass(
                       borderRadius: 999,
+                      tint: isDark ? Colors.black : null,
+                      intensity: isDark ? 1.6 : 1.0,
                       child: Padding(
                         padding: const EdgeInsets.all(10),
                         child: Icon(SolarIconsOutline.arrowLeft, size: 20, color: context.textPrimary),
@@ -1557,6 +1565,8 @@ class NotificationsPage extends ConsumerWidget {
                     onTap: () => Navigator.pop(context),
                     child: LiquidGlass(
                       borderRadius: 999,
+                      tint: isDark ? Colors.black : null,
+                      intensity: isDark ? 1.6 : 1.0,
                       child: Padding(
                         padding: const EdgeInsets.all(10),
                         child: Icon(SolarIconsOutline.arrowLeft, size: 20, color: context.textPrimary),
