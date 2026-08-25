@@ -742,6 +742,7 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
   OverlayEntry? _entry;
   late final AnimationController _controller = AnimationController(vsync: this, value: 0);
   bool _open = false;
+  bool _pressed = false;
 
   static const _closedSize = Size(40, 40);
   static const _openSize = Size(183, 208);
@@ -762,9 +763,9 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
 
   Future<void> _toggle() async {
     if (_open) {
-      setState(() => _open = false);
       await _controller.animateTo(0, duration: const Duration(milliseconds: 250), curve: _closeCurve);
       _removeOverlay();
+      setState(() => _open = false);
       return;
     }
     setState(() => _open = true);
@@ -776,6 +777,7 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
             link: _link,
             targetAnchor: Alignment.topLeft,
             followerAnchor: Alignment.topLeft,
+<<<<<<< HEAD
             child: RepaintBoundary(
               child: AnimatedBuilder(
                 animation: _controller,
@@ -821,6 +823,48 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
                                   ),
                                 ),
                             ],
+=======
+            child: AnimatedBuilder(
+              animation: _controller,
+              builder: (context, child) {
+                final t = _controller.value;
+                final size = Size.lerp(_closedSize, _openSize, t)!;
+                final radius = lerpDouble(999, 20, t)!;
+                final iconOpacity = (1 - t / 0.45).clamp(0.0, 1.0);
+                final menuOpacity = ((t - 0.35) / 0.65).clamp(0.0, 1.0);
+                final menuOffset = (1 - menuOpacity) * 14;
+                final isDark = context.isDark;
+                final closedBg = Colors.white.withOpacity(isDark ? 0.25 : 0.32);
+                final openBg = isDark ? const Color(0xFF1E1B27) : Colors.white;
+                final closedBorder = Colors.white.withOpacity(isDark ? 0.16 : 0.55);
+                final openBorder = context.borderColor;
+                final shadowAlpha = lerpDouble(isDark ? 0.22 : 0.07, isDark ? 0.3 : 0.1, t)!;
+                final shadowBlur = lerpDouble(10, 20, t)!;
+                final shadowOffsetY = lerpDouble(4, 10, t)!;
+                return Material(
+                  color: Colors.transparent,
+                  child: Container(
+                    width: size.width,
+                    height: size.height,
+                    decoration: BoxDecoration(
+                      color: Color.lerp(closedBg, openBg, t),
+                      borderRadius: BorderRadius.circular(radius),
+                      border: Border.all(color: Color.lerp(closedBorder, openBorder, t)!),
+                      boxShadow: [
+                        BoxShadow(color: Colors.black.withOpacity(shadowAlpha), blurRadius: shadowBlur, offset: Offset(0, shadowOffsetY)),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(radius),
+                      child: Stack(
+                        children: [
+                          Positioned(
+                            top: 0, left: 0, width: 40, height: 40,
+                            child: Opacity(
+                              opacity: iconOpacity,
+                              child: Center(child: Icon(SolarIconsOutline.hamburgerMenu, size: 20, color: context.textPrimary)),
+                            ),
+>>>>>>> 9070e2c9d9bbb1114afa10d1733559df59b00b44
                           ),
                         ),
                       ),
@@ -849,8 +893,12 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
       link: _link,
       child: GestureDetector(
         onTap: _toggle,
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapUp: (_) => setState(() => _pressed = false),
+        onTapCancel: () => setState(() => _pressed = false),
         child: Opacity(
           opacity: _open ? 0 : 1,
+<<<<<<< HEAD
           child: Container(
             decoration: BoxDecoration(
               shape: BoxShape.circle,
@@ -870,6 +918,34 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
               child: Padding(
                 padding: const EdgeInsets.all(10),
                 child: Icon(SolarIconsOutline.hamburgerMenu, size: 20, color: context.textPrimary),
+=======
+          child: AnimatedScale(
+            scale: _pressed ? 1.14 : 1.0,
+            duration: Duration(milliseconds: _pressed ? 120 : 220),
+            curve: _pressed ? Curves.easeOut : Curves.easeOutBack,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOut,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: _pressed
+                    ? Theme.of(context).colorScheme.primary.withOpacity(context.isDark ? 0.28 : 0.16)
+                    : Colors.transparent,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(context.isDark ? 0.22 : 0.07),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: LiquidGlass(
+                borderRadius: 999,
+                child: Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: Icon(SolarIconsOutline.hamburgerMenu, size: 20, color: context.textPrimary),
+                ),
+>>>>>>> 9070e2c9d9bbb1114afa10d1733559df59b00b44
               ),
             ),
           ),
