@@ -187,6 +187,43 @@ class LiquidGlass extends StatelessWidget {
   }
 }
 
+const _shakeEase = Cubic(0.22, 1, 0.36, 1);
+
+class ShakeField extends StatefulWidget {
+  final Widget child;
+  const ShakeField({super.key, required this.child});
+  @override
+  State<ShakeField> createState() => ShakeFieldState();
+}
+
+class ShakeFieldState extends State<ShakeField> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller =
+      AnimationController(vsync: this, duration: const Duration(milliseconds: 280));
+  late final Animation<double> _offset = TweenSequence<double>([
+    TweenSequenceItem(tween: Tween(begin: 0.0, end: 6.0).chain(CurveTween(curve: _shakeEase)), weight: 80),
+    TweenSequenceItem(tween: Tween(begin: 6.0, end: -6.0).chain(CurveTween(curve: _shakeEase)), weight: 80),
+    TweenSequenceItem(tween: Tween(begin: -6.0, end: 4.0).chain(CurveTween(curve: _shakeEase)), weight: 60),
+    TweenSequenceItem(tween: Tween(begin: 4.0, end: 0.0).chain(CurveTween(curve: _shakeEase)), weight: 60),
+  ]).animate(_controller);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void shake() => _controller.forward(from: 0);
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _offset,
+      builder: (context, child) => Transform.translate(offset: Offset(_offset.value, 0), child: child),
+      child: widget.child,
+    );
+  }
+}
+
 class Strings {
   static const Map<String, Map<AppLang, String>> _s = {
     'skip': {AppLang.en: 'Skip', AppLang.id: 'Lewati'},
@@ -265,6 +302,7 @@ class Strings {
     'cat_transport': {AppLang.en: 'Transport', AppLang.id: 'Transport'},
     'cat_bills': {AppLang.en: 'Bills', AppLang.id: 'Tagihan'},
     'cat_other': {AppLang.en: 'Other', AppLang.id: 'Lainnya'},
+    'field_required': {AppLang.en: 'This field is required', AppLang.id: 'Kolom ini wajib diisi'},
   };
 
   static String t(AppLang lang, String key) => _s[key]?[lang] ?? key;
@@ -1849,11 +1887,15 @@ class BottomRoundedBorderPainter extends CustomPainter {
 
 Future<void> showTransactionForm(BuildContext context, WidgetRef ref, bool income) async {
   final amount = TextEditingController(), title = TextEditingController(), note = TextEditingController();
+  final amountShakeKey = GlobalKey<ShakeFieldState>();
+  final titleShakeKey = GlobalKey<ShakeFieldState>();
   final lang = ref.read(langProvider);
   final catKeys = income
       ? ['cat_income', 'cat_freelance', 'cat_bonus']
       : ['cat_food', 'cat_shopping', 'cat_transport', 'cat_bills', 'cat_other'];
   String category = Strings.t(AppLang.en, catKeys.first);
+  String? amountError;
+  String? titleError;
   await showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -1863,12 +1905,16 @@ Future<void> showTransactionForm(BuildContext context, WidgetRef ref, bool incom
     padding: EdgeInsets.fromLTRB(20, 22, 20, MediaQuery.viewInsetsOf(context).bottom + 24),
     child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text(Strings.t(lang, income ? 'add_income' : 'add_expense'), style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 28, color: context.textPrimary)),
-      const SizedBox(height: 6),
-      Text(Strings.t(lang, income ? 'add_income_subtitle' : 'add_expense_subtitle'), style: TextStyle(fontSize: 13, color: context.textMuted)),
       const SizedBox(height: 18),
-      TextField(controller: amount, keyboardType: TextInputType.number, inputFormatters: [FilteringTextInputFormatter.digitsOnly], decoration: InputDecoration(labelText: Strings.t(lang, 'amount'), prefixText: 'Rp ')),
+      ShakeField(
+        key: amountShakeKey,
+        child: TextField(controller: amount, keyboardType: TextInputType.number, inputFormatters: [FilteringTextInputFormatter.digitsOnly], decoration: InputDecoration(labelText: Strings.t(lang, 'amount'), prefixText: 'Rp ', errorText: amountError)),
+      ),
       const SizedBox(height: 12),
-      TextField(controller: title, decoration: InputDecoration(labelText: Strings.t(lang, 'transaction_title_field'))),
+      ShakeField(
+        key: titleShakeKey,
+        child: TextField(controller: title, decoration: InputDecoration(labelText: Strings.t(lang, 'transaction_title_field'), errorText: titleError)),
+      ),
       const SizedBox(height: 12),
       DropdownButtonFormField<String>(value: category, decoration: InputDecoration(labelText: Strings.t(lang, 'category')), items: catKeys.map((k) => DropdownMenuItem(value: Strings.t(AppLang.en, k), child: Text(Strings.t(lang, k)))).toList(), onChanged: (v) => setModalState(() => category = v!)),
       const SizedBox(height: 12),
@@ -1876,7 +1922,25 @@ Future<void> showTransactionForm(BuildContext context, WidgetRef ref, bool incom
       const SizedBox(height: 18),
       SizedBox(width: double.infinity, child: FilledButton(onPressed: () {
         final value = double.tryParse(amount.text) ?? 0;
-        if (title.text.trim().isEmpty || value <= 0) return;
+        final hasAmountError = value <= 0;
+        final hasTitleError = title.text.trim().isEmpty;
+        if (hasAmountError || hasTitleError) {
+          setModalState(() {
+            amountError = hasAmountError ? Strings.t(lang, 'field_required') : null;
+            titleError = hasTitleError ? Strings.t(lang, 'field_required') : null;
+          });
+          if (hasAmountError) amountShakeKey.currentState?.shake();
+          if (hasTitleError) titleShakeKey.currentState?.shake();
+          Future.delayed(const Duration(milliseconds: 3000), () {
+            if (context.mounted) {
+              setModalState(() {
+                amountError = null;
+                titleError = null;
+              });
+            }
+          });
+          return;
+        }
         ref.read(transactionsProvider.notifier).add(title: title.text.trim(), amount: value, income: income, category: category, note: note.text.trim(), date: DateTime.now());
         Navigator.pop(sheetContext);
       }, child: Text(Strings.t(lang, 'save_transaction')))),
@@ -1894,30 +1958,57 @@ Future<void> showCardForm({
   final name = TextEditingController(text: existing?.name ?? '');
   final initialDigits = existing != null ? existing.number.replaceAll(RegExp(r'[^0-9]'), '') : '';
   final number = TextEditingController(text: initialDigits);
+  final nameShakeKey = GlobalKey<ShakeFieldState>();
+  final numberShakeKey = GlobalKey<ShakeFieldState>();
+  String? nameError;
+  String? numberError;
+  final lang = ref.read(langProvider);
   await showModalBottomSheet(
     context: context,
     isScrollControlled: true,
     backgroundColor: context.cardColor,
     shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
-    builder: (sheetContext) => Padding(
-      padding: EdgeInsets.fromLTRB(20, 22, 20, MediaQuery.viewInsetsOf(sheetContext).bottom + 24),
+    builder: (sheetContext) => StatefulBuilder(builder: (context, setModalState) => Padding(
+      padding: EdgeInsets.fromLTRB(20, 22, 20, MediaQuery.viewInsetsOf(context).bottom + 24),
       child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(isEdit ? 'Edit kartu' : 'Tambah kartu', style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 28, color: context.textPrimary)),
-        const SizedBox(height: 6),
-        Text(isEdit ? 'Perbarui detail kartu atau dompet Anda' : 'Tambahkan kartu atau dompet baru ke akun Anda', style: TextStyle(fontSize: 13, color: context.textMuted)),
         const SizedBox(height: 18),
-        TextField(controller: name, decoration: const InputDecoration(labelText: 'Nama kartu')),
+        ShakeField(
+          key: nameShakeKey,
+          child: TextField(controller: name, decoration: InputDecoration(labelText: 'Nama kartu', errorText: nameError)),
+        ),
         const SizedBox(height: 12),
-        TextField(
-          controller: number,
-          keyboardType: TextInputType.number,
-          maxLength: 4,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          decoration: const InputDecoration(labelText: '4 digit terakhir', counterText: ''),
+        ShakeField(
+          key: numberShakeKey,
+          child: TextField(
+            controller: number,
+            keyboardType: TextInputType.number,
+            maxLength: 4,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            decoration: InputDecoration(labelText: '4 digit terakhir', counterText: '', errorText: numberError),
+          ),
         ),
         const SizedBox(height: 18),
         SizedBox(width: double.infinity, child: FilledButton(onPressed: () {
-          if (name.text.trim().isEmpty || number.text.trim().length != 4) return;
+          final hasNameError = name.text.trim().isEmpty;
+          final hasNumberError = number.text.trim().length != 4;
+          if (hasNameError || hasNumberError) {
+            setModalState(() {
+              nameError = hasNameError ? Strings.t(lang, 'field_required') : null;
+              numberError = hasNumberError ? Strings.t(lang, 'field_required') : null;
+            });
+            if (hasNameError) nameShakeKey.currentState?.shake();
+            if (hasNumberError) numberShakeKey.currentState?.shake();
+            Future.delayed(const Duration(milliseconds: 3000), () {
+              if (context.mounted) {
+                setModalState(() {
+                  nameError = null;
+                  numberError = null;
+                });
+              }
+            });
+            return;
+          }
           final formattedNumber = '**** ${number.text.trim()}';
           if (isEdit && index != null) {
             ref.read(cardsProvider.notifier).update(index, formattedNumber, name.text.trim());
@@ -1928,7 +2019,7 @@ Future<void> showCardForm({
           Navigator.pop(sheetContext);
         }, child: Text(isEdit ? 'Simpan perubahan' : 'Simpan kartu'))),
       ]),
-    ),
+    )),
   );
 }
 
