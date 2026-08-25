@@ -819,13 +819,11 @@ class HomePage extends ConsumerWidget {
                                 ),
                               ),
                               if (isAiCard)
-                                OverflowBox(
-                                  maxWidth: 110,
-                                  maxHeight: 110,
-                                  alignment: Alignment.center,
+                                Transform.scale(
+                                  scale: 2.0,
                                   child: SizedBox(
-                                    width: 100,
-                                    height: 100,
+                                    width: 40,
+                                    height: 40,
                                     child: Lottie.asset('assets/lottie/ai.json', repeat: true, fit: BoxFit.contain),
                                   ),
                                 )
