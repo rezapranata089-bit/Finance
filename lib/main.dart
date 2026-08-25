@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
+import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:solar_icons/solar_icons.dart';
 
@@ -264,8 +265,8 @@ class Strings {
     'more': {AppLang.en: 'More', AppLang.id: 'Lainnya'},
     'top_merchants': {AppLang.en: 'Top Merchants', AppLang.id: 'Merchant Teratas'},
     'view_all': {AppLang.en: 'View all', AppLang.id: 'Lihat semua'},
-    'discount_title': {AppLang.en: 'Discount Up To 80%', AppLang.id: 'Diskon Hingga 80%'},
-    'discount_subtitle': {AppLang.en: 'Festive Season Gift', AppLang.id: 'Hadiah Musim Perayaan'},
+    'discount_title': {AppLang.en: 'AI Finance Assistant', AppLang.id: 'Asisten Keuangan AI'},
+    'discount_subtitle': {AppLang.en: 'Smarter money insights', AppLang.id: 'Wawasan keuangan lebih pintar'},
     'cashback_title': {AppLang.en: 'Cashback 15%', AppLang.id: 'Cashback 15%'},
     'cashback_subtitle': {AppLang.en: 'Grocery partners', AppLang.id: 'Merchant belanja'},
     'transaction_history': {AppLang.en: 'Transaction History', AppLang.id: 'Riwayat Transaksi'},
@@ -789,6 +790,7 @@ class HomePage extends ConsumerWidget {
                       separatorBuilder: (_, __) => const SizedBox(width: 12),
                       itemBuilder: (context, i) {
                         final promo = promos[i];
+                        final isAiCard = i == 0;
                         return Container(
                           width: cardWidth,
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -816,11 +818,18 @@ class HomePage extends ConsumerWidget {
                                   ],
                                 ),
                               ),
-                              Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(color: isDark ? primary.withOpacity(0.18) : tertiary, shape: BoxShape.circle),
-                                child: Icon(promo.$3, color: primary, size: 24),
-                              ),
+                              if (isAiCard)
+                                SizedBox(
+                                  width: 48,
+                                  height: 48,
+                                  child: Lottie.asset('assets/lottie/ai.json', repeat: true, fit: BoxFit.contain),
+                                )
+                              else
+                                Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(color: isDark ? primary.withOpacity(0.18) : tertiary, shape: BoxShape.circle),
+                                  child: Icon(promo.$3, color: primary, size: 24),
+                                ),
                             ],
                           ),
                         );

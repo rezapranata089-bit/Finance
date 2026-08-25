@@ -18,6 +18,7 @@ dependencies:
   intl: ^0.19.0
   shared_preferences: ^2.3.2
   image_picker: ^1.1.2
+  lottie: ^3.1.2
 
 dev_dependencies:
   flutter_test:
@@ -26,6 +27,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  assets:
+    - assets/lottie/ai.json
   fonts:
     - family: Satoshi
       fonts:
