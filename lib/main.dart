@@ -793,7 +793,7 @@ class HomePage extends ConsumerWidget {
                         final isAiCard = i == 0;
                         return Container(
                           width: cardWidth,
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          padding: EdgeInsets.symmetric(horizontal: 16, vertical: i == 0 ? 4 : 12),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               begin: Alignment.centerLeft,
@@ -820,8 +820,8 @@ class HomePage extends ConsumerWidget {
                               ),
                               if (isAiCard)
                                 SizedBox(
-                                  width: 50,
-                                  height: 50,
+                                  width: 66,
+                                  height: 66,
                                   child: Lottie.asset('assets/lottie/ai.json', repeat: true, fit: BoxFit.cover),
                                 )
                               else
