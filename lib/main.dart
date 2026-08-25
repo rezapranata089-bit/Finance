@@ -820,11 +820,11 @@ class HomePage extends ConsumerWidget {
                               ),
                               if (isAiCard)
                                 SizedBox(
-                                  width: 100,
-                                  height: 100,
+                                  width: 50,
+                                  height: 50,
                                   child: ClipRect(
                                     child: Transform.scale(
-                                      scale: 3.0,
+                                      scale: 2.2,
                                       child: Lottie.asset('assets/lottie/ai.json', repeat: true, fit: BoxFit.contain),
                                     ),
                                   ),
