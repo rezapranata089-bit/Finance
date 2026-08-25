@@ -744,7 +744,7 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
   bool _open = false;
 
   static const _closedSize = Size(40, 40);
-  static const _openSize = Size(183, 172);
+  static const _openSize = Size(183, 208);
   static const _openCurve = Cubic(0.34, 1.25, 0.64, 1.0);
   static const _closeCurve = Cubic(0.22, 1.0, 0.36, 1.0);
 
@@ -887,8 +887,14 @@ class _MorphMenuContent extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final lang = ref.watch(langProvider);
     final primary = Theme.of(context).colorScheme.primary;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final items = [
       (SolarIconsOutline.user, Strings.t(lang, 'nav_profile'), () => ref.read(tabProvider.notifier).state = 3),
+      (
+        isDark ? SolarIconsOutline.sun : SolarIconsOutline.moon,
+        isDark ? Strings.t(lang, 'light') : Strings.t(lang, 'dark'),
+        () => ref.read(themeModeProvider.notifier).state = isDark ? ThemeMode.light : ThemeMode.dark,
+      ),
       (SolarIconsOutline.palette, Strings.t(lang, 'appearance'), () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ThemeSelectionPage()))),
       (Icons.language, Strings.t(lang, 'language'), () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LanguageSelectionPage()))),
       (SolarIconsOutline.bell, Strings.t(lang, 'notifications'), () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsPage()))),
