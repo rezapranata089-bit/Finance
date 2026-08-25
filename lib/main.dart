@@ -735,6 +735,7 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
   OverlayEntry? _entry;
   late final AnimationController _controller = AnimationController(vsync: this, value: 0);
   bool _open = false;
+  bool _pressed = false;
 
   static const _closedSize = Size(40, 40);
   static const _openSize = Size(183, 172);
@@ -843,24 +844,37 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
       link: _link,
       child: GestureDetector(
         onTap: _toggle,
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapUp: (_) => setState(() => _pressed = false),
+        onTapCancel: () => setState(() => _pressed = false),
         child: Opacity(
           opacity: _open ? 0 : 1,
-          child: Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(context.isDark ? 0.22 : 0.07),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
+          child: AnimatedScale(
+            scale: _pressed ? 1.14 : 1.0,
+            duration: Duration(milliseconds: _pressed ? 120 : 220),
+            curve: _pressed ? Curves.easeOut : Curves.easeOutBack,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              curve: Curves.easeOut,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: _pressed
+                    ? Theme.of(context).colorScheme.primary.withOpacity(context.isDark ? 0.28 : 0.16)
+                    : Colors.transparent,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(context.isDark ? 0.22 : 0.07),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: LiquidGlass(
+                borderRadius: 999,
+                child: Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: Icon(SolarIconsOutline.hamburgerMenu, size: 20, color: context.textPrimary),
                 ),
-              ],
-            ),
-            child: LiquidGlass(
-              borderRadius: 999,
-              child: Padding(
-                padding: const EdgeInsets.all(10),
-                child: Icon(SolarIconsOutline.hamburgerMenu, size: 20, color: context.textPrimary),
               ),
             ),
           ),
