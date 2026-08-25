@@ -976,8 +976,8 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
           Positioned.fill(child: GestureDetector(behavior: HitTestBehavior.translucent, onTap: _toggle)),
           CompositedTransformFollower(
             link: _link,
-            targetAnchor: Alignment.topLeft,
-            followerAnchor: Alignment.topLeft,
+            targetAnchor: Alignment.topCenter,
+            followerAnchor: Alignment.topCenter,
             child: RepaintBoundary(
               child: AnimatedBuilder(
                 animation: _controller,
@@ -1013,7 +1013,10 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
                             children: [
                               if (closedOpacity > 0)
                                 Positioned(
-                                  left: 0, top: 0, width: _closedSize.width, height: _closedSize.height,
+                                  left: (size.width - _closedSize.width) / 2,
+                                  top: 0,
+                                  width: _closedSize.width,
+                                  height: _closedSize.height,
                                   child: Opacity(
                                     opacity: closedOpacity,
                                     child: _ClosedCardChip(cardLabel: _cards[selected].$1),
