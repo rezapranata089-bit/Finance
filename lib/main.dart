@@ -810,6 +810,7 @@ class HomePage extends ConsumerWidget {
                             children: [
                               Expanded(
                                 child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(promo.$1, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: context.textPrimary)),
