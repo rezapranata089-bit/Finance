@@ -66,15 +66,14 @@ class LiquidGlass extends StatelessWidget {
   final double intensity;
   final bool useBlur;
   final Color? borderColor;
-  final bool solid;
-  const LiquidGlass({super.key, required this.child, this.borderRadius = 20, this.tint, this.blur = 6, this.intensity = 1.0, this.useBlur = false, this.borderColor, this.solid = false});
+  const LiquidGlass({super.key, required this.child, this.borderRadius = 20, this.tint, this.blur = 6, this.intensity = 1.0, this.useBlur = false, this.borderColor});
 
   @override
   Widget build(BuildContext context) {
     final isDark = context.isDark;
     final base = tint ?? Colors.white;
-    final topOpacity = solid ? 1.0 : ((isDark ? 0.34 : 0.44) * intensity).clamp(0.0, 1.0);
-    final bottomOpacity = solid ? 0.92 : ((isDark ? 0.16 : 0.20) * intensity).clamp(0.0, 1.0);
+    final topOpacity = ((isDark ? 0.34 : 0.44) * intensity).clamp(0.0, 1.0);
+    final bottomOpacity = ((isDark ? 0.16 : 0.20) * intensity).clamp(0.0, 1.0);
     final glassBody = Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(borderRadius),
@@ -717,8 +716,7 @@ class HomePage extends ConsumerWidget {
             child: LiquidGlass(
               borderRadius: 16,
               tint: useBlackGlass ? Colors.black : (primaryStyle ? accent : null),
-              intensity: useBlackGlass ? 1.6 : (primaryStyle ? 1.8 : 1.0),
-              solid: primaryStyle,
+              intensity: useBlackGlass ? 1.6 : (primaryStyle ? (isDark ? 2.3 : 1.8) : 1.0),
               borderColor: useBlackGlass ? context.borderColor : null,
               child: Center(
                 child: Icon(icon, color: useBlackGlass ? Colors.white : (primaryStyle ? Colors.black : context.textPrimary), size: 22),
