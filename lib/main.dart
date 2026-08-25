@@ -65,7 +65,8 @@ class LiquidGlass extends StatelessWidget {
   final double blur;
   final double intensity;
   final bool useBlur;
-  const LiquidGlass({super.key, required this.child, this.borderRadius = 20, this.tint, this.blur = 6, this.intensity = 1.0, this.useBlur = false});
+  final Color? borderColor;
+  const LiquidGlass({super.key, required this.child, this.borderRadius = 20, this.tint, this.blur = 6, this.intensity = 1.0, this.useBlur = false, this.borderColor});
 
   @override
   Widget build(BuildContext context) {
@@ -85,7 +86,7 @@ class LiquidGlass extends StatelessWidget {
           ],
         ),
         border: Border.all(
-          color: Colors.white.withOpacity(isDark ? 0.16 : 0.55),
+          color: borderColor ?? Colors.white.withOpacity(isDark ? 0.16 : 0.55),
           width: 1,
         ),
       ),
@@ -548,6 +549,7 @@ class HomePage extends ConsumerWidget {
                               borderRadius: 999,
                               tint: isDark ? Colors.black : null,
                               intensity: isDark ? 1.6 : 1.0,
+                              borderColor: isDark ? context.borderColor : null,
                               child: Padding(
                                 padding: const EdgeInsets.all(10),
                                 child: Icon(SolarIconsOutline.bell, size: 20, color: context.textPrimary),
@@ -593,8 +595,8 @@ class HomePage extends ConsumerWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     _actionBtn(context, SolarIconsOutline.arrowRightUp, Strings.t(lang, 'send'), primaryStyle: true, blackGlassInDark: true, onTap: () => showTransactionForm(context, ref, false)),
-                    _actionBtn(context, SolarIconsOutline.arrowLeftDown, Strings.t(lang, 'request'), primaryStyle: false, onTap: () => showTransactionForm(context, ref, true)),
-                    _actionBtn(context, SolarIconsOutline.transferHorizontal, Strings.t(lang, 'exchange'), primaryStyle: false, onTap: () => ref.read(tabProvider.notifier).state = 2),
+                    _actionBtn(context, SolarIconsOutline.arrowLeftDown, Strings.t(lang, 'request'), primaryStyle: false, blackGlassInDark: true, onTap: () => showTransactionForm(context, ref, true)),
+                    _actionBtn(context, SolarIconsOutline.transferHorizontal, Strings.t(lang, 'exchange'), primaryStyle: false, blackGlassInDark: true, onTap: () => ref.read(tabProvider.notifier).state = 2),
                     _actionBtn(context, SolarIconsOutline.menuDots, Strings.t(lang, 'more'), primaryStyle: false, blackGlassInDark: true, onTap: () => ref.read(tabProvider.notifier).state = 3),
                   ],
                 ),
@@ -715,6 +717,7 @@ class HomePage extends ConsumerWidget {
               borderRadius: 16,
               tint: useBlackGlass ? Colors.black : (primaryStyle ? accent : null),
               intensity: useBlackGlass ? 1.6 : (primaryStyle ? 1.8 : 1.0),
+              borderColor: useBlackGlass ? context.borderColor : null,
               child: Center(
                 child: Icon(icon, color: useBlackGlass ? Colors.white : (primaryStyle ? Colors.black : context.textPrimary), size: 22),
               ),
@@ -841,6 +844,7 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.isDark;
     return CompositedTransformTarget(
       link: _link,
       child: GestureDetector(
@@ -852,7 +856,7 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(context.isDark ? 0.22 : 0.07),
+                  color: Colors.black.withOpacity(isDark ? 0.22 : 0.07),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -860,6 +864,9 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
             ),
             child: LiquidGlass(
               borderRadius: 999,
+              tint: isDark ? Colors.black : null,
+              intensity: isDark ? 1.6 : 1.0,
+              borderColor: isDark ? context.borderColor : null,
               child: Padding(
                 padding: const EdgeInsets.all(10),
                 child: Icon(SolarIconsOutline.hamburgerMenu, size: 20, color: context.textPrimary),
@@ -1338,6 +1345,7 @@ class ThemeSelectionPage extends ConsumerWidget {
                       borderRadius: 999,
                       tint: isDark ? Colors.black : null,
                       intensity: isDark ? 1.6 : 1.0,
+                      borderColor: isDark ? context.borderColor : null,
                       child: Padding(
                         padding: const EdgeInsets.all(10),
                         child: Icon(SolarIconsOutline.arrowLeft, size: 20, color: isDark ? Colors.white : Colors.black),
@@ -1484,6 +1492,7 @@ class LanguageSelectionPage extends ConsumerWidget {
                       borderRadius: 999,
                       tint: isDark ? Colors.black : null,
                       intensity: isDark ? 1.6 : 1.0,
+                      borderColor: isDark ? context.borderColor : null,
                       child: Padding(
                         padding: const EdgeInsets.all(10),
                         child: Icon(SolarIconsOutline.arrowLeft, size: 20, color: context.textPrimary),
@@ -1567,6 +1576,7 @@ class NotificationsPage extends ConsumerWidget {
                       borderRadius: 999,
                       tint: isDark ? Colors.black : null,
                       intensity: isDark ? 1.6 : 1.0,
+                      borderColor: isDark ? context.borderColor : null,
                       child: Padding(
                         padding: const EdgeInsets.all(10),
                         child: Icon(SolarIconsOutline.arrowLeft, size: 20, color: context.textPrimary),
