@@ -250,7 +250,9 @@ class Strings {
     'system': {AppLang.en: 'System', AppLang.id: 'Sistem'},
     'theme_color': {AppLang.en: 'THEME COLOR', AppLang.id: 'WARNA TEMA'},
     'add_income': {AppLang.en: 'Add income', AppLang.id: 'Tambah pemasukan'},
+    'add_income_subtitle': {AppLang.en: 'Record a new income to your account', AppLang.id: 'Catat pemasukan baru ke akun Anda'},
     'add_expense': {AppLang.en: 'Add expense', AppLang.id: 'Tambah pengeluaran'},
+    'add_expense_subtitle': {AppLang.en: 'Record a new expense from your account', AppLang.id: 'Catat pengeluaran baru dari akun Anda'},
     'amount': {AppLang.en: 'Amount', AppLang.id: 'Nominal'},
     'transaction_title_field': {AppLang.en: 'Transaction title', AppLang.id: 'Judul transaksi'},
     'note_optional': {AppLang.en: 'Note (optional)', AppLang.id: 'Catatan (opsional)'},
@@ -1861,6 +1863,8 @@ Future<void> showTransactionForm(BuildContext context, WidgetRef ref, bool incom
     padding: EdgeInsets.fromLTRB(20, 22, 20, MediaQuery.viewInsetsOf(context).bottom + 24),
     child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text(Strings.t(lang, income ? 'add_income' : 'add_expense'), style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 28, color: context.textPrimary)),
+      const SizedBox(height: 6),
+      Text(Strings.t(lang, income ? 'add_income_subtitle' : 'add_expense_subtitle'), style: TextStyle(fontSize: 13, color: context.textMuted)),
       const SizedBox(height: 18),
       TextField(controller: amount, keyboardType: TextInputType.number, inputFormatters: [FilteringTextInputFormatter.digitsOnly], decoration: InputDecoration(labelText: Strings.t(lang, 'amount'), prefixText: 'Rp ')),
       const SizedBox(height: 12),
@@ -1899,6 +1903,8 @@ Future<void> showCardForm({
       padding: EdgeInsets.fromLTRB(20, 22, 20, MediaQuery.viewInsetsOf(sheetContext).bottom + 24),
       child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(isEdit ? 'Edit kartu' : 'Tambah kartu', style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 28, color: context.textPrimary)),
+        const SizedBox(height: 6),
+        Text(isEdit ? 'Perbarui detail kartu atau dompet Anda' : 'Tambahkan kartu atau dompet baru ke akun Anda', style: TextStyle(fontSize: 13, color: context.textMuted)),
         const SizedBox(height: 18),
         TextField(controller: name, decoration: const InputDecoration(labelText: 'Nama kartu')),
         const SizedBox(height: 12),
