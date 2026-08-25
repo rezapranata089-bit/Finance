@@ -122,6 +122,22 @@ extension AppColors on BuildContext {
   Color get iconMuted => isDark ? Colors.white54 : Colors.grey;
 }
 
+class ThousandsInputFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
+    final digits = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.isEmpty) {
+      return newValue.copyWith(text: '');
+    }
+    final number = int.parse(digits);
+    final formatted = NumberFormat('#,###', 'id_ID').format(number).replaceAll(',', '.');
+    return TextEditingValue(
+      text: formatted,
+      selection: TextSelection.collapsed(offset: formatted.length),
+    );
+  }
+}
+
 class LiquidGlass extends StatelessWidget {
   final Widget child;
   final double borderRadius;
@@ -1908,7 +1924,7 @@ Future<void> showTransactionForm(BuildContext context, WidgetRef ref, bool incom
       const SizedBox(height: 18),
       ShakeField(
         key: amountShakeKey,
-        child: TextField(controller: amount, keyboardType: TextInputType.number, inputFormatters: [FilteringTextInputFormatter.digitsOnly], decoration: InputDecoration(labelText: Strings.t(lang, 'amount'), prefixText: 'Rp ', errorText: amountError)),
+        child: TextField(controller: amount, keyboardType: TextInputType.number, inputFormatters: [FilteringTextInputFormatter.digitsOnly, ThousandsInputFormatter()], decoration: InputDecoration(labelText: Strings.t(lang, 'amount'), prefixText: 'Rp ', errorText: amountError)),
       ),
       const SizedBox(height: 12),
       ShakeField(
@@ -1921,7 +1937,7 @@ Future<void> showTransactionForm(BuildContext context, WidgetRef ref, bool incom
       TextField(controller: note, decoration: InputDecoration(labelText: Strings.t(lang, 'note_optional'))),
       const SizedBox(height: 18),
       SizedBox(width: double.infinity, child: FilledButton(onPressed: () {
-        final value = double.tryParse(amount.text) ?? 0;
+        final value = double.tryParse(amount.text.replaceAll('.', '')) ?? 0;
         final hasAmountError = value <= 0;
         final hasTitleError = title.text.trim().isEmpty;
         if (hasAmountError || hasTitleError) {
