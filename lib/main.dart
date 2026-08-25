@@ -782,7 +782,7 @@ class HomePage extends ConsumerWidget {
                   ];
                   final cardWidth = MediaQuery.sizeOf(context).width * 0.78;
                   return SizedBox(
-                    height: 74,
+                    height: 84,
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
                       clipBehavior: Clip.none,
@@ -793,7 +793,7 @@ class HomePage extends ConsumerWidget {
                         final isAiCard = i == 0;
                         return Container(
                           width: cardWidth,
-                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                          padding: EdgeInsets.symmetric(horizontal: 16, vertical: isAiCard ? 6 : 12),
                           decoration: BoxDecoration(
                             gradient: LinearGradient(
                               begin: Alignment.centerLeft,
@@ -820,8 +820,8 @@ class HomePage extends ConsumerWidget {
                               ),
                               if (isAiCard)
                                 SizedBox(
-                                  width: 48,
-                                  height: 48,
+                                  width: 72,
+                                  height: 72,
                                   child: Lottie.asset('assets/lottie/ai.json', repeat: true, fit: BoxFit.contain),
                                 )
                               else
