@@ -2100,21 +2100,41 @@ void showTransactionActions(BuildContext context, WidgetRef ref, FinanceTransact
 
 void _confirmDeleteTransaction(BuildContext context, WidgetRef ref, FinanceTransaction item) {
   final lang = ref.read(langProvider);
+  final isDark = context.isDark;
   showDialog(
     context: context,
-    builder: (dialogContext) => AlertDialog(
-      title: Text(Strings.t(lang, 'delete_transaction_title')),
-      content: Text(Strings.t(lang, 'delete_transaction_confirm').replaceAll('{title}', item.title)),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(Strings.t(lang, 'cancel'))),
-        TextButton(
-          onPressed: () {
-            ref.read(transactionsProvider.notifier).remove(item);
-            Navigator.pop(dialogContext);
-          },
-          child: Text(Strings.t(lang, 'delete'), style: const TextStyle(color: Colors.redAccent)),
+    barrierColor: Colors.black.withOpacity(0.28),
+    builder: (dialogContext) => Dialog(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      insetPadding: const EdgeInsets.symmetric(horizontal: 28),
+      child: LiquidGlass(
+        borderRadius: 28,
+        tint: isDark ? Colors.black : Colors.white,
+        intensity: isDark ? 1.7 : 1.2,
+        blur: 18,
+        useBlur: true,
+        borderColor: isDark ? Colors.white.withOpacity(0.14) : Colors.white.withOpacity(0.7),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(22, 22, 22, 14),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(Strings.t(lang, 'delete_transaction_title'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: context.textPrimary)),
+            const SizedBox(height: 12),
+            Text(Strings.t(lang, 'delete_transaction_confirm').replaceAll('{title}', item.title), style: TextStyle(fontSize: 14, height: 1.4, color: context.textMuted)),
+            const SizedBox(height: 18),
+            Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+              TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(Strings.t(lang, 'cancel'))),
+              TextButton(
+                onPressed: () {
+                  ref.read(transactionsProvider.notifier).remove(item);
+                  Navigator.pop(dialogContext);
+                },
+                child: Text(Strings.t(lang, 'delete'), style: const TextStyle(color: Colors.redAccent)),
+              ),
+            ]),
+          ]),
         ),
-      ],
+      ),
     ),
   );
 }
