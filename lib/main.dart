@@ -935,7 +935,7 @@ class CardSelectorButton extends ConsumerStatefulWidget {
 class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with SingleTickerProviderStateMixin {
   final LayerLink _link = LayerLink();
   OverlayEntry? _entry;
-  late final AnimationController _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 220));
+  late final AnimationController _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 280));
   late final Animation<double> _scale = CurvedAnimation(parent: _controller, curve: Curves.easeOutBack);
   late final Animation<double> _fade = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
 
@@ -979,7 +979,7 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
               animation: _controller,
               builder: (context, _) {
                 final t = _controller.value.clamp(0.0, 1.0);
-                final showBlur = t > 0.7;
+                final blurAmount = Curves.easeOut.transform(t) * 6;
                 return FadeTransition(
                   opacity: _fade,
                   child: ScaleTransition(
@@ -990,7 +990,7 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
                       child: _CardGlassPopup(
                         cards: _cards,
                         selected: selected,
-                        useBlur: showBlur,
+                        blurAmount: blurAmount,
                         onSelect: (i) {
                           ref.read(selectedCardProvider.notifier).state = i;
                           _toggle();
@@ -1051,8 +1051,8 @@ class _CardGlassPopup extends StatelessWidget {
   final int selected;
   final ValueChanged<int> onSelect;
   final VoidCallback onAdd;
-  final bool useBlur;
-  const _CardGlassPopup({required this.cards, required this.selected, required this.onSelect, required this.onAdd, this.useBlur = true});
+  final double blurAmount;
+  const _CardGlassPopup({required this.cards, required this.selected, required this.onSelect, required this.onAdd, this.blurAmount = 6});
 
   @override
   Widget build(BuildContext context) {
@@ -1063,7 +1063,8 @@ class _CardGlassPopup extends StatelessWidget {
         borderRadius: 18,
         tint: context.cardColor,
         intensity: 1.6,
-        useBlur: useBlur,
+        blur: blurAmount,
+        useBlur: true,
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 4),
           child: Column(
