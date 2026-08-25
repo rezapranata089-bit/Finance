@@ -824,7 +824,7 @@ class HomePage extends ConsumerWidget {
                                   height: 100,
                                   child: ClipRect(
                                     child: Transform.scale(
-                                      scale: 4.0,
+                                      scale: 3.0,
                                       child: Lottie.asset('assets/lottie/ai.json', repeat: true, fit: BoxFit.contain),
                                     ),
                                   ),
