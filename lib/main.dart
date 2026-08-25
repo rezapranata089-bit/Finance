@@ -309,6 +309,7 @@ class Strings {
     'amount': {AppLang.en: 'Amount', AppLang.id: 'Nominal'},
     'transaction_title_field': {AppLang.en: 'Transaction title', AppLang.id: 'Judul transaksi'},
     'note_optional': {AppLang.en: 'Note (optional)', AppLang.id: 'Catatan (opsional)'},
+    'date': {AppLang.en: 'Date', AppLang.id: 'Tanggal'},
     'save_transaction': {AppLang.en: 'Save transaction', AppLang.id: 'Simpan transaksi'},
     'cat_income': {AppLang.en: 'Income', AppLang.id: 'Pemasukan'},
     'cat_freelance': {AppLang.en: 'Freelance', AppLang.id: 'Freelance'},
@@ -1944,6 +1945,7 @@ Future<void> showTransactionForm(BuildContext context, WidgetRef ref, bool incom
   String category = (existing != null && catEnLabels.contains(existing.category)) ? existing.category : catEnLabels.first;
   String? amountError;
   String? titleError;
+  DateTime selectedDate = existing?.date ?? DateTime.now();
   await showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -1967,6 +1969,30 @@ Future<void> showTransactionForm(BuildContext context, WidgetRef ref, bool incom
       ),
       const SizedBox(height: 12),
       DropdownButtonFormField<String>(value: category, decoration: InputDecoration(labelText: Strings.t(lang, 'category')), items: catKeys.map((k) => DropdownMenuItem(value: Strings.t(AppLang.en, k), child: Text(Strings.t(lang, k)))).toList(), onChanged: (v) => setModalState(() => category = v!)),
+      const SizedBox(height: 12),
+      GestureDetector(
+        onTap: () async {
+          final pickedDate = await showDatePicker(
+            context: context,
+            initialDate: selectedDate,
+            firstDate: DateTime(2000),
+            lastDate: DateTime(2100),
+          );
+          if (pickedDate == null || !context.mounted) return;
+          final pickedTime = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(selectedDate));
+          setModalState(() {
+            selectedDate = DateTime(pickedDate.year, pickedDate.month, pickedDate.day, pickedTime?.hour ?? selectedDate.hour, pickedTime?.minute ?? selectedDate.minute);
+          });
+        },
+        child: InputDecorator(
+          decoration: InputDecoration(labelText: Strings.t(lang, 'date')),
+          child: Row(children: [
+            Icon(Icons.calendar_today_outlined, size: 16, color: context.iconMuted),
+            const SizedBox(width: 10),
+            Text(DateFormat('d MMM yyyy, HH:mm', lang == AppLang.id ? 'id_ID' : 'en_US').format(selectedDate), style: TextStyle(fontSize: 14, color: context.textPrimary, fontWeight: FontWeight.w500)),
+          ]),
+        ),
+      ),
       const SizedBox(height: 12),
       TextField(controller: note, decoration: InputDecoration(labelText: Strings.t(lang, 'note_optional'))),
       const SizedBox(height: 18),
@@ -1992,9 +2018,9 @@ Future<void> showTransactionForm(BuildContext context, WidgetRef ref, bool incom
           return;
         }
         if (isEdit) {
-          ref.read(transactionsProvider.notifier).update(existing!, FinanceTransaction(title: title.text.trim(), category: category, note: note.text.trim(), amount: value, income: effectiveIncome, date: existing.date));
+          ref.read(transactionsProvider.notifier).update(existing!, FinanceTransaction(title: title.text.trim(), category: category, note: note.text.trim(), amount: value, income: effectiveIncome, date: selectedDate));
         } else {
-          ref.read(transactionsProvider.notifier).add(title: title.text.trim(), amount: value, income: effectiveIncome, category: category, note: note.text.trim(), date: DateTime.now());
+          ref.read(transactionsProvider.notifier).add(title: title.text.trim(), amount: value, income: effectiveIncome, category: category, note: note.text.trim(), date: selectedDate);
         }
         Navigator.pop(sheetContext);
       }, child: Text(Strings.t(lang, isEdit ? 'save_changes' : 'save_transaction')))),
