@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:ui';
 
@@ -37,6 +38,69 @@ const appPalettes = [
 
 final tabProvider = StateProvider<int>((ref) => 0);
 final selectedCardProvider = StateProvider<int>((ref) => 0);
+
+class FinanceCard {
+  final String number;
+  final String name;
+  const FinanceCard({required this.number, required this.name});
+
+  Map<String, String> toJson() => {'number': number, 'name': name};
+  factory FinanceCard.fromJson(Map<String, dynamic> json) =>
+      FinanceCard(number: json['number'] as String, name: json['name'] as String);
+}
+
+final cardsProvider = StateNotifierProvider<CardsNotifier, List<FinanceCard>>(
+  (ref) => CardsNotifier(ref.watch(prefsProvider)),
+);
+
+class CardsNotifier extends StateNotifier<List<FinanceCard>> {
+  final SharedPreferences prefs;
+  static const _key = 'finance_cards';
+
+  CardsNotifier(this.prefs) : super(_load(prefs));
+
+  static List<FinanceCard> _load(SharedPreferences prefs) {
+    final raw = prefs.getString(_key);
+    if (raw == null || raw.isEmpty) {
+      return const [
+        FinanceCard(number: '**** 3425', name: 'Main Wallet'),
+        FinanceCard(number: '**** 7810', name: 'Savings'),
+        FinanceCard(number: '**** 2290', name: 'Business'),
+      ];
+    }
+    try {
+      final list = jsonDecode(raw) as List;
+      return list.map((e) => FinanceCard.fromJson(e as Map<String, dynamic>)).toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  void _persist() {
+    prefs.setString(_key, jsonEncode(state.map((e) => e.toJson()).toList()));
+  }
+
+  void add(String number, String name) {
+    state = [...state, FinanceCard(number: number, name: name)];
+    _persist();
+  }
+
+  void update(int index, String number, String name) {
+    if (index < 0 || index >= state.length) return;
+    final list = [...state];
+    list[index] = FinanceCard(number: number, name: name);
+    state = list;
+    _persist();
+  }
+
+  void remove(int index) {
+    if (state.length <= 1 || index < 0 || index >= state.length) return;
+    final list = [...state]..removeAt(index);
+    state = list;
+    _persist();
+  }
+}
+
 final onboardingProvider = StateProvider<bool>((ref) => ref.watch(prefsProvider).getBool('onboarding_done') ?? false);
 final themeProvider = StateProvider<AppThemePalette>((ref) => appPalettes[0]);
 final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.light);
@@ -938,14 +1002,8 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
   late final AnimationController _controller = AnimationController(vsync: this, value: 0);
   bool _open = false;
 
-  static const _cards = [
-    ('**** 3425', 'Main Wallet'),
-    ('**** 7810', 'Savings'),
-    ('**** 2290', 'Business'),
-  ];
-
   static const _closedSize = Size(130, 30);
-  static final _openSize = Size(196, (_cards.length + 1) * 42.0 + 9);
+  static const _rowHeight = 42.0;
   static const _openCurve = Cubic(0.34, 1.25, 0.64, 1.0);
   static const _closeCurve = Cubic(0.22, 1.0, 0.36, 1.0);
 
@@ -961,6 +1019,8 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
     _entry = null;
   }
 
+  int _safeIndex(int i, int len) => i >= len ? len - 1 : (i < 0 ? 0 : i);
+
   Future<void> _toggle() async {
     if (_open) {
       await _controller.animateTo(0, duration: const Duration(milliseconds: 250), curve: _closeCurve);
@@ -969,7 +1029,9 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
       return;
     }
     setState(() => _open = true);
-    final selected = ref.read(selectedCardProvider);
+    final cards = ref.read(cardsProvider);
+    final selected = _safeIndex(ref.read(selectedCardProvider), cards.length);
+    final openSize = Size(196, (cards.length + 1) * _rowHeight + 1 + 8);
     _entry = OverlayEntry(
       builder: (overlayContext) => Stack(
         children: [
@@ -982,14 +1044,14 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
               child: AnimatedBuilder(
                 animation: _controller,
                 child: _CardMorphContent(
-                  cards: _cards,
+                  cards: cards,
                   selected: selected,
                   onSelect: _select,
-                  onAdd: _toggle,
+                  onAdd: _openAddCard,
                 ),
                 builder: (context, menuChild) {
                   final t = _controller.value.clamp(0.0, 1.0);
-                  final size = Size.lerp(_closedSize, _openSize, t)!;
+                  final size = Size.lerp(_closedSize, openSize, t)!;
                   const radius = 18.0;
                   final closedOpacity = (1 - t / 0.4).clamp(0.0, 1.0);
                   final openOpacity = ((t - 0.35) / 0.65).clamp(0.0, 1.0);
@@ -1019,7 +1081,7 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
                                   height: _closedSize.height,
                                   child: Opacity(
                                     opacity: closedOpacity,
-                                    child: _ClosedCardChip(cardLabel: _cards[selected].$1),
+                                    child: _ClosedCardChip(cardLabel: cards[selected].number),
                                   ),
                                 ),
                               if (openOpacity > 0)
@@ -1052,16 +1114,23 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
     ref.read(selectedCardProvider.notifier).state = index;
   }
 
+  Future<void> _openAddCard() async {
+    await _toggle();
+    if (!mounted) return;
+    showCardForm(context: context, ref: ref);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final selected = ref.watch(selectedCardProvider);
+    final cards = ref.watch(cardsProvider);
+    final selected = _safeIndex(ref.watch(selectedCardProvider), cards.length);
     return CompositedTransformTarget(
       link: _link,
       child: GestureDetector(
         onTap: _toggle,
         child: Opacity(
           opacity: _open ? 0 : 1,
-          child: _ClosedCardChip(cardLabel: _cards[selected].$1, showArrow: true),
+          child: _ClosedCardChip(cardLabel: cards[selected].number, showArrow: true),
         ),
       ),
     );
@@ -1105,7 +1174,7 @@ class _ClosedCardChip extends StatelessWidget {
 }
 
 class _CardMorphContent extends StatelessWidget {
-  final List<(String, String)> cards;
+  final List<FinanceCard> cards;
   final int selected;
   final ValueChanged<int> onSelect;
   final VoidCallback onAdd;
@@ -1122,28 +1191,52 @@ class _CardMorphContent extends StatelessWidget {
         children: [
           ...cards.asMap().entries.map((e) {
             final isSelected = e.key == selected;
-            return ListTile(
-              dense: true,
-              visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+            return _MorphRow(
               onTap: () => onSelect(e.key),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-              minLeadingWidth: 0,
               leading: Icon(SolarIconsOutline.card, size: 16, color: isSelected ? primary : context.iconMuted),
-              title: Text(e.value.$2, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: context.textPrimary)),
+              label: e.value.name,
+              labelColor: context.textPrimary,
               trailing: isSelected ? Icon(SolarIconsBold.checkCircle, size: 16, color: primary) : null,
             );
           }),
           Divider(height: 1, indent: 12, endIndent: 12, color: context.borderColor),
-          ListTile(
-            dense: true,
-            visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+          _MorphRow(
             onTap: onAdd,
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-            minLeadingWidth: 0,
             leading: Icon(SolarIconsOutline.addCircle, size: 16, color: primary),
-            title: Text('Tambah kartu', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: primary)),
+            label: 'Tambah kartu',
+            labelColor: primary,
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _MorphRow extends StatelessWidget {
+  final VoidCallback onTap;
+  final Widget leading;
+  final String label;
+  final Color labelColor;
+  final Widget? trailing;
+  const _MorphRow({required this.onTap, required this.leading, required this.label, required this.labelColor, this.trailing});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 42,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: Row(
+            children: [
+              leading,
+              const SizedBox(width: 10),
+              Expanded(child: Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: labelColor))),
+              if (trailing != null) trailing!,
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -1367,6 +1460,8 @@ class SettingList extends ConsumerWidget {
                       Navigator.push(context, MaterialPageRoute(builder: (_) => const ThemeSelectionPage()));
                     } else if (item.$1 == 'language') {
                       Navigator.push(context, MaterialPageRoute(builder: (_) => const LanguageSelectionPage()));
+                    } else if (item.$1 == 'account_wallet') {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const CardManagementPage()));
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(Strings.t(lang, 'not_available').replaceAll('{name}', label))));
                     }
@@ -1783,6 +1878,183 @@ Future<void> showTransactionForm(BuildContext context, WidgetRef ref, bool incom
       }, child: Text(Strings.t(lang, 'save_transaction')))),
     ]),
   )));
+}
+
+Future<void> showCardForm({
+  required BuildContext context,
+  required WidgetRef ref,
+  FinanceCard? existing,
+  int? index,
+}) async {
+  final isEdit = existing != null;
+  final name = TextEditingController(text: existing?.name ?? '');
+  final initialDigits = existing != null ? existing.number.replaceAll(RegExp(r'[^0-9]'), '') : '';
+  final number = TextEditingController(text: initialDigits);
+  await showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: context.cardColor,
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+    builder: (sheetContext) => Padding(
+      padding: EdgeInsets.fromLTRB(20, 22, 20, MediaQuery.viewInsetsOf(sheetContext).bottom + 24),
+      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(isEdit ? 'Edit kartu' : 'Tambah kartu', style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 28, color: context.textPrimary)),
+        const SizedBox(height: 18),
+        TextField(controller: name, decoration: const InputDecoration(labelText: 'Nama kartu')),
+        const SizedBox(height: 12),
+        TextField(
+          controller: number,
+          keyboardType: TextInputType.number,
+          maxLength: 4,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          decoration: const InputDecoration(labelText: '4 digit terakhir', counterText: ''),
+        ),
+        const SizedBox(height: 18),
+        SizedBox(width: double.infinity, child: FilledButton(onPressed: () {
+          if (name.text.trim().isEmpty || number.text.trim().length != 4) return;
+          final formattedNumber = '**** ${number.text.trim()}';
+          if (isEdit && index != null) {
+            ref.read(cardsProvider.notifier).update(index, formattedNumber, name.text.trim());
+          } else {
+            ref.read(cardsProvider.notifier).add(formattedNumber, name.text.trim());
+            ref.read(selectedCardProvider.notifier).state = ref.read(cardsProvider).length - 1;
+          }
+          Navigator.pop(sheetContext);
+        }, child: Text(isEdit ? 'Simpan perubahan' : 'Simpan kartu'))),
+      ]),
+    ),
+  );
+}
+
+class CardManagementPage extends ConsumerWidget {
+  const CardManagementPage({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(langProvider);
+    final cards = ref.watch(cardsProvider);
+    final isDark = context.isDark;
+    final primary = Theme.of(context).colorScheme.primary;
+    final tertiary = Theme.of(context).colorScheme.tertiary;
+
+    return Scaffold(
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: LiquidGlass(
+                      borderRadius: 999,
+                      tint: isDark ? Colors.black : null,
+                      intensity: isDark ? 1.6 : 1.0,
+                      borderColor: isDark ? context.borderColor : null,
+                      child: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Icon(SolarIconsOutline.arrowLeft, size: 20, color: context.textPrimary),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(child: Text(Strings.t(lang, 'account_wallet'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: context.textPrimary))),
+                  GestureDetector(
+                    onTap: () => showCardForm(context: context, ref: ref),
+                    child: LiquidGlass(
+                      borderRadius: 999,
+                      tint: isDark ? Colors.black : null,
+                      intensity: isDark ? 1.6 : 1.0,
+                      borderColor: isDark ? context.borderColor : null,
+                      child: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Icon(SolarIconsOutline.addCircle, size: 20, color: primary),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: ListView.separated(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                itemCount: cards.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                itemBuilder: (context, i) {
+                  final card = cards[i];
+                  return Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: context.cardColor,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: context.borderColor),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 44, height: 44,
+                          decoration: BoxDecoration(color: isDark ? primary.withOpacity(0.18) : tertiary, shape: BoxShape.circle),
+                          child: Icon(SolarIconsOutline.card, color: primary, size: 20),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(card.name, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: context.textPrimary)),
+                              const SizedBox(height: 4),
+                              Text(card.number, style: TextStyle(color: context.textMuted, fontSize: 12)),
+                            ],
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => showCardForm(context: context, ref: ref, existing: card, index: i),
+                          icon: Icon(Icons.edit_outlined, size: 18, color: context.iconMuted),
+                        ),
+                        IconButton(
+                          onPressed: cards.length <= 1 ? null : () => _confirmDelete(context, ref, i, card),
+                          icon: Icon(Icons.delete_outline, size: 18, color: cards.length <= 1 ? context.textFaint : Colors.redAccent),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _confirmDelete(BuildContext context, WidgetRef ref, int index, FinanceCard card) {
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Hapus kartu'),
+        content: Text('Hapus "${card.name}"?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Batal')),
+          TextButton(
+            onPressed: () {
+              final selected = ref.read(selectedCardProvider);
+              ref.read(cardsProvider.notifier).remove(index);
+              final newLen = ref.read(cardsProvider).length;
+              if (selected >= newLen) {
+                ref.read(selectedCardProvider.notifier).state = newLen - 1;
+              } else if (index < selected) {
+                ref.read(selectedCardProvider.notifier).state = selected - 1;
+              }
+              Navigator.pop(dialogContext);
+            },
+            child: const Text('Hapus', style: TextStyle(color: Colors.redAccent)),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 String rupiah(double value) => 'Rp ${NumberFormat('#,###', 'id_ID').format(value).replaceAll(',', '.')}';
