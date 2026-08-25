@@ -772,44 +772,60 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
             child: AnimatedBuilder(
               animation: _controller,
               builder: (context, child) {
-                final t = _controller.value;
+                final t = _controller.value.clamp(0.0, 1.0);
                 final size = Size.lerp(_closedSize, _openSize, t)!;
                 final radius = lerpDouble(20, 20, t)!;
                 final iconOpacity = (1 - t / 0.45).clamp(0.0, 1.0);
                 final menuOpacity = ((t - 0.35) / 0.65).clamp(0.0, 1.0);
                 final menuOffset = (1 - menuOpacity) * 14;
+                final isDark = context.isDark;
+                final base = context.cardColor;
+                final glassT = Curves.easeOut.transform(t);
+                final topOpacity = ((isDark ? 0.34 : 0.44) * 1.6 * glassT).clamp(0.0, 1.0);
+                final bottomOpacity = ((isDark ? 0.16 : 0.20) * 1.6 * glassT).clamp(0.0, 1.0);
+                final blurSigma = lerpDouble(0, 16, glassT)!;
                 return Material(
                   color: Colors.transparent,
                   child: Container(
                     width: size.width,
                     height: size.height,
                     decoration: BoxDecoration(
-                      color: context.cardColor,
                       borderRadius: BorderRadius.circular(radius),
-                      border: Border.all(color: context.borderColor),
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          base.withOpacity(topOpacity),
+                          base.withOpacity(bottomOpacity),
+                        ],
+                      ),
+                      border: Border.all(color: Colors.white.withOpacity((isDark ? 0.16 : 0.55) * glassT)),
                       boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(context.isDark ? 0.3 : 0.1), blurRadius: 20, offset: const Offset(0, 10)),
+                        BoxShadow(color: Colors.black.withOpacity((isDark ? 0.3 : 0.1) * glassT), blurRadius: 20, offset: const Offset(0, 10)),
                       ],
                     ),
                     child: ClipRRect(
                       borderRadius: BorderRadius.circular(radius),
-                      child: Stack(
-                        children: [
-                          Positioned(
-                            top: 0, left: 0, width: 40, height: 40,
-                            child: Opacity(
-                              opacity: iconOpacity,
-                              child: Center(child: Icon(SolarIconsOutline.hamburgerMenu, size: 20, color: context.textPrimary)),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
+                        child: Stack(
+                          children: [
+                            Positioned(
+                              top: 0, left: 0, width: 40, height: 40,
+                              child: Opacity(
+                                opacity: iconOpacity,
+                                child: Center(child: Icon(SolarIconsOutline.hamburgerMenu, size: 20, color: context.textPrimary)),
+                              ),
                             ),
-                          ),
-                          Opacity(
-                            opacity: menuOpacity,
-                            child: Transform.translate(
-                              offset: Offset(menuOffset, menuOffset * -0.3),
-                              child: _MorphMenuContent(onSelect: _select),
+                            Opacity(
+                              opacity: menuOpacity,
+                              child: Transform.translate(
+                                offset: Offset(menuOffset, menuOffset * -0.3),
+                                child: _MorphMenuContent(onSelect: _select),
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
