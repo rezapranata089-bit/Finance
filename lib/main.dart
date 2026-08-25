@@ -1003,7 +1003,7 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
   bool _open = false;
 
   static const _closedSize = Size(130, 30);
-  static const _rowHeight = 42.0;
+  static const _rowHeight = 34.0;
   static const _openCurve = Cubic(0.34, 1.25, 0.64, 1.0);
   static const _closeCurve = Cubic(0.22, 1.0, 0.36, 1.0);
 
@@ -1031,7 +1031,7 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
     setState(() => _open = true);
     final cards = ref.read(cardsProvider);
     final selected = _safeIndex(ref.read(selectedCardProvider), cards.length);
-    final openSize = Size(196, (cards.length + 1) * _rowHeight + 1 + 8);
+    final openSize = Size(196, (cards.length + 1) * _rowHeight + 14);
     _entry = OverlayEntry(
       builder: (overlayContext) => Stack(
         children: [
@@ -1184,7 +1184,7 @@ class _CardMorphContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: const EdgeInsets.symmetric(vertical: 2),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1223,11 +1223,11 @@ class _MorphRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 42,
+      height: 34,
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 10),
           child: Row(
             children: [
               leading,
