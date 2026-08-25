@@ -975,24 +975,32 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
             targetAnchor: Alignment.bottomCenter,
             followerAnchor: Alignment.topCenter,
             offset: const Offset(0, 10),
-            child: FadeTransition(
-              opacity: _fade,
-              child: ScaleTransition(
-                scale: _scale,
-                alignment: Alignment.topCenter,
-                child: Material(
-                  color: Colors.transparent,
-                  child: _CardGlassPopup(
-                    cards: _cards,
-                    selected: selected,
-                    onSelect: (i) {
-                      ref.read(selectedCardProvider.notifier).state = i;
-                      _toggle();
-                    },
-                    onAdd: _toggle,
+            child: AnimatedBuilder(
+              animation: _controller,
+              builder: (context, _) {
+                final t = _controller.value.clamp(0.0, 1.0);
+                final showBlur = t > 0.7;
+                return FadeTransition(
+                  opacity: _fade,
+                  child: ScaleTransition(
+                    scale: _scale,
+                    alignment: Alignment.topCenter,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: _CardGlassPopup(
+                        cards: _cards,
+                        selected: selected,
+                        useBlur: showBlur,
+                        onSelect: (i) {
+                          ref.read(selectedCardProvider.notifier).state = i;
+                          _toggle();
+                        },
+                        onAdd: _toggle,
+                      ),
+                    ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
           ),
         ],
@@ -1043,7 +1051,8 @@ class _CardGlassPopup extends StatelessWidget {
   final int selected;
   final ValueChanged<int> onSelect;
   final VoidCallback onAdd;
-  const _CardGlassPopup({required this.cards, required this.selected, required this.onSelect, required this.onAdd});
+  final bool useBlur;
+  const _CardGlassPopup({required this.cards, required this.selected, required this.onSelect, required this.onAdd, this.useBlur = true});
 
   @override
   Widget build(BuildContext context) {
@@ -1054,7 +1063,7 @@ class _CardGlassPopup extends StatelessWidget {
         borderRadius: 18,
         tint: context.cardColor,
         intensity: 1.6,
-        useBlur: true,
+        useBlur: useBlur,
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 4),
           child: Column(
