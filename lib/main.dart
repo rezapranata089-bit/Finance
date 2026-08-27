@@ -2185,14 +2185,14 @@ class SummaryCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final lang = ref.watch(langProvider);
     return Container(padding: const EdgeInsets.all(18), decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(22), border: Border.all(color: context.borderColor)), child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-      Flexible(fit: FlexFit.loose, child: _summary(context, Strings.t(lang, 'income'), NumberFlow(value: income, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: const TextStyle(fontFamily: 'Satoshi', color: Color(0xFF24A148), fontWeight: FontWeight.bold, fontSize: 13)))),
+      _summary(context, Strings.t(lang, 'income'), NumberFlow(value: income, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: const TextStyle(fontFamily: 'Satoshi', color: Color(0xFF24A148), fontWeight: FontWeight.bold, fontSize: 13))),
       Container(width: 1, height: 44, color: context.borderColor),
-      Flexible(fit: FlexFit.loose, child: _summary(context, Strings.t(lang, 'expense'), NumberFlow(value: expense, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: const TextStyle(fontFamily: 'Satoshi', color: Color(0xFFE05270), fontWeight: FontWeight.bold, fontSize: 13)))),
+      _summary(context, Strings.t(lang, 'expense'), NumberFlow(value: expense, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: const TextStyle(fontFamily: 'Satoshi', color: Color(0xFFE05270), fontWeight: FontWeight.bold, fontSize: 13))),
       Container(width: 1, height: 44, color: context.borderColor),
-      Flexible(fit: FlexFit.loose, child: _summary(context, Strings.t(lang, 'savings'), Row(mainAxisSize: MainAxisSize.min, children: [NumberFlow(value: income == 0 ? 0 : ((income - expense) / income * 100).round(), style: TextStyle(fontFamily: 'Satoshi', color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 13)), Text('%', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 13))]))),
+      _summary(context, Strings.t(lang, 'savings'), Row(mainAxisSize: MainAxisSize.min, children: [NumberFlow(value: income == 0 ? 0 : ((income - expense) / income * 100).round(), style: TextStyle(fontFamily: 'Satoshi', color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 13)), Text('%', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 13))])),
     ]));
   }
-  Widget _summary(BuildContext context, String title, Widget valueWidget) => Padding(padding: const EdgeInsets.symmetric(horizontal: 10), child: Column(crossAxisAlignment: CrossAxisAlignment.center, children: [Text(title, style: TextStyle(color: context.textMuted, fontSize: 11)), const SizedBox(height: 7), FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.center, child: valueWidget)]));
+  Widget _summary(BuildContext context, String title, Widget valueWidget) => Padding(padding: const EdgeInsets.symmetric(horizontal: 6), child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.center, children: [Text(title, style: TextStyle(color: context.textMuted, fontSize: 11)), const SizedBox(height: 7), FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.center, child: valueWidget)]));
 }
 
 class ReportRow extends StatelessWidget {
