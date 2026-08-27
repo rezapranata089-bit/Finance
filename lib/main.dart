@@ -1120,7 +1120,6 @@ class HomePage extends ConsumerWidget {
                             value: balance,
                             locale: 'id_ID',
                             format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '),
-                            duration: const Duration(milliseconds: 1000),
                             style: TextStyle(fontFamily: 'Satoshi', fontSize: 38, fontWeight: FontWeight.w700, letterSpacing: -1, color: context.textPrimary),
                           ),
                   ),
