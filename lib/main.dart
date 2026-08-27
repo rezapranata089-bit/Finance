@@ -389,6 +389,60 @@ class TransactionNotifier extends StateNotifier<List<FinanceTransaction>> {
     final list = [...state]..remove(item);
     state = list;
   }
+
+  void addAll(List<FinanceTransaction> items) {
+    state = [...items, ...state];
+  }
+
+  void removeAll(List<FinanceTransaction> items) {
+    final list = [...state];
+    for (final item in items) {
+      list.remove(item);
+    }
+    state = list;
+  }
+}
+
+final dummyDataActiveProvider = StateProvider<bool>((ref) => false);
+final dummyTransactionsHolderProvider = StateProvider<List<FinanceTransaction>>((ref) => []);
+
+List<FinanceTransaction> _buildSmartDummyTransactions(List<FinanceCard> cards) {
+  final now = DateTime.now();
+  final list = <FinanceTransaction>[];
+  for (var i = 0; i < cards.length; i++) {
+    final card = cards[i];
+    list.addAll([
+      FinanceTransaction(title: 'Gaji Dummy · ${card.name}', category: 'Income', note: 'Data dummy', amount: 3000000 + i * 500000, income: true, date: now.subtract(Duration(days: 1, hours: i)), cardIndex: i),
+      FinanceTransaction(title: 'Bonus Dummy · ${card.name}', category: 'Bonus', note: 'Data dummy', amount: 750000 + i * 150000, income: true, date: now.subtract(Duration(hours: 6 + i)), cardIndex: i),
+      FinanceTransaction(title: 'Belanja Dummy · ${card.name}', category: 'Shopping', note: 'Data dummy', amount: 250000 + i * 40000, income: false, date: now.subtract(Duration(hours: 4 + i)), cardIndex: i),
+      FinanceTransaction(title: 'Makan Dummy · ${card.name}', category: 'Food', note: 'Data dummy', amount: 45000 + i * 8000, income: false, date: now.subtract(Duration(hours: 2 + i)), cardIndex: i),
+      FinanceTransaction(title: 'Transport Dummy · ${card.name}', category: 'Transport', note: 'Data dummy', amount: 25000 + i * 5000, income: false, date: now.subtract(Duration(minutes: 40 + i * 15)), cardIndex: i),
+    ]);
+  }
+  return list;
+}
+
+void toggleDummyData(BuildContext context, WidgetRef ref) {
+  HapticFeedback.mediumImpact();
+  final isActive = ref.read(dummyDataActiveProvider);
+  if (isActive) {
+    final dummy = ref.read(dummyTransactionsHolderProvider);
+    ref.read(transactionsProvider.notifier).removeAll(dummy);
+    ref.read(dummyTransactionsHolderProvider.notifier).state = [];
+    ref.read(dummyDataActiveProvider.notifier).state = false;
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Data dummy dihapus')));
+  } else {
+    final cards = ref.read(cardsProvider);
+    if (cards.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Belum ada kartu untuk diisi data dummy')));
+      return;
+    }
+    final dummy = _buildSmartDummyTransactions(cards);
+    ref.read(transactionsProvider.notifier).addAll(dummy);
+    ref.read(dummyTransactionsHolderProvider.notifier).state = dummy;
+    ref.read(dummyDataActiveProvider.notifier).state = true;
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Data dummy ditambahkan untuk semua kartu')));
+  }
 }
 
 class MyFinanceApp extends ConsumerWidget {
@@ -584,18 +638,19 @@ class FinanceShell extends ConsumerWidget {
               ),
             ),
             _navItem(context, 2, SolarIconsOutline.billList, SolarIconsBold.billList, Strings.t(lang, 'nav_card'), tab, ref),
-            _navItem(context, 3, SolarIconsOutline.user, SolarIconsBold.user, Strings.t(lang, 'nav_profile'), tab, ref),
+            _navItem(context, 3, SolarIconsOutline.user, SolarIconsBold.user, Strings.t(lang, 'nav_profile'), tab, ref, onLongPress: () => toggleDummyData(context, ref)),
           ],
         ),
       ),
     );
   }
 
-  Widget _navItem(BuildContext context, int index, IconData iconOutline, IconData iconBold, String label, int currentTab, WidgetRef ref) {
+  Widget _navItem(BuildContext context, int index, IconData iconOutline, IconData iconBold, String label, int currentTab, WidgetRef ref, {VoidCallback? onLongPress}) {
     final isSelected = currentTab == index;
     final color = isSelected ? context.textPrimary : context.iconMuted;
     return GestureDetector(
       onTap: () => ref.read(tabProvider.notifier).state = index,
+      onLongPress: onLongPress,
       behavior: HitTestBehavior.opaque,
       child: SizedBox(
         width: 56,
