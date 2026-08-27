@@ -69,7 +69,7 @@ class CardsNotifier extends StateNotifier<List<FinanceCard>> {
     final raw = prefs.getString(_key);
     if (raw == null || raw.isEmpty) {
       return const [
-        FinanceCard(number: '**** 3425', name: 'Main Wallet', initialBalance: 50000000),
+        FinanceCard(number: '**** 3425', name: 'Main Wallet', initialBalance: 0),
         FinanceCard(number: '**** 7810', name: 'Savings', initialBalance: 0),
         FinanceCard(number: '**** 2290', name: 'Business', initialBalance: 0),
       ];
@@ -363,12 +363,12 @@ final transactionsProvider = StateNotifierProvider<TransactionNotifier, List<Fin
 class TransactionNotifier extends StateNotifier<List<FinanceTransaction>> {
   TransactionNotifier()
       : super([
-          FinanceTransaction(title: 'Monthly Salary', category: 'Income', note: 'August salary', amount: 8500000, income: true, date: DateTime(2026, 8, 24, 8, 30)),
-          FinanceTransaction(title: 'Grocery shopping', category: 'Shopping', note: 'Household needs', amount: 250000, income: false, date: DateTime(2026, 8, 24, 12, 30)),
-          FinanceTransaction(title: 'Afternoon coffee', category: 'Food', note: '', amount: 25000, income: false, date: DateTime(2026, 8, 24, 15, 20)),
-          FinanceTransaction(title: 'Freelance design', category: 'Income', note: '', amount: 500000, income: true, date: DateTime(2026, 8, 23, 10, 0)),
-          FinanceTransaction(title: 'Transportation', category: 'Transport', note: '', amount: 120000, income: false, date: DateTime(2026, 8, 23, 8, 15)),
-          FinanceTransaction(title: 'Internet bill', category: 'Bills', note: '', amount: 350000, income: false, date: DateTime(2026, 8, 20)),
+          FinanceTransaction(title: 'Monthly Salary', category: 'Income', note: 'August salary', amount: 0, income: true, date: DateTime(2026, 8, 24, 8, 30)),
+          FinanceTransaction(title: 'Grocery shopping', category: 'Shopping', note: 'Household needs', amount: 0, income: false, date: DateTime(2026, 8, 24, 12, 30)),
+          FinanceTransaction(title: 'Afternoon coffee', category: 'Food', note: '', amount: 0, income: false, date: DateTime(2026, 8, 24, 15, 20)),
+          FinanceTransaction(title: 'Freelance design', category: 'Income', note: '', amount: 0, income: true, date: DateTime(2026, 8, 23, 10, 0)),
+          FinanceTransaction(title: 'Transportation', category: 'Transport', note: '', amount: 0, income: false, date: DateTime(2026, 8, 23, 8, 15)),
+          FinanceTransaction(title: 'Internet bill', category: 'Bills', note: '', amount: 0, income: false, date: DateTime(2026, 8, 20)),
         ]);
 
   void add({required String title, required double amount, required bool income, required String category, required String note, required DateTime date}) {
@@ -741,7 +741,7 @@ class HomePage extends ConsumerWidget {
                       children: [
                         Icon(SolarIconsBold.stars, size: 14, color: primary),
                         const SizedBox(width: 6),
-                        Text('${Strings.t(lang, 'saved_last_month').replaceAll('{amount}', rupiah(290000))} >', style: TextStyle(fontSize: 11, color: primary, fontWeight: FontWeight.w600)),
+                        Text('${Strings.t(lang, 'saved_last_month').replaceAll('{amount}', rupiah(0))} >', style: TextStyle(fontSize: 11, color: primary, fontWeight: FontWeight.w600)),
                       ],
                     ),
                   ),
@@ -1823,9 +1823,9 @@ class NotificationsPage extends ConsumerWidget {
     final primary = Theme.of(context).colorScheme.primary;
     final tertiary = Theme.of(context).colorScheme.tertiary;
     final notifications = [
-      (SolarIconsBold.wallet, 'Pemasukan diterima', 'Gaji bulanan sebesar Rp 8.500.000 telah masuk', '08:30'),
+      (SolarIconsBold.wallet, 'Pemasukan diterima', 'Gaji bulanan sebesar Rp 0 telah masuk', '08:30'),
       (SolarIconsBold.bag2, 'Diskon spesial', 'Diskon hingga 80% untuk musim perayaan', 'Kemarin'),
-      (SolarIconsBold.stars, 'Target tabungan', 'Kamu berhasil menghemat Rp 290.000 bulan lalu', '2 hari lalu'),
+      (SolarIconsBold.stars, 'Target tabungan', 'Kamu berhasil menghemat Rp 0 bulan lalu', '2 hari lalu'),
     ];
 
     return Scaffold(
