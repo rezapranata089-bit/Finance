@@ -346,6 +346,7 @@ class FinanceTransaction {
   final double amount;
   final bool income;
   final DateTime date;
+  final int cardIndex;
   const FinanceTransaction({
     required this.title,
     required this.category,
@@ -353,6 +354,7 @@ class FinanceTransaction {
     required this.amount,
     required this.income,
     required this.date,
+    this.cardIndex = 0,
   });
 }
 
@@ -363,16 +365,16 @@ final transactionsProvider = StateNotifierProvider<TransactionNotifier, List<Fin
 class TransactionNotifier extends StateNotifier<List<FinanceTransaction>> {
   TransactionNotifier()
       : super([
-          FinanceTransaction(title: 'Monthly Salary', category: 'Income', note: 'August salary', amount: 0, income: true, date: DateTime(2026, 8, 24, 8, 30)),
-          FinanceTransaction(title: 'Grocery shopping', category: 'Shopping', note: 'Household needs', amount: 0, income: false, date: DateTime(2026, 8, 24, 12, 30)),
-          FinanceTransaction(title: 'Afternoon coffee', category: 'Food', note: '', amount: 0, income: false, date: DateTime(2026, 8, 24, 15, 20)),
-          FinanceTransaction(title: 'Freelance design', category: 'Income', note: '', amount: 0, income: true, date: DateTime(2026, 8, 23, 10, 0)),
-          FinanceTransaction(title: 'Transportation', category: 'Transport', note: '', amount: 0, income: false, date: DateTime(2026, 8, 23, 8, 15)),
-          FinanceTransaction(title: 'Internet bill', category: 'Bills', note: '', amount: 0, income: false, date: DateTime(2026, 8, 20)),
+          FinanceTransaction(title: 'Monthly Salary', category: 'Income', note: 'August salary', amount: 0, income: true, date: DateTime(2026, 8, 24, 8, 30), cardIndex: 0),
+          FinanceTransaction(title: 'Grocery shopping', category: 'Shopping', note: 'Household needs', amount: 0, income: false, date: DateTime(2026, 8, 24, 12, 30), cardIndex: 0),
+          FinanceTransaction(title: 'Afternoon coffee', category: 'Food', note: '', amount: 0, income: false, date: DateTime(2026, 8, 24, 15, 20), cardIndex: 0),
+          FinanceTransaction(title: 'Freelance design', category: 'Income', note: '', amount: 0, income: true, date: DateTime(2026, 8, 23, 10, 0), cardIndex: 0),
+          FinanceTransaction(title: 'Transportation', category: 'Transport', note: '', amount: 0, income: false, date: DateTime(2026, 8, 23, 8, 15), cardIndex: 0),
+          FinanceTransaction(title: 'Internet bill', category: 'Bills', note: '', amount: 0, income: false, date: DateTime(2026, 8, 20), cardIndex: 0),
         ]);
 
-  void add({required String title, required double amount, required bool income, required String category, required String note, required DateTime date}) {
-    state = [FinanceTransaction(title: title, amount: amount, income: income, category: category, note: note, date: date), ...state];
+  void add({required String title, required double amount, required bool income, required String category, required String note, required DateTime date, int cardIndex = 0}) {
+    state = [FinanceTransaction(title: title, amount: amount, income: income, category: category, note: note, date: date, cardIndex: cardIndex), ...state];
   }
 
   void update(FinanceTransaction old, FinanceTransaction updated) {
@@ -633,12 +635,16 @@ class HomePage extends ConsumerWidget {
   const HomePage({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final items = ref.watch(transactionsProvider);
+    final allItems = ref.watch(transactionsProvider);
     final lang = ref.watch(langProvider);
     final cards = ref.watch(cardsProvider);
     final rawSelectedCard = ref.watch(selectedCardProvider);
+    final isAllAccounts = rawSelectedCard == -1;
     final safeSelectedCard = cards.isEmpty ? 0 : (rawSelectedCard >= cards.length ? cards.length - 1 : (rawSelectedCard < 0 ? 0 : rawSelectedCard));
-    final selectedCardBalance = cards.isEmpty ? 0.0 : cards[safeSelectedCard].initialBalance;
+    final selectedCardBalance = cards.isEmpty
+        ? 0.0
+        : (isAllAccounts ? cards.fold<double>(0, (a, c) => a + c.initialBalance) : cards[safeSelectedCard].initialBalance);
+    final items = isAllAccounts ? allItems : allItems.where((e) => e.cardIndex == safeSelectedCard).toList();
     final income = items.where((e) => e.income).fold<double>(0, (a, b) => a + b.amount);
     final expense = items.where((e) => !e.income).fold<double>(0, (a, b) => a + b.amount);
     final balance = selectedCardBalance + income - expense;
@@ -1120,6 +1126,8 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
 
   int _safeIndex(int i, int len) => i >= len ? len - 1 : (i < 0 ? 0 : i);
 
+  String _labelFor(List<FinanceCard> cards, int selected) => selected == -1 ? 'Semua Akun' : cards[selected].number;
+
   Future<void> _toggle() async {
     if (_open) {
       await _controller.animateTo(0, duration: const Duration(milliseconds: 250), curve: _closeCurve);
@@ -1129,8 +1137,9 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
     }
     setState(() => _open = true);
     final cards = ref.read(cardsProvider);
-    final selected = _safeIndex(ref.read(selectedCardProvider), cards.length);
-    final openSize = Size(196, (cards.length + 1) * _rowHeight + 14);
+    final rawSelected = ref.read(selectedCardProvider);
+    final selected = rawSelected == -1 ? -1 : _safeIndex(rawSelected, cards.length);
+    final openSize = Size(196, (cards.length + 2) * _rowHeight + 14);
     _entry = OverlayEntry(
       builder: (overlayContext) => Stack(
         children: [
@@ -1180,7 +1189,7 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
                                   height: _closedSize.height,
                                   child: Opacity(
                                     opacity: closedOpacity,
-                                    child: _ClosedCardChip(cardLabel: cards[selected].number),
+                                    child: _ClosedCardChip(cardLabel: _labelFor(cards, selected)),
                                   ),
                                 ),
                               if (openOpacity > 0)
@@ -1222,14 +1231,15 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
   @override
   Widget build(BuildContext context) {
     final cards = ref.watch(cardsProvider);
-    final selected = _safeIndex(ref.watch(selectedCardProvider), cards.length);
+    final rawSelected = ref.watch(selectedCardProvider);
+    final selected = rawSelected == -1 ? -1 : _safeIndex(rawSelected, cards.length);
     return CompositedTransformTarget(
       link: _link,
       child: GestureDetector(
         onTap: _toggle,
         child: Opacity(
           opacity: _open ? 0 : 1,
-          child: _ClosedCardChip(cardLabel: cards[selected].number, showArrow: true),
+          child: _ClosedCardChip(cardLabel: _labelFor(cards, selected), showArrow: true),
         ),
       ),
     );
@@ -1288,6 +1298,14 @@ class _CardMorphContent extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          _MorphRow(
+            onTap: () => onSelect(-1),
+            leading: Icon(Icons.dashboard_outlined, size: 16, color: selected == -1 ? primary : context.iconMuted),
+            label: 'Semua Akun',
+            labelColor: context.textPrimary,
+            trailing: selected == -1 ? Icon(SolarIconsBold.checkCircle, size: 16, color: primary) : null,
+          ),
+          Divider(height: 1, indent: 12, endIndent: 12, color: context.borderColor),
           ...cards.asMap().entries.map((e) {
             final isSelected = e.key == selected;
             return _MorphRow(
@@ -1349,12 +1367,17 @@ class TransactionsPage extends ConsumerStatefulWidget {
 class _TransactionsPageState extends ConsumerState<TransactionsPage> {
   String query = '';
   String filter = 'all';
+  int? cardFilter;
   static const filterKeys = ['all', 'income', 'expense'];
   @override
   Widget build(BuildContext context) {
     final all = ref.watch(transactionsProvider);
     final lang = ref.watch(langProvider);
-    final items = all.where((e) => (filter == 'all' || (filter == 'income' ? e.income : !e.income)) && e.title.toLowerCase().contains(query.toLowerCase())).toList();
+    final cards = ref.watch(cardsProvider);
+    final items = all.where((e) =>
+        (filter == 'all' || (filter == 'income' ? e.income : !e.income)) &&
+        (cardFilter == null || e.cardIndex == cardFilter) &&
+        e.title.toLowerCase().contains(query.toLowerCase())).toList();
     return SafeArea(top: false, child: ListView(padding: EdgeInsets.fromLTRB(20, MediaQuery.paddingOf(context).top + 22, 20, 24), children: [
       Text(Strings.t(lang, 'transactions_title'), style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 32, color: context.textPrimary)),
       Text(Strings.t(lang, 'transactions_subtitle'), style: TextStyle(color: context.textMuted)),
@@ -1378,6 +1401,32 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
               .toList(),
         ),
       ),
+      const SizedBox(height: 10),
+      SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: ChoiceChip(
+                label: const Text('Semua Akun'),
+                selected: cardFilter == null,
+                onSelected: (_) => setState(() => cardFilter = null),
+              ),
+            ),
+            ...cards.asMap().entries.map(
+                  (e) => Padding(
+                    padding: const EdgeInsets.only(right: 8),
+                    child: ChoiceChip(
+                      label: Text(e.value.name),
+                      selected: cardFilter == e.key,
+                      onSelected: (_) => setState(() => cardFilter = e.key),
+                    ),
+                  ),
+                ),
+          ],
+        ),
+      ),
       const SizedBox(height: 20),
       ...items.map((item) => TransactionTile(item: item)),
     ]));
@@ -1388,8 +1437,13 @@ class ReportsPage extends ConsumerWidget {
   const ReportsPage({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final items = ref.watch(transactionsProvider);
+    final allItems = ref.watch(transactionsProvider);
     final lang = ref.watch(langProvider);
+    final cards = ref.watch(cardsProvider);
+    final rawSelectedCard = ref.watch(selectedCardProvider);
+    final isAllAccounts = rawSelectedCard == -1;
+    final safeSelectedCard = cards.isEmpty ? 0 : (rawSelectedCard >= cards.length ? cards.length - 1 : (rawSelectedCard < 0 ? 0 : rawSelectedCard));
+    final items = isAllAccounts ? allItems : allItems.where((e) => e.cardIndex == safeSelectedCard).toList();
     final income = items.where((e) => e.income).fold<double>(0, (a, b) => a + b.amount);
     final expense = items.where((e) => !e.income).fold<double>(0, (a, b) => a + b.amount);
     final groups = <String, double>{};
@@ -1398,6 +1452,8 @@ class ReportsPage extends ConsumerWidget {
     return SafeArea(top: false, child: ListView(padding: EdgeInsets.fromLTRB(20, MediaQuery.paddingOf(context).top + 22, 20, 24), children: [
       Text(Strings.t(lang, 'reports_title'), style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 32, color: context.textPrimary)),
       Text(DateFormat('MMMM yyyy', lang == AppLang.id ? 'id_ID' : 'en_US').format(DateTime(2026, 8, 24)), style: TextStyle(color: context.textMuted)),
+      const SizedBox(height: 6),
+      Text(isAllAccounts ? 'Semua Akun' : (cards.isEmpty ? '' : cards[safeSelectedCard].name), style: TextStyle(color: context.textFaint, fontSize: 12, fontWeight: FontWeight.w600)),
       const SizedBox(height: 22),
       SummaryCard(income: income, expense: expense),
       const SizedBox(height: 24),
@@ -1471,6 +1527,8 @@ class TransactionTile extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final lang = ref.watch(langProvider);
     final primary = Theme.of(context).colorScheme.primary;
+    final cards = ref.watch(cardsProvider);
+    final cardName = (item.cardIndex >= 0 && item.cardIndex < cards.length) ? cards[item.cardIndex].name : '';
     return GestureDetector(
       onTap: () => showTransactionActions(context, ref, item),
       behavior: HitTestBehavior.opaque,
@@ -1495,7 +1553,7 @@ class TransactionTile extends ConsumerWidget {
                 children: [
                   Text(item.title, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: context.textPrimary)),
                   const SizedBox(height: 4),
-                  Text(DateFormat('hh:mm a').format(item.date), style: TextStyle(color: context.textFaint, fontSize: 12, fontWeight: FontWeight.w500)),
+                  Text(cardName.isEmpty ? DateFormat('hh:mm a').format(item.date) : '$cardName · ${DateFormat('hh:mm a').format(item.date)}', style: TextStyle(color: context.textFaint, fontSize: 12, fontWeight: FontWeight.w500)),
                 ],
               ),
             ),
@@ -1971,6 +2029,10 @@ Future<void> showTransactionForm(BuildContext context, WidgetRef ref, bool incom
   String? amountError;
   String? titleError;
   DateTime selectedDate = existing?.date ?? DateTime.now();
+  final cards = ref.read(cardsProvider);
+  final rawSelectedCard = ref.read(selectedCardProvider);
+  int cardIndex = existing?.cardIndex ?? (rawSelectedCard >= 0 && rawSelectedCard < cards.length ? rawSelectedCard : 0);
+  if (cardIndex < 0 || cardIndex >= cards.length) cardIndex = 0;
   await showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -1994,6 +2056,13 @@ Future<void> showTransactionForm(BuildContext context, WidgetRef ref, bool incom
       ),
       const SizedBox(height: 12),
       DropdownButtonFormField<String>(value: category, decoration: InputDecoration(labelText: Strings.t(lang, 'category')), items: catKeys.map((k) => DropdownMenuItem(value: Strings.t(AppLang.en, k), child: Text(Strings.t(lang, k)))).toList(), onChanged: (v) => setModalState(() => category = v!)),
+      const SizedBox(height: 12),
+      DropdownButtonFormField<int>(
+        value: cardIndex,
+        decoration: const InputDecoration(labelText: 'Pakai kartu'),
+        items: cards.asMap().entries.map((e) => DropdownMenuItem(value: e.key, child: Text(e.value.name))).toList(),
+        onChanged: (v) => setModalState(() => cardIndex = v!),
+      ),
       const SizedBox(height: 12),
       GestureDetector(
         onTap: () async {
@@ -2043,9 +2112,9 @@ Future<void> showTransactionForm(BuildContext context, WidgetRef ref, bool incom
           return;
         }
         if (isEdit) {
-          ref.read(transactionsProvider.notifier).update(existing!, FinanceTransaction(title: title.text.trim(), category: category, note: note.text.trim(), amount: value, income: effectiveIncome, date: selectedDate));
+          ref.read(transactionsProvider.notifier).update(existing!, FinanceTransaction(title: title.text.trim(), category: category, note: note.text.trim(), amount: value, income: effectiveIncome, date: selectedDate, cardIndex: cardIndex));
         } else {
-          ref.read(transactionsProvider.notifier).add(title: title.text.trim(), amount: value, income: effectiveIncome, category: category, note: note.text.trim(), date: selectedDate);
+          ref.read(transactionsProvider.notifier).add(title: title.text.trim(), amount: value, income: effectiveIncome, category: category, note: note.text.trim(), date: selectedDate, cardIndex: cardIndex);
         }
         Navigator.pop(sheetContext);
       }, child: Text(Strings.t(lang, isEdit ? 'save_changes' : 'save_transaction')))),
