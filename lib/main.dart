@@ -777,6 +777,9 @@ class MyFinanceApp extends ConsumerWidget {
           brightness: Brightness.light,
         ),
         fontFamily: 'Satoshi',
+        textTheme: Typography.material2021(platform: TargetPlatform.android)
+            .black
+            .apply(fontFamily: 'Satoshi', bodyColor: const Color(0xFF25212E), displayColor: const Color(0xFF25212E)),
         appBarTheme: const AppBarTheme(backgroundColor: Colors.transparent, elevation: 0),
         inputDecorationTheme: InputDecorationTheme(
           filled: true, fillColor: const Color(0xFFF1EEF7),

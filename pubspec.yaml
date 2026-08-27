@@ -36,10 +36,15 @@ flutter:
         - asset: assets/fonts/satoshi_light.otf
           weight: 300
         - asset: assets/fonts/satoshi_regular.otf
+          weight: 400
         - asset: assets/fonts/satoshi_medium.otf
           weight: 500
+        - asset: assets/fonts/satoshi_medium.otf
+          weight: 600
         - asset: assets/fonts/satoshi_bold.otf
           weight: 700
+        - asset: assets/fonts/satoshi_bold.otf
+          weight: 800
         - asset: assets/fonts/satoshi_black.otf
           weight: 900
     - family: DM Serif Display
