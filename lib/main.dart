@@ -1104,11 +1104,25 @@ class HomePage extends ConsumerWidget {
                 Center(child: Text(Strings.t(lang, 'your_balance'), style: TextStyle(color: context.textMuted, fontSize: 13, fontWeight: FontWeight.w500))),
                 const SizedBox(height: 8),
                 Center(
-                  child: NumberFlow(
-                    value: balance,
-                    locale: 'id_ID',
-                    format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '),
-                    style: TextStyle(fontFamily: 'Satoshi', fontSize: 38, fontWeight: FontWeight.w700, letterSpacing: -1, color: context.textPrimary),
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 380),
+                    switchInCurve: Curves.easeOut,
+                    switchOutCurve: Curves.easeIn,
+                    transitionBuilder: (child, anim) => FadeTransition(opacity: anim, child: child),
+                    child: balance == 0
+                        ? Text(
+                            rupiah(0),
+                            key: const ValueKey('balance-zero'),
+                            style: TextStyle(fontFamily: 'Satoshi', fontSize: 38, fontWeight: FontWeight.w700, letterSpacing: -1, color: context.textPrimary),
+                          )
+                        : NumberFlow(
+                            key: const ValueKey('balance-flow'),
+                            value: balance,
+                            locale: 'id_ID',
+                            format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '),
+                            duration: const Duration(milliseconds: 1000),
+                            style: TextStyle(fontFamily: 'Satoshi', fontSize: 38, fontWeight: FontWeight.w700, letterSpacing: -1, color: context.textPrimary),
+                          ),
                   ),
                 ),
                 const SizedBox(height: 12),
