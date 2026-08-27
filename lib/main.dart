@@ -1104,24 +1104,11 @@ class HomePage extends ConsumerWidget {
                 Center(child: Text(Strings.t(lang, 'your_balance'), style: TextStyle(color: context.textMuted, fontSize: 13, fontWeight: FontWeight.w500))),
                 const SizedBox(height: 8),
                 Center(
-                  child: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 380),
-                    switchInCurve: Curves.easeOut,
-                    switchOutCurve: Curves.easeIn,
-                    transitionBuilder: (child, anim) => FadeTransition(opacity: anim, child: child),
-                    child: balance == 0
-                        ? Text(
-                            rupiah(0),
-                            key: const ValueKey('balance-zero'),
-                            style: TextStyle(fontFamily: 'Satoshi', fontSize: 38, fontWeight: FontWeight.w700, letterSpacing: -2.5, color: context.textPrimary),
-                          )
-                        : NumberFlow(
-                            key: const ValueKey('balance-flow'),
-                            value: balance,
-                            locale: 'id_ID',
-                            format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '),
-                            style: TextStyle(fontFamily: 'Satoshi', fontSize: 38, fontWeight: FontWeight.w700, letterSpacing: -2.5, color: context.textPrimary),
-                          ),
+                  child: NumberFlow(
+                    value: balance,
+                    locale: 'id_ID',
+                    format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '),
+                    style: TextStyle(fontFamily: 'Satoshi', fontSize: 38, fontWeight: FontWeight.w700, letterSpacing: -2.5, color: context.textPrimary),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -1134,7 +1121,7 @@ class HomePage extends ConsumerWidget {
                       children: [
                         Icon(SolarIconsBold.stars, size: 14, color: primary),
                         const SizedBox(width: 6),
-                        Text('${Strings.t(lang, 'saved_last_month').replaceAll('{amount}', rupiah(0))} >', style: TextStyle(fontSize: 11, color: primary, fontWeight: FontWeight.w600, letterSpacing: -0.8)),
+                        Text('${Strings.t(lang, 'saved_last_month').replaceAll('{amount}', rupiah(0))} >', style: TextStyle(fontSize: 11, color: primary, fontWeight: FontWeight.w600)),
                       ],
                     ),
                   ),
@@ -3074,7 +3061,7 @@ class CardManagementPage extends ConsumerWidget {
                               const SizedBox(height: 4),
                               Text(card.number, style: TextStyle(color: context.textMuted, fontSize: 12)),
                               const SizedBox(height: 2),
-                              Row(children: [
+                              Wrap(crossAxisAlignment: WrapCrossAlignment.center, children: [
                                 Text('${Strings.t(lang, 'initial_balance')}: ', style: TextStyle(color: context.textFaint, fontSize: 11)),
                                 NumberFlow(value: card.initialBalance, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: TextStyle(fontFamily: 'Satoshi', color: context.textFaint, fontSize: 11, letterSpacing: -1.0)),
                               ]),
@@ -3280,7 +3267,7 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
                                         children: [
                                           Text(loan.borrowerName, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: context.textPrimary)),
                                           const SizedBox(height: 4),
-                                          Row(children: [
+                                          Wrap(crossAxisAlignment: WrapCrossAlignment.center, children: [
                                             Text('${Strings.t(lang, 'remaining_principal')}: ', style: TextStyle(color: context.textMuted, fontSize: 12)),
                                             NumberFlow(value: loan.remainingPrincipal, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: TextStyle(fontFamily: 'Satoshi', color: context.textMuted, fontSize: 12, letterSpacing: -1.0)),
                                           ]),
@@ -3303,7 +3290,7 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
                                           ),
                                         ),
                                         const SizedBox(height: 6),
-                                        Row(children: [
+                                        Wrap(crossAxisAlignment: WrapCrossAlignment.center, alignment: WrapAlignment.end, children: [
                                           Text('${loan.interestPercent}% / ', style: TextStyle(color: context.textFaint, fontSize: 11, fontWeight: FontWeight.w600)),
                                           NumberFlow(value: loan.currentInterest, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: TextStyle(fontFamily: 'Satoshi', color: context.textFaint, fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: -1.0)),
                                         ]),
