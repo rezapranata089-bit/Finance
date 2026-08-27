@@ -418,53 +418,36 @@ class LiquidGlass extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = context.isDark;
-    final base = tint ?? Colors.white;
-    final topOpacity = ((isDark ? 0.34 : 0.44) * intensity).clamp(0.0, 1.0);
-    final bottomOpacity = ((isDark ? 0.16 : 0.20) * intensity).clamp(0.0, 1.0);
-    final glassBody = Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(borderRadius),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            base.withOpacity(topOpacity),
-            base.withOpacity(bottomOpacity),
-          ],
-        ),
-        border: Border.all(
-          color: borderColor ?? Colors.white.withOpacity(isDark ? 0.16 : 0.55),
-          width: 1,
-        ),
-      ),
-      child: child,
-    );
-    return RepaintBoundary(
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(borderRadius),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.22 : 0.06),
-              blurRadius: 14,
-              offset: const Offset(0, 5),
+    final lang = ref.watch(langProvider);
+    return GestureDetector(
+      onTap: _toggle,
+      child: Column(
+        children: [
+          CompositedTransformTarget(
+            link: _link,
+            child: Opacity(
+              opacity: _open ? 0 : 1,
+              child: SizedBox(
+                width: _closedSize.width,
+                height: _closedSize.height,
+                child: LiquidGlass(
+                  borderRadius: 16,
+                  tint: isDark ? Colors.black : null,
+                  intensity: isDark ? 1.6 : 1.0,
+                  borderColor: isDark ? context.borderColor : null,
+                  child: Center(
+                    child: Icon(SolarIconsOutline.menuDots, color: isDark ? Colors.white : context.textPrimary, size: 22),
+                  ),
+                ),
+              ),
             ),
-            BoxShadow(
-              color: Colors.white.withOpacity(isDark ? 0.05 : 0.55),
-              blurRadius: 1,
-              offset: const Offset(0, 1),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(borderRadius),
-          child: useBlur
-              ? BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-                  child: glassBody,
-                )
-              : glassBody,
-        ),
+          ),
+          const SizedBox(height: 8),
+          Opacity(
+            opacity: _open ? 0 : 1,
+            child: Text(Strings.t(lang, 'more'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: context.textPrimary)),
+          ),
+        ],
       ),
     );
   }
