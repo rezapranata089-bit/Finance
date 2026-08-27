@@ -1297,9 +1297,9 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
 
   Future<void> _toggle() async {
     if (_open) {
+      setState(() => _open = false);
       await _controller.animateTo(0, duration: const Duration(milliseconds: 250), curve: _closeCurve);
       _removeOverlay();
-      setState(() => _open = false);
       return;
     }
     setState(() => _open = true);
@@ -1387,7 +1387,8 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
         onTapDown: (_) => setState(() => _pressed = true),
         onTapUp: (_) => setState(() => _pressed = false),
         onTapCancel: () => setState(() => _pressed = false),
-        child: Opacity(
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 200),
           opacity: _open ? 0 : 1,
           child: Container(
             decoration: BoxDecoration(
@@ -1472,7 +1473,7 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> with SingleTicker
   bool _openUpward = false;
 
   static const _closedSize = Size(68, 42);
-  static const _openSize = Size(220, 208);
+  static const _openSize = Size(220, 184);
   static const _openCurve = Cubic(0.34, 1.25, 0.64, 1.0);
   static const _closeCurve = Cubic(0.22, 1.0, 0.36, 1.0);
 
@@ -1490,9 +1491,9 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> with SingleTicker
 
   Future<void> _toggle() async {
     if (_open) {
+      setState(() => _open = false);
       await _controller.animateTo(0, duration: const Duration(milliseconds: 250), curve: _closeCurve);
       _removeOverlay();
-      setState(() => _open = false);
       return;
     }
     final renderBox = context.findRenderObject() as RenderBox;
@@ -1593,7 +1594,8 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> with SingleTicker
         children: [
           CompositedTransformTarget(
             link: _link,
-            child: Opacity(
+            child: AnimatedOpacity(
+              duration: const Duration(milliseconds: 200),
               opacity: _open ? 0 : 1,
               child: SizedBox(
                 width: _closedSize.width,
@@ -1611,7 +1613,8 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> with SingleTicker
             ),
           ),
           const SizedBox(height: 8),
-          Opacity(
+          AnimatedOpacity(
+            duration: const Duration(milliseconds: 200),
             opacity: _open ? 0 : 1,
             child: Text(Strings.t(lang, 'more'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: context.textPrimary)),
           ),
@@ -1696,9 +1699,9 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
 
   Future<void> _toggle() async {
     if (_open) {
+      setState(() => _open = false);
       await _controller.animateTo(0, duration: const Duration(milliseconds: 250), curve: _closeCurve);
       _removeOverlay();
-      setState(() => _open = false);
       return;
     }
     setState(() => _open = true);
@@ -1803,7 +1806,8 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
       link: _link,
       child: GestureDetector(
         onTap: _toggle,
-        child: Opacity(
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 200),
           opacity: _open ? 0 : 1,
           child: _ClosedCardChip(cardLabel: _labelFor(cards, selected), showArrow: true),
         ),
