@@ -1380,6 +1380,212 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
   @override
   Widget build(BuildContext context) {
     final isDark = context.isDark;
+    return CompositedTransformTarget(
+      link: _link,
+      child: GestureDetector(
+        onTap: _toggle,
+        onTapDown: (_) => setState(() => _pressed = true),
+        onTapUp: (_) => setState(() => _pressed = false),
+        onTapCancel: () => setState(() => _pressed = false),
+        child: Opacity(
+          opacity: _open ? 0 : 1,
+          child: Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(isDark ? 0.22 : 0.07),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: LiquidGlass(
+              borderRadius: 999,
+              tint: isDark ? Colors.black : null,
+              intensity: isDark ? 1.6 : 1.0,
+              borderColor: isDark ? context.borderColor : null,
+              child: Padding(
+                padding: const EdgeInsets.all(10),
+                child: Icon(SolarIconsOutline.hamburgerMenu, size: 20, color: context.textPrimary),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MorphMenuContent extends ConsumerWidget {
+  final void Function(VoidCallback action) onSelect;
+  const _MorphMenuContent({required this.onSelect});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(langProvider);
+    final primary = Theme.of(context).colorScheme.primary;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final items = [
+      (SolarIconsOutline.user, Strings.t(lang, 'nav_profile'), () => ref.read(tabProvider.notifier).state = 3),
+      (
+        isDark ? SolarIconsOutline.sun : SolarIconsOutline.moon,
+        isDark ? Strings.t(lang, 'light') : Strings.t(lang, 'dark'),
+        () => ref.read(themeModeProvider.notifier).state = isDark ? ThemeMode.light : ThemeMode.dark,
+      ),
+      (SolarIconsOutline.palette, Strings.t(lang, 'appearance'), () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ThemeSelectionPage()))),
+      (Icons.language, Strings.t(lang, 'language'), () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LanguageSelectionPage()))),
+      (SolarIconsOutline.bell, Strings.t(lang, 'notifications'), () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsPage()))),
+    ];
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: items
+            .map<Widget>((item) => ListTile(
+                  dense: true,
+                  visualDensity: const VisualDensity(horizontal: -4, vertical: -3),
+                  onTap: () => onSelect(item.$3),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+                  minLeadingWidth: 0,
+                  leading: Icon(item.$1, size: 18, color: primary),
+                  title: Text(item.$2, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: context.textPrimary)),
+                ))
+            .toList(),
+      ),
+    );
+  }
+}
+
+class MoreMorphMenu extends ConsumerStatefulWidget {
+  const MoreMorphMenu({super.key});
+  @override
+  ConsumerState<MoreMorphMenu> createState() => _MoreMorphMenuState();
+}
+
+class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> with SingleTickerProviderStateMixin {
+  final LayerLink _link = LayerLink();
+  OverlayEntry? _entry;
+  late final AnimationController _controller = AnimationController(vsync: this, value: 0);
+  bool _open = false;
+  bool _openUpward = false;
+
+  static const _closedSize = Size(68, 42);
+  static const _openSize = Size(220, 208);
+  static const _openCurve = Cubic(0.34, 1.25, 0.64, 1.0);
+  static const _closeCurve = Cubic(0.22, 1.0, 0.36, 1.0);
+
+  @override
+  void dispose() {
+    _removeOverlay();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _removeOverlay() {
+    _entry?.remove();
+    _entry = null;
+  }
+
+  Future<void> _toggle() async {
+    if (_open) {
+      await _controller.animateTo(0, duration: const Duration(milliseconds: 250), curve: _closeCurve);
+      _removeOverlay();
+      setState(() => _open = false);
+      return;
+    }
+    final renderBox = context.findRenderObject() as RenderBox;
+    final buttonPos = renderBox.localToGlobal(Offset.zero);
+    final statusBarHeight = MediaQuery.paddingOf(context).top;
+    final spaceAbove = buttonPos.dy - statusBarHeight;
+    _openUpward = spaceAbove >= _openSize.height + 12;
+    final anchor = _openUpward ? Alignment.bottomRight : Alignment.topRight;
+    setState(() => _open = true);
+    _entry = OverlayEntry(
+      builder: (overlayContext) => Stack(
+        children: [
+          Positioned.fill(child: GestureDetector(behavior: HitTestBehavior.translucent, onTap: _toggle)),
+          CompositedTransformFollower(
+            link: _link,
+            targetAnchor: anchor,
+            followerAnchor: anchor,
+            child: RepaintBoundary(
+              child: AnimatedBuilder(
+                animation: _controller,
+                child: _MoreMorphContent(onSelect: _select),
+                builder: (context, menuChild) {
+                  final t = _controller.value.clamp(0.0, 1.0);
+                  final size = Size.lerp(_closedSize, _openSize, t)!;
+                  const radius = 16.0;
+                  final iconOpacity = (1 - t / 0.45).clamp(0.0, 1.0);
+                  final menuOpacity = ((t - 0.35) / 0.65).clamp(0.0, 1.0);
+                  final menuOffset = (1 - menuOpacity) * 14;
+                  final glassT = Curves.easeOut.transform(t);
+                  final showBlur = glassT > 0.85;
+                  final isDark = context.isDark;
+                  return Material(
+                    color: Colors.transparent,
+                    child: SizedBox(
+                      width: size.width,
+                      height: size.height,
+                      child: LiquidGlass(
+                        borderRadius: radius,
+                        tint: isDark ? Colors.black : context.cardColor,
+                        intensity: isDark ? 1.6 : 1.0,
+                        blur: 6,
+                        useBlur: showBlur,
+                        borderColor: isDark ? context.borderColor : null,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(radius),
+                          child: Stack(
+                            children: [
+                              if (iconOpacity > 0)
+                                Positioned(
+                                  top: _openUpward ? null : 0,
+                                  bottom: _openUpward ? 0 : null,
+                                  right: 0,
+                                  width: _closedSize.width, height: _closedSize.height,
+                                  child: Opacity(
+                                    opacity: iconOpacity,
+                                    child: Center(
+                                      child: Icon(SolarIconsOutline.menuDots, size: 22, color: isDark ? Colors.white : context.textPrimary),
+                                    ),
+                                  ),
+                                ),
+                              if (menuOpacity > 0)
+                                Opacity(
+                                  opacity: menuOpacity,
+                                  child: Transform.translate(
+                                    offset: Offset(0, menuOffset),
+                                    child: menuChild,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    Overlay.of(context).insert(_entry!);
+    await _controller.animateTo(1, duration: const Duration(milliseconds: 350), curve: _openCurve);
+  }
+
+  void _select(VoidCallback action) {
+    _toggle();
+    action();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = context.isDark;
     final lang = ref.watch(langProvider);
     return GestureDetector(
       onTap: _toggle,
