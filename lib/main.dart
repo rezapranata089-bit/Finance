@@ -43,11 +43,16 @@ final selectedCardProvider = StateProvider<int>((ref) => 0);
 class FinanceCard {
   final String number;
   final String name;
-  const FinanceCard({required this.number, required this.name});
+  final double initialBalance;
+  const FinanceCard({required this.number, required this.name, this.initialBalance = 0});
 
-  Map<String, String> toJson() => {'number': number, 'name': name};
+  Map<String, dynamic> toJson() => {'number': number, 'name': name, 'initialBalance': initialBalance};
   factory FinanceCard.fromJson(Map<String, dynamic> json) =>
-      FinanceCard(number: json['number'] as String, name: json['name'] as String);
+      FinanceCard(
+        number: json['number'] as String,
+        name: json['name'] as String,
+        initialBalance: (json['initialBalance'] as num?)?.toDouble() ?? 0,
+      );
 }
 
 final cardsProvider = StateNotifierProvider<CardsNotifier, List<FinanceCard>>(
@@ -64,9 +69,9 @@ class CardsNotifier extends StateNotifier<List<FinanceCard>> {
     final raw = prefs.getString(_key);
     if (raw == null || raw.isEmpty) {
       return const [
-        FinanceCard(number: '**** 3425', name: 'Main Wallet'),
-        FinanceCard(number: '**** 7810', name: 'Savings'),
-        FinanceCard(number: '**** 2290', name: 'Business'),
+        FinanceCard(number: '**** 3425', name: 'Main Wallet', initialBalance: 50000000),
+        FinanceCard(number: '**** 7810', name: 'Savings', initialBalance: 0),
+        FinanceCard(number: '**** 2290', name: 'Business', initialBalance: 0),
       ];
     }
     try {
@@ -81,15 +86,15 @@ class CardsNotifier extends StateNotifier<List<FinanceCard>> {
     prefs.setString(_key, jsonEncode(state.map((e) => e.toJson()).toList()));
   }
 
-  void add(String number, String name) {
-    state = [...state, FinanceCard(number: number, name: name)];
+  void add(String number, String name, {double initialBalance = 0}) {
+    state = [...state, FinanceCard(number: number, name: name, initialBalance: initialBalance)];
     _persist();
   }
 
-  void update(int index, String number, String name) {
+  void update(int index, String number, String name, {double? initialBalance}) {
     if (index < 0 || index >= state.length) return;
     final list = [...state];
-    list[index] = FinanceCard(number: number, name: name);
+    list[index] = FinanceCard(number: number, name: name, initialBalance: initialBalance ?? list[index].initialBalance);
     state = list;
     _persist();
   }
@@ -630,9 +635,13 @@ class HomePage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final items = ref.watch(transactionsProvider);
     final lang = ref.watch(langProvider);
+    final cards = ref.watch(cardsProvider);
+    final rawSelectedCard = ref.watch(selectedCardProvider);
+    final safeSelectedCard = cards.isEmpty ? 0 : (rawSelectedCard >= cards.length ? cards.length - 1 : (rawSelectedCard < 0 ? 0 : rawSelectedCard));
+    final selectedCardBalance = cards.isEmpty ? 0.0 : cards[safeSelectedCard].initialBalance;
     final income = items.where((e) => e.income).fold<double>(0, (a, b) => a + b.amount);
     final expense = items.where((e) => !e.income).fold<double>(0, (a, b) => a + b.amount);
-    final balance = 50000000 + income - expense;
+    final balance = selectedCardBalance + income - expense;
     final primary = Theme.of(context).colorScheme.primary;
     final accent = Theme.of(context).colorScheme.secondary;
     final tertiary = Theme.of(context).colorScheme.tertiary;
@@ -2159,6 +2168,8 @@ Future<void> showCardForm({
   final name = TextEditingController(text: existing?.name ?? '');
   final initialDigits = existing != null ? existing.number.replaceAll(RegExp(r'[^0-9]'), '') : '';
   final number = TextEditingController(text: initialDigits);
+  final balance = TextEditingController(
+      text: existing != null ? NumberFormat('#,###', 'id_ID').format(existing.initialBalance).replaceAll(',', '.') : '');
   final nameShakeKey = GlobalKey<ShakeFieldState>();
   final numberShakeKey = GlobalKey<ShakeFieldState>();
   String? nameError;
@@ -2189,6 +2200,13 @@ Future<void> showCardForm({
             decoration: InputDecoration(labelText: '4 digit terakhir', counterText: '', errorText: numberError),
           ),
         ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: balance,
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly, ThousandsInputFormatter()],
+          decoration: const InputDecoration(labelText: 'Saldo awal', prefixText: 'Rp '),
+        ),
         const SizedBox(height: 18),
         SizedBox(width: double.infinity, child: FilledButton(onPressed: () {
           final hasNameError = name.text.trim().isEmpty;
@@ -2211,10 +2229,11 @@ Future<void> showCardForm({
             return;
           }
           final formattedNumber = '**** ${number.text.trim()}';
+          final balanceValue = double.tryParse(balance.text.replaceAll('.', '')) ?? 0;
           if (isEdit && index != null) {
-            ref.read(cardsProvider.notifier).update(index, formattedNumber, name.text.trim());
+            ref.read(cardsProvider.notifier).update(index, formattedNumber, name.text.trim(), initialBalance: balanceValue);
           } else {
-            ref.read(cardsProvider.notifier).add(formattedNumber, name.text.trim());
+            ref.read(cardsProvider.notifier).add(formattedNumber, name.text.trim(), initialBalance: balanceValue);
             ref.read(selectedCardProvider.notifier).state = ref.read(cardsProvider).length - 1;
           }
           Navigator.pop(sheetContext);
@@ -2304,6 +2323,8 @@ class CardManagementPage extends ConsumerWidget {
                               Text(card.name, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: context.textPrimary)),
                               const SizedBox(height: 4),
                               Text(card.number, style: TextStyle(color: context.textMuted, fontSize: 12)),
+                              const SizedBox(height: 2),
+                              Text('Saldo awal: ${rupiah(card.initialBalance)}', style: TextStyle(color: context.textFaint, fontSize: 11)),
                             ],
                           ),
                         ),
