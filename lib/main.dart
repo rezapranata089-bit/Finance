@@ -38,7 +38,7 @@ const appPalettes = [
 ];
 
 final tabProvider = StateProvider<int>((ref) => 0);
-final selectedCardProvider = StateProvider<int>((ref) => 0);
+final selectedCardProvider = StateProvider<int>((ref) => -1);
 
 class FinanceCard {
   final String number;
@@ -336,6 +336,20 @@ class Strings {
     'cancel': {AppLang.en: 'Cancel', AppLang.id: 'Batal'},
     'delete_transaction_title': {AppLang.en: 'Delete transaction', AppLang.id: 'Hapus transaksi'},
     'delete_transaction_confirm': {AppLang.en: 'Delete "{title}"? This cannot be undone.', AppLang.id: 'Hapus "{title}"? Tindakan ini tidak bisa dibatalkan.'},
+    'all_accounts': {AppLang.en: 'All Accounts', AppLang.id: 'Semua Akun'},
+    'add_card': {AppLang.en: 'Add card', AppLang.id: 'Tambah kartu'},
+    'edit_card': {AppLang.en: 'Edit card', AppLang.id: 'Edit kartu'},
+    'card_name': {AppLang.en: 'Card name', AppLang.id: 'Nama kartu'},
+    'last_4_digits': {AppLang.en: 'Last 4 digits', AppLang.id: '4 digit terakhir'},
+    'initial_balance': {AppLang.en: 'Initial balance', AppLang.id: 'Saldo awal'},
+    'save_card': {AppLang.en: 'Save card', AppLang.id: 'Simpan kartu'},
+    'use_card': {AppLang.en: 'Use card', AppLang.id: 'Pakai kartu'},
+    'delete_card_title': {AppLang.en: 'Delete card', AppLang.id: 'Hapus kartu'},
+    'delete_card_confirm': {AppLang.en: 'Delete "{name}"?', AppLang.id: 'Hapus "{name}"?'},
+    'dummy_added': {AppLang.en: 'Dummy data added for all cards', AppLang.id: 'Data dummy ditambahkan untuk semua kartu'},
+    'dummy_removed': {AppLang.en: 'Dummy data removed', AppLang.id: 'Data dummy dihapus'},
+    'dummy_no_cards': {AppLang.en: 'No cards available to fill dummy data', AppLang.id: 'Belum ada kartu untuk diisi data dummy'},
+    'no_expenses_yet': {AppLang.en: 'No expenses yet', AppLang.id: 'Belum ada pengeluaran'},
   };
 
   static String t(AppLang lang, String key) => _s[key]?[lang] ?? key;
@@ -424,24 +438,25 @@ List<FinanceTransaction> _buildSmartDummyTransactions(List<FinanceCard> cards) {
 
 void toggleDummyData(BuildContext context, WidgetRef ref) {
   HapticFeedback.mediumImpact();
+  final lang = ref.read(langProvider);
   final isActive = ref.read(dummyDataActiveProvider);
   if (isActive) {
     final dummy = ref.read(dummyTransactionsHolderProvider);
     ref.read(transactionsProvider.notifier).removeAll(dummy);
     ref.read(dummyTransactionsHolderProvider.notifier).state = [];
     ref.read(dummyDataActiveProvider.notifier).state = false;
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Data dummy dihapus')));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(Strings.t(lang, 'dummy_removed'))));
   } else {
     final cards = ref.read(cardsProvider);
     if (cards.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Belum ada kartu untuk diisi data dummy')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(Strings.t(lang, 'dummy_no_cards'))));
       return;
     }
     final dummy = _buildSmartDummyTransactions(cards);
     ref.read(transactionsProvider.notifier).addAll(dummy);
     ref.read(dummyTransactionsHolderProvider.notifier).state = dummy;
     ref.read(dummyDataActiveProvider.notifier).state = true;
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Data dummy ditambahkan untuk semua kartu')));
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(Strings.t(lang, 'dummy_added'))));
   }
 }
 
@@ -1183,7 +1198,10 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
 
   int _safeIndex(int i, int len) => i >= len ? len - 1 : (i < 0 ? 0 : i);
 
-  String _labelFor(List<FinanceCard> cards, int selected) => selected == -1 ? 'Semua Akun' : cards[selected].number;
+  String _labelFor(List<FinanceCard> cards, int selected) {
+    if (selected == -1) return Strings.t(ref.read(langProvider), 'all_accounts');
+    return cards[selected].number;
+  }
 
   Future<void> _toggle() async {
     if (_open) {
@@ -1339,7 +1357,7 @@ class _ClosedCardChip extends StatelessWidget {
   }
 }
 
-class _CardMorphContent extends StatelessWidget {
+class _CardMorphContent extends ConsumerWidget {
   final List<FinanceCard> cards;
   final int selected;
   final ValueChanged<int> onSelect;
@@ -1347,8 +1365,9 @@ class _CardMorphContent extends StatelessWidget {
   const _CardMorphContent({required this.cards, required this.selected, required this.onSelect, required this.onAdd});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final primary = Theme.of(context).colorScheme.primary;
+    final lang = ref.watch(langProvider);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Column(
@@ -1358,7 +1377,7 @@ class _CardMorphContent extends StatelessWidget {
           _MorphRow(
             onTap: () => onSelect(-1),
             leading: Icon(Icons.dashboard_outlined, size: 16, color: selected == -1 ? primary : context.iconMuted),
-            label: 'Semua Akun',
+            label: Strings.t(lang, 'all_accounts'),
             labelColor: context.textPrimary,
             trailing: selected == -1 ? Icon(SolarIconsBold.checkCircle, size: 16, color: primary) : null,
           ),
@@ -1377,7 +1396,7 @@ class _CardMorphContent extends StatelessWidget {
           _MorphRow(
             onTap: onAdd,
             leading: Icon(SolarIconsOutline.addCircle, size: 16, color: primary),
-            label: 'Tambah kartu',
+            label: Strings.t(lang, 'add_card'),
             labelColor: primary,
           ),
         ],
@@ -1472,7 +1491,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
             Padding(
               padding: const EdgeInsets.only(right: 8),
               child: ChoiceChip(
-                label: const Text('Semua Akun'),
+                label: Text(Strings.t(lang, 'all_accounts')),
                 selected: cardFilter == null,
                 onSelected: (_) => setState(() => cardFilter = null),
               ),
@@ -1516,7 +1535,7 @@ class ReportsPage extends ConsumerWidget {
       Text(Strings.t(lang, 'reports_title'), style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 32, color: context.textPrimary)),
       Text(DateFormat('MMMM yyyy', lang == AppLang.id ? 'id_ID' : 'en_US').format(DateTime(2026, 8, 24)), style: TextStyle(color: context.textMuted)),
       const SizedBox(height: 6),
-      Text(isAllAccounts ? 'Semua Akun' : (cards.isEmpty ? '' : cards[safeSelectedCard].name), style: TextStyle(color: context.textFaint, fontSize: 12, fontWeight: FontWeight.w600)),
+      Text(isAllAccounts ? Strings.t(lang, 'all_accounts') : (cards.isEmpty ? '' : cards[safeSelectedCard].name), style: TextStyle(color: context.textFaint, fontSize: 12, fontWeight: FontWeight.w600)),
       const SizedBox(height: 22),
       SummaryCard(income: income, expense: expense),
       const SizedBox(height: 24),
@@ -1527,7 +1546,7 @@ class ReportsPage extends ConsumerWidget {
       SectionTitle(Strings.t(lang, 'expense_by_category')),
       const SizedBox(height: 12),
       Container(padding: const EdgeInsets.all(18), decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(24), border: Border.all(color: context.borderColor)), child: safeGroups.isEmpty
-          ? Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Text('Belum ada pengeluaran', style: TextStyle(color: context.textMuted, fontSize: 13)))
+          ? Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Text(Strings.t(lang, 'no_expenses_yet'), style: TextStyle(color: context.textMuted, fontSize: 13)))
           : Column(children: safeGroups.entries.map((e) => ReportRow(label: e.key, amount: e.value, total: expense)).toList())),
     ]));
   }
@@ -2122,7 +2141,7 @@ Future<void> showTransactionForm(BuildContext context, WidgetRef ref, bool incom
       const SizedBox(height: 12),
       DropdownButtonFormField<int>(
         value: cardIndex,
-        decoration: const InputDecoration(labelText: 'Pakai kartu'),
+        decoration: InputDecoration(labelText: Strings.t(lang, 'use_card')),
         items: cards.asMap().entries.map((e) => DropdownMenuItem(value: e.key, child: Text(e.value.name))).toList(),
         onChanged: (v) => setModalState(() => cardIndex = v!),
       ),
@@ -2321,11 +2340,11 @@ Future<void> showCardForm({
     builder: (sheetContext) => StatefulBuilder(builder: (context, setModalState) => Padding(
       padding: EdgeInsets.fromLTRB(20, 22, 20, MediaQuery.viewInsetsOf(context).bottom + 24),
       child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(isEdit ? 'Edit kartu' : 'Tambah kartu', style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 28, color: context.textPrimary)),
+        Text(isEdit ? Strings.t(lang, 'edit_card') : Strings.t(lang, 'add_card'), style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 28, color: context.textPrimary)),
         const SizedBox(height: 18),
         ShakeField(
           key: nameShakeKey,
-          child: TextField(controller: name, decoration: InputDecoration(labelText: 'Nama kartu', errorText: nameError)),
+          child: TextField(controller: name, decoration: InputDecoration(labelText: Strings.t(lang, 'card_name'), errorText: nameError)),
         ),
         const SizedBox(height: 12),
         ShakeField(
@@ -2335,7 +2354,7 @@ Future<void> showCardForm({
             keyboardType: TextInputType.number,
             maxLength: 4,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            decoration: InputDecoration(labelText: '4 digit terakhir', counterText: '', errorText: numberError),
+            decoration: InputDecoration(labelText: Strings.t(lang, 'last_4_digits'), counterText: '', errorText: numberError),
           ),
         ),
         const SizedBox(height: 12),
@@ -2343,7 +2362,7 @@ Future<void> showCardForm({
           controller: balance,
           keyboardType: TextInputType.number,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly, ThousandsInputFormatter()],
-          decoration: const InputDecoration(labelText: 'Saldo awal', prefixText: 'Rp '),
+          decoration: InputDecoration(labelText: Strings.t(lang, 'initial_balance'), prefixText: 'Rp '),
         ),
         const SizedBox(height: 18),
         SizedBox(width: double.infinity, child: FilledButton(onPressed: () {
@@ -2375,7 +2394,7 @@ Future<void> showCardForm({
             ref.read(selectedCardProvider.notifier).state = ref.read(cardsProvider).length - 1;
           }
           Navigator.pop(sheetContext);
-        }, child: Text(isEdit ? 'Simpan perubahan' : 'Simpan kartu'))),
+        }, child: Text(isEdit ? Strings.t(lang, 'save_changes') : Strings.t(lang, 'save_card')))),
       ]),
     )),
   );
@@ -2462,7 +2481,7 @@ class CardManagementPage extends ConsumerWidget {
                               const SizedBox(height: 4),
                               Text(card.number, style: TextStyle(color: context.textMuted, fontSize: 12)),
                               const SizedBox(height: 2),
-                              Text('Saldo awal: ${rupiah(card.initialBalance)}', style: TextStyle(color: context.textFaint, fontSize: 11)),
+                              Text('${Strings.t(lang, 'initial_balance')}: ${rupiah(card.initialBalance)}', style: TextStyle(color: context.textFaint, fontSize: 11)),
                             ],
                           ),
                         ),
@@ -2487,26 +2506,27 @@ class CardManagementPage extends ConsumerWidget {
   }
 
   void _confirmDelete(BuildContext context, WidgetRef ref, int index, FinanceCard card) {
+    final lang = ref.read(langProvider);
     showDialog(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Hapus kartu'),
-        content: Text('Hapus "${card.name}"?'),
+        title: Text(Strings.t(lang, 'delete_card_title')),
+        content: Text(Strings.t(lang, 'delete_card_confirm').replaceAll('{name}', card.name)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Batal')),
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(Strings.t(lang, 'cancel'))),
           TextButton(
             onPressed: () {
               final selected = ref.read(selectedCardProvider);
               ref.read(cardsProvider.notifier).remove(index);
               final newLen = ref.read(cardsProvider).length;
-              if (selected >= newLen) {
+              if (selected != -1 && selected >= newLen) {
                 ref.read(selectedCardProvider.notifier).state = newLen - 1;
-              } else if (index < selected) {
+              } else if (selected != -1 && index < selected) {
                 ref.read(selectedCardProvider.notifier).state = selected - 1;
               }
               Navigator.pop(dialogContext);
             },
-            child: const Text('Hapus', style: TextStyle(color: Colors.redAccent)),
+            child: Text(Strings.t(lang, 'delete'), style: const TextStyle(color: Colors.redAccent)),
           ),
         ],
       ),
