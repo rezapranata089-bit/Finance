@@ -1497,8 +1497,9 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> with SingleTicker
     }
     final renderBox = context.findRenderObject() as RenderBox;
     final buttonPos = renderBox.localToGlobal(Offset.zero);
-    final screenHeight = MediaQuery.sizeOf(context).height;
-    _openUpward = buttonPos.dy > screenHeight * 0.55;
+    final statusBarHeight = MediaQuery.paddingOf(context).top;
+    final spaceAbove = buttonPos.dy - statusBarHeight;
+    _openUpward = spaceAbove >= _openSize.height + 12;
     final anchor = _openUpward ? Alignment.bottomRight : Alignment.topRight;
     setState(() => _open = true);
     _entry = OverlayEntry(
