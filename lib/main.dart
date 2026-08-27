@@ -446,9 +446,11 @@ class MyFinanceApp extends ConsumerWidget {
             .white
             .apply(fontFamily: 'Satoshi', bodyColor: Colors.white, displayColor: Colors.white),
         inputDecorationTheme: InputDecorationTheme(
-          filled: true, fillColor: const Color(0xFF1E1B27),
+          filled: true, fillColor: const Color(0xFF29253363),
           hintStyle: const TextStyle(color: Colors.white38),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.white.withOpacity(0.12))),
+          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.white.withOpacity(0.12))),
+          focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: Colors.white, width: 1.2)),
         ),
       ),
       builder: (context, child) {
@@ -1386,6 +1388,9 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
       const SizedBox(height: 14),
       SingleChildScrollView(
         scrollDirection: Axis.horizontal,
+        clipBehavior: Clip.none,
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 2),
         child: Row(
           children: filterKeys
               .map<Widget>(
@@ -1404,6 +1409,9 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
       const SizedBox(height: 10),
       SingleChildScrollView(
         scrollDirection: Axis.horizontal,
+        clipBehavior: Clip.none,
+        physics: const BouncingScrollPhysics(),
+        padding: const EdgeInsets.symmetric(horizontal: 2),
         child: Row(
           children: [
             Padding(
