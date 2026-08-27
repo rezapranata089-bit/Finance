@@ -1113,14 +1113,14 @@ class HomePage extends ConsumerWidget {
                         ? Text(
                             rupiah(0),
                             key: const ValueKey('balance-zero'),
-                            style: TextStyle(fontFamily: 'Satoshi', fontSize: 38, fontWeight: FontWeight.w700, letterSpacing: -1.5, color: context.textPrimary),
+                            style: TextStyle(fontFamily: 'Satoshi', fontSize: 38, fontWeight: FontWeight.w700, letterSpacing: -2.5, color: context.textPrimary),
                           )
                         : NumberFlow(
                             key: const ValueKey('balance-flow'),
                             value: balance,
                             locale: 'id_ID',
                             format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '),
-                            style: TextStyle(fontFamily: 'Satoshi', fontSize: 38, fontWeight: FontWeight.w700, letterSpacing: -1.5, color: context.textPrimary),
+                            style: TextStyle(fontFamily: 'Satoshi', fontSize: 38, fontWeight: FontWeight.w700, letterSpacing: -2.5, color: context.textPrimary),
                           ),
                   ),
                 ),
@@ -1134,7 +1134,7 @@ class HomePage extends ConsumerWidget {
                       children: [
                         Icon(SolarIconsBold.stars, size: 14, color: primary),
                         const SizedBox(width: 6),
-                        Text('${Strings.t(lang, 'saved_last_month').replaceAll('{amount}', rupiah(0))} >', style: TextStyle(fontSize: 11, color: primary, fontWeight: FontWeight.w600, letterSpacing: -0.2)),
+                        Text('${Strings.t(lang, 'saved_last_month').replaceAll('{amount}', rupiah(0))} >', style: TextStyle(fontSize: 11, color: primary, fontWeight: FontWeight.w600, letterSpacing: -0.8)),
                       ],
                     ),
                   ),
@@ -2165,7 +2165,7 @@ class TransactionTile extends ConsumerWidget {
                   value: item.amount,
                   locale: 'id_ID',
                   format: NumberFlowFormat.currency(currencyCode: 'IDR', symbol: item.income ? '+Rp ' : '-Rp '),
-                  style: TextStyle(fontFamily: 'Satoshi', fontWeight: FontWeight.w800, fontSize: 14, letterSpacing: -0.5, color: context.textPrimary),
+                  style: TextStyle(fontFamily: 'Satoshi', fontWeight: FontWeight.w800, fontSize: 14, letterSpacing: -1.2, color: context.textPrimary),
                 ),
                 const SizedBox(height: 4),
                 Text(Strings.t(lang, item.income ? 'receive' : 'transfer'), style: TextStyle(color: context.textFaint, fontSize: 12, fontWeight: FontWeight.w500)),
@@ -2185,11 +2185,11 @@ class SummaryCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final lang = ref.watch(langProvider);
     return Container(padding: const EdgeInsets.all(18), decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(22), border: Border.all(color: context.borderColor)), child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-      _summary(context, Strings.t(lang, 'income'), NumberFlow(value: income, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: const TextStyle(fontFamily: 'Satoshi', color: Color(0xFF24A148), fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: -0.5))),
+      _summary(context, Strings.t(lang, 'income'), NumberFlow(value: income, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: const TextStyle(fontFamily: 'Satoshi', color: Color(0xFF24A148), fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: -1.2))),
       Container(width: 1, height: 44, color: context.borderColor),
-      _summary(context, Strings.t(lang, 'expense'), NumberFlow(value: expense, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: const TextStyle(fontFamily: 'Satoshi', color: Color(0xFFE05270), fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: -0.5))),
+      _summary(context, Strings.t(lang, 'expense'), NumberFlow(value: expense, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: const TextStyle(fontFamily: 'Satoshi', color: Color(0xFFE05270), fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: -1.2))),
       Container(width: 1, height: 44, color: context.borderColor),
-      _summary(context, Strings.t(lang, 'savings'), Row(mainAxisSize: MainAxisSize.min, children: [NumberFlow(value: income == 0 ? 0 : ((income - expense) / income * 100).round(), style: TextStyle(fontFamily: 'Satoshi', color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: -0.5)), Text('%', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: -0.5))])),
+      _summary(context, Strings.t(lang, 'savings'), Row(mainAxisSize: MainAxisSize.min, children: [NumberFlow(value: income == 0 ? 0 : ((income - expense) / income * 100).round(), style: TextStyle(fontFamily: 'Satoshi', color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: -1.2)), Text('%', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: -1.2))])),
     ]));
   }
   Widget _summary(BuildContext context, String title, Widget valueWidget) => Padding(padding: const EdgeInsets.symmetric(horizontal: 6), child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.center, children: [Text(title, style: TextStyle(color: context.textMuted, fontSize: 11)), const SizedBox(height: 7), FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.center, child: valueWidget)]));
@@ -2201,7 +2201,7 @@ class ReportRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ratio = total <= 0 ? 0.0 : (amount / total).clamp(0.0, 1.0);
-    return Padding(padding: const EdgeInsets.only(bottom: 16), child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label, style: TextStyle(fontWeight: FontWeight.w600, color: context.textPrimary)), Row(mainAxisSize: MainAxisSize.min, children: [NumberFlow(value: amount, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: TextStyle(fontFamily: 'Satoshi', color: context.textMuted, fontSize: 12, letterSpacing: -0.5)), Text(' · ${(ratio * 100).round()}%', style: TextStyle(color: context.textMuted, fontSize: 12))])]), const SizedBox(height: 8), LinearProgressIndicator(value: ratio, minHeight: 7, borderRadius: BorderRadius.circular(8), color: Theme.of(context).colorScheme.primary, backgroundColor: context.isDark ? Theme.of(context).colorScheme.primary.withOpacity(0.16) : Theme.of(context).colorScheme.tertiary)]));
+    return Padding(padding: const EdgeInsets.only(bottom: 16), child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label, style: TextStyle(fontWeight: FontWeight.w600, color: context.textPrimary)), Row(mainAxisSize: MainAxisSize.min, children: [NumberFlow(value: amount, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: TextStyle(fontFamily: 'Satoshi', color: context.textMuted, fontSize: 12, letterSpacing: -1.0)), Text(' · ${(ratio * 100).round()}%', style: TextStyle(color: context.textMuted, fontSize: 12))])]), const SizedBox(height: 8), LinearProgressIndicator(value: ratio, minHeight: 7, borderRadius: BorderRadius.circular(8), color: Theme.of(context).colorScheme.primary, backgroundColor: context.isDark ? Theme.of(context).colorScheme.primary.withOpacity(0.16) : Theme.of(context).colorScheme.tertiary)]));
   }
 }
 
@@ -2818,7 +2818,7 @@ void showTransactionActions(BuildContext context, WidgetRef ref, FinanceTransact
             decoration: BoxDecoration(color: context.isDark ? Colors.white.withOpacity(0.04) : const Color(0xFFF1EEF7), borderRadius: BorderRadius.circular(18)),
             child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
               Text(Strings.t(lang, item.income ? 'receive' : 'transfer'), style: TextStyle(color: context.textMuted)),
-              NumberFlow(value: item.amount, locale: 'id_ID', format: NumberFlowFormat.currency(currencyCode: 'IDR', symbol: item.income ? '+Rp ' : '-Rp '), style: TextStyle(fontFamily: 'Satoshi', fontWeight: FontWeight.w800, fontSize: 16, letterSpacing: -0.5, color: item.income ? const Color(0xFF24A148) : context.textPrimary)),
+              NumberFlow(value: item.amount, locale: 'id_ID', format: NumberFlowFormat.currency(currencyCode: 'IDR', symbol: item.income ? '+Rp ' : '-Rp '), style: TextStyle(fontFamily: 'Satoshi', fontWeight: FontWeight.w800, fontSize: 16, letterSpacing: -1.5, color: item.income ? const Color(0xFF24A148) : context.textPrimary)),
             ]),
           ),
           if (item.note.isNotEmpty) ...[
@@ -3076,7 +3076,7 @@ class CardManagementPage extends ConsumerWidget {
                               const SizedBox(height: 2),
                               Row(children: [
                                 Text('${Strings.t(lang, 'initial_balance')}: ', style: TextStyle(color: context.textFaint, fontSize: 11)),
-                                NumberFlow(value: card.initialBalance, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: TextStyle(fontFamily: 'Satoshi', color: context.textFaint, fontSize: 11, letterSpacing: -0.5)),
+                                NumberFlow(value: card.initialBalance, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: TextStyle(fontFamily: 'Satoshi', color: context.textFaint, fontSize: 11, letterSpacing: -1.0)),
                               ]),
                             ],
                           ),
@@ -3208,7 +3208,7 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Text(Strings.t(lang, 'total_outstanding'), style: TextStyle(color: context.textMuted, fontSize: 11)),
                         const SizedBox(height: 6),
-                        NumberFlow(value: totalOutstanding, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: TextStyle(fontFamily: 'Satoshi', color: context.textPrimary, fontWeight: FontWeight.bold, fontSize: 15, letterSpacing: -0.5)),
+                        NumberFlow(value: totalOutstanding, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: TextStyle(fontFamily: 'Satoshi', color: context.textPrimary, fontWeight: FontWeight.bold, fontSize: 15, letterSpacing: -1.5)),
                       ]),
                     ),
                     Container(width: 1, height: 36, color: context.borderColor),
@@ -3218,7 +3218,7 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                           Text(Strings.t(lang, 'total_interest_collected'), style: TextStyle(color: context.textMuted, fontSize: 11)),
                           const SizedBox(height: 6),
-                          NumberFlow(value: totalInterest, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: const TextStyle(fontFamily: 'Satoshi', color: Color(0xFF24A148), fontWeight: FontWeight.bold, fontSize: 15, letterSpacing: -0.5)),
+                          NumberFlow(value: totalInterest, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: const TextStyle(fontFamily: 'Satoshi', color: Color(0xFF24A148), fontWeight: FontWeight.bold, fontSize: 15, letterSpacing: -1.5)),
                         ]),
                       ),
                     ),
@@ -3282,7 +3282,7 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
                                           const SizedBox(height: 4),
                                           Row(children: [
                                             Text('${Strings.t(lang, 'remaining_principal')}: ', style: TextStyle(color: context.textMuted, fontSize: 12)),
-                                            NumberFlow(value: loan.remainingPrincipal, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: TextStyle(fontFamily: 'Satoshi', color: context.textMuted, fontSize: 12, letterSpacing: -0.5)),
+                                            NumberFlow(value: loan.remainingPrincipal, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: TextStyle(fontFamily: 'Satoshi', color: context.textMuted, fontSize: 12, letterSpacing: -1.0)),
                                           ]),
                                           if (sourceName.isNotEmpty) Text(sourceName, style: TextStyle(color: context.textFaint, fontSize: 11)),
                                         ],
@@ -3305,7 +3305,7 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
                                         const SizedBox(height: 6),
                                         Row(children: [
                                           Text('${loan.interestPercent}% / ', style: TextStyle(color: context.textFaint, fontSize: 11, fontWeight: FontWeight.w600)),
-                                          NumberFlow(value: loan.currentInterest, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: TextStyle(fontFamily: 'Satoshi', color: context.textFaint, fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: -0.5)),
+                                          NumberFlow(value: loan.currentInterest, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: TextStyle(fontFamily: 'Satoshi', color: context.textFaint, fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: -1.0)),
                                         ]),
                                       ],
                                     ),
