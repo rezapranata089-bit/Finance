@@ -156,6 +156,7 @@ class Loan {
   final LoanStatus status;
   final String note;
   final int cardIndex;
+  final int sourceCardIndex;
   final List<LoanPayment> payments;
 
   const Loan({
@@ -168,6 +169,7 @@ class Loan {
     required this.startDate,
     required this.status,
     required this.cardIndex,
+    required this.sourceCardIndex,
     this.note = '',
     this.payments = const [],
   });
@@ -190,6 +192,7 @@ class Loan {
     LoanStatus? status,
     String? note,
     int? cardIndex,
+    int? sourceCardIndex,
     List<LoanPayment>? payments,
   }) =>
       Loan(
@@ -203,6 +206,7 @@ class Loan {
         status: status ?? this.status,
         note: note ?? this.note,
         cardIndex: cardIndex ?? this.cardIndex,
+        sourceCardIndex: sourceCardIndex ?? this.sourceCardIndex,
         payments: payments ?? this.payments,
       );
 
@@ -217,6 +221,7 @@ class Loan {
         'status': status.name,
         'note': note,
         'cardIndex': cardIndex,
+        'sourceCardIndex': sourceCardIndex,
         'payments': payments.map((p) => p.toJson()).toList(),
       };
 
@@ -231,6 +236,7 @@ class Loan {
         status: LoanStatus.values.firstWhere((s) => s.name == json['status'], orElse: () => LoanStatus.active),
         note: json['note'] as String? ?? '',
         cardIndex: json['cardIndex'] as int? ?? 0,
+        sourceCardIndex: json['sourceCardIndex'] as int? ?? 0,
         payments: (json['payments'] as List? ?? []).map((e) => LoanPayment.fromJson(e as Map<String, dynamic>)).toList(),
       );
 }
@@ -268,6 +274,7 @@ class LoansNotifier extends StateNotifier<List<Loan>> {
     required LoanInterestType interestType,
     required DateTime startDate,
     required String note,
+    required int sourceCardIndex,
   }) {
     final cardIndex = ref.read(cardsProvider.notifier).ensurePiutangCard();
     final loan = Loan(
@@ -281,6 +288,7 @@ class LoansNotifier extends StateNotifier<List<Loan>> {
       status: LoanStatus.active,
       note: note,
       cardIndex: cardIndex,
+      sourceCardIndex: sourceCardIndex,
     );
     state = [loan, ...state];
     _persist();
@@ -291,7 +299,7 @@ class LoansNotifier extends StateNotifier<List<Loan>> {
           category: 'Pinjaman Diberikan',
           note: note,
           date: startDate,
-          cardIndex: cardIndex,
+          cardIndex: sourceCardIndex,
         );
   }
 
@@ -315,37 +323,41 @@ class LoansNotifier extends StateNotifier<List<Loan>> {
     _persist();
   }
 
-  void recordPayment(String id, {required double interestAmount, required double principalAmount, required DateTime date, required String note}) {
+  void recordPayment(String id, {required bool isInterest, required double amount, required DateTime date, required String note}) {
     final idx = state.indexWhere((l) => l.id == id);
     if (idx == -1) return;
     final loan = state[idx];
-    final newRemaining = (loan.remainingPrincipal - principalAmount).clamp(0, loan.principal).toDouble();
-    final newStatus = newRemaining <= 0 ? LoanStatus.paid : loan.status;
-    final payment = LoanPayment(date: date, interestAmount: interestAmount, principalAmount: principalAmount, note: note);
-    final list = [...state];
-    list[idx] = loan.copyWith(remainingPrincipal: newRemaining, status: newStatus, payments: [...loan.payments, payment]);
-    state = list;
-    _persist();
-    if (interestAmount > 0) {
+    if (isInterest) {
+      final payment = LoanPayment(date: date, interestAmount: amount, principalAmount: 0, note: note);
+      final list = [...state];
+      list[idx] = loan.copyWith(payments: [...loan.payments, payment]);
+      state = list;
+      _persist();
       ref.read(transactionsProvider.notifier).add(
             title: 'Bunga · ${loan.borrowerName}',
-            amount: interestAmount,
+            amount: amount,
             income: true,
             category: 'Bunga Pinjaman',
             note: note,
             date: date,
             cardIndex: loan.cardIndex,
           );
-    }
-    if (principalAmount > 0) {
+    } else {
+      final newRemaining = (loan.remainingPrincipal - amount).clamp(0, loan.principal).toDouble();
+      final newStatus = newRemaining <= 0 ? LoanStatus.paid : loan.status;
+      final payment = LoanPayment(date: date, interestAmount: 0, principalAmount: amount, note: note);
+      final list = [...state];
+      list[idx] = loan.copyWith(remainingPrincipal: newRemaining, status: newStatus, payments: [...loan.payments, payment]);
+      state = list;
+      _persist();
       ref.read(transactionsProvider.notifier).add(
             title: 'Cicilan Pokok · ${loan.borrowerName}',
-            amount: principalAmount,
+            amount: amount,
             income: true,
             category: 'Cicilan Pokok',
             note: note,
             date: date,
-            cardIndex: loan.cardIndex,
+            cardIndex: loan.sourceCardIndex,
           );
     }
   }
@@ -627,6 +639,8 @@ class Strings {
     'delete_loan_confirm': {AppLang.en: 'Delete loan for "{name}"? This cannot be undone.', AppLang.id: 'Hapus pinjaman "{name}"? Tindakan ini tidak bisa dibatalkan.'},
     'total_outstanding': {AppLang.en: 'Total outstanding', AppLang.id: 'Total piutang beredar'},
     'total_interest_collected': {AppLang.en: 'Total interest collected', AppLang.id: 'Total bunga terkumpul'},
+    'loan_source_card': {AppLang.en: 'Funding source', AppLang.id: 'Sumber dana'},
+    'select_borrower_first': {AppLang.en: 'Please select a borrower first', AppLang.id: 'Pilih peminjam terlebih dahulu'},
   };
 
   static String t(AppLang lang, String key) => _s[key]?[lang] ?? key;
@@ -2394,12 +2408,18 @@ Future<void> showTransactionForm(BuildContext context, WidgetRef ref, bool incom
   final rawSelectedCard = ref.read(selectedCardProvider);
   int cardIndex = existing?.cardIndex ?? (rawSelectedCard >= 0 && rawSelectedCard < cards.length ? rawSelectedCard : 0);
   if (cardIndex < 0 || cardIndex >= cards.length) cardIndex = 0;
+  final loans = ref.read(loansProvider);
+  String? selectedLoanId;
+  bool payIsInterest = true;
   await showModalBottomSheet(
     context: context,
     isScrollControlled: true,
     backgroundColor: context.cardColor,
     shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
-    builder: (sheetContext) => StatefulBuilder(builder: (context, setModalState) => Padding(
+    builder: (sheetContext) => StatefulBuilder(builder: (context, setModalState) {
+      final isPiutangFlow = !isEdit && effectiveIncome && cardIndex >= 0 && cardIndex < cards.length && cards[cardIndex].type == CardType.piutang;
+      final payableLoans = loans.where((l) => l.status != LoanStatus.paid).toList();
+      return Padding(
     padding: EdgeInsets.fromLTRB(20, 22, 20, MediaQuery.viewInsetsOf(context).bottom + 24),
     child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
       Text(Strings.t(lang, isEdit ? (effectiveIncome ? 'edit_income' : 'edit_expense') : (effectiveIncome ? 'add_income' : 'add_expense')), style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 28, color: context.textPrimary)),
@@ -2408,22 +2428,54 @@ Future<void> showTransactionForm(BuildContext context, WidgetRef ref, bool incom
       const SizedBox(height: 18),
       ShakeField(
         key: amountShakeKey,
-        child: TextField(controller: amount, keyboardType: TextInputType.number, inputFormatters: [FilteringTextInputFormatter.digitsOnly, ThousandsInputFormatter()], decoration: InputDecoration(labelText: Strings.t(lang, 'amount'), prefixText: 'Rp ', errorText: amountError)),
+        child: TextField(controller: amount, keyboardType: TextInputType.number, inputFormatters: [FilteringTextInputFormatter.digitsOnly, ThousandsInputFormatter()], decoration: InputDecoration(labelText: isPiutangFlow ? Strings.t(lang, payIsInterest ? 'interest_paid' : 'principal_paid') : Strings.t(lang, 'amount'), prefixText: 'Rp ', errorText: amountError)),
       ),
       const SizedBox(height: 12),
-      ShakeField(
-        key: titleShakeKey,
-        child: TextField(controller: title, decoration: InputDecoration(labelText: Strings.t(lang, 'transaction_title_field'), errorText: titleError)),
-      ),
-      const SizedBox(height: 12),
-      DropdownButtonFormField<String>(value: category, decoration: InputDecoration(labelText: Strings.t(lang, 'category')), items: catKeys.map((k) => DropdownMenuItem(value: Strings.t(AppLang.en, k), child: Text(Strings.t(lang, k)))).toList(), onChanged: (v) => setModalState(() => category = v!)),
-      const SizedBox(height: 12),
+      if (!isPiutangFlow) ...[
+        ShakeField(
+          key: titleShakeKey,
+          child: TextField(controller: title, decoration: InputDecoration(labelText: Strings.t(lang, 'transaction_title_field'), errorText: titleError)),
+        ),
+        const SizedBox(height: 12),
+        DropdownButtonFormField<String>(value: category, decoration: InputDecoration(labelText: Strings.t(lang, 'category')), items: catKeys.map((k) => DropdownMenuItem(value: Strings.t(AppLang.en, k), child: Text(Strings.t(lang, k)))).toList(), onChanged: (v) => setModalState(() => category = v!)),
+        const SizedBox(height: 12),
+      ],
       DropdownButtonFormField<int>(
         value: cardIndex,
         decoration: InputDecoration(labelText: Strings.t(lang, 'use_card')),
         items: cards.asMap().entries.map((e) => DropdownMenuItem(value: e.key, child: Text(e.value.name))).toList(),
-        onChanged: (v) => setModalState(() => cardIndex = v!),
+        onChanged: (v) => setModalState(() {
+          cardIndex = v!;
+          selectedLoanId = null;
+        }),
       ),
+      if (isPiutangFlow) ...[
+        const SizedBox(height: 12),
+        DropdownButtonFormField<String>(
+          value: selectedLoanId,
+          decoration: InputDecoration(labelText: Strings.t(lang, 'borrower_name')),
+          items: payableLoans.map((l) => DropdownMenuItem(value: l.id, child: Text(l.borrowerName))).toList(),
+          onChanged: (v) => setModalState(() => selectedLoanId = v),
+        ),
+        const SizedBox(height: 12),
+        Row(children: [
+          Expanded(
+            child: ChoiceChip(
+              label: Text(Strings.t(lang, 'interest_paid'), style: const TextStyle(fontSize: 11)),
+              selected: payIsInterest,
+              onSelected: (_) => setModalState(() => payIsInterest = true),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: ChoiceChip(
+              label: Text(Strings.t(lang, 'principal_paid'), style: const TextStyle(fontSize: 11)),
+              selected: !payIsInterest,
+              onSelected: (_) => setModalState(() => payIsInterest = false),
+            ),
+          ),
+        ]),
+      ],
       const SizedBox(height: 12),
       GestureDetector(
         onTap: () async {
@@ -2453,6 +2505,25 @@ Future<void> showTransactionForm(BuildContext context, WidgetRef ref, bool incom
       const SizedBox(height: 18),
       SizedBox(width: double.infinity, child: FilledButton(onPressed: () {
         final value = double.tryParse(amount.text.replaceAll('.', '')) ?? 0;
+        if (isPiutangFlow) {
+          final hasAmountError = value <= 0;
+          if (hasAmountError || selectedLoanId == null) {
+            setModalState(() {
+              amountError = hasAmountError ? Strings.t(lang, 'field_required') : null;
+            });
+            if (hasAmountError) amountShakeKey.currentState?.shake();
+            if (selectedLoanId == null) {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(Strings.t(lang, 'select_borrower_first'))));
+            }
+            Future.delayed(const Duration(milliseconds: 3000), () {
+              if (context.mounted) setModalState(() => amountError = null);
+            });
+            return;
+          }
+          ref.read(loansProvider.notifier).recordPayment(selectedLoanId!, isInterest: payIsInterest, amount: value, date: selectedDate, note: note.text.trim());
+          Navigator.pop(sheetContext);
+          return;
+        }
         final hasAmountError = value <= 0;
         final hasTitleError = title.text.trim().isEmpty;
         if (hasAmountError || hasTitleError) {
@@ -2480,7 +2551,9 @@ Future<void> showTransactionForm(BuildContext context, WidgetRef ref, bool incom
         Navigator.pop(sheetContext);
       }, child: Text(Strings.t(lang, isEdit ? 'save_changes' : 'save_transaction')))),
     ]),
-  )));
+      );
+    }),
+  );
 }
 
 void showTransactionActions(BuildContext context, WidgetRef ref, FinanceTransaction item) {
@@ -2838,6 +2911,7 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
   Widget build(BuildContext context) {
     final lang = ref.watch(langProvider);
     final loans = ref.watch(loansProvider);
+    final cards = ref.watch(cardsProvider);
     final isDark = context.isDark;
     final primary = Theme.of(context).colorScheme.primary;
     final tertiary = Theme.of(context).colorScheme.tertiary;
@@ -2950,45 +3024,71 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
                       separatorBuilder: (_, __) => const SizedBox(height: 12),
                       itemBuilder: (context, i) {
                         final loan = filtered[i];
+                        final sourceName = (loan.sourceCardIndex >= 0 && loan.sourceCardIndex < cards.length) ? cards[loan.sourceCardIndex].name : '';
                         return GestureDetector(
-                          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => LoanDetailPage(loanId: loan.id))),
+                          onTap: () => showLoanForm(context: context, ref: ref, existing: loan),
                           child: Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(20), border: Border.all(color: context.borderColor)),
-                            child: Row(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Container(
-                                  width: 44, height: 44,
-                                  decoration: BoxDecoration(color: isDark ? primary.withOpacity(0.18) : tertiary, shape: BoxShape.circle),
-                                  child: Icon(SolarIconsOutline.usersGroupTwoRounded, color: primary, size: 20),
-                                ),
-                                const SizedBox(width: 14),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(loan.borrowerName, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: context.textPrimary)),
-                                      const SizedBox(height: 4),
-                                      Text('${Strings.t(lang, 'remaining_principal')}: ${rupiah(loan.remainingPrincipal)}', style: TextStyle(color: context.textMuted, fontSize: 12)),
-                                    ],
-                                  ),
-                                ),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.end,
+                                Row(
                                   children: [
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        color: (loan.status == LoanStatus.active ? const Color(0xFF24A148) : loan.status == LoanStatus.paid ? primary : Colors.grey).withOpacity(0.14),
-                                        borderRadius: BorderRadius.circular(20),
-                                      ),
-                                      child: Text(
-                                        Strings.t(lang, loan.status == LoanStatus.active ? 'loan_active' : loan.status == LoanStatus.paid ? 'loan_paid' : 'loan_inactive'),
-                                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: loan.status == LoanStatus.active ? const Color(0xFF24A148) : loan.status == LoanStatus.paid ? primary : Colors.grey),
+                                      width: 44, height: 44,
+                                      decoration: BoxDecoration(color: isDark ? primary.withOpacity(0.18) : tertiary, shape: BoxShape.circle),
+                                      child: Icon(SolarIconsOutline.usersGroupTwoRounded, color: primary, size: 20),
+                                    ),
+                                    const SizedBox(width: 14),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(loan.borrowerName, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: context.textPrimary)),
+                                          const SizedBox(height: 4),
+                                          Text('${Strings.t(lang, 'remaining_principal')}: ${rupiah(loan.remainingPrincipal)}', style: TextStyle(color: context.textMuted, fontSize: 12)),
+                                          if (sourceName.isNotEmpty) Text(sourceName, style: TextStyle(color: context.textFaint, fontSize: 11)),
+                                        ],
                                       ),
                                     ),
-                                    const SizedBox(height: 6),
-                                    Text(rupiah(loan.currentInterest), style: TextStyle(color: context.textFaint, fontSize: 11, fontWeight: FontWeight.w600)),
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.end,
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                          decoration: BoxDecoration(
+                                            color: (loan.status == LoanStatus.active ? const Color(0xFF24A148) : loan.status == LoanStatus.paid ? primary : Colors.grey).withOpacity(0.14),
+                                            borderRadius: BorderRadius.circular(20),
+                                          ),
+                                          child: Text(
+                                            Strings.t(lang, loan.status == LoanStatus.active ? 'loan_active' : loan.status == LoanStatus.paid ? 'loan_paid' : 'loan_inactive'),
+                                            style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: loan.status == LoanStatus.active ? const Color(0xFF24A148) : loan.status == LoanStatus.paid ? primary : Colors.grey),
+                                          ),
+                                        ),
+                                        const SizedBox(height: 6),
+                                        Text('${loan.interestPercent}% / ${rupiah(loan.currentInterest)}', style: TextStyle(color: context.textFaint, fontSize: 11, fontWeight: FontWeight.w600)),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 10),
+                                Divider(height: 1, color: context.borderColor),
+                                const SizedBox(height: 8),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  children: [
+                                    TextButton.icon(
+                                      onPressed: loan.status == LoanStatus.paid ? null : () => ref.read(loansProvider.notifier).toggleActive(loan.id),
+                                      icon: Icon(loan.status == LoanStatus.inactive ? Icons.play_arrow : Icons.pause, size: 16),
+                                      label: Text(Strings.t(lang, loan.status == LoanStatus.inactive ? 'loan_active' : 'toggle_active'), style: const TextStyle(fontSize: 12)),
+                                    ),
+                                    TextButton.icon(
+                                      onPressed: () => _confirmDeleteLoan(context, ref, loan),
+                                      style: TextButton.styleFrom(foregroundColor: Colors.redAccent),
+                                      icon: const Icon(Icons.delete_outline, size: 16),
+                                      label: Text(Strings.t(lang, 'delete'), style: const TextStyle(fontSize: 12)),
+                                    ),
                                   ],
                                 ),
                               ],
@@ -2997,172 +3097,6 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
                         );
                       },
                     ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class LoanDetailPage extends ConsumerWidget {
-  final String loanId;
-  const LoanDetailPage({super.key, required this.loanId});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final lang = ref.watch(langProvider);
-    final loans = ref.watch(loansProvider);
-    final loan = loans.firstWhere((l) => l.id == loanId, orElse: () => loans.first);
-    final isDark = context.isDark;
-    final primary = Theme.of(context).colorScheme.primary;
-
-    return Scaffold(
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: LiquidGlass(
-                      borderRadius: 999,
-                      tint: isDark ? Colors.black : null,
-                      intensity: isDark ? 1.6 : 1.0,
-                      borderColor: isDark ? context.borderColor : null,
-                      child: Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: Icon(SolarIconsOutline.arrowLeft, size: 20, color: context.textPrimary),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(child: Text(loan.borrowerName, style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: context.textPrimary))),
-                  IconButton(
-                    onPressed: () => showLoanForm(context: context, ref: ref, existing: loan),
-                    icon: Icon(Icons.edit_outlined, color: context.iconMuted),
-                  ),
-                  IconButton(
-                    onPressed: () => _confirmDeleteLoan(context, ref, loan),
-                    icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
-                  ),
-                ],
-              ),
-            ),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(18),
-                    decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(22), border: Border.all(color: context.borderColor)),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(Strings.t(lang, 'remaining_principal'), style: TextStyle(color: context.textMuted, fontSize: 12)),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: (loan.status == LoanStatus.active ? const Color(0xFF24A148) : loan.status == LoanStatus.paid ? primary : Colors.grey).withOpacity(0.14),
-                                borderRadius: BorderRadius.circular(20),
-                              ),
-                              child: Text(
-                                Strings.t(lang, loan.status == LoanStatus.active ? 'loan_active' : loan.status == LoanStatus.paid ? 'loan_paid' : 'loan_inactive'),
-                                style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: loan.status == LoanStatus.active ? const Color(0xFF24A148) : loan.status == LoanStatus.paid ? primary : Colors.grey),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 6),
-                        Text(rupiah(loan.remainingPrincipal), style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: context.textPrimary)),
-                        const SizedBox(height: 4),
-                        Text('${Strings.t(lang, 'principal_amount')}: ${rupiah(loan.principal)}', style: TextStyle(color: context.textFaint, fontSize: 12)),
-                        const SizedBox(height: 14),
-                        Divider(color: context.borderColor),
-                        const SizedBox(height: 10),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(Strings.t(lang, 'interest_percent'), style: TextStyle(color: context.textMuted, fontSize: 12)),
-                            Text('${loan.interestPercent}%', style: TextStyle(fontWeight: FontWeight.w700, color: context.textPrimary)),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(Strings.t(lang, 'interest_type'), style: TextStyle(color: context.textMuted, fontSize: 12)),
-                            Text(Strings.t(lang, loan.interestType == LoanInterestType.declining ? 'interest_declining' : 'interest_flat'), style: TextStyle(fontWeight: FontWeight.w700, color: context.textPrimary, fontSize: 12)),
-                          ],
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(Strings.t(lang, 'current_interest'), style: TextStyle(color: context.textMuted, fontSize: 12)),
-                            Text(rupiah(loan.currentInterest), style: const TextStyle(fontWeight: FontWeight.w800, color: Color(0xFF24A148))),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: FilledButton.icon(
-                          onPressed: loan.status == LoanStatus.paid ? null : () => showPaymentForm(context: context, ref: ref, loan: loan),
-                          icon: const Icon(Icons.add, size: 18),
-                          label: Text(Strings.t(lang, 'record_payment')),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      OutlinedButton.icon(
-                        onPressed: loan.status == LoanStatus.paid ? null : () => ref.read(loansProvider.notifier).toggleActive(loan.id),
-                        icon: Icon(loan.status == LoanStatus.inactive ? Icons.play_arrow : Icons.pause, size: 18),
-                        label: Text(Strings.t(lang, loan.status == LoanStatus.inactive ? 'loan_active' : 'toggle_active')),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  SectionTitle(Strings.t(lang, 'payment_history')),
-                  const SizedBox(height: 12),
-                  if (loan.payments.isEmpty)
-                    Text(Strings.t(lang, 'no_payments_yet'), style: TextStyle(color: context.textMuted, fontSize: 13))
-                  else
-                    ...loan.payments.reversed.map((p) => Container(
-                          margin: const EdgeInsets.only(bottom: 10),
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(16), border: Border.all(color: context.borderColor)),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(DateFormat('d MMM yyyy').format(p.date), style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: context.textPrimary)),
-                                    if (p.note.isNotEmpty) Text(p.note, style: TextStyle(color: context.textFaint, fontSize: 11)),
-                                  ],
-                                ),
-                              ),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  if (p.interestAmount > 0) Text('+${rupiah(p.interestAmount)} (${Strings.t(lang, 'interest_paid')})', style: const TextStyle(color: Color(0xFF24A148), fontSize: 11, fontWeight: FontWeight.w700)),
-                                  if (p.principalAmount > 0) Text('+${rupiah(p.principalAmount)} (${Strings.t(lang, 'principal_paid')})', style: TextStyle(color: primary, fontSize: 11, fontWeight: FontWeight.w700)),
-                                ],
-                              ),
-                            ],
-                          ),
-                        )),
-                ],
-              ),
             ),
           ],
         ),
@@ -3183,7 +3117,6 @@ class LoanDetailPage extends ConsumerWidget {
             onPressed: () {
               ref.read(loansProvider.notifier).removeLoan(loan.id);
               Navigator.pop(dialogContext);
-              Navigator.pop(context);
             },
             child: Text(Strings.t(lang, 'delete'), style: const TextStyle(color: Colors.redAccent)),
           ),
@@ -3192,6 +3125,8 @@ class LoanDetailPage extends ConsumerWidget {
     );
   }
 }
+
+
 
 Future<void> showLoanForm({required BuildContext context, required WidgetRef ref, Loan? existing}) async {
   final isEdit = existing != null;
@@ -3206,6 +3141,9 @@ Future<void> showLoanForm({required BuildContext context, required WidgetRef ref
   final principalShakeKey = GlobalKey<ShakeFieldState>();
   String? nameError;
   String? principalError;
+  final cards = ref.read(cardsProvider);
+  final nonPiutangCards = cards.asMap().entries.where((e) => e.value.type != CardType.piutang).toList();
+  int sourceCardIndex = existing?.sourceCardIndex ?? (nonPiutangCards.isNotEmpty ? nonPiutangCards.first.key : 0);
 
   await showModalBottomSheet(
     context: context,
@@ -3230,6 +3168,15 @@ Future<void> showLoanForm({required BuildContext context, required WidgetRef ref
               decoration: InputDecoration(labelText: Strings.t(lang, 'principal_amount'), prefixText: 'Rp ', errorText: principalError),
             ),
           ),
+          if (!isEdit) ...[
+            const SizedBox(height: 12),
+            DropdownButtonFormField<int>(
+              value: sourceCardIndex,
+              decoration: InputDecoration(labelText: Strings.t(lang, 'loan_source_card')),
+              items: nonPiutangCards.map((e) => DropdownMenuItem(value: e.key, child: Text(e.value.name))).toList(),
+              onChanged: (v) => setModalState(() => sourceCardIndex = v!),
+            ),
+          ],
           const SizedBox(height: 12),
           TextField(
             controller: percentCtrl,
@@ -3306,6 +3253,7 @@ Future<void> showLoanForm({required BuildContext context, required WidgetRef ref
                         interestType: interestType,
                         startDate: startDate,
                         note: noteCtrl.text.trim(),
+                        sourceCardIndex: sourceCardIndex,
                       );
                 }
                 Navigator.pop(sheetContext);
@@ -3319,90 +3267,6 @@ Future<void> showLoanForm({required BuildContext context, required WidgetRef ref
   );
 }
 
-Future<void> showPaymentForm({required BuildContext context, required WidgetRef ref, required Loan loan}) async {
-  final lang = ref.read(langProvider);
-  final interestCtrl = TextEditingController(text: NumberFormat('#,###', 'id_ID').format(loan.currentInterest).replaceAll(',', '.'));
-  final principalCtrl = TextEditingController(text: '0');
-  final noteCtrl = TextEditingController();
-  DateTime paymentDate = DateTime.now();
-  bool payFull = false;
 
-  await showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: context.cardColor,
-    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
-    builder: (sheetContext) => StatefulBuilder(builder: (context, setModalState) => Padding(
-      padding: EdgeInsets.fromLTRB(20, 22, 20, MediaQuery.viewInsetsOf(context).bottom + 24),
-      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(Strings.t(lang, 'record_payment'), style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 26, color: context.textPrimary)),
-        const SizedBox(height: 6),
-        Text('${Strings.t(lang, 'remaining_principal')}: ${rupiah(loan.remainingPrincipal)}', style: TextStyle(color: context.textMuted, fontSize: 13)),
-        const SizedBox(height: 18),
-        TextField(
-          controller: interestCtrl,
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly, ThousandsInputFormatter()],
-          decoration: InputDecoration(labelText: Strings.t(lang, 'interest_paid'), prefixText: 'Rp '),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: principalCtrl,
-          enabled: !payFull,
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly, ThousandsInputFormatter()],
-          decoration: InputDecoration(labelText: Strings.t(lang, 'principal_paid'), prefixText: 'Rp '),
-        ),
-        const SizedBox(height: 8),
-        Row(children: [
-          Switch(
-            value: payFull,
-            onChanged: (v) => setModalState(() {
-              payFull = v;
-              if (v) principalCtrl.text = NumberFormat('#,###', 'id_ID').format(loan.remainingPrincipal).replaceAll(',', '.');
-            }),
-          ),
-          Expanded(child: Text(Strings.t(lang, 'pay_full_remaining'), style: TextStyle(fontSize: 12, color: context.textMuted))),
-        ]),
-        const SizedBox(height: 8),
-        GestureDetector(
-          onTap: () async {
-            final picked = await showDatePicker(context: context, initialDate: paymentDate, firstDate: DateTime(2000), lastDate: DateTime(2100));
-            if (picked != null) setModalState(() => paymentDate = picked);
-          },
-          child: InputDecorator(
-            decoration: InputDecoration(labelText: Strings.t(lang, 'date')),
-            child: Row(children: [
-              Icon(Icons.calendar_today_outlined, size: 16, color: context.iconMuted),
-              const SizedBox(width: 10),
-              Text(DateFormat('d MMM yyyy').format(paymentDate), style: TextStyle(fontSize: 14, color: context.textPrimary, fontWeight: FontWeight.w500)),
-            ]),
-          ),
-        ),
-        const SizedBox(height: 12),
-        TextField(controller: noteCtrl, decoration: InputDecoration(labelText: Strings.t(lang, 'note_optional'))),
-        const SizedBox(height: 18),
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton(
-            onPressed: () {
-              final interestValue = double.tryParse(interestCtrl.text.replaceAll('.', '')) ?? 0;
-              final principalValue = double.tryParse(principalCtrl.text.replaceAll('.', '')) ?? 0;
-              ref.read(loansProvider.notifier).recordPayment(
-                    loan.id,
-                    interestAmount: interestValue,
-                    principalAmount: principalValue,
-                    date: paymentDate,
-                    note: noteCtrl.text.trim(),
-                  );
-              Navigator.pop(sheetContext);
-            },
-            child: Text(Strings.t(lang, 'save_payment')),
-          ),
-        ),
-      ]),
-    )),
-  );
-}
 
 String rupiah(double value) => 'Rp ${NumberFormat('#,###', 'id_ID').format(value).replaceAll(',', '.')}';
