@@ -1122,7 +1122,7 @@ class HomePage extends ConsumerWidget {
                     _actionBtn(context, SolarIconsOutline.arrowRightUp, Strings.t(lang, 'send'), primaryStyle: true, onTap: () => showTransactionForm(context, ref, false)),
                     _actionBtn(context, SolarIconsOutline.arrowLeftDown, Strings.t(lang, 'request'), primaryStyle: false, blackGlassInDark: true, onTap: () => showTransactionForm(context, ref, true)),
                     _actionBtn(context, SolarIconsOutline.transferHorizontal, Strings.t(lang, 'exchange'), primaryStyle: false, blackGlassInDark: true, onTap: () => ref.read(tabProvider.notifier).state = 2),
-                    _actionBtn(context, SolarIconsOutline.menuDots, Strings.t(lang, 'more'), primaryStyle: false, blackGlassInDark: true, onTap: () => ref.read(tabProvider.notifier).state = 3),
+                    const MoreMorphMenu(),
                   ],
                 ),
               ],
@@ -1451,6 +1451,189 @@ class _MorphMenuContent extends ConsumerWidget {
                   minLeadingWidth: 0,
                   leading: Icon(item.$1, size: 18, color: primary),
                   title: Text(item.$2, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: context.textPrimary)),
+                ))
+            .toList(),
+      ),
+    );
+  }
+}
+
+class MoreMorphMenu extends ConsumerStatefulWidget {
+  const MoreMorphMenu({super.key});
+  @override
+  ConsumerState<MoreMorphMenu> createState() => _MoreMorphMenuState();
+}
+
+class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> with SingleTickerProviderStateMixin {
+  final LayerLink _link = LayerLink();
+  OverlayEntry? _entry;
+  late final AnimationController _controller = AnimationController(vsync: this, value: 0);
+  bool _open = false;
+
+  static const _closedSize = Size(68, 42);
+  static const _openSize = Size(210, 208);
+  static const _openCurve = Cubic(0.34, 1.25, 0.64, 1.0);
+  static const _closeCurve = Cubic(0.22, 1.0, 0.36, 1.0);
+
+  @override
+  void dispose() {
+    _removeOverlay();
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _removeOverlay() {
+    _entry?.remove();
+    _entry = null;
+  }
+
+  Future<void> _toggle() async {
+    if (_open) {
+      await _controller.animateTo(0, duration: const Duration(milliseconds: 250), curve: _closeCurve);
+      _removeOverlay();
+      setState(() => _open = false);
+      return;
+    }
+    setState(() => _open = true);
+    _entry = OverlayEntry(
+      builder: (overlayContext) => Stack(
+        children: [
+          Positioned.fill(child: GestureDetector(behavior: HitTestBehavior.translucent, onTap: _toggle)),
+          CompositedTransformFollower(
+            link: _link,
+            targetAnchor: Alignment.topLeft,
+            followerAnchor: Alignment.topLeft,
+            child: RepaintBoundary(
+              child: AnimatedBuilder(
+                animation: _controller,
+                child: _MoreMorphContent(onSelect: _select),
+                builder: (context, menuChild) {
+                  final t = _controller.value.clamp(0.0, 1.0);
+                  final size = Size.lerp(_closedSize, _openSize, t)!;
+                  const radius = 16.0;
+                  final iconOpacity = (1 - t / 0.45).clamp(0.0, 1.0);
+                  final menuOpacity = ((t - 0.35) / 0.65).clamp(0.0, 1.0);
+                  final menuOffset = (1 - menuOpacity) * 14;
+                  final glassT = Curves.easeOut.transform(t);
+                  final showBlur = glassT > 0.85;
+                  final isDark = context.isDark;
+                  return Material(
+                    color: Colors.transparent,
+                    child: SizedBox(
+                      width: size.width,
+                      height: size.height,
+                      child: LiquidGlass(
+                        borderRadius: radius,
+                        tint: isDark ? Colors.black : context.cardColor,
+                        intensity: isDark ? 1.6 : 1.0,
+                        blur: 6,
+                        useBlur: showBlur,
+                        borderColor: isDark ? context.borderColor : null,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(radius),
+                          child: Stack(
+                            children: [
+                              if (iconOpacity > 0)
+                                Positioned(
+                                  top: 0, left: 0, width: _closedSize.width, height: _closedSize.height,
+                                  child: Opacity(
+                                    opacity: iconOpacity,
+                                    child: Center(
+                                      child: Icon(SolarIconsOutline.menuDots, size: 22, color: isDark ? Colors.white : context.textPrimary),
+                                    ),
+                                  ),
+                                ),
+                              if (menuOpacity > 0)
+                                Opacity(
+                                  opacity: menuOpacity,
+                                  child: Transform.translate(
+                                    offset: Offset(0, menuOffset),
+                                    child: menuChild,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    Overlay.of(context).insert(_entry!);
+    await _controller.animateTo(1, duration: const Duration(milliseconds: 350), curve: _openCurve);
+  }
+
+  void _select(VoidCallback action) {
+    _toggle();
+    action();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = context.isDark;
+    final lang = ref.watch(langProvider);
+    return CompositedTransformTarget(
+      link: _link,
+      child: GestureDetector(
+        onTap: _toggle,
+        child: Opacity(
+          opacity: _open ? 0 : 1,
+          child: Column(
+            children: [
+              SizedBox(
+                width: _closedSize.width,
+                height: _closedSize.height,
+                child: LiquidGlass(
+                  borderRadius: 16,
+                  tint: isDark ? Colors.black : null,
+                  intensity: isDark ? 1.6 : 1.0,
+                  borderColor: isDark ? context.borderColor : null,
+                  child: Center(
+                    child: Icon(SolarIconsOutline.menuDots, color: isDark ? Colors.white : context.textPrimary, size: 22),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(Strings.t(lang, 'more'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: context.textPrimary)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _MoreMorphContent extends ConsumerWidget {
+  final void Function(VoidCallback action) onSelect;
+  const _MoreMorphContent({required this.onSelect});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(langProvider);
+    final primary = Theme.of(context).colorScheme.primary;
+    final items = [
+      (SolarIconsOutline.wallet, Strings.t(lang, 'account_wallet'), () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CardManagementPage()))),
+      (SolarIconsOutline.usersGroupTwoRounded, Strings.t(lang, 'receivables'), () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoanManagementPage()))),
+      (SolarIconsOutline.arrowLeftDown, Strings.t(lang, 'add_income'), () => showTransactionForm(context, ref, true)),
+      (SolarIconsOutline.arrowRightUp, Strings.t(lang, 'add_expense'), () => showTransactionForm(context, ref, false)),
+      (SolarIconsOutline.bell, Strings.t(lang, 'notifications'), () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsPage()))),
+    ];
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: items
+            .map<Widget>((item) => _MorphRow(
+                  onTap: () => onSelect(item.$3),
+                  leading: Icon(item.$1, size: 18, color: primary),
+                  label: item.$2,
+                  labelColor: context.textPrimary,
                 ))
             .toList(),
       ),
