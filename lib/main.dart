@@ -1587,15 +1587,15 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> with SingleTicker
   Widget build(BuildContext context) {
     final isDark = context.isDark;
     final lang = ref.watch(langProvider);
-    return CompositedTransformTarget(
-      link: _link,
-      child: GestureDetector(
-        onTap: _toggle,
-        child: Opacity(
-          opacity: _open ? 0 : 1,
-          child: Column(
-            children: [
-              SizedBox(
+    return GestureDetector(
+      onTap: _toggle,
+      child: Opacity(
+        opacity: _open ? 0 : 1,
+        child: Column(
+          children: [
+            CompositedTransformTarget(
+              link: _link,
+              child: SizedBox(
                 width: _closedSize.width,
                 height: _closedSize.height,
                 child: LiquidGlass(
@@ -1608,10 +1608,10 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> with SingleTicker
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(Strings.t(lang, 'more'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: context.textPrimary)),
-            ],
-          ),
+            ),
+            const SizedBox(height: 8),
+            Text(Strings.t(lang, 'more'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: context.textPrimary)),
+          ],
         ),
       ),
     );
