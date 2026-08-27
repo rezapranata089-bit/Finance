@@ -1394,6 +1394,7 @@ class ReportsPage extends ConsumerWidget {
     final expense = items.where((e) => !e.income).fold<double>(0, (a, b) => a + b.amount);
     final groups = <String, double>{};
     for (final item in items.where((e) => !e.income)) groups[item.category] = (groups[item.category] ?? 0) + item.amount;
+    final safeGroups = Map<String, double>.fromEntries(groups.entries.where((e) => e.value > 0));
     return SafeArea(top: false, child: ListView(padding: EdgeInsets.fromLTRB(20, MediaQuery.paddingOf(context).top + 22, 20, 24), children: [
       Text(Strings.t(lang, 'reports_title'), style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 32, color: context.textPrimary)),
       Text(DateFormat('MMMM yyyy', lang == AppLang.id ? 'id_ID' : 'en_US').format(DateTime(2026, 8, 24)), style: TextStyle(color: context.textMuted)),
@@ -1406,7 +1407,9 @@ class ReportsPage extends ConsumerWidget {
       const SizedBox(height: 24),
       SectionTitle(Strings.t(lang, 'expense_by_category')),
       const SizedBox(height: 12),
-      Container(padding: const EdgeInsets.all(18), decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(24), border: Border.all(color: context.borderColor)), child: Column(children: groups.entries.map((e) => ReportRow(label: e.key, amount: e.value, total: expense)).toList())),
+      Container(padding: const EdgeInsets.all(18), decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(24), border: Border.all(color: context.borderColor)), child: safeGroups.isEmpty
+          ? Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Text('Belum ada pengeluaran', style: TextStyle(color: context.textMuted, fontSize: 13)))
+          : Column(children: safeGroups.entries.map((e) => ReportRow(label: e.key, amount: e.value, total: expense)).toList())),
     ]));
   }
 }
@@ -1525,7 +1528,7 @@ class SummaryCard extends ConsumerWidget {
       Container(width: 1, height: 44, color: context.borderColor),
       Expanded(child: _summary(context, Strings.t(lang, 'expense'), rupiah(expense), const Color(0xFFE05270))),
       Container(width: 1, height: 44, color: context.borderColor),
-      Expanded(child: _summary(context, Strings.t(lang, 'savings'), '${((income - expense) / (income == 0 ? 1 : income) * 100).round()}%', Theme.of(context).colorScheme.primary)),
+      Expanded(child: _summary(context, Strings.t(lang, 'savings'), '${(income == 0 ? 0 : ((income - expense) / income * 100)).round()}%', Theme.of(context).colorScheme.primary)),
     ]));
   }
   Widget _summary(BuildContext context, String title, String value, Color color) => Padding(padding: const EdgeInsets.symmetric(horizontal: 8), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: TextStyle(color: context.textMuted, fontSize: 11)), const SizedBox(height: 7), Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 13))]));
@@ -1535,7 +1538,10 @@ class ReportRow extends StatelessWidget {
   final String label; final double amount, total;
   const ReportRow({super.key, required this.label, required this.amount, required this.total});
   @override
-  Widget build(BuildContext context) => Padding(padding: const EdgeInsets.only(bottom: 16), child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label, style: TextStyle(fontWeight: FontWeight.w600, color: context.textPrimary)), Text('${rupiah(amount)} · ${(amount / total * 100).round()}%', style: TextStyle(color: context.textMuted, fontSize: 12))]), const SizedBox(height: 8), LinearProgressIndicator(value: amount / total, minHeight: 7, borderRadius: BorderRadius.circular(8), color: Theme.of(context).colorScheme.primary, backgroundColor: context.isDark ? Theme.of(context).colorScheme.primary.withOpacity(0.16) : Theme.of(context).colorScheme.tertiary)]));
+  Widget build(BuildContext context) {
+    final ratio = total <= 0 ? 0.0 : (amount / total).clamp(0.0, 1.0);
+    return Padding(padding: const EdgeInsets.only(bottom: 16), child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label, style: TextStyle(fontWeight: FontWeight.w600, color: context.textPrimary)), Text('${rupiah(amount)} · ${(ratio * 100).round()}%', style: TextStyle(color: context.textMuted, fontSize: 12))]), const SizedBox(height: 8), LinearProgressIndicator(value: ratio, minHeight: 7, borderRadius: BorderRadius.circular(8), color: Theme.of(context).colorScheme.primary, backgroundColor: context.isDark ? Theme.of(context).colorScheme.primary.withOpacity(0.16) : Theme.of(context).colorScheme.tertiary)]));
+  }
 }
 
 class SettingList extends ConsumerWidget {
