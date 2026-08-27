@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
+import 'package:number_flow_flutter/number_flow_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:solar_icons/solar_icons.dart';
 
@@ -1099,7 +1100,7 @@ class HomePage extends ConsumerWidget {
                 const SizedBox(height: 24),
                 Center(child: Text(Strings.t(lang, 'your_balance'), style: TextStyle(color: context.textMuted, fontSize: 13, fontWeight: FontWeight.w500))),
                 const SizedBox(height: 8),
-                Center(child: Text(rupiah(balance), style: TextStyle(fontSize: 38, fontWeight: FontWeight.w700, letterSpacing: -1, color: context.textPrimary))),
+                Center(child: NumberFlow(value: balance, format: NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0), style: TextStyle(fontSize: 38, fontWeight: FontWeight.w700, letterSpacing: -1, color: context.textPrimary))),
                 const SizedBox(height: 12),
                 Center(
                   child: Container(
@@ -2137,8 +2138,9 @@ class TransactionTile extends ConsumerWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(
-                  '${item.income ? '+' : '-'}${rupiah(item.amount)}',
+                NumberFlow(
+                  value: item.amount,
+                  format: NumberFormat.currency(locale: 'id_ID', symbol: item.income ? '+Rp ' : '-Rp ', decimalDigits: 0),
                   style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: context.textPrimary),
                 ),
                 const SizedBox(height: 4),
@@ -2159,14 +2161,14 @@ class SummaryCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final lang = ref.watch(langProvider);
     return Container(padding: const EdgeInsets.all(18), decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(22), border: Border.all(color: context.borderColor)), child: Row(children: [
-      Expanded(child: _summary(context, Strings.t(lang, 'income'), rupiah(income), const Color(0xFF24A148))),
+      Expanded(child: _summary(context, Strings.t(lang, 'income'), NumberFlow(value: income, format: NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0), style: const TextStyle(color: Color(0xFF24A148), fontWeight: FontWeight.bold, fontSize: 13)))),
       Container(width: 1, height: 44, color: context.borderColor),
-      Expanded(child: _summary(context, Strings.t(lang, 'expense'), rupiah(expense), const Color(0xFFE05270))),
+      Expanded(child: _summary(context, Strings.t(lang, 'expense'), NumberFlow(value: expense, format: NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0), style: const TextStyle(color: Color(0xFFE05270), fontWeight: FontWeight.bold, fontSize: 13)))),
       Container(width: 1, height: 44, color: context.borderColor),
-      Expanded(child: _summary(context, Strings.t(lang, 'savings'), '${(income == 0 ? 0 : ((income - expense) / income * 100)).round()}%', Theme.of(context).colorScheme.primary)),
+      Expanded(child: _summary(context, Strings.t(lang, 'savings'), Row(mainAxisSize: MainAxisSize.min, children: [NumberFlow(value: income == 0 ? 0 : ((income - expense) / income * 100).round(), style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 13)), Text('%', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 13))]))),
     ]));
   }
-  Widget _summary(BuildContext context, String title, String value, Color color) => Padding(padding: const EdgeInsets.symmetric(horizontal: 8), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: TextStyle(color: context.textMuted, fontSize: 11)), const SizedBox(height: 7), Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 13))]));
+  Widget _summary(BuildContext context, String title, Widget valueWidget) => Padding(padding: const EdgeInsets.symmetric(horizontal: 8), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: TextStyle(color: context.textMuted, fontSize: 11)), const SizedBox(height: 7), FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.centerLeft, child: valueWidget)]));
 }
 
 class ReportRow extends StatelessWidget {
@@ -2175,7 +2177,7 @@ class ReportRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ratio = total <= 0 ? 0.0 : (amount / total).clamp(0.0, 1.0);
-    return Padding(padding: const EdgeInsets.only(bottom: 16), child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label, style: TextStyle(fontWeight: FontWeight.w600, color: context.textPrimary)), Text('${rupiah(amount)} · ${(ratio * 100).round()}%', style: TextStyle(color: context.textMuted, fontSize: 12))]), const SizedBox(height: 8), LinearProgressIndicator(value: ratio, minHeight: 7, borderRadius: BorderRadius.circular(8), color: Theme.of(context).colorScheme.primary, backgroundColor: context.isDark ? Theme.of(context).colorScheme.primary.withOpacity(0.16) : Theme.of(context).colorScheme.tertiary)]));
+    return Padding(padding: const EdgeInsets.only(bottom: 16), child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label, style: TextStyle(fontWeight: FontWeight.w600, color: context.textPrimary)), Row(mainAxisSize: MainAxisSize.min, children: [NumberFlow(value: amount, format: NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0), style: TextStyle(color: context.textMuted, fontSize: 12)), Text(' · ${(ratio * 100).round()}%', style: TextStyle(color: context.textMuted, fontSize: 12))])]), const SizedBox(height: 8), LinearProgressIndicator(value: ratio, minHeight: 7, borderRadius: BorderRadius.circular(8), color: Theme.of(context).colorScheme.primary, backgroundColor: context.isDark ? Theme.of(context).colorScheme.primary.withOpacity(0.16) : Theme.of(context).colorScheme.tertiary)]));
   }
 }
 
@@ -2792,7 +2794,7 @@ void showTransactionActions(BuildContext context, WidgetRef ref, FinanceTransact
             decoration: BoxDecoration(color: context.isDark ? Colors.white.withOpacity(0.04) : const Color(0xFFF1EEF7), borderRadius: BorderRadius.circular(18)),
             child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
               Text(Strings.t(lang, item.income ? 'receive' : 'transfer'), style: TextStyle(color: context.textMuted)),
-              Text('${item.income ? '+' : '-'}${rupiah(item.amount)}', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: item.income ? const Color(0xFF24A148) : context.textPrimary)),
+              NumberFlow(value: item.amount, format: NumberFormat.currency(locale: 'id_ID', symbol: item.income ? '+Rp ' : '-Rp ', decimalDigits: 0), style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16, color: item.income ? const Color(0xFF24A148) : context.textPrimary)),
             ]),
           ),
           if (item.note.isNotEmpty) ...[
@@ -3048,7 +3050,10 @@ class CardManagementPage extends ConsumerWidget {
                               const SizedBox(height: 4),
                               Text(card.number, style: TextStyle(color: context.textMuted, fontSize: 12)),
                               const SizedBox(height: 2),
-                              Text('${Strings.t(lang, 'initial_balance')}: ${rupiah(card.initialBalance)}', style: TextStyle(color: context.textFaint, fontSize: 11)),
+                              Row(children: [
+                                Text('${Strings.t(lang, 'initial_balance')}: ', style: TextStyle(color: context.textFaint, fontSize: 11)),
+                                NumberFlow(value: card.initialBalance, format: NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0), style: TextStyle(color: context.textFaint, fontSize: 11)),
+                              ]),
                             ],
                           ),
                         ),
@@ -3179,7 +3184,7 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Text(Strings.t(lang, 'total_outstanding'), style: TextStyle(color: context.textMuted, fontSize: 11)),
                         const SizedBox(height: 6),
-                        Text(rupiah(totalOutstanding), style: TextStyle(color: context.textPrimary, fontWeight: FontWeight.bold, fontSize: 15)),
+                        NumberFlow(value: totalOutstanding, format: NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0), style: TextStyle(color: context.textPrimary, fontWeight: FontWeight.bold, fontSize: 15)),
                       ]),
                     ),
                     Container(width: 1, height: 36, color: context.borderColor),
@@ -3189,7 +3194,7 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                           Text(Strings.t(lang, 'total_interest_collected'), style: TextStyle(color: context.textMuted, fontSize: 11)),
                           const SizedBox(height: 6),
-                          Text(rupiah(totalInterest), style: const TextStyle(color: Color(0xFF24A148), fontWeight: FontWeight.bold, fontSize: 15)),
+                          NumberFlow(value: totalInterest, format: NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0), style: const TextStyle(color: Color(0xFF24A148), fontWeight: FontWeight.bold, fontSize: 15)),
                         ]),
                       ),
                     ),
@@ -3251,7 +3256,10 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
                                         children: [
                                           Text(loan.borrowerName, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14, color: context.textPrimary)),
                                           const SizedBox(height: 4),
-                                          Text('${Strings.t(lang, 'remaining_principal')}: ${rupiah(loan.remainingPrincipal)}', style: TextStyle(color: context.textMuted, fontSize: 12)),
+                                          Row(children: [
+                                            Text('${Strings.t(lang, 'remaining_principal')}: ', style: TextStyle(color: context.textMuted, fontSize: 12)),
+                                            NumberFlow(value: loan.remainingPrincipal, format: NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0), style: TextStyle(color: context.textMuted, fontSize: 12)),
+                                          ]),
                                           if (sourceName.isNotEmpty) Text(sourceName, style: TextStyle(color: context.textFaint, fontSize: 11)),
                                         ],
                                       ),
@@ -3271,7 +3279,10 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
                                           ),
                                         ),
                                         const SizedBox(height: 6),
-                                        Text('${loan.interestPercent}% / ${rupiah(loan.currentInterest)}', style: TextStyle(color: context.textFaint, fontSize: 11, fontWeight: FontWeight.w600)),
+                                        Row(children: [
+                                          Text('${loan.interestPercent}% / ', style: TextStyle(color: context.textFaint, fontSize: 11, fontWeight: FontWeight.w600)),
+                                          NumberFlow(value: loan.currentInterest, format: NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0), style: TextStyle(color: context.textFaint, fontSize: 11, fontWeight: FontWeight.w600)),
+                                        ]),
                                       ],
                                     ),
                                   ],
