@@ -1465,9 +1465,11 @@ class MoreMorphMenu extends ConsumerStatefulWidget {
 }
 
 class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> with SingleTickerProviderStateMixin {
+  final LayerLink _link = LayerLink();
   OverlayEntry? _entry;
   late final AnimationController _controller = AnimationController(vsync: this, value: 0);
   bool _open = false;
+  bool _openUpward = false;
 
   static const _closedSize = Size(68, 42);
   static const _openSize = Size(220, 208);
@@ -1493,80 +1495,83 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> with SingleTicker
       setState(() => _open = false);
       return;
     }
+    final renderBox = context.findRenderObject() as RenderBox;
+    final buttonPos = renderBox.localToGlobal(Offset.zero);
+    final screenHeight = MediaQuery.sizeOf(context).height;
+    _openUpward = buttonPos.dy > screenHeight * 0.55;
+    final anchor = _openUpward ? Alignment.bottomRight : Alignment.topRight;
     setState(() => _open = true);
     _entry = OverlayEntry(
-      builder: (overlayContext) {
-        final bottomSafe = MediaQuery.paddingOf(overlayContext).bottom;
-        final screenHeight = MediaQuery.sizeOf(overlayContext).height;
-        final anchorBottom = screenHeight < 640;
-        return Stack(
-          children: [
-            Positioned.fill(child: GestureDetector(behavior: HitTestBehavior.translucent, onTap: _toggle)),
-            Positioned(
-              left: 0,
-              right: 0,
-              top: anchorBottom ? null : null,
-              bottom: bottomSafe + 96,
-              child: Center(
-                child: RepaintBoundary(
-                  child: AnimatedBuilder(
-                    animation: _controller,
-                    child: _MoreMorphContent(onSelect: _select),
-                    builder: (context, menuChild) {
-                      final t = _controller.value.clamp(0.0, 1.0);
-                      final size = Size.lerp(_closedSize, _openSize, t)!;
-                      const radius = 16.0;
-                      final iconOpacity = (1 - t / 0.45).clamp(0.0, 1.0);
-                      final menuOpacity = ((t - 0.35) / 0.65).clamp(0.0, 1.0);
-                      final menuOffset = (1 - menuOpacity) * 14;
-                      final glassT = Curves.easeOut.transform(t);
-                      final showBlur = glassT > 0.85;
-                      final isDark = context.isDark;
-                      return Material(
-                        color: Colors.transparent,
-                        child: SizedBox(
-                          width: size.width,
-                          height: size.height,
-                          child: LiquidGlass(
-                            borderRadius: radius,
-                            tint: isDark ? Colors.black : context.cardColor,
-                            intensity: isDark ? 1.6 : 1.0,
-                            blur: 6,
-                            useBlur: showBlur,
-                            borderColor: isDark ? context.borderColor : null,
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(radius),
-                              child: Stack(
-                                children: [
-                                  if (iconOpacity > 0)
-                                    Center(
-                                      child: Opacity(
-                                        opacity: iconOpacity,
-                                        child: Icon(SolarIconsOutline.menuDots, size: 22, color: isDark ? Colors.white : context.textPrimary),
-                                      ),
+      builder: (overlayContext) => Stack(
+        children: [
+          Positioned.fill(child: GestureDetector(behavior: HitTestBehavior.translucent, onTap: _toggle)),
+          CompositedTransformFollower(
+            link: _link,
+            targetAnchor: anchor,
+            followerAnchor: anchor,
+            child: RepaintBoundary(
+              child: AnimatedBuilder(
+                animation: _controller,
+                child: _MoreMorphContent(onSelect: _select),
+                builder: (context, menuChild) {
+                  final t = _controller.value.clamp(0.0, 1.0);
+                  final size = Size.lerp(_closedSize, _openSize, t)!;
+                  const radius = 16.0;
+                  final iconOpacity = (1 - t / 0.45).clamp(0.0, 1.0);
+                  final menuOpacity = ((t - 0.35) / 0.65).clamp(0.0, 1.0);
+                  final menuOffset = (1 - menuOpacity) * 14;
+                  final glassT = Curves.easeOut.transform(t);
+                  final showBlur = glassT > 0.85;
+                  final isDark = context.isDark;
+                  return Material(
+                    color: Colors.transparent,
+                    child: SizedBox(
+                      width: size.width,
+                      height: size.height,
+                      child: LiquidGlass(
+                        borderRadius: radius,
+                        tint: isDark ? Colors.black : context.cardColor,
+                        intensity: isDark ? 1.6 : 1.0,
+                        blur: 6,
+                        useBlur: showBlur,
+                        borderColor: isDark ? context.borderColor : null,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(radius),
+                          child: Stack(
+                            children: [
+                              if (iconOpacity > 0)
+                                Positioned(
+                                  top: _openUpward ? null : 0,
+                                  bottom: _openUpward ? 0 : null,
+                                  right: 0,
+                                  width: _closedSize.width, height: _closedSize.height,
+                                  child: Opacity(
+                                    opacity: iconOpacity,
+                                    child: Center(
+                                      child: Icon(SolarIconsOutline.menuDots, size: 22, color: isDark ? Colors.white : context.textPrimary),
                                     ),
-                                  if (menuOpacity > 0)
-                                    Opacity(
-                                      opacity: menuOpacity,
-                                      child: Transform.translate(
-                                        offset: Offset(0, menuOffset),
-                                        child: menuChild,
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
+                                  ),
+                                ),
+                              if (menuOpacity > 0)
+                                Opacity(
+                                  opacity: menuOpacity,
+                                  child: Transform.translate(
+                                    offset: Offset(0, menuOffset),
+                                    child: menuChild,
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
-                      );
-                    },
-                  ),
-                ),
+                      ),
+                    ),
+                  );
+                },
               ),
             ),
-          ],
-        );
-      },
+          ),
+        ],
+      ),
     );
     Overlay.of(context).insert(_entry!);
     await _controller.animateTo(1, duration: const Duration(milliseconds: 350), curve: _openCurve);
@@ -1581,28 +1586,31 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> with SingleTicker
   Widget build(BuildContext context) {
     final isDark = context.isDark;
     final lang = ref.watch(langProvider);
-    return GestureDetector(
-      onTap: _toggle,
-      child: Opacity(
-        opacity: _open ? 0 : 1,
-        child: Column(
-          children: [
-            SizedBox(
-              width: _closedSize.width,
-              height: _closedSize.height,
-              child: LiquidGlass(
-                borderRadius: 16,
-                tint: isDark ? Colors.black : null,
-                intensity: isDark ? 1.6 : 1.0,
-                borderColor: isDark ? context.borderColor : null,
-                child: Center(
-                  child: Icon(SolarIconsOutline.menuDots, color: isDark ? Colors.white : context.textPrimary, size: 22),
+    return CompositedTransformTarget(
+      link: _link,
+      child: GestureDetector(
+        onTap: _toggle,
+        child: Opacity(
+          opacity: _open ? 0 : 1,
+          child: Column(
+            children: [
+              SizedBox(
+                width: _closedSize.width,
+                height: _closedSize.height,
+                child: LiquidGlass(
+                  borderRadius: 16,
+                  tint: isDark ? Colors.black : null,
+                  intensity: isDark ? 1.6 : 1.0,
+                  borderColor: isDark ? context.borderColor : null,
+                  child: Center(
+                    child: Icon(SolarIconsOutline.menuDots, color: isDark ? Colors.white : context.textPrimary, size: 22),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(Strings.t(lang, 'more'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: context.textPrimary)),
-          ],
+              const SizedBox(height: 8),
+              Text(Strings.t(lang, 'more'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: context.textPrimary)),
+            ],
+          ),
         ),
       ),
     );
@@ -1618,19 +1626,15 @@ class _MoreMorphContent extends ConsumerWidget {
     final lang = ref.watch(langProvider);
     final primary = Theme.of(context).colorScheme.primary;
     final items = [
+      (SolarIconsOutline.wallet, Strings.t(lang, 'account_wallet'), () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CardManagementPage()))),
+      (SolarIconsOutline.usersGroupTwoRounded, Strings.t(lang, 'receivables'), () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoanManagementPage()))),
+      (SolarIconsOutline.palette, Strings.t(lang, 'appearance'), () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ThemeSelectionPage()))),
+      (Icons.language, Strings.t(lang, 'language'), () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LanguageSelectionPage()))),
       (
         SolarIconsOutline.safeSquare,
         Strings.t(lang, 'savings_target'),
         () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(Strings.t(lang, 'not_available').replaceAll('{name}', Strings.t(lang, 'savings_target'))))),
       ),
-      (
-        SolarIconsOutline.widget,
-        Strings.t(lang, 'category'),
-        () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(Strings.t(lang, 'not_available').replaceAll('{name}', Strings.t(lang, 'category'))))),
-      ),
-      (SolarIconsOutline.arrowLeftDown, Strings.t(lang, 'add_income'), () => showTransactionForm(context, ref, true)),
-      (SolarIconsOutline.arrowRightUp, Strings.t(lang, 'add_expense'), () => showTransactionForm(context, ref, false)),
-      (SolarIconsOutline.bell, Strings.t(lang, 'notifications'), () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsPage()))),
     ];
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
