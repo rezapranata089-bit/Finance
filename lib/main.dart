@@ -1238,7 +1238,7 @@ class HomePage extends ConsumerWidget {
                 const SizedBox(height: 16),
                 Text(Strings.t(lang, 'today'), style: TextStyle(color: context.textFaint, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1)),
                 const SizedBox(height: 12),
-                ...items.take(4).map((item) => TransactionTile(item: item)),
+                ...items.take(4).toList().asMap().entries.map((e) => StaggeredReveal(index: e.key, child: TransactionTile(item: e.value))),
               ],
             ),
           ),
@@ -2016,7 +2016,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
         ),
       ),
       const SizedBox(height: 20),
-      ...items.map((item) => TransactionTile(item: item)),
+      ...items.asMap().entries.map((e) => StaggeredReveal(index: e.key, child: TransactionTile(item: e.value))),
     ]));
   }
 }
@@ -2053,7 +2053,7 @@ class ReportsPage extends ConsumerWidget {
       const SizedBox(height: 12),
       Container(padding: const EdgeInsets.all(18), decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(24), border: Border.all(color: context.borderColor)), child: safeGroups.isEmpty
           ? Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Text(Strings.t(lang, 'no_expenses_yet'), style: TextStyle(color: context.textMuted, fontSize: 13)))
-          : Column(children: safeGroups.entries.map((e) => ReportRow(label: e.key, amount: e.value, total: expense)).toList())),
+          : Column(children: safeGroups.entries.toList().asMap().entries.map((e) => StaggeredReveal(index: e.key, child: ReportRow(label: e.value.key, amount: e.value.value, total: expense))).toList())),
     ]));
   }
 }
@@ -2521,9 +2521,11 @@ class NotificationsPage extends ConsumerWidget {
                       separatorBuilder: (_, __) => const SizedBox(height: 12),
                       itemBuilder: (context, i) {
                         final item = notifications[i];
-                        return Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
+                        return StaggeredReveal(
+                          index: i,
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
                             color: cardBg,
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(color: isDark ? Colors.white12 : Colors.grey.shade200),
@@ -2551,7 +2553,7 @@ class NotificationsPage extends ConsumerWidget {
                               Text(item.$4, style: TextStyle(color: context.textFaint, fontSize: 11, fontWeight: FontWeight.w500)),
                             ],
                           ),
-                        );
+                        ));
                       },
                     ),
             ),
@@ -3028,9 +3030,11 @@ class CardManagementPage extends ConsumerWidget {
                 separatorBuilder: (_, __) => const SizedBox(height: 12),
                 itemBuilder: (context, i) {
                   final card = cards[i];
-                  return Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
+                  return StaggeredReveal(
+                    index: i,
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
                       color: context.cardColor,
                       borderRadius: BorderRadius.circular(20),
                       border: Border.all(color: context.borderColor),
@@ -3078,7 +3082,7 @@ class CardManagementPage extends ConsumerWidget {
                         ),
                       ],
                     ),
-                  );
+                  ));
                 },
               ),
             ),
@@ -3245,9 +3249,11 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
                       itemBuilder: (context, i) {
                         final loan = filtered[i];
                         final sourceName = (loan.sourceCardIndex >= 0 && loan.sourceCardIndex < cards.length) ? cards[loan.sourceCardIndex].name : '';
-                        return GestureDetector(
-                          onTap: () => showLoanForm(context: context, ref: ref, existing: loan),
-                          child: Container(
+                        return StaggeredReveal(
+                          index: i,
+                          child: GestureDetector(
+                            onTap: () => showLoanForm(context: context, ref: ref, existing: loan),
+                            child: Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(20), border: Border.all(color: context.borderColor)),
                             child: Column(
@@ -3320,7 +3326,7 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
                               ],
                             ),
                           ),
-                        );
+                        ));
                       },
                     ),
             ),
@@ -3494,5 +3500,45 @@ Future<void> showLoanForm({required BuildContext context, required WidgetRef ref
 }
 
 
+
+class StaggeredReveal extends StatefulWidget {
+  final Widget child;
+  final int index;
+  const StaggeredReveal({super.key, required this.child, required this.index});
+
+  @override
+  State<StaggeredReveal> createState() => _StaggeredRevealState();
+}
+
+class _StaggeredRevealState extends State<StaggeredReveal> with SingleTickerProviderStateMixin {
+  late final AnimationController _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 550));
+  late final Animation<double> _fade = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
+  late final Animation<Offset> _slide = Tween<Offset>(begin: const Offset(0, 0.25), end: Offset.zero).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(Duration(milliseconds: (widget.index * 60).clamp(0, 500)), () {
+      if (mounted) _ctrl.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _ctrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FadeTransition(
+      opacity: _fade,
+      child: SlideTransition(
+        position: _slide,
+        child: widget.child,
+      ),
+    );
+  }
+}
 
 String rupiah(double value) => 'Rp ${NumberFormat('#,###', 'id_ID').format(value).replaceAll(',', '.')}';
