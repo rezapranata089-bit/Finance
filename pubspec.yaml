@@ -20,6 +20,7 @@ dependencies:
   image_picker: ^1.1.2
   lottie: ^3.1.2
   number_flow_flutter: ^0.1.0
+  flutter_animate: ^4.5.2
 
 dev_dependencies:
   flutter_test:

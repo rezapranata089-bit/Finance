@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -3511,42 +3512,28 @@ Future<void> showLoanForm({required BuildContext context, required WidgetRef ref
 
 
 
-class StaggeredReveal extends StatefulWidget {
+class StaggeredReveal extends StatelessWidget {
   final Widget child;
   final int index;
   const StaggeredReveal({super.key, required this.child, required this.index});
 
   @override
-  State<StaggeredReveal> createState() => _StaggeredRevealState();
-}
-
-class _StaggeredRevealState extends State<StaggeredReveal> with SingleTickerProviderStateMixin {
-  late final AnimationController _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 550));
-  late final Animation<double> _fade = Tween<double>(begin: 0.0, end: 1.0).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
-  late final Animation<Offset> _slide = Tween<Offset>(begin: const Offset(0, 0.25), end: Offset.zero).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
-
-  @override
-  void initState() {
-    super.initState();
-    Future.delayed(Duration(milliseconds: (widget.index * 60).clamp(0, 500)), () {
-      if (mounted) _ctrl.forward();
-    });
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return FadeTransition(
-      opacity: _fade,
-      child: SlideTransition(
-        position: _slide,
-        child: widget.child,
-      ),
+    return Animate(
+      delay: Duration(milliseconds: (index * 55).clamp(0, 440)),
+      effects: const [
+        FadeEffect(
+          duration: Duration(milliseconds: 420),
+          curve: Curves.easeOutCubic,
+        ),
+        SlideEffect(
+          begin: Offset(0, 0.12),
+          end: Offset.zero,
+          duration: Duration(milliseconds: 520),
+          curve: Curves.easeOutCubic,
+        ),
+      ],
+      child: child,
     );
   }
 }
