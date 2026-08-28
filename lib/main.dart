@@ -3517,6 +3517,10 @@ Future<void> showTransactionForm(BuildContext context, WidgetRef ref, bool incom
   final note = TextEditingController(text: existing?.note ?? '');
   final amountShakeKey = GlobalKey<ShakeFieldState>();
   final titleShakeKey = GlobalKey<ShakeFieldState>();
+  final interestAmountCtrl = TextEditingController();
+  final principalAmountCtrl = TextEditingController();
+  final interestAmountShakeKey = GlobalKey<ShakeFieldState>();
+  final principalAmountShakeKey = GlobalKey<ShakeFieldState>();
   final lang = ref.read(langProvider);
   final catKeys = effectiveIncome
       ? ['cat_income', 'cat_freelance', 'cat_bonus']
@@ -3525,6 +3529,8 @@ Future<void> showTransactionForm(BuildContext context, WidgetRef ref, bool incom
   String category = (existing != null && catEnLabels.contains(existing.category)) ? existing.category : catEnLabels.first;
   String? amountError;
   String? titleError;
+  String? interestAmountError;
+  String? principalAmountError;
   DateTime selectedDate = existing?.date ?? DateTime.now();
   final cards = ref.read(cardsProvider);
   final rawSelectedCard = ref.read(selectedCardProvider);
@@ -3532,7 +3538,8 @@ Future<void> showTransactionForm(BuildContext context, WidgetRef ref, bool incom
   if (cardIndex < 0 || cardIndex >= cards.length) cardIndex = 0;
   final loans = ref.read(loansProvider);
   String? selectedLoanId;
-  bool payIsInterest = true;
+  bool payInterestSelected = true;
+  bool payPrincipalSelected = false;
   await showModalBottomSheet(
     context: context,
     isScrollControlled: true,
@@ -3548,12 +3555,12 @@ Future<void> showTransactionForm(BuildContext context, WidgetRef ref, bool incom
       const SizedBox(height: 6),
       Text(Strings.t(lang, isEdit ? (effectiveIncome ? 'edit_income_subtitle' : 'edit_expense_subtitle') : (effectiveIncome ? 'add_income_subtitle' : 'add_expense_subtitle')), style: TextStyle(fontSize: 13, color: context.textMuted)),
       const SizedBox(height: 18),
-      ShakeField(
-        key: amountShakeKey,
-        child: TextField(controller: amount, keyboardType: TextInputType.number, inputFormatters: [FilteringTextInputFormatter.digitsOnly, ThousandsInputFormatter()], decoration: InputDecoration(labelText: isPiutangFlow ? Strings.t(lang, payIsInterest ? 'interest_paid' : 'principal_paid') : Strings.t(lang, 'amount'), prefixText: 'Rp ', errorText: amountError)),
-      ),
-      const SizedBox(height: 12),
       if (!isPiutangFlow) ...[
+        ShakeField(
+          key: amountShakeKey,
+          child: TextField(controller: amount, keyboardType: TextInputType.number, inputFormatters: [FilteringTextInputFormatter.digitsOnly, ThousandsInputFormatter()], decoration: InputDecoration(labelText: Strings.t(lang, 'amount'), prefixText: 'Rp ', errorText: amountError)),
+        ),
+        const SizedBox(height: 12),
         ShakeField(
           key: titleShakeKey,
           child: TextField(controller: title, decoration: InputDecoration(labelText: Strings.t(lang, 'transaction_title_field'), errorText: titleError)),
@@ -3582,21 +3589,35 @@ Future<void> showTransactionForm(BuildContext context, WidgetRef ref, bool incom
         const SizedBox(height: 12),
         Row(children: [
           Expanded(
-            child: ChoiceChip(
+            child: FilterChip(
               label: Text(Strings.t(lang, 'interest_paid'), style: const TextStyle(fontSize: 11)),
-              selected: payIsInterest,
-              onSelected: (_) => setModalState(() => payIsInterest = true),
+              selected: payInterestSelected,
+              onSelected: (v) => setModalState(() => payInterestSelected = v),
             ),
           ),
           const SizedBox(width: 8),
           Expanded(
-            child: ChoiceChip(
+            child: FilterChip(
               label: Text(Strings.t(lang, 'principal_paid'), style: const TextStyle(fontSize: 11)),
-              selected: !payIsInterest,
-              onSelected: (_) => setModalState(() => payIsInterest = false),
+              selected: payPrincipalSelected,
+              onSelected: (v) => setModalState(() => payPrincipalSelected = v),
             ),
           ),
         ]),
+        if (payInterestSelected) ...[
+          const SizedBox(height: 12),
+          ShakeField(
+            key: interestAmountShakeKey,
+            child: TextField(controller: interestAmountCtrl, keyboardType: TextInputType.number, inputFormatters: [FilteringTextInputFormatter.digitsOnly, ThousandsInputFormatter()], decoration: InputDecoration(labelText: Strings.t(lang, 'interest_paid'), prefixText: 'Rp ', errorText: interestAmountError)),
+          ),
+        ],
+        if (payPrincipalSelected) ...[
+          const SizedBox(height: 12),
+          ShakeField(
+            key: principalAmountShakeKey,
+            child: TextField(controller: principalAmountCtrl, keyboardType: TextInputType.number, inputFormatters: [FilteringTextInputFormatter.digitsOnly, ThousandsInputFormatter()], decoration: InputDecoration(labelText: Strings.t(lang, 'principal_paid'), prefixText: 'Rp ', errorText: principalAmountError)),
+          ),
+        ],
       ],
       const SizedBox(height: 12),
       GestureDetector(
@@ -3628,21 +3649,34 @@ Future<void> showTransactionForm(BuildContext context, WidgetRef ref, bool incom
       SizedBox(width: double.infinity, child: FilledButton(onPressed: () {
         final value = double.tryParse(amount.text.replaceAll('.', '')) ?? 0;
         if (isPiutangFlow) {
-          final hasAmountError = value <= 0;
-          if (hasAmountError || selectedLoanId == null) {
+          final interestValue = double.tryParse(interestAmountCtrl.text.replaceAll('.', '')) ?? 0;
+          final principalValue = double.tryParse(principalAmountCtrl.text.replaceAll('.', '')) ?? 0;
+          final noTypeSelected = !payInterestSelected && !payPrincipalSelected;
+          final hasInterestError = payInterestSelected && interestValue <= 0;
+          final hasPrincipalError = payPrincipalSelected && principalValue <= 0;
+          if (noTypeSelected || hasInterestError || hasPrincipalError || selectedLoanId == null) {
             setModalState(() {
-              amountError = hasAmountError ? Strings.t(lang, 'field_required') : null;
+              interestAmountError = hasInterestError ? Strings.t(lang, 'field_required') : null;
+              principalAmountError = hasPrincipalError ? Strings.t(lang, 'field_required') : null;
             });
-            if (hasAmountError) amountShakeKey.currentState?.shake();
+            if (hasInterestError) interestAmountShakeKey.currentState?.shake();
+            if (hasPrincipalError) principalAmountShakeKey.currentState?.shake();
             if (selectedLoanId == null) {
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(Strings.t(lang, 'select_borrower_first'))));
+            } else if (noTypeSelected) {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(Strings.t(lang, 'field_required'))));
             }
             Future.delayed(const Duration(milliseconds: 3000), () {
-              if (context.mounted) setModalState(() => amountError = null);
+              if (context.mounted) setModalState(() { interestAmountError = null; principalAmountError = null; });
             });
             return;
           }
-          ref.read(loansProvider.notifier).recordPayment(selectedLoanId!, isInterest: payIsInterest, amount: value, date: selectedDate, note: note.text.trim());
+          if (payInterestSelected) {
+            ref.read(loansProvider.notifier).recordPayment(selectedLoanId!, isInterest: true, amount: interestValue, date: selectedDate, note: note.text.trim());
+          }
+          if (payPrincipalSelected) {
+            ref.read(loansProvider.notifier).recordPayment(selectedLoanId!, isInterest: false, amount: principalValue, date: selectedDate, note: note.text.trim());
+          }
           Navigator.pop(sheetContext);
           return;
         }
