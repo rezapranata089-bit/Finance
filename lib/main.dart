@@ -4168,7 +4168,7 @@ class _StaggeredRevealState extends State<StaggeredReveal> with AutomaticKeepAli
     return VisibilityDetector(
       key: _visibilityKey,
       onVisibilityChanged: (info) {
-        if (!_hasEnteredViewport && info.visibleFraction > 0.04) {
+        if (!_hasEnteredViewport && info.visibleFraction > 0) {
           setState(() => _hasEnteredViewport = true);
           updateKeepAlive();
         }
@@ -4177,7 +4177,8 @@ class _StaggeredRevealState extends State<StaggeredReveal> with AutomaticKeepAli
         child: _hasEnteredViewport
             ? AnimationConfiguration.staggeredList(
                 position: widget.index,
-                duration: const Duration(milliseconds: 400),
+                duration: const Duration(milliseconds: 260),
+                delay: const Duration(milliseconds: 25),
                 child: SlideAnimation(
                   verticalOffset: 50.0,
                   child: FadeInAnimation(child: widget.child),
