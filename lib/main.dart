@@ -4,6 +4,7 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:visibility_detector/visibility_detector.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -3534,7 +3535,7 @@ Future<void> showLoanForm({required BuildContext context, required WidgetRef ref
 
 
 
-class StaggeredReveal extends StatelessWidget {
+class StaggeredReveal extends StatefulWidget {
   final Widget child;
   final int index;
   final ScrollController? scrollController;
@@ -3542,41 +3543,45 @@ class StaggeredReveal extends StatelessWidget {
   const StaggeredReveal({super.key, required this.child, required this.index, this.scrollController, this.followScroll = true});
 
   @override
-  Widget build(BuildContext context) {
-    final controller = followScroll ? (scrollController ?? PrimaryScrollController.maybeOf(context)) : null;
-    final revealBegin = -180.0 + (index * 130.0);
-    final revealEnd = revealBegin + 150.0;
+  State<StaggeredReveal> createState() => _StaggeredRevealState();
+}
 
-    return Animate(
-      adapter: controller == null
-          ? null
-          : ScrollAdapter(
-              controller,
-              begin: revealBegin,
-              end: revealEnd,
-            ),
-      delay: Duration(milliseconds: (index * 55).clamp(0, 440)),
-      effects: const [
-        FadeEffect(
-          begin: 0,
-          end: 1,
-          duration: Duration(milliseconds: 420),
-          curve: Curves.easeOutCubic,
-        ),
-        SlideEffect(
-          begin: Offset(0, 0.18),
-          end: Offset.zero,
-          duration: Duration(milliseconds: 520),
-          curve: Curves.easeOutCubic,
-        ),
-        ScaleEffect(
-          begin: const Offset(0.96, 0.96),
-          end: const Offset(1, 1),
-          duration: Duration(milliseconds: 520),
-          curve: Curves.easeOutCubic,
-        ),
-      ],
-      child: child,
+class _StaggeredRevealState extends State<StaggeredReveal> {
+  bool _hasEnteredViewport = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return VisibilityDetector(
+      key: ValueKey('staggered-${widget.index}-${widget.child.hashCode}'),
+      onVisibilityChanged: (info) {
+        if (!_hasEnteredViewport && info.visibleFraction > 0.04) {
+          setState(() => _hasEnteredViewport = true);
+        }
+      },
+      child: Animate(
+        target: _hasEnteredViewport ? 1 : 0,
+        effects: const [
+          FadeEffect(
+            begin: 0,
+            end: 1,
+            duration: Duration(milliseconds: 420),
+            curve: Curves.easeOutCubic,
+          ),
+          SlideEffect(
+            begin: Offset(0, 0.18),
+            end: Offset.zero,
+            duration: Duration(milliseconds: 520),
+            curve: Curves.easeOutCubic,
+          ),
+          ScaleEffect(
+            begin: Offset(0.96, 0.96),
+            end: Offset(1, 1),
+            duration: Duration(milliseconds: 520),
+            curve: Curves.easeOutCubic,
+          ),
+        ],
+        child: widget.child,
+      ),
     );
   }
 }
