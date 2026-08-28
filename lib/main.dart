@@ -1642,7 +1642,7 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
   bool _pressed = false;
 
   static const _closedSize = Size(40, 40);
-  static const _openSize = Size(183, 208);
+  static const _openSize = Size(190, 226);
   static const _openCurve = Cubic(0.34, 1.25, 0.64, 1.0);
   static const _closeCurve = Cubic(0.22, 1.0, 0.36, 1.0);
 
@@ -1790,8 +1790,9 @@ class _MorphMenuContent extends ConsumerWidget {
     final lang = ref.watch(langProvider);
     final primary = Theme.of(context).colorScheme.primary;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final profile = ref.watch(userProfileProvider);
+    final initial = profile.name.isNotEmpty ? profile.name.substring(0, 1).toUpperCase() : '?';
     final items = [
-      (SolarIconsOutline.user, Strings.t(lang, 'nav_profile'), () => ref.read(tabProvider.notifier).state = 3),
       (
         isDark ? SolarIconsOutline.sun : SolarIconsOutline.moon,
         isDark ? Strings.t(lang, 'light') : Strings.t(lang, 'dark'),
@@ -1806,17 +1807,43 @@ class _MorphMenuContent extends ConsumerWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: items
-            .map<Widget>((item) => ListTile(
-                  dense: true,
-                  visualDensity: const VisualDensity(horizontal: -4, vertical: -3),
-                  onTap: () => onSelect(item.$3),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 14),
-                  minLeadingWidth: 0,
-                  leading: Icon(item.$1, size: 18, color: primary),
-                  title: Text(item.$2, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: context.textPrimary)),
-                ))
-            .toList(),
+        children: [
+          InkWell(
+            onTap: () => onSelect(() => ref.read(tabProvider.notifier).state = 3),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              child: Row(
+                children: [
+                  ProfileAvatar(
+                    photoPath: profile.photoPath,
+                    photoBytesBase64: profile.photoBytesBase64,
+                    photoVersion: profile.photoVersion,
+                    initial: initial,
+                    radius: 16,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      profile.name,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: context.textPrimary),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          Divider(height: 1, indent: 14, endIndent: 14, color: context.borderColor),
+          ...items.map<Widget>((item) => ListTile(
+                dense: true,
+                visualDensity: const VisualDensity(horizontal: -4, vertical: -3),
+                onTap: () => onSelect(item.$3),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14),
+                minLeadingWidth: 0,
+                leading: Icon(item.$1, size: 18, color: primary),
+                title: Text(item.$2, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: context.textPrimary)),
+              )),
+        ],
       ),
     );
   }
