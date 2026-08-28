@@ -3566,8 +3566,6 @@ Future<void> showTransactionForm(BuildContext context, WidgetRef ref, bool incom
           child: TextField(controller: title, decoration: InputDecoration(labelText: Strings.t(lang, 'transaction_title_field'), errorText: titleError)),
         ),
         const SizedBox(height: 12),
-        DropdownButtonFormField<String>(value: category, decoration: InputDecoration(labelText: Strings.t(lang, 'category')), items: catKeys.map((k) => DropdownMenuItem(value: Strings.t(AppLang.en, k), child: Text(Strings.t(lang, k)))).toList(), onChanged: (v) => setModalState(() => category = v!)),
-        const SizedBox(height: 12),
       ],
       DropdownButtonFormField<int>(
         value: cardIndex,
