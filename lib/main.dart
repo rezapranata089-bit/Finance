@@ -1268,7 +1268,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ...items.take(4).toList().asMap().entries.map(
                       (e) => StaggeredReveal(
                         index: e.key,
-                        scrollController: _scrollController,
+                        followScroll: false,
                         child: TransactionTile(item: e.value),
                       ),
                     ),
@@ -3538,11 +3538,12 @@ class StaggeredReveal extends StatelessWidget {
   final Widget child;
   final int index;
   final ScrollController? scrollController;
-  const StaggeredReveal({super.key, required this.child, required this.index, this.scrollController});
+  final bool followScroll;
+  const StaggeredReveal({super.key, required this.child, required this.index, this.scrollController, this.followScroll = true});
 
   @override
   Widget build(BuildContext context) {
-    final controller = scrollController ?? PrimaryScrollController.maybeOf(context);
+    final controller = followScroll ? (scrollController ?? PrimaryScrollController.maybeOf(context)) : null;
     final revealBegin = -180.0 + (index * 130.0);
     final revealEnd = revealBegin + 150.0;
 
