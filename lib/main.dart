@@ -852,7 +852,7 @@ class Strings {
     'savings': {AppLang.en: 'Savings', AppLang.id: 'Tabungan'},
     'profile_title': {AppLang.en: 'Profile', AppLang.id: 'Profil'},
     'view_profile': {AppLang.en: 'View profile', AppLang.id: 'Lihat profil'},
-    'premium_member': {AppLang.en: 'Premium', AppLang.id: 'Premium'},
+    'verified_account': {AppLang.en: 'Verified', AppLang.id: 'Terverifikasi'},
     'change_photo': {AppLang.en: 'Change profile photo', AppLang.id: 'Ubah foto profil'},
     'choose_from_gallery': {AppLang.en: 'Choose from gallery', AppLang.id: 'Pilih dari galeri'},
     'take_photo': {AppLang.en: 'Take a photo', AppLang.id: 'Ambil foto'},
@@ -1847,10 +1847,10 @@ class _MorphMenuContent extends ConsumerWidget {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(Icons.workspace_premium_rounded, size: 9, color: primary),
+                                Icon(SolarIconsBold.shieldCheck, size: 9, color: primary),
                                 const SizedBox(width: 3),
                                 Text(
-                                  Strings.t(lang, 'premium_member'),
+                                  Strings.t(lang, 'verified_account'),
                                   style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, height: 1.0, color: primary, letterSpacing: 0.2),
                                 ),
                               ],
