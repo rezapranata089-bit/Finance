@@ -3519,16 +3519,35 @@ class StaggeredReveal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scrollController = PrimaryScrollController.maybeOf(context);
+    final revealBegin = -180.0 + (index * 130.0);
+    final revealEnd = revealBegin + 150.0;
+
     return Animate(
+      adapter: scrollController == null
+          ? null
+          : ScrollAdapter(
+              scrollController,
+              begin: revealBegin,
+              end: revealEnd,
+            ),
       delay: Duration(milliseconds: (index * 55).clamp(0, 440)),
       effects: const [
         FadeEffect(
+          begin: 0,
+          end: 1,
           duration: Duration(milliseconds: 420),
           curve: Curves.easeOutCubic,
         ),
         SlideEffect(
-          begin: Offset(0, 0.12),
+          begin: Offset(0, 0.18),
           end: Offset.zero,
+          duration: Duration(milliseconds: 520),
+          curve: Curves.easeOutCubic,
+        ),
+        ScaleEffect(
+          begin: 0.96,
+          end: 1,
           duration: Duration(milliseconds: 520),
           curve: Curves.easeOutCubic,
         ),
