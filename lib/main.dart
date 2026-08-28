@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math' as math;
 import 'dart:ui';
 
@@ -7,10 +8,12 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:intl/intl.dart';
 import 'package:lottie/lottie.dart';
 import 'package:number_flow_flutter/number_flow_flutter.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:solar_icons/solar_icons.dart';
 
@@ -26,6 +29,234 @@ void main() async {
 }
 
 final prefsProvider = Provider<SharedPreferences>((ref) => throw UnimplementedError());
+
+class UserProfile {
+  final String name;
+  final String? photoPath;
+  final int photoVersion;
+  const UserProfile({this.name = 'Raka', this.photoPath, this.photoVersion = 0});
+
+  UserProfile copyWith({String? name, String? photoPath, bool clearPhoto = false, int? photoVersion}) => UserProfile(
+        name: name ?? this.name,
+        photoPath: clearPhoto ? null : (photoPath ?? this.photoPath),
+        photoVersion: photoVersion ?? this.photoVersion,
+      );
+
+  Map<String, dynamic> toJson() => {'name': name, 'photoPath': photoPath, 'photoVersion': photoVersion};
+  factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
+        name: json['name'] as String? ?? 'Raka',
+        photoPath: json['photoPath'] as String?,
+        photoVersion: json['photoVersion'] as int? ?? 0,
+      );
+}
+
+final userProfileProvider = StateNotifierProvider<UserProfileNotifier, UserProfile>(
+  (ref) => UserProfileNotifier(ref.watch(prefsProvider)),
+);
+
+class UserProfileNotifier extends StateNotifier<UserProfile> {
+  final SharedPreferences prefs;
+  static const _key = 'user_profile';
+
+  UserProfileNotifier(this.prefs) : super(_load(prefs));
+
+  static UserProfile _load(SharedPreferences prefs) {
+    final raw = prefs.getString(_key);
+    if (raw == null || raw.isEmpty) return const UserProfile();
+    try {
+      return UserProfile.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+    } catch (_) {
+      return const UserProfile();
+    }
+  }
+
+  void _persist() {
+    prefs.setString(_key, jsonEncode(state.toJson()));
+  }
+
+  void updateName(String name) {
+    final trimmed = name.trim();
+    if (trimmed.isEmpty) return;
+    state = state.copyWith(name: trimmed);
+    _persist();
+  }
+
+  Future<void> updatePhoto(String newPath) async {
+    final oldPath = state.photoPath;
+    if (oldPath != null && oldPath != newPath) {
+      PaintingBinding.instance.imageCache.evict(FileImage(File(oldPath)));
+    }
+    state = state.copyWith(photoPath: newPath, photoVersion: state.photoVersion + 1);
+    _persist();
+  }
+
+  Future<void> removePhoto() async {
+    final oldPath = state.photoPath;
+    if (oldPath != null) {
+      PaintingBinding.instance.imageCache.evict(FileImage(File(oldPath)));
+      final file = File(oldPath);
+      if (await file.exists()) {
+        try {
+          await file.delete();
+        } catch (_) {}
+      }
+    }
+    state = state.copyWith(clearPhoto: true, photoVersion: state.photoVersion + 1);
+    _persist();
+  }
+}
+
+Future<String?> pickAndCompressProfilePhoto(ImageSource source) async {
+  final picker = ImagePicker();
+  final XFile? picked = await picker.pickImage(
+    source: source,
+    maxWidth: 800,
+    maxHeight: 800,
+    imageQuality: 75,
+  );
+  if (picked == null) return null;
+  final dir = await getApplicationDocumentsDirectory();
+  final destPath = '${dir.path}/profile_photo.jpg';
+  final destFile = File(destPath);
+  if (await destFile.exists()) {
+    try {
+      await destFile.delete();
+    } catch (_) {}
+  }
+  await File(picked.path).copy(destPath);
+  return destPath;
+}
+
+Future<void> showProfilePhotoOptions(BuildContext context, WidgetRef ref) async {
+  final lang = ref.read(langProvider);
+  final hasPhoto = ref.read(userProfileProvider).photoPath != null;
+  await showModalBottomSheet(
+    context: context,
+    backgroundColor: context.cardColor,
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+    builder: (sheetContext) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 22, 20, 24),
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(Strings.t(lang, 'change_photo'), style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 24, color: context.textPrimary)),
+          const SizedBox(height: 18),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: Icon(Icons.photo_library_outlined, color: Theme.of(context).colorScheme.primary),
+            title: Text(Strings.t(lang, 'choose_from_gallery')),
+            onTap: () async {
+              Navigator.pop(sheetContext);
+              final path = await pickAndCompressProfilePhoto(ImageSource.gallery);
+              if (path != null) ref.read(userProfileProvider.notifier).updatePhoto(path);
+            },
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: Icon(Icons.camera_alt_outlined, color: Theme.of(context).colorScheme.primary),
+            title: Text(Strings.t(lang, 'take_photo')),
+            onTap: () async {
+              Navigator.pop(sheetContext);
+              final path = await pickAndCompressProfilePhoto(ImageSource.camera);
+              if (path != null) ref.read(userProfileProvider.notifier).updatePhoto(path);
+            },
+          ),
+          if (hasPhoto)
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.delete_outline, color: Colors.redAccent),
+              title: Text(Strings.t(lang, 'remove_photo'), style: const TextStyle(color: Colors.redAccent)),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                ref.read(userProfileProvider.notifier).removePhoto();
+              },
+            ),
+        ]),
+      ),
+    ),
+  );
+}
+
+Future<void> showEditNameDialog(BuildContext context, WidgetRef ref) async {
+  final lang = ref.read(langProvider);
+  final nameCtrl = TextEditingController(text: ref.read(userProfileProvider).name);
+  final nameShakeKey = GlobalKey<ShakeFieldState>();
+  String? nameError;
+  await showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: context.cardColor,
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+    builder: (sheetContext) => StatefulBuilder(builder: (context, setModalState) => Padding(
+      padding: EdgeInsets.fromLTRB(20, 22, 20, MediaQuery.viewInsetsOf(context).bottom + 24),
+      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Text(Strings.t(lang, 'edit_name'), style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 26, color: context.textPrimary)),
+        const SizedBox(height: 18),
+        ShakeField(
+          key: nameShakeKey,
+          child: TextField(controller: nameCtrl, decoration: InputDecoration(labelText: Strings.t(lang, 'your_name'), errorText: nameError)),
+        ),
+        const SizedBox(height: 18),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton(
+            onPressed: () {
+              final trimmed = nameCtrl.text.trim();
+              if (trimmed.isEmpty) {
+                setModalState(() => nameError = Strings.t(lang, 'field_required'));
+                nameShakeKey.currentState?.shake();
+                Future.delayed(const Duration(milliseconds: 3000), () {
+                  if (context.mounted) setModalState(() => nameError = null);
+                });
+                return;
+              }
+              ref.read(userProfileProvider.notifier).updateName(trimmed);
+              Navigator.pop(sheetContext);
+            },
+            child: Text(Strings.t(lang, 'save_changes')),
+          ),
+        ),
+      ]),
+    )),
+  );
+}
+
+class ProfileAvatar extends StatelessWidget {
+  final String? photoPath;
+  final int photoVersion;
+  final String initial;
+  final double radius;
+  const ProfileAvatar({super.key, required this.photoPath, required this.photoVersion, required this.initial, this.radius = 31});
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
+    final diameter = radius * 2;
+    final cacheDim = (diameter * MediaQuery.devicePixelRatioOf(context)).round();
+    if (photoPath == null) {
+      return CircleAvatar(
+        radius: radius,
+        backgroundColor: primary,
+        child: Text(initial, style: TextStyle(color: Colors.white, fontSize: radius * 0.8, fontWeight: FontWeight.bold)),
+      );
+    }
+    return ClipOval(
+      key: ValueKey('avatar-$photoVersion'),
+      child: Image.file(
+        File(photoPath!),
+        width: diameter,
+        height: diameter,
+        fit: BoxFit.cover,
+        cacheWidth: cacheDim,
+        cacheHeight: cacheDim,
+        errorBuilder: (context, error, stackTrace) => CircleAvatar(
+          radius: radius,
+          backgroundColor: primary,
+          child: Text(initial, style: TextStyle(color: Colors.white, fontSize: radius * 0.8, fontWeight: FontWeight.bold)),
+        ),
+      ),
+    );
+  }
+}
 class AppThemePalette {
   final String name;
   final Color primary, secondary, tertiary;
@@ -555,6 +786,12 @@ class Strings {
     'expense': {AppLang.en: 'Expense', AppLang.id: 'Pengeluaran'},
     'savings': {AppLang.en: 'Savings', AppLang.id: 'Tabungan'},
     'profile_title': {AppLang.en: 'Profile', AppLang.id: 'Profil'},
+    'change_photo': {AppLang.en: 'Change profile photo', AppLang.id: 'Ubah foto profil'},
+    'choose_from_gallery': {AppLang.en: 'Choose from gallery', AppLang.id: 'Pilih dari galeri'},
+    'take_photo': {AppLang.en: 'Take a photo', AppLang.id: 'Ambil foto'},
+    'remove_photo': {AppLang.en: 'Remove photo', AppLang.id: 'Hapus foto'},
+    'edit_name': {AppLang.en: 'Edit name', AppLang.id: 'Edit nama'},
+    'your_name': {AppLang.en: 'Your name', AppLang.id: 'Nama Anda'},
     'manage_account': {AppLang.en: 'Manage your finance account', AppLang.id: 'Kelola akun keuanganmu'},
     'section_finance': {AppLang.en: 'Finance', AppLang.id: 'Keuangan'},
     'savings_target': {AppLang.en: 'Savings target', AppLang.id: 'Target tabungan'},
@@ -2113,6 +2350,8 @@ class ProfilePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final lang = ref.watch(langProvider);
+    final profile = ref.watch(userProfileProvider);
+    final initial = profile.name.isNotEmpty ? profile.name.substring(0, 1).toUpperCase() : '?';
     return SafeArea(top: false, child: ListView(padding: EdgeInsets.fromLTRB(20, MediaQuery.paddingOf(context).top + 22, 20, 24), children: [
       Text(Strings.t(lang, 'profile_title'), style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 32, color: context.textPrimary)),
       const SizedBox(height: 22),
@@ -2120,13 +2359,39 @@ class ProfilePage extends ConsumerWidget {
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(24), border: Border.all(color: context.borderColor)),
         child: Row(children: [
-          CircleAvatar(radius: 31, backgroundColor: Theme.of(context).colorScheme.primary, child: const Text('R', style: TextStyle(color: Colors.white, fontSize: 25, fontWeight: FontWeight.bold))),
+          GestureDetector(
+            onTap: () => showProfilePhotoOptions(context, ref),
+            child: Stack(clipBehavior: Clip.none, children: [
+              ProfileAvatar(photoPath: profile.photoPath, photoVersion: profile.photoVersion, initial: initial, radius: 31),
+              Positioned(
+                right: -2, bottom: -2,
+                child: Container(
+                  padding: const EdgeInsets.all(5),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.secondary,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: context.cardColor, width: 2),
+                  ),
+                  child: const Icon(Icons.camera_alt_rounded, size: 12, color: Colors.black),
+                ),
+              ),
+            ]),
+          ),
           const SizedBox(width: 15),
-          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Raka', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: context.textPrimary)),
-            const SizedBox(height: 4),
-            Text(Strings.t(lang, 'manage_account'), style: TextStyle(color: context.textMuted)),
-          ]),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Row(children: [
+                Flexible(child: Text(profile.name, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: context.textPrimary), overflow: TextOverflow.ellipsis)),
+                const SizedBox(width: 6),
+                GestureDetector(
+                  onTap: () => showEditNameDialog(context, ref),
+                  child: Icon(Icons.edit_outlined, size: 16, color: context.iconMuted),
+                ),
+              ]),
+              const SizedBox(height: 4),
+              Text(Strings.t(lang, 'manage_account'), style: TextStyle(color: context.textMuted)),
+            ]),
+          ),
         ]),
       ),
       const SizedBox(height: 26),

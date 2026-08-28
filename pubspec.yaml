@@ -18,6 +18,7 @@ dependencies:
   intl: ^0.20.2
   shared_preferences: ^2.3.2
   image_picker: ^1.1.2
+  path_provider: ^2.1.6
   lottie: ^3.1.2
   number_flow_flutter: ^0.1.0
   flutter_animate: ^4.5.2
