@@ -820,6 +820,61 @@ final langProvider = StateProvider<AppLang>((ref) {
   return saved == 'id' ? AppLang.id : AppLang.en;
 });
 
+final categoryFeatureEnabledProvider = StateProvider<bool>((ref) => ref.watch(prefsProvider).getBool('category_feature_enabled') ?? false);
+
+final customCategoriesProvider = StateNotifierProvider<CustomCategoriesNotifier, List<String>>(
+  (ref) => CustomCategoriesNotifier(ref.watch(prefsProvider)),
+);
+
+class CustomCategoriesNotifier extends StateNotifier<List<String>> {
+  final SharedPreferences prefs;
+  static const _key = 'custom_categories';
+
+  CustomCategoriesNotifier(this.prefs) : super(prefs.getStringList(_key) ?? []);
+
+  void _persist() {
+    prefs.setStringList(_key, state);
+  }
+
+  void add(String category) {
+    final trimmed = category.trim();
+    if (trimmed.isEmpty || state.contains(trimmed)) return;
+    state = [...state, trimmed];
+    _persist();
+  }
+
+  void remove(String category) {
+    state = state.where((c) => c != category).toList();
+    _persist();
+  }
+}
+
+const incomeCategoryKeys = ['cat_income', 'cat_freelance', 'cat_bonus'];
+const expenseCategoryKeys = ['cat_food', 'cat_shopping', 'cat_transport', 'cat_bills', 'cat_other'];
+const allBuiltinCategoryKeys = ['cat_income', 'cat_freelance', 'cat_bonus', 'cat_food', 'cat_shopping', 'cat_transport', 'cat_bills', 'cat_other'];
+
+String? builtinCategoryKeyFor(String enLabel) {
+  for (final k in allBuiltinCategoryKeys) {
+    if (Strings.t(AppLang.en, k) == enLabel) return k;
+  }
+  return null;
+}
+
+Future<String?> promptNewCategoryDialog(BuildContext context, AppLang lang) {
+  final ctrl = TextEditingController();
+  return showDialog<String>(
+    context: context,
+    builder: (dialogContext) => AlertDialog(
+      title: Text(Strings.t(lang, 'add_category')),
+      content: TextField(controller: ctrl, autofocus: true, decoration: InputDecoration(labelText: Strings.t(lang, 'category_name'))),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(Strings.t(lang, 'cancel'))),
+        TextButton(onPressed: () => Navigator.pop(dialogContext, ctrl.text.trim()), child: Text(Strings.t(lang, 'save_changes'))),
+      ],
+    ),
+  );
+}
+
 extension AppColors on BuildContext {
   bool get isDark => Theme.of(this).brightness == Brightness.dark;
   Color get cardColor => isDark ? const Color(0xFF121016) : const Color(0xFFF8F7FB);
@@ -1164,6 +1219,11 @@ class Strings {
     'payment_principal_label': {AppLang.en: 'Principal', AppLang.id: 'Pokok'},
     'loan_edit_from_panel_notice': {AppLang.en: 'This transaction is linked to a loan. To edit or delete it, manage it from the Loans panel.', AppLang.id: 'Transaksi ini terhubung dengan pinjaman. Untuk mengedit atau menghapusnya, kelola dari panel Loans.'},
     'go_to_loans': {AppLang.en: 'Go to Loans', AppLang.id: 'Buka panel Loans'},
+    'enable_category_feature': {AppLang.en: 'Enable categories', AppLang.id: 'Aktifkan kategori'},
+    'enable_category_feature_desc': {AppLang.en: 'Tag transactions with a category and see spending breakdowns', AppLang.id: 'Beri label kategori pada transaksi dan lihat rincian pengeluaran'},
+    'categories_list': {AppLang.en: 'CATEGORIES', AppLang.id: 'KATEGORI'},
+    'add_category': {AppLang.en: 'Add category', AppLang.id: 'Tambah kategori'},
+    'category_name': {AppLang.en: 'Category name', AppLang.id: 'Nama kategori'},
   };
 
   static String t(AppLang lang, String key) => _s[key]?[lang] ?? key;
@@ -3118,6 +3178,8 @@ class SettingList extends ConsumerWidget {
                       Navigator.push(context, MaterialPageRoute(builder: (_) => const CardManagementPage()));
                     } else if (item.$1 == 'receivables') {
                       Navigator.push(context, MaterialPageRoute(builder: (_) => const LoanManagementPage()));
+                    } else if (item.$1 == 'category') {
+                      Navigator.push(context, MaterialPageRoute(builder: (_) => const CategorySettingsPage()));
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(Strings.t(lang, 'not_available').replaceAll('{name}', label))));
                     }
@@ -3370,6 +3432,113 @@ class LanguageSelectionPage extends ConsumerWidget {
   }
 }
 
+class CategorySettingsPage extends ConsumerWidget {
+  const CategorySettingsPage({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final lang = ref.watch(langProvider);
+    final enabled = ref.watch(categoryFeatureEnabledProvider);
+    final customCategories = ref.watch(customCategoriesProvider);
+    final isDark = context.isDark;
+    final primary = Theme.of(context).colorScheme.primary;
+
+    return Scaffold(
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+              child: Row(children: [
+                GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: LiquidGlass(
+                    borderRadius: 999,
+                    tint: isDark ? Colors.black : null,
+                    intensity: isDark ? 1.6 : 1.0,
+                    borderColor: isDark ? context.borderColor : null,
+                    child: Padding(padding: const EdgeInsets.all(10), child: Icon(SolarIconsOutline.arrowLeft, size: 20, color: context.textPrimary)),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Text(Strings.t(lang, 'category'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: context.textPrimary)),
+              ]),
+            ),
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(22), border: Border.all(color: context.borderColor)),
+                    child: SwitchListTile(
+                      value: enabled,
+                      onChanged: (v) {
+                        ref.read(categoryFeatureEnabledProvider.notifier).state = v;
+                        ref.read(prefsProvider).setBool('category_feature_enabled', v);
+                      },
+                      title: Text(Strings.t(lang, 'enable_category_feature'), style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: context.textPrimary)),
+                      subtitle: Text(Strings.t(lang, 'enable_category_feature_desc'), style: TextStyle(fontSize: 12, color: context.textMuted)),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(Strings.t(lang, 'categories_list'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: context.textFaint, letterSpacing: 1.2)),
+                  const SizedBox(height: 12),
+                  Container(
+                    decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(22), border: Border.all(color: context.borderColor)),
+                    child: Column(children: [
+                      ...allBuiltinCategoryKeys.asMap().entries.map((e) => Column(children: [
+                            ListTile(
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 18),
+                              leading: Icon(SolarIconsOutline.widget, size: 18, color: primary),
+                              title: Text(Strings.t(lang, e.value), style: TextStyle(color: context.textPrimary)),
+                              trailing: Text(
+                                Strings.t(lang, incomeCategoryKeys.contains(e.value) ? 'income' : 'expense'),
+                                style: TextStyle(fontSize: 10, color: context.textFaint, fontWeight: FontWeight.w600),
+                              ),
+                            ),
+                            if (e.key != allBuiltinCategoryKeys.length - 1 || customCategories.isNotEmpty)
+                              Divider(height: 1, indent: 56, endIndent: 20, color: context.borderColor),
+                          ])),
+                      ...customCategories.asMap().entries.map((e) => Column(children: [
+                            ListTile(
+                              contentPadding: const EdgeInsets.symmetric(horizontal: 18),
+                              leading: Icon(SolarIconsOutline.widget, size: 18, color: primary),
+                              title: Text(e.value, style: TextStyle(color: context.textPrimary)),
+                              trailing: IconButton(
+                                icon: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
+                                onPressed: () => ref.read(customCategoriesProvider.notifier).remove(e.value),
+                              ),
+                            ),
+                            if (e.key != customCategories.length - 1) Divider(height: 1, indent: 56, endIndent: 20, color: context.borderColor),
+                          ])),
+                    ]),
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () async {
+                        final newCat = await promptNewCategoryDialog(context, lang);
+                        if (newCat != null && newCat.trim().isNotEmpty) {
+                          ref.read(customCategoriesProvider.notifier).add(newCat.trim());
+                        }
+                      },
+                      icon: Icon(SolarIconsOutline.addCircle, size: 18, color: primary),
+                      label: Text(Strings.t(lang, 'add_category'), style: TextStyle(color: primary)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class NotificationsPage extends ConsumerWidget {
   const NotificationsPage({super.key});
 
@@ -3527,6 +3696,9 @@ Future<void> showTransactionForm(BuildContext context, WidgetRef ref, bool incom
       : ['cat_food', 'cat_shopping', 'cat_transport', 'cat_bills', 'cat_other'];
   final catEnLabels = catKeys.map((k) => Strings.t(AppLang.en, k)).toList();
   String category = (existing != null && catEnLabels.contains(existing.category)) ? existing.category : catEnLabels.first;
+  final categoryFeatureEnabled = ref.read(categoryFeatureEnabledProvider);
+  var categoryOptions = [...catEnLabels, ...ref.read(customCategoriesProvider)];
+  if (!categoryOptions.contains(category)) categoryOptions = [...categoryOptions, category];
   String? amountError;
   String? titleError;
   String? interestAmountError;
@@ -3566,6 +3738,44 @@ Future<void> showTransactionForm(BuildContext context, WidgetRef ref, bool incom
           child: TextField(controller: title, decoration: InputDecoration(labelText: Strings.t(lang, 'transaction_title_field'), errorText: titleError)),
         ),
         const SizedBox(height: 12),
+        if (categoryFeatureEnabled)
+          Row(crossAxisAlignment: CrossAxisAlignment.center, children: [
+            Expanded(
+              child: DropdownButtonFormField<String>(
+                value: category,
+                decoration: InputDecoration(labelText: Strings.t(lang, 'category')),
+                items: categoryOptions.map((c) {
+                  final key = builtinCategoryKeyFor(c);
+                  final displayLabel = key != null ? Strings.t(lang, key) : c;
+                  return DropdownMenuItem(value: c, child: Text(displayLabel, overflow: TextOverflow.ellipsis));
+                }).toList(),
+                onChanged: (v) => setModalState(() => category = v!),
+              ),
+            ),
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: () async {
+                final newCat = await promptNewCategoryDialog(context, lang);
+                if (newCat != null && newCat.trim().isNotEmpty) {
+                  final trimmed = newCat.trim();
+                  ref.read(customCategoriesProvider.notifier).add(trimmed);
+                  setModalState(() {
+                    if (!categoryOptions.contains(trimmed)) categoryOptions = [...categoryOptions, trimmed];
+                    category = trimmed;
+                  });
+                }
+              },
+              child: Container(
+                width: 52, height: 52,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primary.withOpacity(context.isDark ? 0.18 : 0.1),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(SolarIconsOutline.addCircle, color: Theme.of(context).colorScheme.primary, size: 20),
+              ),
+            ),
+          ]),
+        if (categoryFeatureEnabled) const SizedBox(height: 12),
       ],
       DropdownButtonFormField<int>(
         value: cardIndex,
