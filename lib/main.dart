@@ -1162,6 +1162,8 @@ class Strings {
     'principal_label': {AppLang.en: 'Principal', AppLang.id: 'Pokok pinjaman'},
     'payment_interest_label': {AppLang.en: 'Interest', AppLang.id: 'Bunga'},
     'payment_principal_label': {AppLang.en: 'Principal', AppLang.id: 'Pokok'},
+    'loan_edit_from_panel_notice': {AppLang.en: 'This transaction is linked to a loan. To edit or delete it, manage it from the Loans panel.', AppLang.id: 'Transaksi ini terhubung dengan pinjaman. Untuk mengedit atau menghapusnya, kelola dari panel Loans.'},
+    'go_to_loans': {AppLang.en: 'Go to Loans', AppLang.id: 'Buka panel Loans'},
   };
 
   static String t(AppLang lang, String key) => _s[key]?[lang] ?? key;
@@ -3007,7 +3009,13 @@ class TransactionTile extends ConsumerWidget {
     final cards = ref.watch(cardsProvider);
     final cardName = (item.cardIndex >= 0 && item.cardIndex < cards.length) ? cards[item.cardIndex].name : '';
     return GestureDetector(
-      onTap: () => showTransactionActions(context, ref, item),
+      onTap: () {
+        if (item.category == 'Pinjaman Diberikan' && item.loanId != null) {
+          showTransactionLoanNotice(context, ref, item);
+        } else {
+          showTransactionActions(context, ref, item);
+        }
+      },
       behavior: HitTestBehavior.opaque,
       child: Padding(
         padding: const EdgeInsets.only(bottom: 16),
@@ -3744,6 +3752,66 @@ void showTransactionActions(BuildContext context, WidgetRef ref, FinanceTransact
   );
 }
 
+void showTransactionLoanNotice(BuildContext context, WidgetRef ref, FinanceTransaction item) {
+  final lang = ref.read(langProvider);
+  final primary = Theme.of(context).colorScheme.primary;
+  final isDark = context.isDark;
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: context.cardColor,
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+    builder: (sheetContext) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 22, 20, 24),
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Container(
+              width: 48, height: 48,
+              decoration: BoxDecoration(color: isDark ? primary.withOpacity(0.18) : Theme.of(context).colorScheme.tertiary, shape: BoxShape.circle),
+              child: Icon(SolarIconsOutline.usersGroupTwoRounded, color: primary, size: 22),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(item.title, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: context.textPrimary)),
+                const SizedBox(height: 4),
+                Text(AppFormatters.dateTimeFull.format(item.date), style: TextStyle(color: context.textFaint, fontSize: 12)),
+              ]),
+            ),
+          ]),
+          const SizedBox(height: 18),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(color: isDark ? Colors.white.withOpacity(0.04) : const Color(0xFFF1EEF7), borderRadius: BorderRadius.circular(18)),
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Icon(Icons.info_outline_rounded, size: 18, color: primary),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  Strings.t(lang, 'loan_edit_from_panel_notice'),
+                  style: TextStyle(color: context.textMuted, fontSize: 13, height: 1.4),
+                ),
+              ),
+            ]),
+          ),
+          const SizedBox(height: 22),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: () {
+                Navigator.pop(sheetContext);
+                Navigator.push(context, MaterialPageRoute(builder: (_) => LoanManagementPage(initialLoanId: item.loanId)));
+              },
+              icon: const Icon(SolarIconsOutline.usersGroupTwoRounded, size: 18),
+              label: Text(Strings.t(lang, 'go_to_loans')),
+            ),
+          ),
+        ]),
+      ),
+    ),
+  );
+}
+
 void _confirmDeleteTransaction(BuildContext context, WidgetRef ref, FinanceTransaction item) {
   final lang = ref.read(langProvider);
   final isDark = context.isDark;
@@ -4030,7 +4098,8 @@ class CardManagementPage extends ConsumerWidget {
 }
 
 class LoanManagementPage extends ConsumerStatefulWidget {
-  const LoanManagementPage({super.key});
+  final String? initialLoanId;
+  const LoanManagementPage({super.key, this.initialLoanId});
   @override
   ConsumerState<LoanManagementPage> createState() => _LoanManagementPageState();
 }
@@ -4038,6 +4107,26 @@ class LoanManagementPage extends ConsumerStatefulWidget {
 class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
   String filter = 'all';
   static const filterKeys = ['all', 'loan_active', 'loan_paid', 'loan_inactive'];
+  bool _autoOpenHandled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialLoanId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _maybeAutoOpenDetail());
+    }
+  }
+
+  void _maybeAutoOpenDetail() {
+    if (_autoOpenHandled || !mounted) return;
+    final loanId = widget.initialLoanId;
+    if (loanId == null) return;
+    final loans = ref.read(loansProvider);
+    final match = loans.where((l) => l.id == loanId);
+    if (match.isEmpty) return;
+    _autoOpenHandled = true;
+    showLoanDetail(context, ref, match.first);
+  }
 
   @override
   Widget build(BuildContext context) {
