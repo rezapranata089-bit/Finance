@@ -2538,6 +2538,25 @@ class ProfilePage extends ConsumerWidget {
               Row(children: [
                 Flexible(child: Text(profile.name, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: context.textPrimary), overflow: TextOverflow.ellipsis)),
                 const SizedBox(width: 6),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary.withOpacity(context.isDark ? 0.18 : 0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.workspace_premium_rounded, size: 11, color: Theme.of(context).colorScheme.primary),
+                      const SizedBox(width: 4),
+                      Text(
+                        Strings.t(lang, 'premium_member'),
+                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, height: 1.0, color: Theme.of(context).colorScheme.primary, letterSpacing: 0.2),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 6),
                 GestureDetector(
                   onTap: () => showEditNameDialog(context, ref),
                   child: Icon(Icons.edit_outlined, size: 16, color: context.iconMuted),
