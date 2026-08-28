@@ -1663,6 +1663,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                 const SizedBox(height: 12),
                 ...items.take(4).toList().asMap().entries.map(
                       (e) => StaggeredReveal(
+                        key: ValueKey(e.value.id),
                         index: e.key,
                         child: TransactionTile(item: e.value),
                       ),
@@ -4145,19 +4146,44 @@ Future<void> showLoanForm({required BuildContext context, required WidgetRef ref
 
 
 
-class StaggeredReveal extends StatelessWidget {
+class StaggeredReveal extends StatefulWidget {
   final Widget child;
   final int index;
   const StaggeredReveal({super.key, required this.child, required this.index});
 
   @override
+  State<StaggeredReveal> createState() => _StaggeredRevealState();
+}
+
+class _StaggeredRevealState extends State<StaggeredReveal> with AutomaticKeepAliveClientMixin {
+  bool _hasEnteredViewport = false;
+  late final Key _visibilityKey = UniqueKey();
+
+  @override
+  bool get wantKeepAlive => _hasEnteredViewport;
+
+  @override
   Widget build(BuildContext context) {
-    return AnimationConfiguration.staggeredList(
-      position: index,
-      duration: const Duration(milliseconds: 400),
-      child: SlideAnimation(
-        verticalOffset: 50.0,
-        child: FadeInAnimation(child: child),
+    super.build(context);
+    return VisibilityDetector(
+      key: _visibilityKey,
+      onVisibilityChanged: (info) {
+        if (!_hasEnteredViewport && info.visibleFraction > 0.04) {
+          setState(() => _hasEnteredViewport = true);
+          updateKeepAlive();
+        }
+      },
+      child: RepaintBoundary(
+        child: _hasEnteredViewport
+            ? AnimationConfiguration.staggeredList(
+                position: widget.index,
+                duration: const Duration(milliseconds: 400),
+                child: SlideAnimation(
+                  verticalOffset: 50.0,
+                  child: FadeInAnimation(child: widget.child),
+                ),
+              )
+            : widget.child,
       ),
     );
   }
