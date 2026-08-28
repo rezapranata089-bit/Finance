@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math' as math;
 import 'dart:typed_data';
 import 'dart:ui';
 
@@ -1589,7 +1588,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ...items.take(4).toList().asMap().entries.map(
                       (e) => StaggeredReveal(
                         index: e.key,
-                        followScroll: false,
                         child: TransactionTile(item: e.value),
                       ),
                     ),
@@ -1641,7 +1639,6 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
   OverlayEntry? _entry;
   late final AnimationController _controller = AnimationController(vsync: this, value: 0);
   bool _open = false;
-  bool _pressed = false;
 
   static const _closedSize = Size(40, 40);
   static const _openSize = Size(200, 230);
@@ -1749,9 +1746,6 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
       link: _link,
       child: GestureDetector(
         onTap: _toggle,
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapUp: (_) => setState(() => _pressed = false),
-        onTapCancel: () => setState(() => _pressed = false),
         child: AnimatedOpacity(
           duration: const Duration(milliseconds: 200),
           opacity: _open ? 0 : 1,
@@ -3993,9 +3987,7 @@ Future<void> showLoanForm({required BuildContext context, required WidgetRef ref
 class StaggeredReveal extends StatefulWidget {
   final Widget child;
   final int index;
-  final ScrollController? scrollController;
-  final bool followScroll;
-  const StaggeredReveal({super.key, required this.child, required this.index, this.scrollController, this.followScroll = true});
+  const StaggeredReveal({super.key, required this.child, required this.index});
 
   @override
   State<StaggeredReveal> createState() => _StaggeredRevealState();
@@ -4003,11 +3995,15 @@ class StaggeredReveal extends StatefulWidget {
 
 class _StaggeredRevealState extends State<StaggeredReveal> {
   bool _hasEnteredViewport = false;
+  // Dibuat sekali per State (bukan dari hashCode widget yang berubah setiap
+  // rebuild) supaya VisibilityDetector tidak dibongkar-pasang ulang setiap
+  // ada state lain di layar yang berubah.
+  late final Key _visibilityKey = UniqueKey();
 
   @override
   Widget build(BuildContext context) {
     return VisibilityDetector(
-      key: ValueKey('staggered-${widget.index}-${widget.child.hashCode}'),
+      key: _visibilityKey,
       onVisibilityChanged: (info) {
         if (!_hasEnteredViewport && info.visibleFraction > 0.04) {
           setState(() => _hasEnteredViewport = true);
