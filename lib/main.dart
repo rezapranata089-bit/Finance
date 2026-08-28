@@ -1300,7 +1300,7 @@ class FinanceShell extends ConsumerWidget {
     final lang = ref.watch(langProvider);
     return Scaffold(
       body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 260),
+        duration: const Duration(milliseconds: 100),
         switchInCurve: Curves.easeOut,
         switchOutCurve: Curves.easeIn,
         transitionBuilder: (child, animation) => FadeTransition(opacity: animation, child: child),
@@ -2590,7 +2590,11 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
           );
         }
         final e = items[index - 1];
-        return StaggeredReveal(index: index - 1, child: TransactionTile(item: e));
+        return StaggeredReveal(
+          animate: false,
+          index: index - 1,
+          child: TransactionTile(item: e),
+        );
       },
     ));
   }
