@@ -1104,32 +1104,13 @@ class HomePage extends ConsumerWidget {
                 Center(child: Text(Strings.t(lang, 'your_balance'), style: TextStyle(color: context.textMuted, fontSize: 13, fontWeight: FontWeight.w500))),
                 const SizedBox(height: 8),
                 Center(
-                  child: AnimatedSize(
-                    duration: const Duration(milliseconds: 520),
-                    curve: Curves.easeOutCubic,
-                    alignment: Alignment.center,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.baseline,
-                      textBaseline: TextBaseline.alphabetic,
-                      children: [
-                        Text('Rp ', style: TextStyle(fontFamily: 'Satoshi', fontSize: 38, fontWeight: FontWeight.w700, letterSpacing: -2.5, color: context.textPrimary)),
-                        NumberFlow(
-                          value: balance,
-                          locale: 'id_ID',
-                          format: const NumberFlowFormat.decimal(maxFraction: 0),
-                          spring: NumberFlowSpring.ios,
-                          transformTiming: const TimingConfig(
-                            duration: Duration(milliseconds: 520),
-                            curve: NumberFlowCurve(),
-                          ),
-                          tabularNums: true,
-                          motionBlur: 3.0,
-                          digitSquish: 0.16,
-                          style: TextStyle(fontFamily: 'Satoshi', fontSize: 38, fontWeight: FontWeight.w700, letterSpacing: -2.5, color: context.textPrimary),
-                        ),
-                      ],
-                    ),
+                  child: NumberFlow(
+                    value: balance,
+                    locale: 'id_ID',
+                    format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '),
+                    spring: NumberFlowSpring.ios,
+                    tabularNums: true,
+                    style: TextStyle(fontFamily: 'Satoshi', fontSize: 38, fontWeight: FontWeight.w700, letterSpacing: -2.5, color: context.textPrimary),
                   ),
                 ),
                 const SizedBox(height: 12),
