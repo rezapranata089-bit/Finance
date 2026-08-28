@@ -423,13 +423,15 @@ enum LoanInterestType { flat, declining }
 enum LoanStatus { active, paid, inactive }
 
 class LoanPayment {
+  final String? transactionId;
   final DateTime date;
   final double interestAmount;
   final double principalAmount;
   final String note;
-  const LoanPayment({required this.date, this.interestAmount = 0, this.principalAmount = 0, this.note = ''});
+  const LoanPayment({this.transactionId, required this.date, this.interestAmount = 0, this.principalAmount = 0, this.note = ''});
 
   Map<String, dynamic> toJson() => {
+        'transactionId': transactionId,
         'date': date.toIso8601String(),
         'interestAmount': interestAmount,
         'principalAmount': principalAmount,
@@ -437,6 +439,7 @@ class LoanPayment {
       };
 
   factory LoanPayment.fromJson(Map<String, dynamic> json) => LoanPayment(
+        transactionId: json['transactionId'] as String?,
         date: DateTime.parse(json['date'] as String),
         interestAmount: (json['interestAmount'] as num?)?.toDouble() ?? 0,
         principalAmount: (json['principalAmount'] as num?)?.toDouble() ?? 0,
@@ -632,13 +635,15 @@ class LoansNotifier extends StateNotifier<List<Loan>> {
     final idx = state.indexWhere((l) => l.id == id);
     if (idx == -1) return;
     final loan = state[idx];
+    final txId = 'loantx-${DateTime.now().microsecondsSinceEpoch}';
     if (isInterest) {
-      final payment = LoanPayment(date: date, interestAmount: amount, principalAmount: 0, note: note);
+      final payment = LoanPayment(transactionId: txId, date: date, interestAmount: amount, principalAmount: 0, note: note);
       final list = [...state];
       list[idx] = loan.copyWith(payments: [...loan.payments, payment]);
       state = list;
       _persist();
       ref.read(transactionsProvider.notifier).add(
+            id: txId,
             title: 'Bunga · ${loan.borrowerName}',
             amount: amount,
             income: true,
@@ -651,12 +656,13 @@ class LoansNotifier extends StateNotifier<List<Loan>> {
     } else {
       final newRemaining = (loan.remainingPrincipal - amount).clamp(0, loan.principal).toDouble();
       final newStatus = newRemaining <= 0 ? LoanStatus.paid : loan.status;
-      final payment = LoanPayment(date: date, interestAmount: 0, principalAmount: amount, note: note);
+      final payment = LoanPayment(transactionId: txId, date: date, interestAmount: 0, principalAmount: amount, note: note);
       final list = [...state];
       list[idx] = loan.copyWith(remainingPrincipal: newRemaining, status: newStatus, payments: [...loan.payments, payment]);
       state = list;
       _persist();
       ref.read(transactionsProvider.notifier).add(
+            id: txId,
             title: 'Cicilan Pokok · ${loan.borrowerName}',
             amount: amount,
             income: true,
@@ -667,6 +673,70 @@ class LoansNotifier extends StateNotifier<List<Loan>> {
             loanId: id,
           );
     }
+  }
+
+  void syncFromTransactionEdit(FinanceTransaction oldTx, FinanceTransaction newTx) {
+    final loanId = newTx.loanId;
+    if (loanId == null) return;
+    final idx = state.indexWhere((l) => l.id == loanId);
+    if (idx == -1) return;
+    final loan = state[idx];
+    if (oldTx.category == 'Pinjaman Diberikan') {
+      final delta = newTx.amount - oldTx.amount;
+      final newPrincipal = newTx.amount;
+      final newRemaining = (loan.remainingPrincipal + delta).clamp(0, newPrincipal).toDouble();
+      LoanStatus newStatus = loan.status;
+      if (newRemaining <= 0) {
+        newStatus = LoanStatus.paid;
+      } else if (loan.status == LoanStatus.paid) {
+        newStatus = LoanStatus.active;
+      }
+      final list = [...state];
+      list[idx] = loan.copyWith(principal: newPrincipal, remainingPrincipal: newRemaining, status: newStatus);
+      state = list;
+      _persist();
+    } else if (oldTx.category == 'Bunga Pinjaman') {
+      final pIdx = loan.payments.indexWhere((p) => p.transactionId == oldTx.id);
+      if (pIdx == -1) return;
+      final payments = [...loan.payments];
+      payments[pIdx] = LoanPayment(transactionId: payments[pIdx].transactionId, date: newTx.date, interestAmount: newTx.amount, principalAmount: 0, note: newTx.note);
+      final list = [...state];
+      list[idx] = loan.copyWith(payments: payments);
+      state = list;
+      _persist();
+    } else if (oldTx.category == 'Cicilan Pokok') {
+      final pIdx = loan.payments.indexWhere((p) => p.transactionId == oldTx.id);
+      if (pIdx == -1) return;
+      final oldPrincipalPaid = loan.payments[pIdx].principalAmount;
+      final deltaPaid = newTx.amount - oldPrincipalPaid;
+      final newRemaining = (loan.remainingPrincipal - deltaPaid).clamp(0, loan.principal).toDouble();
+      final payments = [...loan.payments];
+      payments[pIdx] = LoanPayment(transactionId: payments[pIdx].transactionId, date: newTx.date, interestAmount: 0, principalAmount: newTx.amount, note: newTx.note);
+      final newStatus = newRemaining <= 0 ? LoanStatus.paid : (loan.status == LoanStatus.paid ? LoanStatus.active : loan.status);
+      final list = [...state];
+      list[idx] = loan.copyWith(remainingPrincipal: newRemaining, payments: payments, status: newStatus);
+      state = list;
+      _persist();
+    }
+  }
+
+  void removePaymentByTransaction(String loanId, String transactionId) {
+    final idx = state.indexWhere((l) => l.id == loanId);
+    if (idx == -1) return;
+    final loan = state[idx];
+    final pIdx = loan.payments.indexWhere((p) => p.transactionId == transactionId);
+    if (pIdx == -1) return;
+    final payment = loan.payments[pIdx];
+    final payments = [...loan.payments]..removeAt(pIdx);
+    double newRemaining = loan.remainingPrincipal;
+    if (payment.principalAmount > 0) {
+      newRemaining = (loan.remainingPrincipal + payment.principalAmount).clamp(0, loan.principal).toDouble();
+    }
+    final newStatus = (loan.status == LoanStatus.paid && newRemaining > 0) ? LoanStatus.active : loan.status;
+    final list = [...state];
+    list[idx] = loan.copyWith(remainingPrincipal: newRemaining, payments: payments, status: newStatus);
+    state = list;
+    _persist();
   }
 
   void removeLoan(String id) {
@@ -1107,8 +1177,8 @@ class TransactionNotifier extends StateNotifier<List<FinanceTransaction>> {
     prefs.setString(_key, jsonEncode(state.map((e) => e.toJson()).toList()));
   }
 
-  void add({required String title, required double amount, required bool income, required String category, required String note, required DateTime date, int cardIndex = 0, String? loanId}) {
-    state = [FinanceTransaction(id: _generateId(), title: title, amount: amount, income: income, category: category, note: note, date: date, cardIndex: cardIndex, loanId: loanId), ...state];
+  void add({required String title, required double amount, required bool income, required String category, required String note, required DateTime date, int cardIndex = 0, String? loanId, String? id}) {
+    state = [FinanceTransaction(id: id ?? _generateId(), title: title, amount: amount, income: income, category: category, note: note, date: date, cardIndex: cardIndex, loanId: loanId), ...state];
     _persist();
   }
 
@@ -3507,7 +3577,11 @@ Future<void> showTransactionForm(BuildContext context, WidgetRef ref, bool incom
           return;
         }
         if (isEdit) {
-          ref.read(transactionsProvider.notifier).update(existing!, FinanceTransaction(id: existing.id, title: title.text.trim(), category: category, note: note.text.trim(), amount: value, income: effectiveIncome, date: selectedDate, cardIndex: cardIndex));
+          final updatedTx = FinanceTransaction(id: existing!.id, title: title.text.trim(), category: category, note: note.text.trim(), amount: value, income: effectiveIncome, date: selectedDate, cardIndex: cardIndex, loanId: existing.loanId);
+          ref.read(transactionsProvider.notifier).update(existing, updatedTx);
+          if (existing.loanId != null) {
+            ref.read(loansProvider.notifier).syncFromTransactionEdit(existing, updatedTx);
+          }
         } else {
           ref.read(transactionsProvider.notifier).add(title: title.text.trim(), amount: value, income: effectiveIncome, category: category, note: note.text.trim(), date: selectedDate, cardIndex: cardIndex);
         }
@@ -3617,7 +3691,15 @@ void _confirmDeleteTransaction(BuildContext context, WidgetRef ref, FinanceTrans
               TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(Strings.t(lang, 'cancel'))),
               TextButton(
                 onPressed: () {
-                  ref.read(transactionsProvider.notifier).remove(item);
+                  final loanId = item.loanId;
+                  if (loanId != null && item.category == 'Pinjaman Diberikan') {
+                    ref.read(loansProvider.notifier).removeLoan(loanId);
+                  } else {
+                    if (loanId != null) {
+                      ref.read(loansProvider.notifier).removePaymentByTransaction(loanId, item.id);
+                    }
+                    ref.read(transactionsProvider.notifier).remove(item);
+                  }
                   Navigator.pop(dialogContext);
                 },
                 child: Text(Strings.t(lang, 'delete'), style: const TextStyle(color: Colors.redAccent)),
