@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
+import 'dart:typed_data';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -33,19 +34,36 @@ final prefsProvider = Provider<SharedPreferences>((ref) => throw UnimplementedEr
 class UserProfile {
   final String name;
   final String? photoPath;
+  final String? photoBytesBase64;
   final int photoVersion;
-  const UserProfile({this.name = 'Raka', this.photoPath, this.photoVersion = 0});
+  const UserProfile({this.name = 'Raka', this.photoPath, this.photoBytesBase64, this.photoVersion = 0});
 
-  UserProfile copyWith({String? name, String? photoPath, bool clearPhoto = false, int? photoVersion}) => UserProfile(
+  bool get hasPhoto => photoPath != null || photoBytesBase64 != null;
+
+  UserProfile copyWith({
+    String? name,
+    String? photoPath,
+    String? photoBytesBase64,
+    bool clearPhoto = false,
+    int? photoVersion,
+  }) =>
+      UserProfile(
         name: name ?? this.name,
         photoPath: clearPhoto ? null : (photoPath ?? this.photoPath),
+        photoBytesBase64: clearPhoto ? null : (photoBytesBase64 ?? this.photoBytesBase64),
         photoVersion: photoVersion ?? this.photoVersion,
       );
 
-  Map<String, dynamic> toJson() => {'name': name, 'photoPath': photoPath, 'photoVersion': photoVersion};
+  Map<String, dynamic> toJson() => {
+        'name': name,
+        'photoPath': photoPath,
+        'photoBytesBase64': photoBytesBase64,
+        'photoVersion': photoVersion,
+      };
   factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
         name: json['name'] as String? ?? 'Raka',
         photoPath: json['photoPath'] as String?,
+        photoBytesBase64: json['photoBytesBase64'] as String?,
         photoVersion: json['photoVersion'] as int? ?? 0,
       );
 }
@@ -81,18 +99,24 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
     _persist();
   }
 
-  Future<void> updatePhoto(String newPath) async {
-    final oldPath = state.photoPath;
-    if (oldPath != null && oldPath != newPath) {
-      PaintingBinding.instance.imageCache.evict(FileImage(File(oldPath)));
+  Future<void> updatePhoto({String? path, Uint8List? bytes}) async {
+    if (!kIsWeb && path != null) {
+      final oldPath = state.photoPath;
+      if (oldPath != null && oldPath != path) {
+        PaintingBinding.instance.imageCache.evict(FileImage(File(oldPath)));
+      }
+      state = state.copyWith(photoPath: path, photoVersion: state.photoVersion + 1);
+    } else if (kIsWeb && bytes != null) {
+      state = state.copyWith(photoBytesBase64: base64Encode(bytes), photoVersion: state.photoVersion + 1);
+    } else {
+      return;
     }
-    state = state.copyWith(photoPath: newPath, photoVersion: state.photoVersion + 1);
     _persist();
   }
 
   Future<void> removePhoto() async {
     final oldPath = state.photoPath;
-    if (oldPath != null) {
+    if (!kIsWeb && oldPath != null) {
       PaintingBinding.instance.imageCache.evict(FileImage(File(oldPath)));
       final file = File(oldPath);
       if (await file.exists()) {
@@ -106,7 +130,13 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
   }
 }
 
-Future<String?> pickAndCompressProfilePhoto(ImageSource source) async {
+class ProfilePhotoPick {
+  final String? path;
+  final Uint8List? bytes;
+  const ProfilePhotoPick({this.path, this.bytes});
+}
+
+Future<ProfilePhotoPick?> pickAndCompressProfilePhoto(ImageSource source) async {
   final picker = ImagePicker();
   final XFile? picked = await picker.pickImage(
     source: source,
@@ -115,6 +145,12 @@ Future<String?> pickAndCompressProfilePhoto(ImageSource source) async {
     imageQuality: 75,
   );
   if (picked == null) return null;
+
+  if (kIsWeb) {
+    final bytes = await picked.readAsBytes();
+    return ProfilePhotoPick(bytes: bytes);
+  }
+
   final dir = await getApplicationDocumentsDirectory();
   final destPath = '${dir.path}/profile_photo.jpg';
   final destFile = File(destPath);
@@ -124,12 +160,12 @@ Future<String?> pickAndCompressProfilePhoto(ImageSource source) async {
     } catch (_) {}
   }
   await File(picked.path).copy(destPath);
-  return destPath;
+  return ProfilePhotoPick(path: destPath);
 }
 
-Future<void> showProfilePhotoOptions(BuildContext context, WidgetRef ref) async {
+  Future<void> showProfilePhotoOptions(BuildContext context, WidgetRef ref) async {
   final lang = ref.read(langProvider);
-  final hasPhoto = ref.read(userProfileProvider).photoPath != null;
+  final hasPhoto = ref.read(userProfileProvider).hasPhoto;
   await showModalBottomSheet(
     context: context,
     backgroundColor: context.cardColor,
@@ -146,8 +182,8 @@ Future<void> showProfilePhotoOptions(BuildContext context, WidgetRef ref) async 
             title: Text(Strings.t(lang, 'choose_from_gallery')),
             onTap: () async {
               Navigator.pop(sheetContext);
-              final path = await pickAndCompressProfilePhoto(ImageSource.gallery);
-              if (path != null) ref.read(userProfileProvider.notifier).updatePhoto(path);
+              final result = await pickAndCompressProfilePhoto(ImageSource.gallery);
+              if (result != null) ref.read(userProfileProvider.notifier).updatePhoto(path: result.path, bytes: result.bytes);
             },
           ),
           ListTile(
@@ -156,8 +192,8 @@ Future<void> showProfilePhotoOptions(BuildContext context, WidgetRef ref) async 
             title: Text(Strings.t(lang, 'take_photo')),
             onTap: () async {
               Navigator.pop(sheetContext);
-              final path = await pickAndCompressProfilePhoto(ImageSource.camera);
-              if (path != null) ref.read(userProfileProvider.notifier).updatePhoto(path);
+              final result = await pickAndCompressProfilePhoto(ImageSource.camera);
+              if (result != null) ref.read(userProfileProvider.notifier).updatePhoto(path: result.path, bytes: result.bytes);
             },
           ),
           if (hasPhoto)
@@ -222,23 +258,55 @@ Future<void> showEditNameDialog(BuildContext context, WidgetRef ref) async {
 
 class ProfileAvatar extends StatelessWidget {
   final String? photoPath;
+  final String? photoBytesBase64;
   final int photoVersion;
   final String initial;
   final double radius;
-  const ProfileAvatar({super.key, required this.photoPath, required this.photoVersion, required this.initial, this.radius = 31});
+  const ProfileAvatar({
+    super.key,
+    required this.photoPath,
+    this.photoBytesBase64,
+    required this.photoVersion,
+    required this.initial,
+    this.radius = 31,
+  });
+
+  Widget _fallback(Color primary) => CircleAvatar(
+        radius: radius,
+        backgroundColor: primary,
+        child: Text(initial, style: TextStyle(color: Colors.white, fontSize: radius * 0.8, fontWeight: FontWeight.bold)),
+      );
 
   @override
   Widget build(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
     final diameter = radius * 2;
     final cacheDim = (diameter * MediaQuery.devicePixelRatioOf(context)).round();
-    if (photoPath == null) {
-      return CircleAvatar(
-        radius: radius,
-        backgroundColor: primary,
-        child: Text(initial, style: TextStyle(color: Colors.white, fontSize: radius * 0.8, fontWeight: FontWeight.bold)),
+
+    if (kIsWeb) {
+      if (photoBytesBase64 == null) return _fallback(primary);
+      Uint8List bytes;
+      try {
+        bytes = base64Decode(photoBytesBase64!);
+      } catch (_) {
+        return _fallback(primary);
+      }
+      return ClipOval(
+        key: ValueKey('avatar-web-$photoVersion'),
+        child: Image.memory(
+          bytes,
+          width: diameter,
+          height: diameter,
+          fit: BoxFit.cover,
+          cacheWidth: cacheDim,
+          cacheHeight: cacheDim,
+          gaplessPlayback: true,
+          errorBuilder: (context, error, stackTrace) => _fallback(primary),
+        ),
       );
     }
+
+    if (photoPath == null) return _fallback(primary);
     return ClipOval(
       key: ValueKey('avatar-$photoVersion'),
       child: Image.file(
@@ -248,11 +316,7 @@ class ProfileAvatar extends StatelessWidget {
         fit: BoxFit.cover,
         cacheWidth: cacheDim,
         cacheHeight: cacheDim,
-        errorBuilder: (context, error, stackTrace) => CircleAvatar(
-          radius: radius,
-          backgroundColor: primary,
-          child: Text(initial, style: TextStyle(color: Colors.white, fontSize: radius * 0.8, fontWeight: FontWeight.bold)),
-        ),
+        errorBuilder: (context, error, stackTrace) => _fallback(primary),
       ),
     );
   }
@@ -2362,7 +2426,13 @@ class ProfilePage extends ConsumerWidget {
           GestureDetector(
             onTap: () => showProfilePhotoOptions(context, ref),
             child: Stack(clipBehavior: Clip.none, children: [
-              ProfileAvatar(photoPath: profile.photoPath, photoVersion: profile.photoVersion, initial: initial, radius: 31),
+              ProfileAvatar(
+                photoPath: profile.photoPath,
+                photoBytesBase64: profile.photoBytesBase64,
+                photoVersion: profile.photoVersion,
+                initial: initial,
+                radius: 31,
+              ),
               Positioned(
                 right: -2, bottom: -2,
                 child: Container(
