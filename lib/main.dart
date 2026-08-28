@@ -5,7 +5,6 @@ import 'dart:ui';
 
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -20,6 +19,7 @@ import 'package:solar_icons/solar_icons.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  VisibilityDetectorController.instance.updateInterval = const Duration(milliseconds: 50);
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   await initializeDateFormatting('id_ID', null);
   final prefs = await SharedPreferences.getInstance();
@@ -4209,21 +4209,55 @@ class StaggeredReveal extends StatefulWidget {
   @override
   State<StaggeredReveal> createState() => _StaggeredRevealState();
 }
-class _StaggeredRevealState extends State<StaggeredReveal> with AutomaticKeepAliveClientMixin {
+
+class _StaggeredRevealState extends State<StaggeredReveal> with SingleTickerProviderStateMixin, AutomaticKeepAliveClientMixin {
   @override
   bool get wantKeepAlive => true;
+
+  late final AnimationController _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 560));
+  late final Animation<double> _fade = CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.82, curve: Curves.easeOut));
+  late final Animation<double> _slide = CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic);
+  late final Key _visibilityKey = widget.key ?? UniqueKey();
+  bool _triggered = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _handleVisibility(VisibilityInfo info) {
+    if (_triggered || !mounted) return;
+    if (info.visibleFraction <= 0.08) return;
+    _triggered = true;
+    final delay = widget.stagger ? Duration(milliseconds: 45 * (widget.index % 6)) : Duration.zero;
+    if (delay == Duration.zero) {
+      _controller.forward();
+    } else {
+      Future.delayed(delay, () {
+        if (mounted) _controller.forward();
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     super.build(context);
     if (!widget.animate) return widget.child;
-    return RepaintBoundary(
-      child: AnimationConfiguration.staggeredList(
-position: widget.stagger ? widget.index : 0,
-duration: const Duration(milliseconds: 360),
-delay: widget.stagger ? const Duration(milliseconds: 80) : Duration.zero,
-child: SlideAnimation(
-  verticalOffset: 70.0,
-          child: FadeInAnimation(child: widget.child),
+    return VisibilityDetector(
+      key: _visibilityKey,
+      onVisibilityChanged: _handleVisibility,
+      child: RepaintBoundary(
+        child: AnimatedBuilder(
+          animation: _controller,
+          child: widget.child,
+          builder: (context, child) => Opacity(
+            opacity: _fade.value,
+            child: Transform.translate(
+              offset: Offset(0, (1 - _slide.value) * 26),
+              child: child,
+            ),
+          ),
         ),
       ),
     );
