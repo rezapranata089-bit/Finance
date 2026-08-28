@@ -2446,7 +2446,36 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
   String query = '';
   String filter = 'all';
   int? cardFilter;
+  int _displayCount = _pageSize;
+  final ScrollController _scrollController = ScrollController();
   static const filterKeys = ['all', 'income', 'expense'];
+  static const _pageSize = 10;
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final threshold = _scrollController.position.maxScrollExtent - 200;
+    if (_scrollController.position.pixels >= threshold) {
+      setState(() => _displayCount += _pageSize);
+    }
+  }
+
+  void _resetPaging() {
+    _displayCount = _pageSize;
+  }
+
   @override
   Widget build(BuildContext context) {
     final all = ref.watch(transactionsProvider);
@@ -2456,9 +2485,12 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
         (filter == 'all' || (filter == 'income' ? e.income : !e.income)) &&
         (cardFilter == null || e.cardIndex == cardFilter) &&
         e.title.toLowerCase().contains(query.toLowerCase())).toList();
+    final visibleCount = _displayCount < items.length ? _displayCount : items.length;
+    final hasMore = visibleCount < items.length;
     return SafeArea(top: false, child: ListView.builder(
+      controller: _scrollController,
       padding: EdgeInsets.fromLTRB(20, MediaQuery.paddingOf(context).top + 22, 20, 24),
-      itemCount: items.length + 1,
+      itemCount: visibleCount + 1 + (hasMore ? 1 : 0),
       itemBuilder: (context, index) {
         if (index == 0) {
           return Column(
@@ -2467,7 +2499,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
               Text(Strings.t(lang, 'transactions_title'), style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 32, color: context.textPrimary)),
               Text(Strings.t(lang, 'transactions_subtitle'), style: TextStyle(color: context.textMuted)),
               const SizedBox(height: 22),
-              TextField(onChanged: (v) => setState(() => query = v), decoration: InputDecoration(hintText: Strings.t(lang, 'search_transactions'), prefixIcon: const Icon(Icons.search))),
+              TextField(onChanged: (v) => setState(() { query = v; _resetPaging(); }), decoration: InputDecoration(hintText: Strings.t(lang, 'search_transactions'), prefixIcon: const Icon(Icons.search))),
               const SizedBox(height: 14),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
@@ -2482,7 +2514,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                           child: ChoiceChip(
                             label: Text(Strings.t(lang, 'filter_$k')),
                             selected: filter == k,
-                            onSelected: (_) => setState(() => filter = k),
+                            onSelected: (_) => setState(() { filter = k; _resetPaging(); }),
                           ),
                         ),
                       )
@@ -2502,7 +2534,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                       child: ChoiceChip(
                         label: Text(Strings.t(lang, 'all_accounts')),
                         selected: cardFilter == null,
-                        onSelected: (_) => setState(() => cardFilter = null),
+                        onSelected: (_) => setState(() { cardFilter = null; _resetPaging(); }),
                       ),
                     ),
                     ...cards.asMap().entries.map(
@@ -2511,7 +2543,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                             child: ChoiceChip(
                               label: Text(e.value.name),
                               selected: cardFilter == e.key,
-                              onSelected: (_) => setState(() => cardFilter = e.key),
+                              onSelected: (_) => setState(() { cardFilter = e.key; _resetPaging(); }),
                             ),
                           ),
                         ),
@@ -2520,6 +2552,12 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
               ),
               const SizedBox(height: 20),
             ],
+          );
+        }
+        if (hasMore && index == visibleCount + 1) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 20),
+            child: Center(child: SizedBox(width: 22, height: 22, child: CircularProgressIndicator(strokeWidth: 2.4))),
           );
         }
         final e = items[index - 1];
