@@ -636,17 +636,40 @@ class LoansNotifier extends StateNotifier<List<Loan>> {
         );
   }
 
-  void updateLoan(String id, {String? borrowerName, double? interestPercent, LoanInterestType? interestType, String? note}) {
+  void updateLoan(String id, {String? borrowerName, double? principal, double? interestPercent, LoanInterestType? interestType, String? note}) {
     final idx = state.indexWhere((l) => l.id == id);
     if (idx == -1) return;
     final oldLoan = state[idx];
+    double? newRemaining;
+    LoanStatus? newStatus;
+    final principalChanged = principal != null && principal != oldLoan.principal;
+    if (principalChanged) {
+      final delta = principal - oldLoan.principal;
+      newRemaining = (oldLoan.remainingPrincipal + delta).clamp(0, principal).toDouble();
+      if (newRemaining <= 0) {
+        newStatus = LoanStatus.paid;
+      } else if (oldLoan.status == LoanStatus.paid) {
+        newStatus = LoanStatus.active;
+      }
+    }
     final list = [...state];
-    list[idx] = oldLoan.copyWith(borrowerName: borrowerName, interestPercent: interestPercent, interestType: interestType, note: note);
+    list[idx] = oldLoan.copyWith(
+      borrowerName: borrowerName,
+      principal: principal,
+      remainingPrincipal: newRemaining,
+      interestPercent: interestPercent,
+      interestType: interestType,
+      note: note,
+      status: newStatus,
+    );
     state = list;
     _persist();
     final trimmedName = borrowerName?.trim();
     if (trimmedName != null && trimmedName.isNotEmpty && trimmedName != oldLoan.borrowerName) {
       ref.read(transactionsProvider.notifier).renameByLoan(id, trimmedName);
+    }
+    if (principalChanged) {
+      ref.read(transactionsProvider.notifier).updatePrincipalAmountByLoan(id, principal);
     }
   }
 
@@ -1275,6 +1298,26 @@ class TransactionNotifier extends StateNotifier<List<FinanceTransaction>> {
 
   void removeByLoan(String loanId) {
     state = state.where((t) => t.loanId != loanId).toList();
+    _persist();
+  }
+
+  void updatePrincipalAmountByLoan(String loanId, double newAmount) {
+    final idx = state.indexWhere((t) => t.loanId == loanId && t.category == 'Pinjaman Diberikan');
+    if (idx == -1) return;
+    final old = state[idx];
+    final list = [...state];
+    list[idx] = FinanceTransaction(
+      id: old.id,
+      title: old.title,
+      category: old.category,
+      note: old.note,
+      amount: newAmount,
+      income: old.income,
+      date: old.date,
+      cardIndex: old.cardIndex,
+      loanId: old.loanId,
+    );
+    state = list;
     _persist();
   }
 }
@@ -4265,7 +4308,6 @@ Future<void> showLoanForm({required BuildContext context, required WidgetRef ref
             key: principalShakeKey,
             child: TextField(
               controller: principalCtrl,
-              enabled: !isEdit,
               keyboardType: TextInputType.number,
               inputFormatters: [FilteringTextInputFormatter.digitsOnly, ThousandsInputFormatter()],
               decoration: InputDecoration(labelText: Strings.t(lang, 'principal_amount'), prefixText: 'Rp ', errorText: principalError),
@@ -4332,7 +4374,7 @@ Future<void> showLoanForm({required BuildContext context, required WidgetRef ref
               onPressed: () {
                 final hasNameError = nameCtrl.text.trim().isEmpty;
                 final principalValue = double.tryParse(principalCtrl.text.replaceAll('.', '')) ?? 0;
-                final hasPrincipalError = !isEdit && principalValue <= 0;
+                final hasPrincipalError = principalValue <= 0;
                 if (hasNameError || hasPrincipalError) {
                   setModalState(() {
                     nameError = hasNameError ? Strings.t(lang, 'field_required') : null;
@@ -4347,7 +4389,7 @@ Future<void> showLoanForm({required BuildContext context, required WidgetRef ref
                 }
                 final percentValue = double.tryParse(percentCtrl.text) ?? 0;
                 if (isEdit) {
-                  ref.read(loansProvider.notifier).updateLoan(existing.id, borrowerName: nameCtrl.text.trim(), interestPercent: percentValue, interestType: interestType, note: noteCtrl.text.trim());
+                  ref.read(loansProvider.notifier).updateLoan(existing.id, borrowerName: nameCtrl.text.trim(), principal: principalValue, interestPercent: percentValue, interestType: interestType, note: noteCtrl.text.trim());
                 } else {
                   ref.read(loansProvider.notifier).addLoan(
                         borrowerName: nameCtrl.text.trim(),
