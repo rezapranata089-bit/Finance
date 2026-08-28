@@ -4134,20 +4134,30 @@ class StaggeredReveal extends StatefulWidget {
   State<StaggeredReveal> createState() => _StaggeredRevealState();
 }
 
-class _StaggeredRevealState extends State<StaggeredReveal> {
+class _StaggeredRevealState extends State<StaggeredReveal> with AutomaticKeepAliveClientMixin {
   bool _hasEnteredViewport = false;
   // Dibuat sekali per State (bukan dari hashCode widget yang berubah setiap
   // rebuild) supaya VisibilityDetector tidak dibongkar-pasang ulang setiap
   // ada state lain di layar yang berubah.
   late final Key _visibilityKey = UniqueKey();
 
+  // Setelah animasi terpicu sekali, State ini dipertahankan hidup (tidak
+  // di-dispose) walau item discroll keluar dari viewport/cache extent.
+  // Ini mencegah animasi replay saat item yang sama muncul lagi (mis. saat
+  // scroll ke atas), karena tanpa ini ListView.builder bisa membuang
+  // State lama dan membangun ulang dari awal (_hasEnteredViewport = false).
+  @override
+  bool get wantKeepAlive => _hasEnteredViewport;
+
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return VisibilityDetector(
       key: _visibilityKey,
       onVisibilityChanged: (info) {
         if (!_hasEnteredViewport && info.visibleFraction > 0.04) {
           setState(() => _hasEnteredViewport = true);
+          updateKeepAlive();
         }
       },
       child: RepaintBoundary(
