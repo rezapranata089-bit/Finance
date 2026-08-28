@@ -1025,6 +1025,7 @@ class HomePage extends ConsumerWidget {
     return SafeArea(
       top: false,
       child: ListView(
+        primary: true,
         padding: EdgeInsets.zero,
         children: [
           Container(
