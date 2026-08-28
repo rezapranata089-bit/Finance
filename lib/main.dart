@@ -36,7 +36,7 @@ class UserProfile {
   final String? photoPath;
   final String? photoBytesBase64;
   final int photoVersion;
-  const UserProfile({this.name = 'Raka', this.photoPath, this.photoBytesBase64, this.photoVersion = 0});
+  const UserProfile({this.name = '', this.photoPath, this.photoBytesBase64, this.photoVersion = 0});
 
   bool get hasPhoto => photoPath != null || photoBytesBase64 != null;
 
@@ -61,7 +61,7 @@ class UserProfile {
         'photoVersion': photoVersion,
       };
   factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
-        name: json['name'] as String? ?? 'Raka',
+        name: json['name'] as String? ?? '',
         photoPath: json['photoPath'] as String?,
         photoBytesBase64: json['photoBytesBase64'] as String?,
         photoVersion: json['photoVersion'] as int? ?? 0,
@@ -369,13 +369,7 @@ class CardsNotifier extends StateNotifier<List<FinanceCard>> {
 
   static List<FinanceCard> _load(SharedPreferences prefs) {
     final raw = prefs.getString(_key);
-    if (raw == null || raw.isEmpty) {
-      return const [
-        FinanceCard(number: '**** 3425', name: 'Main Wallet', initialBalance: 0),
-        FinanceCard(number: '**** 7810', name: 'Savings', initialBalance: 0),
-        FinanceCard(number: '**** 2290', name: 'Business', initialBalance: 0),
-      ];
-    }
+    if (raw == null || raw.isEmpty) return const [];
     try {
       final list = jsonDecode(raw) as List;
       return list.map((e) => FinanceCard.fromJson(e as Map<String, dynamic>)).toList();
@@ -1042,29 +1036,60 @@ class FinanceTransaction {
     required this.income,
     required this.date,
     this.cardIndex = 0,
-  });
-}
+    });
 
-final transactionsProvider = StateNotifierProvider<TransactionNotifier, List<FinanceTransaction>>(
-  (ref) => TransactionNotifier(),
+    Map<String, dynamic> toJson() => {
+          'id': id,
+          'title': title,
+          'category': category,
+          'note': note,
+          'amount': amount,
+          'income': income,
+          'date': date.toIso8601String(),
+          'cardIndex': cardIndex,
+        };
+
+    factory FinanceTransaction.fromJson(Map<String, dynamic> json) => FinanceTransaction(
+          id: json['id'] as String,
+          title: json['title'] as String? ?? '',
+          category: json['category'] as String? ?? '',
+          note: json['note'] as String? ?? '',
+          amount: (json['amount'] as num?)?.toDouble() ?? 0,
+          income: json['income'] as bool? ?? false,
+          date: DateTime.tryParse(json['date'] as String? ?? '') ?? DateTime.now(),
+          cardIndex: json['cardIndex'] as int? ?? 0,
+        );
+  }
+  final transactionsProvider = StateNotifierProvider<TransactionNotifier, List<FinanceTransaction>>(
+  (ref) => TransactionNotifier(ref.watch(prefsProvider)),
 );
 
 class TransactionNotifier extends StateNotifier<List<FinanceTransaction>> {
+  final SharedPreferences prefs;
   static int _idCounter = 0;
+  static const _key = 'finance_transactions';
   static String _generateId() => '${DateTime.now().microsecondsSinceEpoch}-${_idCounter++}';
 
-  TransactionNotifier()
-      : super([
-          FinanceTransaction(id: 'seed-1', title: 'Monthly Salary', category: 'Income', note: 'August salary', amount: 0, income: true, date: DateTime(2026, 8, 24, 8, 30), cardIndex: 0),
-          FinanceTransaction(id: 'seed-2', title: 'Grocery shopping', category: 'Shopping', note: 'Household needs', amount: 0, income: false, date: DateTime(2026, 8, 24, 12, 30), cardIndex: 0),
-          FinanceTransaction(id: 'seed-3', title: 'Afternoon coffee', category: 'Food', note: '', amount: 0, income: false, date: DateTime(2026, 8, 24, 15, 20), cardIndex: 0),
-          FinanceTransaction(id: 'seed-4', title: 'Freelance design', category: 'Income', note: '', amount: 0, income: true, date: DateTime(2026, 8, 23, 10, 0), cardIndex: 0),
-          FinanceTransaction(id: 'seed-5', title: 'Transportation', category: 'Transport', note: '', amount: 0, income: false, date: DateTime(2026, 8, 23, 8, 15), cardIndex: 0),
-          FinanceTransaction(id: 'seed-6', title: 'Internet bill', category: 'Bills', note: '', amount: 0, income: false, date: DateTime(2026, 8, 20), cardIndex: 0),
-        ]);
+  TransactionNotifier(this.prefs) : super(_load(prefs));
+
+  static List<FinanceTransaction> _load(SharedPreferences prefs) {
+    final raw = prefs.getString(_key);
+    if (raw == null || raw.isEmpty) return const [];
+    try {
+      final list = jsonDecode(raw) as List;
+      return list.map((e) => FinanceTransaction.fromJson(e as Map<String, dynamic>)).toList();
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  void _persist() {
+    prefs.setString(_key, jsonEncode(state.map((e) => e.toJson()).toList()));
+  }
 
   void add({required String title, required double amount, required bool income, required String category, required String note, required DateTime date, int cardIndex = 0}) {
     state = [FinanceTransaction(id: _generateId(), title: title, amount: amount, income: income, category: category, note: note, date: date, cardIndex: cardIndex), ...state];
+    _persist();
   }
 
   void update(FinanceTransaction old, FinanceTransaction updated) {
@@ -1073,24 +1098,31 @@ class TransactionNotifier extends StateNotifier<List<FinanceTransaction>> {
     final list = [...state];
     list[idx] = updated;
     state = list;
+    _persist();
   }
 
   void remove(FinanceTransaction item) {
     state = state.where((t) => t.id != item.id).toList();
+    _persist();
   }
 
   void addAll(List<FinanceTransaction> items) {
     state = [...items, ...state];
+    _persist();
   }
 
   void removeAll(List<FinanceTransaction> items) {
     final idsToRemove = items.map((e) => e.id).toSet();
-    state = state.where((t) => !idsToRemove.contains(t.id)).toList();
-  }
-}
-
-final dummyDataActiveProvider = StateProvider<bool>((ref) => false);
-final dummyTransactionsHolderProvider = StateProvider<List<FinanceTransaction>>((ref) => []);
+        state = state.where((t) => !idsToRemove.contains(t.id)).toList();
+        _persist();
+      }
+    }
+    final dummyDataActiveProvider = StateProvider<bool>(
+      (ref) => ref.watch(prefsProvider).getBool('dummy_data_active') ?? false,
+    );
+    final dummyTransactionsHolderProvider = StateProvider<List<FinanceTransaction>>(
+      (ref) => ref.watch(transactionsProvider).where((item) => item.id.startsWith('dummy-')).toList(),
+    );
 
 List<FinanceTransaction> _buildSmartDummyTransactions(List<FinanceCard> cards) {
   final now = DateTime.now();
@@ -1118,6 +1150,7 @@ void toggleDummyData(BuildContext context, WidgetRef ref) {
     ref.read(transactionsProvider.notifier).removeAll(dummy);
     ref.read(dummyTransactionsHolderProvider.notifier).state = [];
     ref.read(dummyDataActiveProvider.notifier).state = false;
+    ref.read(prefsProvider).setBool('dummy_data_active', false);
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(Strings.t(lang, 'dummy_removed'))));
   } else {
     final cards = ref.read(cardsProvider);
@@ -1129,6 +1162,7 @@ void toggleDummyData(BuildContext context, WidgetRef ref) {
     ref.read(transactionsProvider.notifier).addAll(dummy);
     ref.read(dummyTransactionsHolderProvider.notifier).state = dummy;
     ref.read(dummyDataActiveProvider.notifier).state = true;
+    ref.read(prefsProvider).setBool('dummy_data_active', true);
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(Strings.t(lang, 'dummy_added'))));
   }
 }
