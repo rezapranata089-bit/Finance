@@ -532,7 +532,7 @@ class Strings {
     'request': {AppLang.en: 'Request', AppLang.id: 'Minta'},
     'exchange': {AppLang.en: 'Exchange', AppLang.id: 'Tukar'},
     'more': {AppLang.en: 'More', AppLang.id: 'Lainnya'},
-    'top_merchants': {AppLang.en: 'Top Merchants', AppLang.id: 'Merchant Teratas'},
+    'top_merchants': {AppLang.en: 'Smart Money Picks', AppLang.id: 'Pilihan Keuangan Cerdas'},
     'view_all': {AppLang.en: 'View all', AppLang.id: 'Lihat semua'},
     'discount_title': {AppLang.en: 'AI Finance Assistant', AppLang.id: 'Asisten Keuangan AI'},
     'discount_subtitle': {AppLang.en: 'Smarter money insights', AppLang.id: 'Wawasan keuangan lebih pintar'},
@@ -1188,7 +1188,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(Strings.t(lang, 'top_merchants'), style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: context.textPrimary)),
-                    Text('${Strings.t(lang, 'view_all')} >', style: TextStyle(color: context.textFaint, fontSize: 12, fontWeight: FontWeight.w600)),
                   ],
                 ),
                 const SizedBox(height: 16),
