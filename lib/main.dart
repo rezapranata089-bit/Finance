@@ -852,6 +852,7 @@ class Strings {
     'savings': {AppLang.en: 'Savings', AppLang.id: 'Tabungan'},
     'profile_title': {AppLang.en: 'Profile', AppLang.id: 'Profil'},
     'view_profile': {AppLang.en: 'View profile', AppLang.id: 'Lihat profil'},
+    'premium_member': {AppLang.en: 'Premium', AppLang.id: 'Premium'},
     'change_photo': {AppLang.en: 'Change profile photo', AppLang.id: 'Ubah foto profil'},
     'choose_from_gallery': {AppLang.en: 'Choose from gallery', AppLang.id: 'Pilih dari galeri'},
     'take_photo': {AppLang.en: 'Take a photo', AppLang.id: 'Ambil foto'},
@@ -1836,11 +1837,29 @@ class _MorphMenuContent extends ConsumerWidget {
                             overflow: TextOverflow.ellipsis,
                             style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w800, height: 1.1, color: context.textPrimary),
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            Strings.t(lang, 'view_profile'),
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, height: 1.1, color: context.textFaint),
+                          const SizedBox(height: 3),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  const Color(0xFFFFC94A),
+                                  const Color(0xFFFF9F1C),
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.workspace_premium_rounded, size: 9, color: Colors.white),
+                                const SizedBox(width: 3),
+                                Text(
+                                  Strings.t(lang, 'premium_member'),
+                                  style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800, height: 1.0, color: Colors.white, letterSpacing: 0.2),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
