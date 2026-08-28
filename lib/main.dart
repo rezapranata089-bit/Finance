@@ -4183,7 +4183,10 @@ class _StaggeredRevealState extends State<StaggeredReveal> with AutomaticKeepAli
                   child: FadeInAnimation(child: widget.child),
                 ),
               )
-            : widget.child,
+            : Opacity(
+                opacity: 0,
+                child: widget.child,
+              ),
       ),
     );
   }
