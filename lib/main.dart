@@ -3676,6 +3676,7 @@ class CardManagementPage extends ConsumerWidget {
                 itemBuilder: (context, i) {
                   final card = cards[i];
                   return StaggeredReveal(
+                    animate: false,
                     index: i,
                     child: Container(
                       padding: const EdgeInsets.all(16),
@@ -4149,7 +4150,8 @@ Future<void> showLoanForm({required BuildContext context, required WidgetRef ref
 class StaggeredReveal extends StatefulWidget {
   final Widget child;
   final int index;
-  const StaggeredReveal({super.key, required this.child, required this.index});
+  final bool animate;
+  const StaggeredReveal({super.key, required this.child, required this.index, this.animate = true});
 
   @override
   State<StaggeredReveal> createState() => _StaggeredRevealState();
@@ -4165,6 +4167,7 @@ class _StaggeredRevealState extends State<StaggeredReveal> with AutomaticKeepAli
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    if (!widget.animate) return widget.child;
     return VisibilityDetector(
       key: _visibilityKey,
       onVisibilityChanged: (info) {
