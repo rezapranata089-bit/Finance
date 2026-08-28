@@ -1104,19 +1104,23 @@ class HomePage extends ConsumerWidget {
                 Center(child: Text(Strings.t(lang, 'your_balance'), style: TextStyle(color: context.textMuted, fontSize: 13, fontWeight: FontWeight.w500))),
                 const SizedBox(height: 8),
                 Center(
-                  child: NumberFlow(
-                    value: balance,
-                    locale: 'id_ID',
-                    format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '),
-                    spring: NumberFlowSpring.ios,
-                    transformTiming: const TimingConfig(
-                      duration: Duration(milliseconds: 520),
-                      curve: NumberFlowCurve(),
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: NumberFlow(
+                      value: balance,
+                      locale: 'id_ID',
+                      format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '),
+                      spring: NumberFlowSpring.ios,
+                      transformTiming: const TimingConfig(
+                        duration: Duration(milliseconds: 520),
+                        curve: NumberFlowCurve(),
+                      ),
+                      tabularNums: true,
+                      textAlign: TextAlignValue.center,
+                      motionBlur: 3.0,
+                      digitSquish: 0.16,
+                      style: TextStyle(fontFamily: 'Satoshi', fontSize: 38, fontWeight: FontWeight.w700, letterSpacing: -2.5, color: context.textPrimary),
                     ),
-                    tabularNums: true,
-                    motionBlur: 3.0,
-                    digitSquish: 0.16,
-                    style: TextStyle(fontFamily: 'Satoshi', fontSize: 38, fontWeight: FontWeight.w700, letterSpacing: -2.5, color: context.textPrimary),
                   ),
                 ),
                 const SizedBox(height: 12),
