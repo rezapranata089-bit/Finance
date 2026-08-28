@@ -23,6 +23,13 @@ void main() async {
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   await initializeDateFormatting('id_ID', null);
   final prefs = await SharedPreferences.getInstance();
+  if (!(prefs.getBool('fresh_data_reset_v2') ?? false)) {
+    await prefs.remove('finance_cards');
+    await prefs.remove('finance_transactions');
+    await prefs.remove('user_profile');
+    await prefs.remove('dummy_data_active');
+    await prefs.setBool('fresh_data_reset_v2', true);
+  }
   runApp(ProviderScope(
     overrides: [prefsProvider.overrideWithValue(prefs)],
     child: const MyFinanceApp(),
@@ -1136,6 +1143,13 @@ List<FinanceTransaction> _buildSmartDummyTransactions(List<FinanceCard> cards) {
       FinanceTransaction(id: 'dummy-$seed-$i-2', title: 'Belanja Dummy · ${card.name}', category: 'Shopping', note: 'Data dummy', amount: 250000 + i * 40000, income: false, date: now.subtract(Duration(hours: 4 + i)), cardIndex: i),
       FinanceTransaction(id: 'dummy-$seed-$i-3', title: 'Makan Dummy · ${card.name}', category: 'Food', note: 'Data dummy', amount: 45000 + i * 8000, income: false, date: now.subtract(Duration(hours: 2 + i)), cardIndex: i),
       FinanceTransaction(id: 'dummy-$seed-$i-4', title: 'Transport Dummy · ${card.name}', category: 'Transport', note: 'Data dummy', amount: 25000 + i * 5000, income: false, date: now.subtract(Duration(minutes: 40 + i * 15)), cardIndex: i),
+      FinanceTransaction(id: 'dummy-$seed-$i-5', title: 'Tagihan Dummy · ${card.name}', category: 'Bills', note: 'Data dummy', amount: 180000 + i * 25000, income: false, date: now.subtract(Duration(days: 2 + i)), cardIndex: i),
+      FinanceTransaction(id: 'dummy-$seed-$i-6', title: 'Freelance Dummy · ${card.name}', category: 'Income', note: 'Data dummy', amount: 1250000 + i * 200000, income: true, date: now.subtract(Duration(days: 3 + i)), cardIndex: i),
+      FinanceTransaction(id: 'dummy-$seed-$i-7', title: 'Belanja Online Dummy · ${card.name}', category: 'Shopping', note: 'Data dummy', amount: 325000 + i * 35000, income: false, date: now.subtract(Duration(days: 4 + i)), cardIndex: i),
+      FinanceTransaction(id: 'dummy-$seed-$i-8', title: 'Hiburan Dummy · ${card.name}', category: 'Entertainment', note: 'Data dummy', amount: 150000 + i * 20000, income: false, date: now.subtract(Duration(days: 5 + i)), cardIndex: i),
+      FinanceTransaction(id: 'dummy-$seed-$i-9', title: 'Bonus Proyek Dummy · ${card.name}', category: 'Bonus', note: 'Data dummy', amount: 900000 + i * 125000, income: true, date: now.subtract(Duration(days: 6 + i)), cardIndex: i),
+      FinanceTransaction(id: 'dummy-$seed-$i-10', title: 'Kesehatan Dummy · ${card.name}', category: 'Health', note: 'Data dummy', amount: 210000 + i * 30000, income: false, date: now.subtract(Duration(days: 7 + i)), cardIndex: i),
+      FinanceTransaction(id: 'dummy-$seed-$i-11', title: 'Investasi Dummy · ${card.name}', category: 'Investment', note: 'Data dummy', amount: 500000 + i * 100000, income: false, date: now.subtract(Duration(days: 8 + i)), cardIndex: i),
     ]);
   }
   return list;
