@@ -4204,45 +4204,25 @@ class StaggeredReveal extends StatefulWidget {
   final int index;
   final bool animate;
   const StaggeredReveal({super.key, required this.child, required this.index, this.animate = true});
-
   @override
   State<StaggeredReveal> createState() => _StaggeredRevealState();
 }
-
 class _StaggeredRevealState extends State<StaggeredReveal> with AutomaticKeepAliveClientMixin {
-  bool _hasEnteredViewport = false;
-  late final Key _visibilityKey = UniqueKey();
-
   @override
-  bool get wantKeepAlive => _hasEnteredViewport;
-
+  bool get wantKeepAlive => true;
   @override
   Widget build(BuildContext context) {
     super.build(context);
     if (!widget.animate) return widget.child;
-    return VisibilityDetector(
-      key: _visibilityKey,
-      onVisibilityChanged: (info) {
-        if (!_hasEnteredViewport && info.visibleFraction > 0) {
-          setState(() => _hasEnteredViewport = true);
-          updateKeepAlive();
-        }
-      },
-      child: RepaintBoundary(
-        child: _hasEnteredViewport
-            ? AnimationConfiguration.staggeredList(
-                position: widget.index,
-                duration: const Duration(milliseconds: 260),
-                delay: const Duration(milliseconds: 25),
-                child: SlideAnimation(
-                  verticalOffset: 50.0,
-                  child: FadeInAnimation(child: widget.child),
-                ),
-              )
-            : Opacity(
-                opacity: 0,
-                child: widget.child,
-              ),
+    return RepaintBoundary(
+      child: AnimationConfiguration.staggeredList(
+        position: widget.index,
+        duration: const Duration(milliseconds: 220),
+        delay: const Duration(milliseconds: 20),
+        child: SlideAnimation(
+          verticalOffset: 28.0,
+          child: FadeInAnimation(child: widget.child),
+        ),
       ),
     );
   }
