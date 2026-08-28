@@ -1563,7 +1563,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                       curve: Curves.easeOut,
                     ),
                     tabularNums: true,
-                    style: TextStyle(fontFamily: 'Satoshi', fontSize: 38, fontWeight: FontWeight.w700, letterSpacing: -2.5, color: context.textPrimary),
+                    style: TextStyle(fontFamily: 'Satoshi', fontSize: 38, fontWeight: FontWeight.w700, letterSpacing: -1.8, color: context.textPrimary),
                   ),
                 ),
                 const SizedBox(height: 12),
