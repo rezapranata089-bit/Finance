@@ -3505,7 +3505,7 @@ void showTransactionActions(BuildContext context, WidgetRef ref, FinanceTransact
             decoration: BoxDecoration(color: context.isDark ? Colors.white.withOpacity(0.04) : const Color(0xFFF1EEF7), borderRadius: BorderRadius.circular(18)),
             child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
               Text(Strings.t(lang, item.income ? 'receive' : 'transfer'), style: TextStyle(color: context.textMuted)),
-              NumberFlow(value: item.amount, locale: 'id_ID', format: NumberFlowFormat.currency(currencyCode: 'IDR', symbol: item.income ? '+Rp ' : '-Rp '), style: TextStyle(fontFamily: 'Satoshi', fontWeight: FontWeight.w800, fontSize: 16, letterSpacing: -1.5, color: item.income ? const Color(0xFF24A148) : context.textPrimary)),
+              NumberFlow(value: item.amount, locale: 'id_ID', format: NumberFlowFormat.currency(currencyCode: 'IDR', symbol: item.income ? '+Rp ' : '-Rp '), style: TextStyle(fontFamily: 'Satoshi', fontWeight: FontWeight.w800, fontSize: 16, letterSpacing: -0.2, color: item.income ? const Color(0xFF24A148) : context.textPrimary)),
             ]),
           ),
           if (item.note.isNotEmpty) ...[
