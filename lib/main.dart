@@ -3898,7 +3898,7 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
                       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Text(Strings.t(lang, 'total_outstanding'), style: TextStyle(color: context.textMuted, fontSize: 11)),
                         const SizedBox(height: 6),
-                        NumberFlow(value: totalOutstanding, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: TextStyle(fontFamily: 'Satoshi', color: context.textPrimary, fontWeight: FontWeight.bold, fontSize: 15, letterSpacing: -1.5)),
+                        NumberFlow(value: totalOutstanding, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: TextStyle(fontFamily: 'Satoshi', color: context.textPrimary, fontWeight: FontWeight.bold, fontSize: 15, letterSpacing: -0.2)),
                       ]),
                     ),
                     Container(width: 1, height: 36, color: context.borderColor),
@@ -3908,7 +3908,7 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                           Text(Strings.t(lang, 'total_interest_collected'), style: TextStyle(color: context.textMuted, fontSize: 11)),
                           const SizedBox(height: 6),
-                          NumberFlow(value: totalInterest, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: const TextStyle(fontFamily: 'Satoshi', color: Color(0xFF24A148), fontWeight: FontWeight.bold, fontSize: 15, letterSpacing: -1.5)),
+                          NumberFlow(value: totalInterest, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: const TextStyle(fontFamily: 'Satoshi', color: Color(0xFF24A148), fontWeight: FontWeight.bold, fontSize: 15, letterSpacing: -0.2)),
                         ]),
                       ),
                     ),
@@ -3974,7 +3974,7 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
                                           const SizedBox(height: 4),
                                           Wrap(crossAxisAlignment: WrapCrossAlignment.center, children: [
                                             Text('${Strings.t(lang, 'remaining_principal')}: ', style: TextStyle(color: context.textMuted, fontSize: 12)),
-                                            NumberFlow(value: loan.remainingPrincipal, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: TextStyle(fontFamily: 'Satoshi', color: context.textMuted, fontSize: 12, letterSpacing: -1.0)),
+                                            NumberFlow(value: loan.remainingPrincipal, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: TextStyle(fontFamily: 'Satoshi', color: context.textMuted, fontSize: 12, letterSpacing: -0.1)),
                                           ]),
                                           if (sourceName.isNotEmpty) Text(sourceName, style: TextStyle(color: context.textFaint, fontSize: 11)),
                                         ],
@@ -3997,7 +3997,7 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
                                         const SizedBox(height: 6),
                                         Wrap(crossAxisAlignment: WrapCrossAlignment.center, alignment: WrapAlignment.end, children: [
                                           Text('${loan.interestPercent}% / ', style: TextStyle(color: context.textFaint, fontSize: 11, fontWeight: FontWeight.w600)),
-                                          NumberFlow(value: loan.currentInterest, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: TextStyle(fontFamily: 'Satoshi', color: context.textFaint, fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: -1.0)),
+                                          NumberFlow(value: loan.currentInterest, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: TextStyle(fontFamily: 'Satoshi', color: context.textFaint, fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: -0.1)),
                                         ]),
                                       ],
                                     ),
