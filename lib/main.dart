@@ -1713,6 +1713,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                       (e) => StaggeredReveal(
                         key: ValueKey(e.value.id),
                         index: e.key,
+                        stagger: true,
                         child: TransactionTile(item: e.value),
                       ),
                     ),
@@ -4203,7 +4204,8 @@ class StaggeredReveal extends StatefulWidget {
   final Widget child;
   final int index;
   final bool animate;
-  const StaggeredReveal({super.key, required this.child, required this.index, this.animate = true});
+  final bool stagger;
+  const StaggeredReveal({super.key, required this.child, required this.index, this.animate = true, this.stagger = false});
   @override
   State<StaggeredReveal> createState() => _StaggeredRevealState();
 }
@@ -4216,11 +4218,11 @@ class _StaggeredRevealState extends State<StaggeredReveal> with AutomaticKeepAli
     if (!widget.animate) return widget.child;
     return RepaintBoundary(
       child: AnimationConfiguration.staggeredList(
-  position: 0,
-  duration: const Duration(milliseconds: 180),
-  delay: Duration.zero,
-  child: SlideAnimation(
-          verticalOffset: 28.0,
+position: widget.stagger ? widget.index : 0,
+duration: const Duration(milliseconds: 360),
+delay: widget.stagger ? const Duration(milliseconds: 80) : Duration.zero,
+child: SlideAnimation(
+  verticalOffset: 70.0,
           child: FadeInAnimation(child: widget.child),
         ),
       ),
