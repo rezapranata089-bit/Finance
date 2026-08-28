@@ -599,16 +599,22 @@ class LoansNotifier extends StateNotifier<List<Loan>> {
           note: note,
           date: startDate,
           cardIndex: sourceCardIndex,
+          loanId: loan.id,
         );
   }
 
   void updateLoan(String id, {String? borrowerName, double? interestPercent, LoanInterestType? interestType, String? note}) {
     final idx = state.indexWhere((l) => l.id == id);
     if (idx == -1) return;
+    final oldLoan = state[idx];
     final list = [...state];
-    list[idx] = list[idx].copyWith(borrowerName: borrowerName, interestPercent: interestPercent, interestType: interestType, note: note);
+    list[idx] = oldLoan.copyWith(borrowerName: borrowerName, interestPercent: interestPercent, interestType: interestType, note: note);
     state = list;
     _persist();
+    final trimmedName = borrowerName?.trim();
+    if (trimmedName != null && trimmedName.isNotEmpty && trimmedName != oldLoan.borrowerName) {
+      ref.read(transactionsProvider.notifier).renameByLoan(id, trimmedName);
+    }
   }
 
   void toggleActive(String id) {
@@ -640,6 +646,7 @@ class LoansNotifier extends StateNotifier<List<Loan>> {
             note: note,
             date: date,
             cardIndex: loan.cardIndex,
+            loanId: id,
           );
     } else {
       final newRemaining = (loan.remainingPrincipal - amount).clamp(0, loan.principal).toDouble();
@@ -657,6 +664,7 @@ class LoansNotifier extends StateNotifier<List<Loan>> {
             note: note,
             date: date,
             cardIndex: loan.sourceCardIndex,
+            loanId: id,
           );
     }
   }
@@ -664,6 +672,7 @@ class LoansNotifier extends StateNotifier<List<Loan>> {
   void removeLoan(String id) {
     state = state.where((l) => l.id != id).toList();
     _persist();
+    ref.read(transactionsProvider.notifier).removeByLoan(id);
   }
 }
 
@@ -1034,6 +1043,7 @@ class FinanceTransaction {
   final bool income;
   final DateTime date;
   final int cardIndex;
+  final String? loanId;
   const FinanceTransaction({
     required this.id,
     required this.title,
@@ -1043,6 +1053,7 @@ class FinanceTransaction {
     required this.income,
     required this.date,
     this.cardIndex = 0,
+    this.loanId,
     });
 
     Map<String, dynamic> toJson() => {
@@ -1054,6 +1065,7 @@ class FinanceTransaction {
           'income': income,
           'date': date.toIso8601String(),
           'cardIndex': cardIndex,
+          'loanId': loanId,
         };
 
     factory FinanceTransaction.fromJson(Map<String, dynamic> json) => FinanceTransaction(
@@ -1065,6 +1077,7 @@ class FinanceTransaction {
           income: json['income'] as bool? ?? false,
           date: DateTime.tryParse(json['date'] as String? ?? '') ?? DateTime.now(),
           cardIndex: json['cardIndex'] as int? ?? 0,
+          loanId: json['loanId'] as String?,
         );
   }
   final transactionsProvider = StateNotifierProvider<TransactionNotifier, List<FinanceTransaction>>(
@@ -1094,8 +1107,8 @@ class TransactionNotifier extends StateNotifier<List<FinanceTransaction>> {
     prefs.setString(_key, jsonEncode(state.map((e) => e.toJson()).toList()));
   }
 
-  void add({required String title, required double amount, required bool income, required String category, required String note, required DateTime date, int cardIndex = 0}) {
-    state = [FinanceTransaction(id: _generateId(), title: title, amount: amount, income: income, category: category, note: note, date: date, cardIndex: cardIndex), ...state];
+  void add({required String title, required double amount, required bool income, required String category, required String note, required DateTime date, int cardIndex = 0, String? loanId}) {
+    state = [FinanceTransaction(id: _generateId(), title: title, amount: amount, income: income, category: category, note: note, date: date, cardIndex: cardIndex, loanId: loanId), ...state];
     _persist();
   }
 
@@ -1120,10 +1133,43 @@ class TransactionNotifier extends StateNotifier<List<FinanceTransaction>> {
 
   void removeAll(List<FinanceTransaction> items) {
     final idsToRemove = items.map((e) => e.id).toSet();
-        state = state.where((t) => !idsToRemove.contains(t.id)).toList();
-        _persist();
+    state = state.where((t) => !idsToRemove.contains(t.id)).toList();
+    _persist();
+  }
+
+  void renameByLoan(String loanId, String newBorrowerName) {
+    final list = state.map((t) {
+      if (t.loanId != loanId) return t;
+      String newTitle = t.title;
+      if (t.title.startsWith('Pinjaman ke ')) {
+        newTitle = 'Pinjaman ke $newBorrowerName';
+      } else if (t.title.startsWith('Bunga · ')) {
+        newTitle = 'Bunga · $newBorrowerName';
+      } else if (t.title.startsWith('Cicilan Pokok · ')) {
+        newTitle = 'Cicilan Pokok · $newBorrowerName';
       }
-    }
+      if (newTitle == t.title) return t;
+      return FinanceTransaction(
+        id: t.id,
+        title: newTitle,
+        category: t.category,
+        note: t.note,
+        amount: t.amount,
+        income: t.income,
+        date: t.date,
+        cardIndex: t.cardIndex,
+        loanId: t.loanId,
+      );
+    }).toList();
+    state = list;
+    _persist();
+  }
+
+  void removeByLoan(String loanId) {
+    state = state.where((t) => t.loanId != loanId).toList();
+    _persist();
+  }
+}
     final dummyDataActiveProvider = StateProvider<bool>(
       (ref) => ref.watch(prefsProvider).getBool('dummy_data_active') ?? false,
     );
