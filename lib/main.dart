@@ -4215,11 +4215,11 @@ class _StaggeredRevealState extends State<StaggeredReveal> with AutomaticKeepAli
     super.build(context);
     if (!widget.animate) return widget.child;
     return RepaintBoundary(
-      child: AnimationConfiguration.staggeredList(
-        position: widget.index,
-        duration: const Duration(milliseconds: 220),
-        delay: const Duration(milliseconds: 20),
-        child: SlideAnimation(
+? AnimationConfiguration.staggeredList(
+  position: 0,
+  duration: const Duration(milliseconds: 180),
+  delay: Duration.zero,
+  child: SlideAnimation(
           verticalOffset: 28.0,
           child: FadeInAnimation(child: widget.child),
         ),
