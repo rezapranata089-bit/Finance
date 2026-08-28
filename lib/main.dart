@@ -3543,8 +3543,7 @@ class StaggeredReveal extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = scrollController ?? PrimaryScrollController.maybeOf(context);
-    const historyStart = 360.0;
-    final revealBegin = historyStart + (index * 72.0);
+    final revealBegin = -180.0 + (index * 130.0);
     final revealEnd = revealBegin + 150.0;
 
     return Animate(
