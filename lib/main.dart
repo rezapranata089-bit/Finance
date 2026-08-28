@@ -1643,8 +1643,8 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
   bool _open = false;
   bool _pressed = false;
 
-static const _closedSize = Size(40, 40);
-static const _openSize = Size(200, 222);
+  static const _closedSize = Size(40, 40);
+  static const _openSize = Size(200, 230);
   static const _openCurve = Cubic(0.34, 1.25, 0.64, 1.0);
   static const _closeCurve = Cubic(0.22, 1.0, 0.36, 1.0);
 
@@ -1841,22 +1841,17 @@ class _MorphMenuContent extends ConsumerWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                             decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  const Color(0xFFFFC94A),
-                                  const Color(0xFFFF9F1C),
-                                ],
-                              ),
+                              color: primary.withOpacity(isDark ? 0.18 : 0.1),
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                const Icon(Icons.workspace_premium_rounded, size: 9, color: Colors.white),
+                                Icon(Icons.workspace_premium_rounded, size: 9, color: primary),
                                 const SizedBox(width: 3),
                                 Text(
                                   Strings.t(lang, 'premium_member'),
-                                  style: const TextStyle(fontSize: 9, fontWeight: FontWeight.w800, height: 1.0, color: Colors.white, letterSpacing: 0.2),
+                                  style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, height: 1.0, color: primary, letterSpacing: 0.2),
                                 ),
                               ],
                             ),
