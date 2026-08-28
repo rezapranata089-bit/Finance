@@ -1260,7 +1260,24 @@ class _HomePageState extends ConsumerState<HomePage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(Strings.t(lang, 'transaction_history'), style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: context.textPrimary)),
-                    Text('${Strings.t(lang, 'view_all')} >', style: TextStyle(color: context.textFaint, fontSize: 12, fontWeight: FontWeight.w600)),
+                    GestureDetector(
+                      onTap: () => ref.read(tabProvider.notifier).state = 2,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: primary.withOpacity(isDark ? 0.18 : 0.08),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(Strings.t(lang, 'view_all'), style: TextStyle(color: primary, fontSize: 12, fontWeight: FontWeight.w700)),
+                            const SizedBox(width: 4),
+                            Icon(Icons.arrow_forward_rounded, size: 15, color: primary),
+                          ],
+                        ),
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 16),
