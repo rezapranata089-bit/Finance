@@ -1250,7 +1250,13 @@ class HomePage extends ConsumerWidget {
                 const SizedBox(height: 16),
                 Text(Strings.t(lang, 'today'), style: TextStyle(color: context.textFaint, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1)),
                 const SizedBox(height: 12),
-                ...items.take(4).toList().asMap().entries.map((e) => StaggeredReveal(index: e.key, child: TransactionTile(item: e.value))),
+                ...items.take(4).toList().asMap().entries.map(
+                      (e) => StaggeredReveal(
+                        index: e.key,
+                        scrollController: PrimaryScrollController.of(context),
+                        child: TransactionTile(item: e.value),
+                      ),
+                    ),
               ],
             ),
           ),
@@ -3516,19 +3522,21 @@ Future<void> showLoanForm({required BuildContext context, required WidgetRef ref
 class StaggeredReveal extends StatelessWidget {
   final Widget child;
   final int index;
-  const StaggeredReveal({super.key, required this.child, required this.index});
+  final ScrollController? scrollController;
+  const StaggeredReveal({super.key, required this.child, required this.index, this.scrollController});
 
   @override
   Widget build(BuildContext context) {
-    final scrollController = PrimaryScrollController.maybeOf(context);
-    final revealBegin = -180.0 + (index * 130.0);
+    final controller = scrollController ?? PrimaryScrollController.maybeOf(context);
+    const historyStart = 360.0;
+    final revealBegin = historyStart + (index * 72.0);
     final revealEnd = revealBegin + 150.0;
 
     return Animate(
-      adapter: scrollController == null
+      adapter: controller == null
           ? null
           : ScrollAdapter(
-              scrollController,
+              controller,
               begin: revealBegin,
               end: revealEnd,
             ),
