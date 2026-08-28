@@ -3546,8 +3546,8 @@ class StaggeredReveal extends StatelessWidget {
           curve: Curves.easeOutCubic,
         ),
         ScaleEffect(
-          begin: 0.96,
-          end: 1,
+          begin: const Offset(0.96, 0.96),
+          end: const Offset(1, 1),
           duration: Duration(milliseconds: 520),
           curve: Curves.easeOutCubic,
         ),
