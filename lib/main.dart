@@ -543,6 +543,36 @@ class Loan {
       );
 }
 
+({DateTime? date, bool reached}) estimateLoanBEP(Loan loan) {
+  final totalInterest = loan.totalInterestCollected;
+  final remainingToBEP = loan.principal - totalInterest;
+  if (remainingToBEP <= 0) return (date: null, reached: true);
+  final interestPayments = loan.payments.where((p) => p.interestAmount > 0).toList()..sort((a, b) => a.date.compareTo(b.date));
+  double avgInterestPerPeriod;
+  double avgIntervalDays;
+  if (interestPayments.length >= 2) {
+    avgInterestPerPeriod = interestPayments.fold<double>(0, (a, p) => a + p.interestAmount) / interestPayments.length;
+    double totalGapDays = 0;
+    for (var i = 1; i < interestPayments.length; i++) {
+      totalGapDays += interestPayments[i].date.difference(interestPayments[i - 1].date).inDays.abs();
+    }
+    avgIntervalDays = totalGapDays / (interestPayments.length - 1);
+    if (avgIntervalDays <= 0) avgIntervalDays = 30;
+  } else if (interestPayments.length == 1) {
+    avgInterestPerPeriod = interestPayments.first.interestAmount;
+    avgIntervalDays = interestPayments.first.date.difference(loan.startDate).inDays.abs().toDouble();
+    if (avgIntervalDays <= 0) avgIntervalDays = 30;
+  } else {
+    avgInterestPerPeriod = loan.currentInterest;
+    avgIntervalDays = 30;
+  }
+  if (avgInterestPerPeriod <= 0) return (date: null, reached: false);
+  final periodsNeeded = (remainingToBEP / avgInterestPerPeriod).ceil();
+  final lastDate = interestPayments.isNotEmpty ? interestPayments.last.date : loan.startDate;
+  final targetDate = lastDate.add(Duration(days: (avgIntervalDays * periodsNeeded).round()));
+  return (date: targetDate, reached: false);
+}
+
 final loansProvider = StateNotifierProvider<LoansNotifier, List<Loan>>(
   (ref) => LoansNotifier(ref.watch(prefsProvider), ref),
 );
@@ -1101,6 +1131,14 @@ class Strings {
     'total_interest_collected': {AppLang.en: 'Total interest collected', AppLang.id: 'Total bunga terkumpul'},
     'loan_source_card': {AppLang.en: 'Funding source', AppLang.id: 'Sumber dana'},
     'select_borrower_first': {AppLang.en: 'Please select a borrower first', AppLang.id: 'Pilih peminjam terlebih dahulu'},
+    'loan_date': {AppLang.en: 'Loan date', AppLang.id: 'Tanggal pinjaman'},
+    'interest_payment_count': {AppLang.en: 'Interest payments', AppLang.id: 'Pembayaran bunga'},
+    'target_bep': {AppLang.en: 'Target break-even', AppLang.id: 'Target BEP'},
+    'target_bep_reached': {AppLang.en: 'Break-even reached', AppLang.id: 'BEP tercapai'},
+    'target_bep_unavailable': {AppLang.en: 'Not enough data yet', AppLang.id: 'Belum cukup data'},
+    'principal_label': {AppLang.en: 'Principal', AppLang.id: 'Pokok pinjaman'},
+    'payment_interest_label': {AppLang.en: 'Interest', AppLang.id: 'Bunga'},
+    'payment_principal_label': {AppLang.en: 'Principal', AppLang.id: 'Pokok'},
   };
 
   static String t(AppLang lang, String key) => _s[key]?[lang] ?? key;
@@ -4079,7 +4117,7 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
                         return StaggeredReveal(
                           index: i,
                           child: GestureDetector(
-                            onTap: () => showLoanForm(context: context, ref: ref, existing: loan),
+                            onTap: () => showLoanDetail(context, ref, loan),
                             child: Container(
                             padding: const EdgeInsets.all(16),
                             decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(20), border: Border.all(color: context.borderColor)),
@@ -4137,6 +4175,12 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
+                                    TextButton.icon(
+                                      onPressed: () => showLoanForm(context: context, ref: ref, existing: loan),
+                                      style: TextButton.styleFrom(foregroundColor: primary),
+                                      icon: const Icon(Icons.edit_outlined, size: 16),
+                                      label: Text(Strings.t(lang, 'edit'), style: const TextStyle(fontSize: 12)),
+                                    ),
                                     TextButton.icon(
                                       onPressed: loan.status == LoanStatus.paid ? null : () => ref.read(loansProvider.notifier).toggleActive(loan.id),
                                       icon: Icon(loan.status == LoanStatus.inactive ? Icons.play_arrow : Icons.pause, size: 16),
@@ -4326,7 +4370,228 @@ Future<void> showLoanForm({required BuildContext context, required WidgetRef ref
   );
 }
 
+Future<void> showLoanDetail(BuildContext context, WidgetRef ref, Loan loan) async {
+  final lang = ref.read(langProvider);
+  final primary = Theme.of(context).colorScheme.primary;
+  final isDark = context.isDark;
+  final tertiary = Theme.of(context).colorScheme.tertiary;
+  final interestPaymentCount = loan.payments.where((p) => p.interestAmount > 0).length;
+  final bep = estimateLoanBEP(loan);
+  final sortedPayments = [...loan.payments]..sort((a, b) => b.date.compareTo(a.date));
+  final statusColor = loan.status == LoanStatus.active ? const Color(0xFF24A148) : loan.status == LoanStatus.paid ? primary : Colors.grey;
+  final subtleBg = isDark ? Colors.white.withOpacity(0.04) : const Color(0xFFF1EEF7);
 
+  await showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: context.cardColor,
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+    builder: (sheetContext) => DraggableScrollableSheet(
+      initialChildSize: 0.7,
+      minChildSize: 0.42,
+      maxChildSize: 0.92,
+      expand: false,
+      builder: (context, scrollController) => Padding(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40, height: 4,
+                decoration: BoxDecoration(color: context.borderColor, borderRadius: BorderRadius.circular(4)),
+              ),
+            ),
+            const SizedBox(height: 18),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Container(
+                  width: 52, height: 52,
+                  decoration: BoxDecoration(color: isDark ? primary.withOpacity(0.18) : tertiary, shape: BoxShape.circle),
+                  child: Icon(SolarIconsOutline.usersGroupTwoRounded, color: primary, size: 24),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(loan.borrowerName, style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 21, color: context.textPrimary)),
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(color: statusColor.withOpacity(0.14), borderRadius: BorderRadius.circular(20)),
+                        child: Text(
+                          Strings.t(lang, loan.status == LoanStatus.active ? 'loan_active' : loan.status == LoanStatus.paid ? 'loan_paid' : 'loan_inactive'),
+                          style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: statusColor),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.pop(sheetContext);
+                    showLoanForm(context: context, ref: ref, existing: loan);
+                  },
+                  child: LiquidGlass(
+                    borderRadius: 999,
+                    tint: isDark ? Colors.black : null,
+                    intensity: isDark ? 1.6 : 1.0,
+                    borderColor: isDark ? context.borderColor : null,
+                    child: Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: Icon(Icons.edit_outlined, size: 18, color: primary),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 18),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(color: subtleBg, borderRadius: BorderRadius.circular(18)),
+              child: Row(children: [
+                Expanded(
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(Strings.t(lang, 'principal_label'), style: TextStyle(color: context.textMuted, fontSize: 11)),
+                    const SizedBox(height: 6),
+                    NumberFlow(value: loan.principal, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: TextStyle(fontFamily: 'Satoshi', color: context.textPrimary, fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: -0.2)),
+                  ]),
+                ),
+                Container(width: 1, height: 34, color: context.borderColor),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 14),
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(Strings.t(lang, 'remaining_principal'), style: TextStyle(color: context.textMuted, fontSize: 11)),
+                      const SizedBox(height: 6),
+                      NumberFlow(value: loan.remainingPrincipal, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: TextStyle(fontFamily: 'Satoshi', color: context.textPrimary, fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: -0.2)),
+                    ]),
+                  ),
+                ),
+              ]),
+            ),
+            const SizedBox(height: 14),
+            Row(children: [
+              Expanded(
+                child: _LoanDetailStat(
+                  icon: Icons.calendar_today_outlined,
+                  label: Strings.t(lang, 'loan_date'),
+                  value: AppFormatters.dateOnly.format(loan.startDate),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _LoanDetailStat(
+                  icon: Icons.flag_outlined,
+                  label: Strings.t(lang, 'target_bep'),
+                  value: bep.reached
+                      ? Strings.t(lang, 'target_bep_reached')
+                      : (bep.date != null ? AppFormatters.dateOnly.format(bep.date!) : Strings.t(lang, 'target_bep_unavailable')),
+                  valueColor: bep.reached ? const Color(0xFF24A148) : null,
+                ),
+              ),
+            ]),
+            const SizedBox(height: 12),
+            Row(children: [
+              Expanded(
+                child: _LoanDetailStat(
+                  icon: Icons.autorenew,
+                  label: Strings.t(lang, 'interest_payment_count'),
+                  value: '$interestPaymentCount×',
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _LoanDetailStat(
+                  icon: SolarIconsOutline.wallet,
+                  label: Strings.t(lang, 'total_interest_collected'),
+                  value: rupiah(loan.totalInterestCollected),
+                  valueColor: const Color(0xFF24A148),
+                ),
+              ),
+            ]),
+            const SizedBox(height: 22),
+            Text(Strings.t(lang, 'payment_history'), style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: context.textPrimary)),
+            const SizedBox(height: 10),
+            Expanded(
+              child: sortedPayments.isEmpty
+                  ? Center(child: Text(Strings.t(lang, 'no_payments_yet'), style: TextStyle(color: context.textMuted, fontSize: 13)))
+                  : ListView.separated(
+                      controller: scrollController,
+                      itemCount: sortedPayments.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 10),
+                      itemBuilder: (context, i) {
+                        final p = sortedPayments[i];
+                        final isInterest = p.interestAmount > 0;
+                        final amount = isInterest ? p.interestAmount : p.principalAmount;
+                        return Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          decoration: BoxDecoration(color: subtleBg, borderRadius: BorderRadius.circular(16)),
+                          child: Row(children: [
+                            Container(
+                              width: 34, height: 34,
+                              decoration: BoxDecoration(
+                                color: (isInterest ? const Color(0xFF24A148) : primary).withOpacity(0.14),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(isInterest ? SolarIconsOutline.wallet : SolarIconsOutline.card, size: 15, color: isInterest ? const Color(0xFF24A148) : primary),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(Strings.t(lang, isInterest ? 'payment_interest_label' : 'payment_principal_label'), style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: context.textPrimary)),
+                                  const SizedBox(height: 2),
+                                  Text(AppFormatters.dateOnly.format(p.date), style: TextStyle(fontSize: 11, color: context.textFaint)),
+                                ],
+                              ),
+                            ),
+                            NumberFlow(value: amount, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: '+Rp '), style: TextStyle(fontFamily: 'Satoshi', fontWeight: FontWeight.w800, fontSize: 12.5, letterSpacing: -0.1, color: isInterest ? const Color(0xFF24A148) : context.textPrimary)),
+                          ]),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+class _LoanDetailStat extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final Color? valueColor;
+  const _LoanDetailStat({required this.icon, required this.label, required this.value, this.valueColor});
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
+    final isDark = context.isDark;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withOpacity(0.04) : const Color(0xFFF1EEF7),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 16, color: primary),
+          const SizedBox(height: 8),
+          Text(label, style: TextStyle(fontSize: 10.5, color: context.textMuted, fontWeight: FontWeight.w600)),
+          const SizedBox(height: 4),
+          Text(value, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: valueColor ?? context.textPrimary), maxLines: 1, overflow: TextOverflow.ellipsis),
+        ],
+      ),
+    );
+  }
+}
 
 class StaggeredReveal extends StatefulWidget {
   final Widget child;
