@@ -1800,8 +1800,15 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
     await _controller.animateTo(1, duration: const Duration(milliseconds: 350), curve: _openCurve);
   }
 
+  void _closeImmediately() {
+    _controller.stop();
+    _controller.value = 0;
+    setState(() => _open = false);
+    _removeOverlay();
+  }
+
   void _select(VoidCallback action) {
-    _toggle();
+    _closeImmediately();
     action();
   }
 
@@ -2086,8 +2093,15 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> with SingleTicker
     await _controller.animateTo(1, duration: const Duration(milliseconds: 350), curve: _openCurve);
   }
 
+  void _closeImmediately() {
+    _controller.stop();
+    _controller.value = 0;
+    setState(() => _open = false);
+    _removeOverlay();
+  }
+
   void _select(VoidCallback action) {
-    _toggle();
+    _closeImmediately();
     action();
   }
 
