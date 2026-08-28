@@ -667,8 +667,18 @@ class LoansNotifier extends StateNotifier<List<Loan>> {
 }
 
 final onboardingProvider = StateProvider<bool>((ref) => ref.watch(prefsProvider).getBool('onboarding_done') ?? false);
-final themeProvider = StateProvider<AppThemePalette>((ref) => appPalettes[0]);
-final themeModeProvider = StateProvider<ThemeMode>((ref) => ThemeMode.light);
+final themeProvider = StateProvider<AppThemePalette>((ref) {
+  final saved = ref.watch(prefsProvider).getString('app_theme_palette');
+  if (saved != null) {
+    final match = appPalettes.where((p) => p.name == saved);
+    if (match.isNotEmpty) return match.first;
+  }
+  return appPalettes[0];
+});
+final themeModeProvider = StateProvider<ThemeMode>((ref) {
+  final saved = ref.watch(prefsProvider).getString('app_theme_mode');
+  return ThemeMode.values.firstWhere((m) => m.name == saved, orElse: () => ThemeMode.light);
+});
 
 enum AppLang { en, id }
 
@@ -1865,7 +1875,11 @@ class _MorphMenuContent extends ConsumerWidget {
       (
         isDark ? SolarIconsOutline.sun : SolarIconsOutline.moon,
         isDark ? Strings.t(lang, 'light') : Strings.t(lang, 'dark'),
-        () => ref.read(themeModeProvider.notifier).state = isDark ? ThemeMode.light : ThemeMode.dark,
+        () {
+          final newMode = isDark ? ThemeMode.light : ThemeMode.dark;
+          ref.read(themeModeProvider.notifier).state = newMode;
+          ref.read(prefsProvider).setString('app_theme_mode', newMode.name);
+        },
       ),
       (SolarIconsOutline.palette, Strings.t(lang, 'appearance'), () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ThemeSelectionPage()))),
       (Icons.language, Strings.t(lang, 'language'), () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LanguageSelectionPage()))),
@@ -2944,7 +2958,10 @@ class ThemeSelectionPage extends ConsumerWidget {
                         return Column(
                           children: [
                             ListTile(
-                              onTap: () => ref.read(themeProvider.notifier).state = palette,
+                              onTap: () {
+                                ref.read(themeProvider.notifier).state = palette;
+                                ref.read(prefsProvider).setString('app_theme_palette', palette.name);
+                              },
                               contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
                               leading: Container(
                                 width: 44, height: 44,
@@ -2989,7 +3006,10 @@ class ThemeSelectionPage extends ConsumerWidget {
     
     return Expanded(
       child: GestureDetector(
-        onTap: () => ref.read(themeModeProvider.notifier).state = mode,
+        onTap: () {
+          ref.read(themeModeProvider.notifier).state = mode;
+          ref.read(prefsProvider).setString('app_theme_mode', mode.name);
+        },
         behavior: HitTestBehavior.opaque,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
