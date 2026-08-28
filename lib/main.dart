@@ -2844,7 +2844,7 @@ class TransactionTile extends ConsumerWidget {
                   value: item.amount,
                   locale: 'id_ID',
                   format: NumberFlowFormat.currency(currencyCode: 'IDR', symbol: item.income ? '+Rp ' : '-Rp '),
-                  style: TextStyle(fontFamily: 'Satoshi', fontWeight: FontWeight.w800, fontSize: 14, letterSpacing: -1.2, color: context.textPrimary),
+                  style: TextStyle(fontFamily: 'Satoshi', fontWeight: FontWeight.w800, fontSize: 14, letterSpacing: -0.2, color: context.textPrimary),
                 ),
                 const SizedBox(height: 4),
                 Text(Strings.t(lang, item.income ? 'receive' : 'transfer'), style: TextStyle(color: context.textFaint, fontSize: 12, fontWeight: FontWeight.w500)),
