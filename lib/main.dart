@@ -687,6 +687,22 @@ extension AppColors on BuildContext {
   Color get iconMuted => isDark ? Colors.white54 : Colors.grey;
 }
 
+class AppFormatters {
+  static final NumberFormat thousands = NumberFormat('#,###', 'id_ID');
+  static final DateFormat hourMinute = DateFormat('hh:mm a');
+  static final DateFormat dateTimeFull = DateFormat('d MMM yyyy, hh:mm a');
+  static final DateFormat dateOnly = DateFormat('d MMM yyyy');
+  static final DateFormat _monthYearId = DateFormat('MMMM yyyy', 'id_ID');
+  static final DateFormat _monthYearEn = DateFormat('MMMM yyyy', 'en_US');
+  static final DateFormat _dateTimeMinuteId = DateFormat('d MMM yyyy, HH:mm', 'id_ID');
+  static final DateFormat _dateTimeMinuteEn = DateFormat('d MMM yyyy, HH:mm', 'en_US');
+
+  static DateFormat monthYear(AppLang lang) => lang == AppLang.id ? _monthYearId : _monthYearEn;
+  static DateFormat dateTimeMinute(AppLang lang) => lang == AppLang.id ? _dateTimeMinuteId : _dateTimeMinuteEn;
+
+  static String rupiah(num value) => 'Rp ${thousands.format(value).replaceAll(',', '.')}';
+}
+
 class ThousandsInputFormatter extends TextInputFormatter {
   @override
   TextEditingValue formatEditUpdate(TextEditingValue oldValue, TextEditingValue newValue) {
@@ -695,7 +711,7 @@ class ThousandsInputFormatter extends TextInputFormatter {
       return newValue.copyWith(text: '');
     }
     final number = int.parse(digits);
-    final formatted = NumberFormat('#,###', 'id_ID').format(number).replaceAll(',', '.');
+    final formatted = AppFormatters.thousands.format(number).replaceAll(',', '.');
     return TextEditingValue(
       text: formatted,
       selection: TextSelection.collapsed(offset: formatted.length),
@@ -1001,12 +1017,14 @@ class Strings {
 }
 
 class FinanceTransaction {
+  final String id;
   final String title, category, note;
   final double amount;
   final bool income;
   final DateTime date;
   final int cardIndex;
   const FinanceTransaction({
+    required this.id,
     required this.title,
     required this.category,
     required this.note,
@@ -1022,22 +1040,25 @@ final transactionsProvider = StateNotifierProvider<TransactionNotifier, List<Fin
 );
 
 class TransactionNotifier extends StateNotifier<List<FinanceTransaction>> {
+  static int _idCounter = 0;
+  static String _generateId() => '${DateTime.now().microsecondsSinceEpoch}-${_idCounter++}';
+
   TransactionNotifier()
       : super([
-          FinanceTransaction(title: 'Monthly Salary', category: 'Income', note: 'August salary', amount: 0, income: true, date: DateTime(2026, 8, 24, 8, 30), cardIndex: 0),
-          FinanceTransaction(title: 'Grocery shopping', category: 'Shopping', note: 'Household needs', amount: 0, income: false, date: DateTime(2026, 8, 24, 12, 30), cardIndex: 0),
-          FinanceTransaction(title: 'Afternoon coffee', category: 'Food', note: '', amount: 0, income: false, date: DateTime(2026, 8, 24, 15, 20), cardIndex: 0),
-          FinanceTransaction(title: 'Freelance design', category: 'Income', note: '', amount: 0, income: true, date: DateTime(2026, 8, 23, 10, 0), cardIndex: 0),
-          FinanceTransaction(title: 'Transportation', category: 'Transport', note: '', amount: 0, income: false, date: DateTime(2026, 8, 23, 8, 15), cardIndex: 0),
-          FinanceTransaction(title: 'Internet bill', category: 'Bills', note: '', amount: 0, income: false, date: DateTime(2026, 8, 20), cardIndex: 0),
+          FinanceTransaction(id: 'seed-1', title: 'Monthly Salary', category: 'Income', note: 'August salary', amount: 0, income: true, date: DateTime(2026, 8, 24, 8, 30), cardIndex: 0),
+          FinanceTransaction(id: 'seed-2', title: 'Grocery shopping', category: 'Shopping', note: 'Household needs', amount: 0, income: false, date: DateTime(2026, 8, 24, 12, 30), cardIndex: 0),
+          FinanceTransaction(id: 'seed-3', title: 'Afternoon coffee', category: 'Food', note: '', amount: 0, income: false, date: DateTime(2026, 8, 24, 15, 20), cardIndex: 0),
+          FinanceTransaction(id: 'seed-4', title: 'Freelance design', category: 'Income', note: '', amount: 0, income: true, date: DateTime(2026, 8, 23, 10, 0), cardIndex: 0),
+          FinanceTransaction(id: 'seed-5', title: 'Transportation', category: 'Transport', note: '', amount: 0, income: false, date: DateTime(2026, 8, 23, 8, 15), cardIndex: 0),
+          FinanceTransaction(id: 'seed-6', title: 'Internet bill', category: 'Bills', note: '', amount: 0, income: false, date: DateTime(2026, 8, 20), cardIndex: 0),
         ]);
 
   void add({required String title, required double amount, required bool income, required String category, required String note, required DateTime date, int cardIndex = 0}) {
-    state = [FinanceTransaction(title: title, amount: amount, income: income, category: category, note: note, date: date, cardIndex: cardIndex), ...state];
+    state = [FinanceTransaction(id: _generateId(), title: title, amount: amount, income: income, category: category, note: note, date: date, cardIndex: cardIndex), ...state];
   }
 
   void update(FinanceTransaction old, FinanceTransaction updated) {
-    final idx = state.indexOf(old);
+    final idx = state.indexWhere((t) => t.id == old.id);
     if (idx == -1) return;
     final list = [...state];
     list[idx] = updated;
@@ -1045,8 +1066,7 @@ class TransactionNotifier extends StateNotifier<List<FinanceTransaction>> {
   }
 
   void remove(FinanceTransaction item) {
-    final list = [...state]..remove(item);
-    state = list;
+    state = state.where((t) => t.id != item.id).toList();
   }
 
   void addAll(List<FinanceTransaction> items) {
@@ -1054,11 +1074,8 @@ class TransactionNotifier extends StateNotifier<List<FinanceTransaction>> {
   }
 
   void removeAll(List<FinanceTransaction> items) {
-    final list = [...state];
-    for (final item in items) {
-      list.remove(item);
-    }
-    state = list;
+    final idsToRemove = items.map((e) => e.id).toSet();
+    state = state.where((t) => !idsToRemove.contains(t.id)).toList();
   }
 }
 
@@ -1067,15 +1084,16 @@ final dummyTransactionsHolderProvider = StateProvider<List<FinanceTransaction>>(
 
 List<FinanceTransaction> _buildSmartDummyTransactions(List<FinanceCard> cards) {
   final now = DateTime.now();
+  final seed = now.microsecondsSinceEpoch;
   final list = <FinanceTransaction>[];
   for (var i = 0; i < cards.length; i++) {
     final card = cards[i];
     list.addAll([
-      FinanceTransaction(title: 'Gaji Dummy · ${card.name}', category: 'Income', note: 'Data dummy', amount: 3000000 + i * 500000, income: true, date: now.subtract(Duration(days: 1, hours: i)), cardIndex: i),
-      FinanceTransaction(title: 'Bonus Dummy · ${card.name}', category: 'Bonus', note: 'Data dummy', amount: 750000 + i * 150000, income: true, date: now.subtract(Duration(hours: 6 + i)), cardIndex: i),
-      FinanceTransaction(title: 'Belanja Dummy · ${card.name}', category: 'Shopping', note: 'Data dummy', amount: 250000 + i * 40000, income: false, date: now.subtract(Duration(hours: 4 + i)), cardIndex: i),
-      FinanceTransaction(title: 'Makan Dummy · ${card.name}', category: 'Food', note: 'Data dummy', amount: 45000 + i * 8000, income: false, date: now.subtract(Duration(hours: 2 + i)), cardIndex: i),
-      FinanceTransaction(title: 'Transport Dummy · ${card.name}', category: 'Transport', note: 'Data dummy', amount: 25000 + i * 5000, income: false, date: now.subtract(Duration(minutes: 40 + i * 15)), cardIndex: i),
+      FinanceTransaction(id: 'dummy-$seed-$i-0', title: 'Gaji Dummy · ${card.name}', category: 'Income', note: 'Data dummy', amount: 3000000 + i * 500000, income: true, date: now.subtract(Duration(days: 1, hours: i)), cardIndex: i),
+      FinanceTransaction(id: 'dummy-$seed-$i-1', title: 'Bonus Dummy · ${card.name}', category: 'Bonus', note: 'Data dummy', amount: 750000 + i * 150000, income: true, date: now.subtract(Duration(hours: 6 + i)), cardIndex: i),
+      FinanceTransaction(id: 'dummy-$seed-$i-2', title: 'Belanja Dummy · ${card.name}', category: 'Shopping', note: 'Data dummy', amount: 250000 + i * 40000, income: false, date: now.subtract(Duration(hours: 4 + i)), cardIndex: i),
+      FinanceTransaction(id: 'dummy-$seed-$i-3', title: 'Makan Dummy · ${card.name}', category: 'Food', note: 'Data dummy', amount: 45000 + i * 8000, income: false, date: now.subtract(Duration(hours: 2 + i)), cardIndex: i),
+      FinanceTransaction(id: 'dummy-$seed-$i-4', title: 'Transport Dummy · ${card.name}', category: 'Transport', note: 'Data dummy', amount: 25000 + i * 5000, income: false, date: now.subtract(Duration(minutes: 40 + i * 15)), cardIndex: i),
     ]);
   }
   return list;
@@ -2529,7 +2547,7 @@ class ReportsPage extends ConsumerWidget {
     final safeGroups = Map<String, double>.fromEntries(groups.entries.where((e) => e.value > 0));
     return SafeArea(top: false, child: ListView(padding: EdgeInsets.fromLTRB(20, MediaQuery.paddingOf(context).top + 22, 20, 24), children: [
       Text(Strings.t(lang, 'reports_title'), style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 32, color: context.textPrimary)),
-      Text(DateFormat('MMMM yyyy', lang == AppLang.id ? 'id_ID' : 'en_US').format(DateTime(2026, 8, 24)), style: TextStyle(color: context.textMuted)),
+      Text(AppFormatters.monthYear(lang).format(DateTime(2026, 8, 24)), style: TextStyle(color: context.textMuted)),
       const SizedBox(height: 6),
       Text(isAllAccounts ? Strings.t(lang, 'all_accounts') : (cards.isEmpty ? '' : cards[safeSelectedCard].name), style: TextStyle(color: context.textFaint, fontSize: 12, fontWeight: FontWeight.w600)),
       const SizedBox(height: 22),
@@ -2695,7 +2713,7 @@ class TransactionTile extends ConsumerWidget {
                 children: [
                   Text(item.title, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15, color: context.textPrimary)),
                   const SizedBox(height: 4),
-                  Text(cardName.isEmpty ? DateFormat('hh:mm a').format(item.date) : '$cardName · ${DateFormat('hh:mm a').format(item.date)}', style: TextStyle(color: context.textFaint, fontSize: 12, fontWeight: FontWeight.w500)),
+                  Text(cardName.isEmpty ? AppFormatters.hourMinute.format(item.date) : '$cardName · ${AppFormatters.hourMinute.format(item.date)}', style: TextStyle(color: context.textFaint, fontSize: 12, fontWeight: FontWeight.w500)),
                 ],
               ),
             ),
@@ -3163,7 +3181,7 @@ class BottomRoundedBorderPainter extends CustomPainter {
 Future<void> showTransactionForm(BuildContext context, WidgetRef ref, bool income, {FinanceTransaction? existing}) async {
   final isEdit = existing != null;
   final effectiveIncome = isEdit ? existing!.income : income;
-  final amount = TextEditingController(text: isEdit ? NumberFormat('#,###', 'id_ID').format(existing!.amount).replaceAll(',', '.') : '');
+  final amount = TextEditingController(text: isEdit ? AppFormatters.thousands.format(existing!.amount).replaceAll(',', '.') : '');
   final title = TextEditingController(text: existing?.title ?? '');
   final note = TextEditingController(text: existing?.note ?? '');
   final amountShakeKey = GlobalKey<ShakeFieldState>();
@@ -3269,7 +3287,7 @@ Future<void> showTransactionForm(BuildContext context, WidgetRef ref, bool incom
           child: Row(children: [
             Icon(Icons.calendar_today_outlined, size: 16, color: context.iconMuted),
             const SizedBox(width: 10),
-            Text(DateFormat('d MMM yyyy, HH:mm', lang == AppLang.id ? 'id_ID' : 'en_US').format(selectedDate), style: TextStyle(fontSize: 14, color: context.textPrimary, fontWeight: FontWeight.w500)),
+            Text(AppFormatters.dateTimeMinute(lang).format(selectedDate), style: TextStyle(fontSize: 14, color: context.textPrimary, fontWeight: FontWeight.w500)),
           ]),
         ),
       ),
@@ -3317,7 +3335,7 @@ Future<void> showTransactionForm(BuildContext context, WidgetRef ref, bool incom
           return;
         }
         if (isEdit) {
-          ref.read(transactionsProvider.notifier).update(existing!, FinanceTransaction(title: title.text.trim(), category: category, note: note.text.trim(), amount: value, income: effectiveIncome, date: selectedDate, cardIndex: cardIndex));
+          ref.read(transactionsProvider.notifier).update(existing!, FinanceTransaction(id: existing.id, title: title.text.trim(), category: category, note: note.text.trim(), amount: value, income: effectiveIncome, date: selectedDate, cardIndex: cardIndex));
         } else {
           ref.read(transactionsProvider.notifier).add(title: title.text.trim(), amount: value, income: effectiveIncome, category: category, note: note.text.trim(), date: selectedDate, cardIndex: cardIndex);
         }
@@ -3351,7 +3369,7 @@ void showTransactionActions(BuildContext context, WidgetRef ref, FinanceTransact
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 Text(item.title, style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16, color: context.textPrimary)),
                 const SizedBox(height: 4),
-                Text(DateFormat('d MMM yyyy, hh:mm a').format(item.date), style: TextStyle(color: context.textFaint, fontSize: 12)),
+                Text(AppFormatters.dateTimeFull.format(item.date), style: TextStyle(color: context.textFaint, fontSize: 12)),
               ]),
             ),
           ]),
@@ -3451,7 +3469,7 @@ Future<void> showCardForm({
   final initialDigits = existing != null ? existing.number.replaceAll(RegExp(r'[^0-9]'), '') : '';
   final number = TextEditingController(text: initialDigits);
   final balance = TextEditingController(
-      text: existing != null ? NumberFormat('#,###', 'id_ID').format(existing.initialBalance).replaceAll(',', '.') : '');
+      text: existing != null ? AppFormatters.thousands.format(existing.initialBalance).replaceAll(',', '.') : '');
   final nameShakeKey = GlobalKey<ShakeFieldState>();
   final numberShakeKey = GlobalKey<ShakeFieldState>();
   String? nameError;
@@ -3918,7 +3936,7 @@ Future<void> showLoanForm({required BuildContext context, required WidgetRef ref
   final isEdit = existing != null;
   final lang = ref.read(langProvider);
   final nameCtrl = TextEditingController(text: existing?.borrowerName ?? '');
-  final principalCtrl = TextEditingController(text: existing != null ? NumberFormat('#,###', 'id_ID').format(existing.principal).replaceAll(',', '.') : '');
+  final principalCtrl = TextEditingController(text: existing != null ? AppFormatters.thousands.format(existing.principal).replaceAll(',', '.') : '');
   final percentCtrl = TextEditingController(text: existing != null ? existing.interestPercent.toString() : '10');
   final noteCtrl = TextEditingController(text: existing?.note ?? '');
   LoanInterestType interestType = existing?.interestType ?? LoanInterestType.declining;
@@ -4002,7 +4020,7 @@ Future<void> showLoanForm({required BuildContext context, required WidgetRef ref
                 child: Row(children: [
                   Icon(Icons.calendar_today_outlined, size: 16, color: context.iconMuted),
                   const SizedBox(width: 10),
-                  Text(DateFormat('d MMM yyyy').format(startDate), style: TextStyle(fontSize: 14, color: context.textPrimary, fontWeight: FontWeight.w500)),
+                  Text(AppFormatters.dateOnly.format(startDate), style: TextStyle(fontSize: 14, color: context.textPrimary, fontWeight: FontWeight.w500)),
                 ]),
               ),
             ),
@@ -4108,4 +4126,4 @@ class _StaggeredRevealState extends State<StaggeredReveal> {
   }
 }
 
-String rupiah(double value) => 'Rp ${NumberFormat('#,###', 'id_ID').format(value).replaceAll(',', '.')}';
+String rupiah(double value) => AppFormatters.rupiah(value);
