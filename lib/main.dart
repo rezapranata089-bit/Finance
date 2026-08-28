@@ -3010,7 +3010,7 @@ class TransactionTile extends ConsumerWidget {
     final cardName = (item.cardIndex >= 0 && item.cardIndex < cards.length) ? cards[item.cardIndex].name : '';
     return GestureDetector(
       onTap: () {
-        if (item.category == 'Pinjaman Diberikan' && item.loanId != null) {
+        if (item.category == 'Pinjaman Diberikan') {
           showTransactionLoanNotice(context, ref, item);
         } else {
           showTransactionActions(context, ref, item);
