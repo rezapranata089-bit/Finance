@@ -851,6 +851,7 @@ class Strings {
     'expense': {AppLang.en: 'Expense', AppLang.id: 'Pengeluaran'},
     'savings': {AppLang.en: 'Savings', AppLang.id: 'Tabungan'},
     'profile_title': {AppLang.en: 'Profile', AppLang.id: 'Profil'},
+    'view_profile': {AppLang.en: 'View profile', AppLang.id: 'Lihat profil'},
     'change_photo': {AppLang.en: 'Change profile photo', AppLang.id: 'Ubah foto profil'},
     'choose_from_gallery': {AppLang.en: 'Choose from gallery', AppLang.id: 'Pilih dari galeri'},
     'take_photo': {AppLang.en: 'Take a photo', AppLang.id: 'Ambil foto'},
@@ -1641,8 +1642,8 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
   bool _open = false;
   bool _pressed = false;
 
-  static const _closedSize = Size(40, 40);
-  static const _openSize = Size(190, 226);
+static const _closedSize = Size(40, 40);
+static const _openSize = Size(200, 222);
   static const _openCurve = Cubic(0.34, 1.25, 0.64, 1.0);
   static const _closeCurve = Cubic(0.22, 1.0, 0.36, 1.0);
 
@@ -1808,40 +1809,78 @@ class _MorphMenuContent extends ConsumerWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          InkWell(
-            onTap: () => onSelect(() => ref.read(tabProvider.notifier).state = 3),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-              child: Row(
-                children: [
-                  ProfileAvatar(
-                    photoPath: profile.photoPath,
-                    photoBytesBase64: profile.photoBytesBase64,
-                    photoVersion: profile.photoVersion,
-                    initial: initial,
-                    radius: 16,
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      profile.name,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: context.textPrimary),
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(12),
+              onTap: () => onSelect(() => ref.read(tabProvider.notifier).state = 3),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Row(
+                  children: [
+                    ProfileAvatar(
+                      photoPath: profile.photoPath,
+                      photoBytesBase64: profile.photoBytesBase64,
+                      photoVersion: profile.photoVersion,
+                      initial: initial,
+                      radius: 17,
                     ),
-                  ),
-                ],
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            profile.name,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w800, height: 1.1, color: context.textPrimary),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            Strings.t(lang, 'view_profile'),
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, height: 1.1, color: context.textFaint),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(SolarIconsOutline.altArrowRight, size: 14, color: context.iconMuted),
+                  ],
+                ),
               ),
             ),
           ),
-          Divider(height: 1, indent: 14, endIndent: 14, color: context.borderColor),
-          ...items.map<Widget>((item) => ListTile(
-                dense: true,
-                visualDensity: const VisualDensity(horizontal: -4, vertical: -3),
-                onTap: () => onSelect(item.$3),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14),
-                minLeadingWidth: 0,
-                leading: Icon(item.$1, size: 18, color: primary),
-                title: Text(item.$2, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: context.textPrimary)),
+          Divider(height: 1, indent: 12, endIndent: 12, color: context.borderColor),
+          ...items.map<Widget>((item) => Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: () => onSelect(item.$3),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 26, height: 26,
+                          decoration: BoxDecoration(
+                            color: primary.withOpacity(isDark ? 0.18 : 0.08),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(item.$1, size: 14, color: primary),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            item.$2,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: context.textPrimary),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               )),
         ],
       ),
