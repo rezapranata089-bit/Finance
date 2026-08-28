@@ -1109,6 +1109,10 @@ class HomePage extends ConsumerWidget {
                     locale: 'id_ID',
                     format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '),
                     spring: NumberFlowSpring.ios,
+                    transformTiming: const TimingConfig(
+                      duration: Duration(milliseconds: 520),
+                      curve: NumberFlowCurve(),
+                    ),
                     tabularNums: true,
                     motionBlur: 3.0,
                     digitSquish: 0.16,
