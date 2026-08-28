@@ -1844,22 +1844,13 @@ class _MorphMenuContent extends ConsumerWidget {
                               ),
                               const SizedBox(width: 6),
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                width: 16, height: 16,
+                                padding: const EdgeInsets.all(3),
                                 decoration: BoxDecoration(
                                   color: primary.withOpacity(isDark ? 0.18 : 0.1),
-                                  borderRadius: BorderRadius.circular(20),
+                                  shape: BoxShape.circle,
                                 ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.workspace_premium_rounded, size: 9, color: primary),
-                                    const SizedBox(width: 3),
-                                    Text(
-                                      Strings.t(lang, 'premium_member'),
-                                      style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, height: 1.0, color: primary, letterSpacing: 0.2),
-                                    ),
-                                  ],
-                                ),
+                                child: Icon(Icons.workspace_premium_rounded, size: 10, color: primary),
                               ),
                             ],
                           ),
@@ -1867,7 +1858,7 @@ class _MorphMenuContent extends ConsumerWidget {
                           Text(
                             Strings.t(lang, 'view_profile'),
                             overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, height: 1.1, color: context.textFaint),
+                            style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w300, height: 1.1, color: context.textFaint),
                           ),
                         ],
                       ),
