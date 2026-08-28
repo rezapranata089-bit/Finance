@@ -4098,29 +4098,25 @@ class _StaggeredRevealState extends State<StaggeredReveal> {
           setState(() => _hasEnteredViewport = true);
         }
       },
-      child: Animate(
-        target: _hasEnteredViewport ? 1 : 0,
-        effects: const [
-          FadeEffect(
-            begin: 0,
-            end: 1,
-            duration: Duration(milliseconds: 420),
-            curve: Curves.easeOutCubic,
-          ),
-          SlideEffect(
-            begin: Offset(0, 0.18),
-            end: Offset.zero,
-            duration: Duration(milliseconds: 520),
-            curve: Curves.easeOutCubic,
-          ),
-          ScaleEffect(
-            begin: Offset(0.96, 0.96),
-            end: Offset(1, 1),
-            duration: Duration(milliseconds: 520),
-            curve: Curves.easeOutCubic,
-          ),
-        ],
-        child: widget.child,
+      child: RepaintBoundary(
+        child: Animate(
+          target: _hasEnteredViewport ? 1 : 0,
+          effects: const [
+            FadeEffect(
+              begin: 0,
+              end: 1,
+              duration: Duration(milliseconds: 300),
+              curve: Curves.easeOut,
+            ),
+            SlideEffect(
+              begin: Offset(0, 0.08),
+              end: Offset.zero,
+              duration: Duration(milliseconds: 320),
+              curve: Curves.easeOutCubic,
+            ),
+          ],
+          child: widget.child,
+        ),
       ),
     );
   }
