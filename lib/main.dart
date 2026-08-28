@@ -768,6 +768,54 @@ class LiquidGlass extends StatelessWidget {
   }
 }
 
+class VisibilityAwareLottie extends StatefulWidget {
+  final String asset;
+  const VisibilityAwareLottie({super.key, required this.asset});
+
+  @override
+  State<VisibilityAwareLottie> createState() => _VisibilityAwareLottieState();
+}
+
+class _VisibilityAwareLottieState extends State<VisibilityAwareLottie> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(vsync: this);
+  late final Key _visibilityKey = UniqueKey();
+  bool _isVisible = true;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _handleVisibility(VisibilityInfo info) {
+    final visible = info.visibleFraction > 0.04;
+    if (visible == _isVisible) return;
+    _isVisible = visible;
+    if (visible) {
+      _controller.repeat();
+    } else {
+      _controller.stop();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return VisibilityDetector(
+      key: _visibilityKey,
+      onVisibilityChanged: _handleVisibility,
+      child: Lottie.asset(
+        widget.asset,
+        controller: _controller,
+        onLoaded: (composition) {
+          _controller.duration = composition.duration;
+          if (_isVisible) _controller.repeat();
+        },
+        fit: BoxFit.cover,
+      ),
+    );
+  }
+}
+
 const _shakeEase = Cubic(0.22, 1, 0.36, 1);
 
 class ShakeField extends StatefulWidget {
@@ -1539,10 +1587,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                                 ),
                               ),
                               if (isAiCard)
-                                SizedBox(
+                                const SizedBox(
                                   width: 70,
                                   height: 70,
-                                  child: Lottie.asset('assets/lottie/ai.json', repeat: true, fit: BoxFit.cover),
+                                  child: VisibilityAwareLottie(asset: 'assets/lottie/ai.json'),
                                 )
                               else
                                 Container(
@@ -2390,64 +2438,76 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
         (filter == 'all' || (filter == 'income' ? e.income : !e.income)) &&
         (cardFilter == null || e.cardIndex == cardFilter) &&
         e.title.toLowerCase().contains(query.toLowerCase())).toList();
-    return SafeArea(top: false, child: ListView(padding: EdgeInsets.fromLTRB(20, MediaQuery.paddingOf(context).top + 22, 20, 24), children: [
-      Text(Strings.t(lang, 'transactions_title'), style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 32, color: context.textPrimary)),
-      Text(Strings.t(lang, 'transactions_subtitle'), style: TextStyle(color: context.textMuted)),
-      const SizedBox(height: 22),
-      TextField(onChanged: (v) => setState(() => query = v), decoration: InputDecoration(hintText: Strings.t(lang, 'search_transactions'), prefixIcon: const Icon(Icons.search))),
-      const SizedBox(height: 14),
-      SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        clipBehavior: Clip.none,
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 2),
-        child: Row(
-          children: filterKeys
-              .map<Widget>(
-                (k) => Padding(
-                  padding: const EdgeInsets.only(right: 8),
-                  child: ChoiceChip(
-                    label: Text(Strings.t(lang, 'filter_$k')),
-                    selected: filter == k,
-                    onSelected: (_) => setState(() => filter = k),
-                  ),
+    return SafeArea(top: false, child: ListView.builder(
+      padding: EdgeInsets.fromLTRB(20, MediaQuery.paddingOf(context).top + 22, 20, 24),
+      itemCount: items.length + 1,
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(Strings.t(lang, 'transactions_title'), style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 32, color: context.textPrimary)),
+              Text(Strings.t(lang, 'transactions_subtitle'), style: TextStyle(color: context.textMuted)),
+              const SizedBox(height: 22),
+              TextField(onChanged: (v) => setState(() => query = v), decoration: InputDecoration(hintText: Strings.t(lang, 'search_transactions'), prefixIcon: const Icon(Icons.search))),
+              const SizedBox(height: 14),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                clipBehavior: Clip.none,
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+                child: Row(
+                  children: filterKeys
+                      .map<Widget>(
+                        (k) => Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: ChoiceChip(
+                            label: Text(Strings.t(lang, 'filter_$k')),
+                            selected: filter == k,
+                            onSelected: (_) => setState(() => filter = k),
+                          ),
+                        ),
+                      )
+                      .toList(),
                 ),
-              )
-              .toList(),
-        ),
-      ),
-      const SizedBox(height: 10),
-      SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        clipBehavior: Clip.none,
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 2),
-        child: Row(
-          children: [
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: ChoiceChip(
-                label: Text(Strings.t(lang, 'all_accounts')),
-                selected: cardFilter == null,
-                onSelected: (_) => setState(() => cardFilter = null),
               ),
-            ),
-            ...cards.asMap().entries.map(
-                  (e) => Padding(
-                    padding: const EdgeInsets.only(right: 8),
-                    child: ChoiceChip(
-                      label: Text(e.value.name),
-                      selected: cardFilter == e.key,
-                      onSelected: (_) => setState(() => cardFilter = e.key),
+              const SizedBox(height: 10),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                clipBehavior: Clip.none,
+                physics: const BouncingScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+                child: Row(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: ChoiceChip(
+                        label: Text(Strings.t(lang, 'all_accounts')),
+                        selected: cardFilter == null,
+                        onSelected: (_) => setState(() => cardFilter = null),
+                      ),
                     ),
-                  ),
+                    ...cards.asMap().entries.map(
+                          (e) => Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: ChoiceChip(
+                              label: Text(e.value.name),
+                              selected: cardFilter == e.key,
+                              onSelected: (_) => setState(() => cardFilter = e.key),
+                            ),
+                          ),
+                        ),
+                  ],
                 ),
-          ],
-        ),
-      ),
-      const SizedBox(height: 20),
-      ...items.asMap().entries.map((e) => StaggeredReveal(index: e.key, child: TransactionTile(item: e.value))),
-    ]));
+              ),
+              const SizedBox(height: 20),
+            ],
+          );
+        }
+        final e = items[index - 1];
+        return StaggeredReveal(index: index - 1, child: TransactionTile(item: e));
+      },
+    ));
   }
 }
 
@@ -2483,7 +2543,18 @@ class ReportsPage extends ConsumerWidget {
       const SizedBox(height: 12),
       Container(padding: const EdgeInsets.all(18), decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(24), border: Border.all(color: context.borderColor)), child: safeGroups.isEmpty
           ? Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Text(Strings.t(lang, 'no_expenses_yet'), style: TextStyle(color: context.textMuted, fontSize: 13)))
-          : Column(children: safeGroups.entries.toList().asMap().entries.map((e) => StaggeredReveal(index: e.key, child: ReportRow(label: e.value.key, amount: e.value.value, total: expense))).toList())),
+          : Builder(builder: (context) {
+              final entries = safeGroups.entries.toList();
+              return ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: entries.length,
+                itemBuilder: (context, index) {
+                  final e = entries[index];
+                  return StaggeredReveal(index: index, child: ReportRow(label: e.key, amount: e.value, total: expense));
+                },
+              );
+            })),
     ]));
   }
 }
