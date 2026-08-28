@@ -2591,7 +2591,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
         }
         final e = items[index - 1];
         return StaggeredReveal(
-          animate: false,
+          animate: true,
           index: index - 1,
           child: TransactionTile(item: e),
         );
