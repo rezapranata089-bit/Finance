@@ -999,10 +999,24 @@ class FinanceShell extends ConsumerWidget {
   }
 }
 
-class HomePage extends ConsumerWidget {
+class HomePage extends ConsumerStatefulWidget {
   const HomePage({super.key});
+
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends ConsumerState<HomePage> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final allItems = ref.watch(transactionsProvider);
     final lang = ref.watch(langProvider);
     final cards = ref.watch(cardsProvider);
@@ -1025,7 +1039,8 @@ class HomePage extends ConsumerWidget {
     return SafeArea(
       top: false,
       child: ListView(
-        primary: true,
+        controller: _scrollController,
+        primary: false,
         padding: EdgeInsets.zero,
         children: [
           Container(
@@ -1253,7 +1268,7 @@ class HomePage extends ConsumerWidget {
                 ...items.take(4).toList().asMap().entries.map(
                       (e) => StaggeredReveal(
                         index: e.key,
-                        scrollController: PrimaryScrollController.of(context),
+                        scrollController: _scrollController,
                         child: TransactionTile(item: e.value),
                       ),
                     ),
