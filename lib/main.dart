@@ -852,7 +852,7 @@ class Strings {
     'savings': {AppLang.en: 'Savings', AppLang.id: 'Tabungan'},
     'profile_title': {AppLang.en: 'Profile', AppLang.id: 'Profil'},
     'view_profile': {AppLang.en: 'View profile', AppLang.id: 'Lihat profil'},
-    'verified_account': {AppLang.en: 'Verified', AppLang.id: 'Terverifikasi'},
+    'premium_member': {AppLang.en: 'Premium', AppLang.id: 'Premium'},
     'change_photo': {AppLang.en: 'Change profile photo', AppLang.id: 'Ubah foto profil'},
     'choose_from_gallery': {AppLang.en: 'Choose from gallery', AppLang.id: 'Pilih dari galeri'},
     'take_photo': {AppLang.en: 'Take a photo', AppLang.id: 'Ambil foto'},
@@ -1832,29 +1832,42 @@ class _MorphMenuContent extends ConsumerWidget {
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            profile.name,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w800, height: 1.1, color: context.textPrimary),
-                          ),
-                          const SizedBox(height: 3),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: primary.withOpacity(isDark ? 0.18 : 0.1),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(SolarIconsBold.shieldCheck, size: 9, color: primary),
-                                const SizedBox(width: 3),
-                                Text(
-                                  Strings.t(lang, 'verified_account'),
-                                  style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, height: 1.0, color: primary, letterSpacing: 0.2),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  profile.name,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(fontSize: 14.5, fontWeight: FontWeight.w800, height: 1.1, color: context.textPrimary),
                                 ),
-                              ],
-                            ),
+                              ),
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: primary.withOpacity(isDark ? 0.18 : 0.1),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.workspace_premium_rounded, size: 9, color: primary),
+                                    const SizedBox(width: 3),
+                                    Text(
+                                      Strings.t(lang, 'premium_member'),
+                                      style: TextStyle(fontSize: 9, fontWeight: FontWeight.w800, height: 1.0, color: primary, letterSpacing: 0.2),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            Strings.t(lang, 'view_profile'),
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600, height: 1.1, color: context.textFaint),
                           ),
                         ],
                       ),
