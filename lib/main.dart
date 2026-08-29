@@ -2586,27 +2586,27 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
                       width: size.width,
                       height: size.height,
                       child: liquid_glass.LiquidGlassShadow(
-                        blur: 1.5,
-                        opacity: 0.08,
-                        offset: const Offset(0, 1),
+                        blur: 10,
+                        opacity: 0.18,
+                        offset: const Offset(0, 6),
                         cornerRadius: radius,
                         child: liquid_glass.LiquidGlassLens(
                           style: liquid_glass.LiquidGlassStyle(
                             shape: liquid_glass.LiquidGlassShape.roundedRectangle(
                               cornerRadius: radius,
-                              borderColor: context.isDark ? Colors.white.withOpacity(0.22) : Colors.white.withOpacity(0.72),
-                              borderWidth: 1.0,
+                              borderColor: context.isDark ? Colors.white.withOpacity(0.30) : Colors.white.withOpacity(0.85),
+                              borderWidth: 1.3,
                             ),
                             appearance: liquid_glass.LiquidGlassAppearance(
-                              color: (context.isDark ? Colors.black : Colors.white).withOpacity(context.isDark ? 0.42 : 0.58),
-                              blur: const liquid_glass.LiquidGlassBlur(sigmaX: 3.5, sigmaY: 3.5),
-                              saturation: 1.05,
+                              color: (context.isDark ? Colors.black : Colors.white).withOpacity(context.isDark ? 0.30 : 0.38),
+                              blur: const liquid_glass.LiquidGlassBlur(sigmaX: 12, sigmaY: 12),
+                              saturation: 1.4,
                             ),
                             refraction: const liquid_glass.LiquidGlassRefraction(
-                              distortion: 0.018,
-                              distortionWidth: 18,
-                              magnification: 1.01,
-                              chromaticAberration: 0.0005,
+                              distortion: 0.035,
+                              distortionWidth: 26,
+                              magnification: 1.06,
+                              chromaticAberration: 0.0018,
                             ),
                           ),
                           child: ClipRRect(
