@@ -2416,62 +2416,55 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> with SingleTicker
                     child: SizedBox(
                       width: size.width,
                       height: size.height,
-                      child: Stack(
-                        children: [
-                          liquid_glass.LiquidGlassShadow(
-                            blur: 10,
-                            opacity: 0.18,
-                            offset: const Offset(0, 6),
-                            cornerRadius: radius,
-                            child: Container(
-                              width: size.width,
-                              height: size.height,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(radius + 1),
-                                gradient: LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  stops: const [0.0, 0.5, 1.0],
-                                  colors: isDark
-                                      ? [
-                                          Colors.white.withOpacity(0.22),
-                                          Colors.white.withOpacity(0.03),
-                                          Colors.white.withOpacity(0.10),
-                                        ]
-                                      : [
-                                          Colors.white.withOpacity(0.95),
-                                          Colors.white.withOpacity(0.18),
-                                          Colors.white.withOpacity(0.50),
-                                        ],
-                                ),
-                              ),
-                              padding: const EdgeInsets.all(1.1),
-                              child: liquid_glass.LiquidGlassLens(
-                                style: liquid_glass.LiquidGlassStyle(
-                                  shape: liquid_glass.LiquidGlassShape.roundedRectangle(
-                                    cornerRadius: radius - 1,
-                                    borderColor: Colors.transparent,
-                                    borderWidth: 0,
-                                  ),
-                                  appearance: liquid_glass.LiquidGlassAppearance(
-                                    color: isDark ? Colors.black.withOpacity(0.38) : Colors.white.withOpacity(0.30),
-                                    blur: const liquid_glass.LiquidGlassBlur(sigmaX: 6, sigmaY: 6),
-                                    saturation: isDark ? 1.1 : 1.25,
-                                  ),
-                                  refraction: const liquid_glass.LiquidGlassRefraction(
-                                    distortion: 0.04,
-                                    distortionWidth: 22,
-                                    magnification: 1.1,
-                                    chromaticAberration: 0.0035,
-                                  ),
-                                ),
-                                child: const SizedBox.expand(),
-                              ),
+                      child: liquid_glass.LiquidGlassShadow(
+                        blur: 10,
+                        opacity: 0.18,
+                        offset: const Offset(0, 6),
+                        cornerRadius: radius,
+                        child: Container(
+                          width: size.width,
+                          height: size.height,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(radius + 1),
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              stops: const [0.0, 0.5, 1.0],
+                              colors: isDark
+                                  ? [
+                                      Colors.white.withOpacity(0.22),
+                                      Colors.white.withOpacity(0.03),
+                                      Colors.white.withOpacity(0.10),
+                                    ]
+                                  : [
+                                      Colors.white.withOpacity(0.95),
+                                      Colors.white.withOpacity(0.18),
+                                      Colors.white.withOpacity(0.50),
+                                    ],
                             ),
                           ),
-                          Positioned.fill(
+                          padding: const EdgeInsets.all(1.1),
+                          child: liquid_glass.LiquidGlassLens(
+                            style: liquid_glass.LiquidGlassStyle(
+                              shape: liquid_glass.LiquidGlassShape.roundedRectangle(
+                                cornerRadius: radius - 1,
+                                borderColor: Colors.transparent,
+                                borderWidth: 0,
+                              ),
+                              appearance: liquid_glass.LiquidGlassAppearance(
+                                color: isDark ? Colors.black.withOpacity(0.38) : Colors.white.withOpacity(0.30),
+                                blur: const liquid_glass.LiquidGlassBlur(sigmaX: 6, sigmaY: 6),
+                                saturation: isDark ? 1.1 : 1.25,
+                              ),
+                              refraction: const liquid_glass.LiquidGlassRefraction(
+                                distortion: 0.04,
+                                distortionWidth: 22,
+                                magnification: 1.1,
+                                chromaticAberration: 0.0035,
+                              ),
+                            ),
                             child: ClipRRect(
-                              borderRadius: BorderRadius.circular(radius),
+                              borderRadius: BorderRadius.circular(radius - 1),
                               child: Stack(
                                 children: [
                                   if (iconOpacity > 0)
@@ -2499,7 +2492,7 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> with SingleTicker
                               ),
                             ),
                           ),
-                        ],
+                        ),
                       ),
                     ),
                   );
@@ -2694,62 +2687,55 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
                     child: SizedBox(
                       width: size.width,
                       height: size.height,
-                      child: Stack(
-                        children: [
-                          liquid_glass.LiquidGlassShadow(
-                            blur: 10,
-                            opacity: 0.18,
-                            offset: const Offset(0, 6),
-                            cornerRadius: radius,
-                            child: Container(
-                              width: size.width,
-                              height: size.height,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(radius + 1),
-                                gradient: LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  stops: const [0.0, 0.5, 1.0],
-                                  colors: context.isDark
-                                      ? [
-                                          Colors.white.withOpacity(0.22),
-                                          Colors.white.withOpacity(0.03),
-                                          Colors.white.withOpacity(0.10),
-                                        ]
-                                      : [
-                                          Colors.white.withOpacity(0.95),
-                                          Colors.white.withOpacity(0.18),
-                                          Colors.white.withOpacity(0.50),
-                                        ],
-                                ),
-                              ),
-                              padding: const EdgeInsets.all(1.1),
-                              child: liquid_glass.LiquidGlassLens(
-                                style: liquid_glass.LiquidGlassStyle(
-                                  shape: liquid_glass.LiquidGlassShape.roundedRectangle(
-                                    cornerRadius: radius - 1,
-                                    borderColor: Colors.transparent,
-                                    borderWidth: 0,
-                                  ),
-                                  appearance: liquid_glass.LiquidGlassAppearance(
-                                    color: context.isDark ? Colors.black.withOpacity(0.38) : Colors.white.withOpacity(0.30),
-                                    blur: const liquid_glass.LiquidGlassBlur(sigmaX: 6, sigmaY: 6),
-                                    saturation: context.isDark ? 1.1 : 1.25,
-                                  ),
-                                  refraction: const liquid_glass.LiquidGlassRefraction(
-                                    distortion: 0.04,
-                                    distortionWidth: 22,
-                                    magnification: 1.1,
-                                    chromaticAberration: 0.0035,
-                                  ),
-                                ),
-                                child: const SizedBox.expand(),
-                              ),
+                      child: liquid_glass.LiquidGlassShadow(
+                        blur: 10,
+                        opacity: 0.18,
+                        offset: const Offset(0, 6),
+                        cornerRadius: radius,
+                        child: Container(
+                          width: size.width,
+                          height: size.height,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(radius + 1),
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              stops: const [0.0, 0.5, 1.0],
+                              colors: context.isDark
+                                  ? [
+                                      Colors.white.withOpacity(0.22),
+                                      Colors.white.withOpacity(0.03),
+                                      Colors.white.withOpacity(0.10),
+                                    ]
+                                  : [
+                                      Colors.white.withOpacity(0.95),
+                                      Colors.white.withOpacity(0.18),
+                                      Colors.white.withOpacity(0.50),
+                                    ],
                             ),
                           ),
-                          Positioned.fill(
+                          padding: const EdgeInsets.all(1.1),
+                          child: liquid_glass.LiquidGlassLens(
+                            style: liquid_glass.LiquidGlassStyle(
+                              shape: liquid_glass.LiquidGlassShape.roundedRectangle(
+                                cornerRadius: radius - 1,
+                                borderColor: Colors.transparent,
+                                borderWidth: 0,
+                              ),
+                              appearance: liquid_glass.LiquidGlassAppearance(
+                                color: context.isDark ? Colors.black.withOpacity(0.38) : Colors.white.withOpacity(0.30),
+                                blur: const liquid_glass.LiquidGlassBlur(sigmaX: 6, sigmaY: 6),
+                                saturation: context.isDark ? 1.1 : 1.25,
+                              ),
+                              refraction: const liquid_glass.LiquidGlassRefraction(
+                                distortion: 0.04,
+                                distortionWidth: 22,
+                                magnification: 1.1,
+                                chromaticAberration: 0.0035,
+                              ),
+                            ),
                             child: ClipRRect(
-                              borderRadius: BorderRadius.circular(radius),
+                              borderRadius: BorderRadius.circular(radius - 1),
                               child: Stack(
                                 children: [
                                   if (closedOpacity > 0)
@@ -2775,7 +2761,7 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
                               ),
                             ),
                           ),
-                        ],
+                        ),
                       ),
                     ),
                   );
