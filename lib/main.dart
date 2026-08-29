@@ -2514,11 +2514,14 @@ class CardSelectorButton extends ConsumerStatefulWidget {
 
 class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with SingleTickerProviderStateMixin {
   final LayerLink _link = LayerLink();
+  final GlobalKey _buttonKey = GlobalKey();
   OverlayEntry? _entry;
   late final AnimationController _controller = AnimationController(vsync: this, value: 0);
   bool _open = false;
+  bool _isAnimating = false;
 
   static const _closedSize = Size(130, 30);
+  Size _measuredClosedSize = _closedSize;
   static const _rowHeight = 34.0;
   static const _openCurve = Cubic(0.34, 1.25, 0.64, 1.0);
   static const _closeCurve = Cubic(0.22, 1.0, 0.36, 1.0);
@@ -2543,11 +2546,19 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
   }
 
   Future<void> _toggle() async {
+    if (_isAnimating) return;
     if (_open) {
+      _isAnimating = true;
       setState(() => _open = false);
       await _controller.animateTo(0, duration: const Duration(milliseconds: 250), curve: _closeCurve);
       _removeOverlay();
+      if (mounted) _isAnimating = false;
       return;
+    }
+    _isAnimating = true;
+    final buttonBox = _buttonKey.currentContext?.findRenderObject() as RenderBox?;
+    if (buttonBox != null && buttonBox.hasSize) {
+      _measuredClosedSize = buttonBox.size;
     }
     setState(() => _open = true);
     final cards = ref.read(cardsProvider);
@@ -2573,7 +2584,7 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
                 ),
                 builder: (context, menuChild) {
                   final t = _controller.value.clamp(0.0, 1.0);
-                  final size = Size.lerp(_closedSize, openSize, t)!;
+                  final size = Size.lerp(_measuredClosedSize, openSize, t)!;
                   const radius = 18.0;
                   final closedOpacity = (1 - t / 0.4).clamp(0.0, 1.0);
                   final openOpacity = ((t - 0.35) / 0.65).clamp(0.0, 1.0);
@@ -2636,10 +2647,10 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
                                 children: [
                                   if (closedOpacity > 0)
                                     Positioned(
-                                      left: (size.width - _closedSize.width) / 2,
+                                      left: (size.width - _measuredClosedSize.width) / 2,
                                       top: 0,
-                                      width: _closedSize.width,
-                                      height: _closedSize.height,
+                                      width: _measuredClosedSize.width,
+                                      height: _measuredClosedSize.height,
                                       child: Opacity(
                                         opacity: closedOpacity,
                                         child: _ClosedCardChip(cardLabel: _labelFor(cards, selected)),
@@ -2670,6 +2681,7 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
     );
     Overlay.of(context).insert(_entry!);
     await _controller.animateTo(1, duration: const Duration(milliseconds: 340), curve: _openCurve);
+    if (mounted) _isAnimating = false;
   }
 
   void _select(int index) {
@@ -2692,10 +2704,13 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
       link: _link,
       child: GestureDetector(
         onTap: _toggle,
-        child: AnimatedOpacity(
-          duration: const Duration(milliseconds: 200),
-          opacity: _open ? 0 : 1,
-          child: _ClosedCardChip(cardLabel: _labelFor(cards, selected), showArrow: true),
+        child: KeyedSubtree(
+          key: _buttonKey,
+          child: AnimatedOpacity(
+            duration: const Duration(milliseconds: 200),
+            opacity: _open ? 0 : 1,
+            child: _ClosedCardChip(cardLabel: _labelFor(cards, selected), showArrow: true),
+          ),
         ),
       ),
     );
