@@ -2035,12 +2035,14 @@ class HamburgerMorphMenu extends ConsumerStatefulWidget {
 
 class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with SingleTickerProviderStateMixin {
   final LayerLink _link = LayerLink();
+  final GlobalKey _buttonKey = GlobalKey();
   OverlayEntry? _entry;
   late final AnimationController _controller = AnimationController(vsync: this, value: 0);
   bool _open = false;
   bool _isAnimating = false;
 
   static const _closedSize = Size(40, 40);
+  Size _measuredClosedSize = _closedSize;
   static const _openSize = Size(200, 230);
   static const _openCurve = Cubic(0.34, 1.25, 0.64, 1.0);
   static const _closeCurve = Cubic(0.22, 1.0, 0.36, 1.0);
@@ -2068,6 +2070,10 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
       return;
     }
     _isAnimating = true;
+    final buttonBox = _buttonKey.currentContext?.findRenderObject() as RenderBox?;
+    if (buttonBox != null && buttonBox.hasSize) {
+      _measuredClosedSize = buttonBox.size;
+    }
     const radius = 20.0;
     final glassStyle = liquid_glass.LiquidGlassStyle(
       shape: liquid_glass.LiquidGlassShape.roundedRectangle(
@@ -2102,7 +2108,7 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
                 child: _MorphMenuContent(onSelect: _select),
                 builder: (context, menuChild) {
                   final t = _controller.value.clamp(0.0, 1.0);
-                  final size = Size.lerp(_closedSize, _openSize, t)!;
+                  final size = Size.lerp(_measuredClosedSize, _openSize, t)!;
                   final iconOpacity = (1 - t / 0.4).clamp(0.0, 1.0);
                   final menuOpacity = ((t - 0.35) / 0.65).clamp(0.0, 1.0);
                   final menuOffset = (1 - menuOpacity) * 12;
@@ -2160,7 +2166,7 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
                                 children: [
                                   if (iconOpacity > 0)
                                     Positioned(
-                                      top: 0, left: 0, width: 40, height: 40,
+                                      top: 0, left: 0, width: _measuredClosedSize.width, height: _measuredClosedSize.height,
                                       child: Opacity(
                                         opacity: iconOpacity,
                                         child: const Center(child: Icon(SolarIconsOutline.hamburgerMenu, size: 20)),
@@ -2218,25 +2224,28 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
         child: AnimatedOpacity(
           duration: const Duration(milliseconds: 200),
           opacity: _open ? 0 : 1,
-          child: Container(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(isDark ? 0.22 : 0.07),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
+          child: KeyedSubtree(
+            key: _buttonKey,
+            child: Container(
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(isDark ? 0.22 : 0.07),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: LiquidGlass(
+                borderRadius: 999,
+                tint: isDark ? Colors.black : null,
+                intensity: isDark ? 1.6 : 1.0,
+                borderColor: isDark ? context.borderColor : null,
+                child: Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: Icon(SolarIconsOutline.hamburgerMenu, size: 20, color: context.textPrimary),
                 ),
-              ],
-            ),
-            child: LiquidGlass(
-              borderRadius: 999,
-              tint: isDark ? Colors.black : null,
-              intensity: isDark ? 1.6 : 1.0,
-              borderColor: isDark ? context.borderColor : null,
-              child: Padding(
-                padding: const EdgeInsets.all(10),
-                child: Icon(SolarIconsOutline.hamburgerMenu, size: 20, color: context.textPrimary),
               ),
             ),
           ),
