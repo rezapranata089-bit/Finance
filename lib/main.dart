@@ -16,6 +16,7 @@ import 'package:number_flow_flutter/number_flow_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:solar_icons/solar_icons.dart';
+import 'package:liquid_glass_easy/liquid_glass_easy.dart' as liquid_glass;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -2584,38 +2585,44 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
                     child: SizedBox(
                       width: size.width,
                       height: size.height,
-                      child: LiquidGlass(
-                        borderRadius: radius,
-                        tint: context.cardColor,
-                        intensity: glassT > 0.8 ? 1.6 : 1.0,
-                        blur: 6,
-                        useBlur: showBlur,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(radius),
-                          child: Stack(
-                            children: [
-                              if (closedOpacity > 0)
-                                Positioned(
-                                  left: (size.width - _closedSize.width) / 2,
-                                  top: 0,
-                                  width: _closedSize.width,
-                                  height: _closedSize.height,
-                                  child: Opacity(
-                                    opacity: closedOpacity,
-                                    child: _ClosedCardChip(cardLabel: _labelFor(cards, selected)),
-                                  ),
-                                ),
-                              if (openOpacity > 0)
-                                Opacity(
-                                  opacity: openOpacity,
-                                  child: Transform.translate(
-                                    offset: Offset(0, openOffset),
-                                    child: menuChild,
-                                  ),
-                                ),
-                            ],
+                      child: liquid_glass.LiquidGlassView(
+                        backgroundWidget: const SizedBox.expand(),
+                        children: [
+                          liquid_glass.LiquidGlass(
+                            width: size.width,
+                            height: size.height,
+                            magnification: 1.0,
+                            distortion: 0.1,
+                            distortionWidth: 50,
+                            position: liquid_glass.LiquidGlassOffsetPosition(left: 0, top: 0),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(radius),
+                              child: Stack(
+                                children: [
+                                  if (closedOpacity > 0)
+                                    Positioned(
+                                      left: (size.width - _closedSize.width) / 2,
+                                      top: 0,
+                                      width: _closedSize.width,
+                                      height: _closedSize.height,
+                                      child: Opacity(
+                                        opacity: closedOpacity,
+                                        child: _ClosedCardChip(cardLabel: _labelFor(cards, selected)),
+                                      ),
+                                    ),
+                                  if (openOpacity > 0)
+                                    Opacity(
+                                      opacity: openOpacity,
+                                      child: Transform.translate(
+                                        offset: Offset(0, openOffset),
+                                        child: menuChild,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
                           ),
-                        ),
+                        ],
                       ),
                     ),
                   );
