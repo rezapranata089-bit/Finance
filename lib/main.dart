@@ -17,7 +17,7 @@ import 'package:number_flow_flutter/number_flow_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:solar_icons/solar_icons.dart';
-import 'package:liquid_glass_easy/liquid_glass_easy.dart' as liquid_glass;
+
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
 void main() async {
@@ -932,59 +932,119 @@ class LiquidGlass extends StatelessWidget {
   final double intensity;
   final bool useBlur;
   final Color? borderColor;
+
   const LiquidGlass({super.key, required this.child, this.borderRadius = 20, this.tint, this.blur = 6, this.intensity = 1.0, this.useBlur = false, this.borderColor});
 
   @override
   Widget build(BuildContext context) {
     final isDark = context.isDark;
     final base = tint ?? Colors.white;
-    final topOpacity = ((isDark ? 0.34 : 0.44) * intensity).clamp(0.0, 1.0);
-    final bottomOpacity = ((isDark ? 0.16 : 0.20) * intensity).clamp(0.0, 1.0);
-    final glassBody = Container(
+    final opacity = ((isDark ? 0.26 : 0.36) * intensity).clamp(0.0, 1.0);
+    return RepaintBoundary(
+      child: GlassContainer(
+        shape: LiquidRoundedRectangle(borderRadius: borderRadius),
+        settings: LiquidGlassSettings(
+          glassColor: base.withOpacity(opacity),
+          blur: useBlur ? blur : 0,
+          thickness: 20,
+          saturation: isDark ? 1.1 : 1.25,
+          shadowElevation: 1,
+          glowIntensity: 0.2,
+        ),
+        child: child,
+      ),
+    );
+  }
+}
+
+class LiquidGlassStyle {
+  final LiquidGlassShape shape;
+  final LiquidGlassAppearance appearance;
+  final LiquidGlassRefraction refraction;
+
+  const LiquidGlassStyle({required this.shape, required this.appearance, required this.refraction});
+}
+
+class LiquidGlassShape {
+  final double cornerRadius;
+
+  const LiquidGlassShape._(this.cornerRadius);
+
+  static LiquidGlassShape roundedRectangle({required double cornerRadius, Color? borderColor, double? borderWidth}) {
+    return LiquidGlassShape._(cornerRadius);
+  }
+}
+
+class LiquidGlassAppearance {
+  final Color color;
+  final LiquidGlassBlur blur;
+  final double saturation;
+
+  const LiquidGlassAppearance({required this.color, required this.blur, required this.saturation});
+}
+
+class LiquidGlassBlur {
+  final double sigmaX;
+  final double sigmaY;
+
+  const LiquidGlassBlur({required this.sigmaX, required this.sigmaY});
+}
+
+class LiquidGlassRefraction {
+  final double distortion;
+  final double distortionWidth;
+  final double magnification;
+  final double chromaticAberration;
+
+  const LiquidGlassRefraction({required this.distortion, required this.distortionWidth, required this.magnification, required this.chromaticAberration});
+}
+
+class LiquidGlassShadow extends StatelessWidget {
+  final double blur;
+  final double opacity;
+  final Offset offset;
+  final double cornerRadius;
+  final Widget child;
+
+  const LiquidGlassShadow({super.key, required this.blur, required this.opacity, required this.offset, required this.cornerRadius, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(borderRadius),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            base.withOpacity(topOpacity),
-            base.withOpacity(bottomOpacity),
-          ],
-        ),
-        border: Border.all(
-          color: borderColor ?? Colors.white.withOpacity(isDark ? 0.16 : 0.55),
-          width: 1,
-        ),
+        borderRadius: BorderRadius.circular(cornerRadius),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(opacity),
+            blurRadius: blur,
+            offset: offset,
+          ),
+        ],
       ),
       child: child,
     );
-    return RepaintBoundary(
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(borderRadius),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.22 : 0.06),
-              blurRadius: 14,
-              offset: const Offset(0, 5),
-            ),
-            BoxShadow(
-              color: Colors.white.withOpacity(isDark ? 0.05 : 0.55),
-              blurRadius: 1,
-              offset: const Offset(0, 1),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(borderRadius),
-          child: useBlur
-              ? BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-                  child: glassBody,
-                )
-              : glassBody,
-        ),
+  }
+}
+
+class LiquidGlassLens extends StatelessWidget {
+  final LiquidGlassStyle style;
+  final Widget child;
+
+  const LiquidGlassLens({super.key, required this.style, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return GlassContainer(
+      shape: LiquidRoundedRectangle(borderRadius: style.shape.cornerRadius),
+      settings: LiquidGlassSettings(
+        glassColor: style.appearance.color,
+        blur: style.appearance.blur.sigmaX,
+        saturation: style.appearance.saturation,
+        thickness: 20,
+        chromaticAberration: style.refraction.chromaticAberration,
+        shadowElevation: 1,
       ),
+      child: child,
     );
   }
 }
@@ -2081,18 +2141,18 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
       _measuredClosedSize = buttonBox.size;
     }
     const radius = 20.0;
-    final glassStyle = liquid_glass.LiquidGlassStyle(
-      shape: liquid_glass.LiquidGlassShape.roundedRectangle(
+    final glassStyle = LiquidGlassStyle(
+      shape: LiquidGlassShape.roundedRectangle(
         cornerRadius: radius - 1,
         borderColor: Colors.transparent,
         borderWidth: 0,
       ),
-      appearance: liquid_glass.LiquidGlassAppearance(
+      appearance: LiquidGlassAppearance(
         color: context.isDark ? Colors.black.withOpacity(0.38) : Colors.white.withOpacity(0.30),
-        blur: const liquid_glass.LiquidGlassBlur(sigmaX: 6, sigmaY: 6),
+        blur: const LiquidGlassBlur(sigmaX: 6, sigmaY: 6),
         saturation: context.isDark ? 1.1 : 1.25,
       ),
-      refraction: const liquid_glass.LiquidGlassRefraction(
+      refraction: const LiquidGlassRefraction(
         distortion: 0.04,
         distortionWidth: 22,
         magnification: 1.1,
@@ -2129,7 +2189,7 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
                       height: size.height,
                       child: Stack(
                         children: [
-                          liquid_glass.LiquidGlassShadow(
+                          LiquidGlassShadow(
                             blur: shadowBlur,
                             opacity: shadowOpacity,
                             offset: Offset(0, shadowDy),
@@ -2164,7 +2224,7 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
                             ),
                           ),
                           padding: const EdgeInsets.all(1.1),
-                          child: liquid_glass.LiquidGlassLens(
+                          child: LiquidGlassLens(
                             style: glassStyle,
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(radius - 1),
@@ -2437,18 +2497,18 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> with SingleTicker
     _openUpward = spaceAbove >= _openSize.height + 12;
     final anchor = _openUpward ? Alignment.bottomRight : Alignment.topRight;
     const radius = 16.0;
-    final glassStyle = liquid_glass.LiquidGlassStyle(
-      shape: liquid_glass.LiquidGlassShape.roundedRectangle(
+    final glassStyle = LiquidGlassStyle(
+      shape: LiquidGlassShape.roundedRectangle(
         cornerRadius: radius - 1,
         borderColor: Colors.transparent,
         borderWidth: 0,
       ),
-      appearance: liquid_glass.LiquidGlassAppearance(
+      appearance: LiquidGlassAppearance(
         color: context.isDark ? Colors.black.withOpacity(0.38) : Colors.white.withOpacity(0.30),
-        blur: const liquid_glass.LiquidGlassBlur(sigmaX: 6, sigmaY: 6),
+        blur: const LiquidGlassBlur(sigmaX: 6, sigmaY: 6),
         saturation: context.isDark ? 1.1 : 1.25,
       ),
-      refraction: const liquid_glass.LiquidGlassRefraction(
+      refraction: const LiquidGlassRefraction(
         distortion: 0.04,
         distortionWidth: 22,
         magnification: 1.1,
@@ -2486,7 +2546,7 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> with SingleTicker
                       height: size.height,
                       child: Stack(
                         children: [
-                          liquid_glass.LiquidGlassShadow(
+                          LiquidGlassShadow(
                             blur: shadowBlur,
                             opacity: shadowOpacity,
                             offset: Offset(0, shadowDy),
@@ -2521,7 +2581,7 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> with SingleTicker
                             ),
                           ),
                           padding: const EdgeInsets.all(1.1),
-                          child: liquid_glass.LiquidGlassLens(
+                          child: LiquidGlassLens(
                             style: glassStyle,
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(radius - 1),
@@ -2719,18 +2779,18 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
     final selected = rawSelected == -1 ? -1 : _safeIndex(rawSelected, cards.length);
     final openSize = Size(196, (cards.length + 2) * _rowHeight + 14);
     const radius = 18.0;
-    final glassStyle = liquid_glass.LiquidGlassStyle(
-      shape: liquid_glass.LiquidGlassShape.roundedRectangle(
+    final glassStyle = LiquidGlassStyle(
+      shape: LiquidGlassShape.roundedRectangle(
         cornerRadius: radius - 1,
         borderColor: Colors.transparent,
         borderWidth: 0,
       ),
-      appearance: liquid_glass.LiquidGlassAppearance(
+      appearance: LiquidGlassAppearance(
         color: context.isDark ? Colors.black.withOpacity(0.38) : Colors.white.withOpacity(0.30),
-        blur: const liquid_glass.LiquidGlassBlur(sigmaX: 6, sigmaY: 6),
+        blur: const LiquidGlassBlur(sigmaX: 6, sigmaY: 6),
         saturation: context.isDark ? 1.1 : 1.25,
       ),
-      refraction: const liquid_glass.LiquidGlassRefraction(
+      refraction: const LiquidGlassRefraction(
         distortion: 0.04,
         distortionWidth: 22,
         magnification: 1.1,
@@ -2773,7 +2833,7 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
                       height: size.height,
                       child: Stack(
                         children: [
-                          liquid_glass.LiquidGlassShadow(
+                          LiquidGlassShadow(
                             blur: shadowBlur,
                             opacity: shadowOpacity,
                             offset: Offset(0, shadowDy),
@@ -2808,7 +2868,7 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
                             ),
                           ),
                           padding: const EdgeInsets.all(1.1),
-                          child: liquid_glass.LiquidGlassLens(
+                          child: LiquidGlassLens(
                             style: glassStyle,
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(radius - 1),
@@ -3711,7 +3771,7 @@ class CategorySettingsPage extends ConsumerWidget {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        liquid_glass.LiquidGlassSwitch(
+                        GlassSwitch(
                           value: enabled,
                           activeColor: primary,
                           onChanged: (v) {
