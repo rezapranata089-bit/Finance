@@ -3018,6 +3018,11 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
   final ScrollController _scrollController = ScrollController();
   static const filterKeys = ['all', 'income', 'expense'];
   static const _pageSize = 10;
+  static const Map<String, IconData> _filterIcons = {
+    'all': SolarIconsOutline.widget,
+    'income': SolarIconsOutline.arrowLeftDown,
+    'expense': SolarIconsOutline.arrowRightUp,
+  };
 
   @override
   void initState() {
@@ -3071,7 +3076,12 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
               TextField(onChanged: (v) => setState(() { query = v; _resetPaging(); }), decoration: InputDecoration(hintText: Strings.t(lang, 'search_transactions'), prefixIcon: const Icon(Icons.search))),
               const SizedBox(height: 14),
               GlassSegmentedControl(
-                segments: filterKeys.map((k) => Strings.t(lang, 'filter_$k')).toList(),
+                segments: filterKeys
+                    .map((k) => GlassSegment(
+                          icon: Icon(_filterIcons[k], size: 14),
+                          label: Strings.t(lang, 'filter_$k'),
+                        ))
+                    .toList(),
                 selectedIndex: filterKeys.indexOf(filter),
                 onSegmentSelected: (index) {
                   setState(() {
