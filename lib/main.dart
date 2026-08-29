@@ -3696,16 +3696,33 @@ class CategorySettingsPage extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6),
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(22), border: Border.all(color: context.borderColor)),
-                    child: SwitchListTile(
-                      value: enabled,
-                      onChanged: (v) {
-                        ref.read(categoryFeatureEnabledProvider.notifier).state = v;
-                        ref.read(prefsProvider).setBool('category_feature_enabled', v);
-                      },
-                      title: Text(Strings.t(lang, 'enable_category_feature'), style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: context.textPrimary)),
-                      subtitle: Text(Strings.t(lang, 'enable_category_feature_desc'), style: TextStyle(fontSize: 12, color: context.textMuted)),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(Strings.t(lang, 'enable_category_feature'), style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: context.textPrimary)),
+                              const SizedBox(height: 4),
+                              Text(Strings.t(lang, 'enable_category_feature_desc'), style: TextStyle(fontSize: 12, color: context.textMuted, height: 1.3)),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        liquid_glass.LiquidGlassSwitch(
+                          value: enabled,
+                          activeColor: primary,
+                          onChanged: (v) {
+                            ref.read(categoryFeatureEnabledProvider.notifier).state = v;
+                            ref.read(prefsProvider).setBool('category_feature_enabled', v);
+                          },
+                          width: 52,
+                          height: 30,
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 24),
