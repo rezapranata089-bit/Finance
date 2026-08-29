@@ -3014,21 +3014,17 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
   static const filterKeys = ['all', 'income', 'expense'];
   static const _pageSize = 10;
 
-  // ── Liquid pill physics (mirrors liquid_glass_easy's animated nav bar:
-  // a positional spring carries the pill between tabs; a second-order
-  // finite-difference on that position gives real acceleration, which
-  // drives an oppositely-signed squash/stretch on width vs height). ──
+  // ── Liquid pill physics: a simple positional spring carries the pill
+  // between tabs, matching the same subtle glass look and motion feel
+  // as the category page's LiquidGlassSwitch (no squash/stretch, no
+  // heavy refraction). ──
   late final AnimationController _pillController = AnimationController(
     vsync: this,
     lowerBound: 0,
     upperBound: (filterKeys.length - 1).toDouble(),
     value: filterKeys.indexOf(filter).toDouble(),
-  )..addListener(_onPillTick);
+  );
   double _pillSegmentWidth = 0;
-  double _pillLastPixelPos = 0;
-  double _pillLastVelocity = 0;
-  Duration? _pillLastFrameTime;
-  double _pillDeviation = 0;
   late final AnimationController _pillGrowController = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 260),
@@ -3039,25 +3035,6 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
     'income': SolarIconsOutline.arrowLeftDown,
     'expense': SolarIconsOutline.arrowRightUp,
   };
-
-  void _onPillTick() {
-    final segW = _pillSegmentWidth;
-    if (segW <= 0) return;
-    final now = WidgetsBinding.instance.currentSystemFrameTimeStamp;
-    final pixelPos = _pillController.value * segW;
-    if (_pillLastFrameTime != null) {
-      final dt = (now - _pillLastFrameTime!).inMicroseconds / 1e6;
-      if (dt > 0.0005) {
-        final velocity = (pixelPos - _pillLastPixelPos) / dt;
-        final accel = (velocity - _pillLastVelocity) / dt;
-        final rawDev = (accel * 0.000012).clamp(-0.16, 0.16);
-        _pillDeviation = _pillDeviation + (rawDev - _pillDeviation) * 0.4;
-        _pillLastVelocity = velocity;
-      }
-    }
-    _pillLastPixelPos = pixelPos;
-    _pillLastFrameTime = now;
-  }
 
   void _animatePillTo(int targetIndex) {
     final sim = SpringSimulation(
@@ -3186,12 +3163,11 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
                           final committedIndex = _pillController.value.round().clamp(0, filterKeys.length - 1);
                           final baseThumbWidth = segW - 6;
                           final baseThumbHeight = trackHeight - trackPadding * 2;
-                          final dev = _pillDeviation;
                           final growT = Curves.easeOutBack.transform(_pillGrowController.value.clamp(0.0, 1.0));
-                          final growExtra = 16 * growT;
+                          final growExtra = 6 * growT;
                           final refractionT = _pillGrowController.value.clamp(0.0, 1.0);
-                          final thumbWidth = (baseThumbWidth * (1 + dev * 0.5)).clamp(baseThumbWidth * 0.8, segW * 1.3);
-                          final thumbHeight = ((baseThumbHeight + growExtra) * (1 - dev * 0.4)).clamp(baseThumbHeight * 0.8, baseThumbHeight + 16);
+                          final thumbWidth = baseThumbWidth;
+                          final thumbHeight = baseThumbHeight + growExtra;
                           final capsuleRadius = thumbHeight / 2;
                           final centerX = _pillController.value * segW + segW / 2;
                           return Stack(
@@ -3259,14 +3235,14 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
                                             style: liquid_glass.LiquidGlassStyle(
                                               shape: liquid_glass.LiquidGlassShape.continuousRoundedRectangle(cornerRadius: capsuleRadius),
                                               appearance: liquid_glass.LiquidGlassAppearance(
-                                                color: Colors.white.withOpacity(context.isDark ? 0.16 : 0.46),
-                                                saturation: context.isDark ? 1.1 : 1.25,
+                                                color: Theme.of(context).colorScheme.primary.withOpacity(context.isDark ? 0.30 : 0.22),
+                                                saturation: context.isDark ? 1.05 : 1.15,
                                               ),
                                               refraction: liquid_glass.LiquidGlassRefraction(
-                                                distortion: lerpDouble(0.0, 0.14, refractionT)!,
-                                                distortionWidth: lerpDouble(0.0, 30, refractionT)!,
-                                                magnification: lerpDouble(1.0, 1.12, refractionT)!,
-                                                chromaticAberration: lerpDouble(0.0, 0.0055, refractionT)!,
+                                                distortion: lerpDouble(0.0, 0.03, refractionT)!,
+                                                distortionWidth: lerpDouble(0.0, 10, refractionT)!,
+                                                magnification: lerpDouble(1.0, 1.04, refractionT)!,
+                                                chromaticAberration: lerpDouble(0.0, 0.0012, refractionT)!,
                                               ),
                                             ),
                                             child: const SizedBox.expand(),
