@@ -939,24 +939,21 @@ class LiquidGlass extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = context.isDark;
     final base = tint ?? Colors.white;
-    final opacity = ((isDark ? 0.26 : 0.36) * intensity).clamp(0.0, 1.0);
-    return RepaintBoundary(
-      child: GlassContainer(
-        shape: LiquidRoundedRectangle(borderRadius: borderRadius),
-        useOwnLayer: true,
-        quality: GlassQuality.premium,
-        settings: LiquidGlassSettings(
-          glassColor: base.withOpacity(opacity),
-          blur: useBlur ? blur : 0,
-          thickness: 20,
-          saturation: isDark ? 1.1 : 1.25,
-          refractiveIndex: 1.3,
-          lightIntensity: isDark ? 1.2 : 0.9,
-          lightAngle: 2.4,
-          shadowElevation: 1,
-          glowIntensity: 0.2,
-        ),
-        child: child,
+    final opacity = ((isDark ? 0.34 : 0.55) * intensity).clamp(0.0, 1.0);
+    final content = DecoratedBox(
+      decoration: BoxDecoration(
+        color: base.withOpacity(opacity),
+        borderRadius: BorderRadius.circular(borderRadius),
+        border: borderColor != null ? Border.all(color: borderColor!, width: 1) : null,
+      ),
+      child: child,
+    );
+    if (!useBlur) return content;
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(borderRadius),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
+        child: content,
       ),
     );
   }
