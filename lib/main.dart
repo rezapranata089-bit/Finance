@@ -2624,8 +2624,8 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
                                 saturation: context.isDark ? 1.1 : 1.25,
                               ),
                               refraction: const liquid_glass.LiquidGlassRefraction(
-                                distortion: 0.06,
-                                distortionWidth: 30,
+                                distortion: 0.04,
+                                distortionWidth: 22,
                                 magnification: 1.1,
                                 chromaticAberration: 0.0035,
                               ),
