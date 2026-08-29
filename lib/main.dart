@@ -2590,79 +2590,99 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
                         opacity: 0.18,
                         offset: const Offset(0, 6),
                         cornerRadius: radius,
-                        child: liquid_glass.LiquidGlassLens(
-                          style: liquid_glass.LiquidGlassStyle(
-                            shape: liquid_glass.LiquidGlassShape.roundedRectangle(
-                              cornerRadius: radius,
-                              borderColor: context.isDark ? Colors.white.withOpacity(0.30) : Colors.white.withOpacity(0.85),
-                              borderWidth: 1.3,
-                            ),
-                            appearance: liquid_glass.LiquidGlassAppearance(
-                              color: context.isDark ? Colors.white.withOpacity(0.10) : Colors.white.withOpacity(0.32),
-                              blur: const liquid_glass.LiquidGlassBlur(sigmaX: 18, sigmaY: 18),
-                              saturation: 1.6,
-                            ),
-                            refraction: const liquid_glass.LiquidGlassRefraction(
-                              distortion: 0.04,
-                              distortionWidth: 28,
-                              magnification: 1.08,
-                              chromaticAberration: 0.002,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(radius + 1),
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              stops: const [0.0, 0.5, 1.0],
+                              colors: [
+                                Colors.white.withOpacity(context.isDark ? 0.50 : 0.95),
+                                Colors.white.withOpacity(context.isDark ? 0.05 : 0.18),
+                                Colors.white.withOpacity(context.isDark ? 0.16 : 0.50),
+                              ],
                             ),
                           ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(radius),
-                            child: Stack(
-                              children: [
-                                Positioned.fill(
-                                  child: IgnorePointer(
-                                    child: DecoratedBox(
-                                      decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                          stops: const [0.0, 0.28, 0.55],
-                                          colors: [
-                                            Colors.white.withOpacity(context.isDark ? 0.22 : 0.55),
-                                            Colors.white.withOpacity(context.isDark ? 0.05 : 0.12),
-                                            Colors.white.withOpacity(0.0),
-                                          ],
+                          padding: const EdgeInsets.all(1.1),
+                          child: liquid_glass.LiquidGlassLens(
+                            style: liquid_glass.LiquidGlassStyle(
+                              shape: liquid_glass.LiquidGlassShape.roundedRectangle(
+                                cornerRadius: radius - 1,
+                                borderColor: Colors.transparent,
+                                borderWidth: 0,
+                              ),
+                              appearance: liquid_glass.LiquidGlassAppearance(
+                                color: Colors.white.withOpacity(context.isDark ? 0.12 : 0.30),
+                                blur: const liquid_glass.LiquidGlassBlur(sigmaX: 6, sigmaY: 6),
+                                saturation: 1.25,
+                              ),
+                              refraction: const liquid_glass.LiquidGlassRefraction(
+                                distortion: 0.06,
+                                distortionWidth: 30,
+                                magnification: 1.1,
+                                chromaticAberration: 0.0035,
+                              ),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(radius - 1),
+                              child: Stack(
+                                children: [
+                                  Positioned.fill(
+                                    child: IgnorePointer(
+                                      child: DecoratedBox(
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
+                                            stops: const [0.0, 0.42],
+                                            colors: [
+                                              Colors.white.withOpacity(context.isDark ? 0.18 : 0.45),
+                                              Colors.white.withOpacity(0.0),
+                                            ],
+                                          ),
                                         ),
                                       ),
                                     ),
                                   ),
-                                ),
-                                Positioned.fill(
-                                  child: IgnorePointer(
-                                    child: DecoratedBox(
-                                      decoration: BoxDecoration(
-                                        border: Border(
-                                          top: BorderSide(color: Colors.white.withOpacity(context.isDark ? 0.28 : 0.75), width: 1),
+                                  Positioned.fill(
+                                    child: IgnorePointer(
+                                      child: DecoratedBox(
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            begin: Alignment.bottomCenter,
+                                            end: Alignment.topCenter,
+                                            stops: const [0.0, 0.22],
+                                            colors: [
+                                              Colors.black.withOpacity(context.isDark ? 0.24 : 0.05),
+                                              Colors.black.withOpacity(0.0),
+                                            ],
+                                          ),
                                         ),
-                                        borderRadius: BorderRadius.circular(radius),
                                       ),
                                     ),
                                   ),
-                                ),
-                                if (closedOpacity > 0)
-                                  Positioned(
-                                    left: (size.width - _closedSize.width) / 2,
-                                    top: 0,
-                                    width: _closedSize.width,
-                                    height: _closedSize.height,
-                                    child: Opacity(
-                                      opacity: closedOpacity,
-                                      child: _ClosedCardChip(cardLabel: _labelFor(cards, selected)),
+                                  if (closedOpacity > 0)
+                                    Positioned(
+                                      left: (size.width - _closedSize.width) / 2,
+                                      top: 0,
+                                      width: _closedSize.width,
+                                      height: _closedSize.height,
+                                      child: Opacity(
+                                        opacity: closedOpacity,
+                                        child: _ClosedCardChip(cardLabel: _labelFor(cards, selected)),
+                                      ),
                                     ),
-                                  ),
-                                if (openOpacity > 0)
-                                  Opacity(
-                                    opacity: openOpacity,
-                                    child: Transform.translate(
-                                      offset: Offset(0, openOffset),
-                                      child: menuChild,
+                                  if (openOpacity > 0)
+                                    Opacity(
+                                      opacity: openOpacity,
+                                      child: Transform.translate(
+                                        offset: Offset(0, openOffset),
+                                        child: menuChild,
+                                      ),
                                     ),
-                                  ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ),
