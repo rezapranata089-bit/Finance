@@ -18,12 +18,14 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:solar_icons/solar_icons.dart';
 import 'package:liquid_glass_easy/liquid_glass_easy.dart' as liquid_glass;
+import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   VisibilityDetectorController.instance.updateInterval = const Duration(milliseconds: 50);
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   await initializeDateFormatting('id_ID', null);
+  await LiquidGlassWidgets.initialize();
   final prefs = await SharedPreferences.getInstance();
   if (!(prefs.getBool('fresh_data_reset_v2') ?? false)) {
     await prefs.remove('finance_cards');
@@ -32,9 +34,12 @@ void main() async {
     await prefs.remove('dummy_data_active');
     await prefs.setBool('fresh_data_reset_v2', true);
   }
-  runApp(ProviderScope(
-    overrides: [prefsProvider.overrideWithValue(prefs)],
-    child: const MyFinanceApp(),
+  runApp(LiquidGlassWidgets.wrap(
+    brightnessResolver: Theme.maybeBrightnessOf,
+    child: ProviderScope(
+      overrides: [prefsProvider.overrideWithValue(prefs)],
+      child: const MyFinanceApp(),
+    ),
   ));
 }
 
@@ -3014,38 +3019,6 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
   static const filterKeys = ['all', 'income', 'expense'];
   static const _pageSize = 10;
 
-  // ── Liquid pill physics: a simple positional spring carries the pill
-  // between tabs, matching the same subtle glass look and motion feel
-  // as the category page's LiquidGlassSwitch (no squash/stretch, no
-  // heavy refraction). ──
-  late final AnimationController _pillController = AnimationController(
-    vsync: this,
-    lowerBound: 0,
-    upperBound: (filterKeys.length - 1).toDouble(),
-    value: filterKeys.indexOf(filter).toDouble(),
-  );
-  double _pillSegmentWidth = 0;
-  late final AnimationController _pillGrowController = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 260),
-    value: 0,
-  );
-  static const Map<String, IconData> _filterIcons = {
-    'all': SolarIconsOutline.widget,
-    'income': SolarIconsOutline.arrowLeftDown,
-    'expense': SolarIconsOutline.arrowRightUp,
-  };
-
-  void _animatePillTo(int targetIndex) {
-    final sim = SpringSimulation(
-      const SpringDescription(mass: 1, stiffness: 280, damping: 31.4),
-      _pillController.value,
-      targetIndex.toDouble(),
-      _pillController.velocity,
-    );
-    _pillController.animateWith(sim);
-  }
-
   @override
   void initState() {
     super.initState();
@@ -3056,8 +3029,6 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
-    _pillController.dispose();
-    _pillGrowController.dispose();
     super.dispose();
   }
 
@@ -3099,194 +3070,16 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
               const SizedBox(height: 22),
               TextField(onChanged: (v) => setState(() { query = v; _resetPaging(); }), decoration: InputDecoration(hintText: Strings.t(lang, 'search_transactions'), prefixIcon: const Icon(Icons.search))),
               const SizedBox(height: 14),
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  const trackPadding = 4.0;
-                  const trackHeight = 44.0;
-                  _pillSegmentWidth = (constraints.maxWidth - trackPadding * 2) / filterKeys.length;
-                  final segW = _pillSegmentWidth;
-                  return GestureDetector(
-                    onHorizontalDragStart: (_) {
-                      _pillController.stop();
-                      _pillGrowController.animateTo(1, duration: const Duration(milliseconds: 180), curve: Curves.easeOut);
-                    },
-                    onHorizontalDragUpdate: (details) {
-                      final deltaIndex = details.delta.dx / segW;
-                      final newValue = (_pillController.value + deltaIndex)
-                          .clamp(0.0, (filterKeys.length - 1).toDouble());
-                      _pillController.value = newValue;
-                      final nearest = newValue.round();
-                      if (filterKeys[nearest] != filter) {
-                        setState(() {
-                          filter = filterKeys[nearest];
-                          _resetPaging();
-                        });
-                      }
-                    },
-                    onHorizontalDragEnd: (details) {
-                      final targetIndex = filterKeys.indexOf(filter);
-                      final initialVelocity = details.velocity.pixelsPerSecond.dx / segW;
-                      final sim = SpringSimulation(
-                        const SpringDescription(mass: 1, stiffness: 280, damping: 31.4),
-                        _pillController.value,
-                        targetIndex.toDouble(),
-                        initialVelocity,
-                      );
-                      _pillController.animateWith(sim);
-                      _pillGrowController.animateWith(SpringSimulation(
-                        const SpringDescription(mass: 1, stiffness: 240, damping: 16),
-                        _pillGrowController.value,
-                        0,
-                        0,
-                      ));
-                    },
-                    onHorizontalDragCancel: () {
-                      _pillGrowController.animateWith(SpringSimulation(
-                        const SpringDescription(mass: 1, stiffness: 240, damping: 16),
-                        _pillGrowController.value,
-                        0,
-                        0,
-                      ));
-                    },
-                    child: Container(
-                      height: trackHeight,
-                      width: constraints.maxWidth,
-                      padding: const EdgeInsets.all(trackPadding),
-                      decoration: BoxDecoration(
-                        color: context.isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.045),
-                        borderRadius: BorderRadius.circular(trackHeight / 2),
-                        border: Border.all(color: context.borderColor),
-                      ),
-                      child: AnimatedBuilder(
-                        animation: Listenable.merge([_pillController, _pillGrowController]),
-                        builder: (context, _) {
-                          final committedIndex = _pillController.value.round().clamp(0, filterKeys.length - 1);
-                          final baseThumbWidth = segW - 6;
-                          final baseThumbHeight = trackHeight - trackPadding * 2;
-                          final growT = Curves.easeOutBack.transform(_pillGrowController.value.clamp(0.0, 1.0));
-                          final growExtra = 6 * growT;
-                          final refractionT = _pillGrowController.value.clamp(0.0, 1.0);
-                          final thumbWidth = baseThumbWidth;
-                          final thumbHeight = baseThumbHeight + growExtra;
-                          final capsuleRadius = thumbHeight / 2;
-                          final centerX = _pillController.value * segW + segW / 2;
-                          return Stack(
-                            clipBehavior: Clip.none,
-                            children: [
-                              Row(
-                                children: filterKeys.asMap().entries.map((entry) {
-                                  final isCommitted = entry.key == committedIndex;
-                                  final icon = _filterIcons[entry.value];
-                                  return Expanded(
-                                    child: GestureDetector(
-                                      behavior: HitTestBehavior.opaque,
-                                      onTap: () {
-                                        setState(() {
-                                          filter = entry.value;
-                                          _resetPaging();
-                                        });
-                                        _animatePillTo(entry.key);
-                                      },
-                                      child: Center(
-                                        child: Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            if (icon != null) ...[
-                                              AnimatedScale(
-                                                scale: isCommitted ? 1.0 : 0.9,
-                                                duration: const Duration(milliseconds: 160),
-                                                child: Icon(icon, size: 14, color: isCommitted ? context.textPrimary : context.textMuted),
-                                              ),
-                                              const SizedBox(width: 5),
-                                            ],
-                                            AnimatedDefaultTextStyle(
-                                              duration: const Duration(milliseconds: 160),
-                                              style: TextStyle(
-                                                fontFamily: 'Satoshi',
-                                                fontSize: 13,
-                                                fontWeight: isCommitted ? FontWeight.w800 : FontWeight.w600,
-                                                color: isCommitted ? context.textPrimary : context.textMuted,
-                                              ),
-                                              child: Text(Strings.t(lang, 'filter_${entry.value}')),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
-                              Positioned(
-                                left: centerX - thumbWidth / 2,
-                                top: (trackHeight - trackPadding * 2 - thumbHeight) / 2,
-                                width: thumbWidth,
-                                height: thumbHeight,
-                                child: IgnorePointer(
-                                  child: liquid_glass.LiquidGlassShadow(
-                                    blur: 10,
-                                    opacity: context.isDark ? 0.22 : 0.10,
-                                    offset: const Offset(0, 1),
-                                    cornerRadius: capsuleRadius,
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(capsuleRadius),
-                                      child: Stack(
-                                        children: [
-                                          liquid_glass.LiquidGlassLens(
-                                            style: liquid_glass.LiquidGlassStyle(
-                                              shape: liquid_glass.LiquidGlassShape.continuousRoundedRectangle(cornerRadius: capsuleRadius),
-                                              appearance: liquid_glass.LiquidGlassAppearance(
-                                                color: Theme.of(context).colorScheme.primary.withOpacity(context.isDark ? 0.30 : 0.22),
-                                                saturation: context.isDark ? 1.05 : 1.15,
-                                              ),
-                                              refraction: liquid_glass.LiquidGlassRefraction(
-                                                distortion: lerpDouble(0.0, 0.03, refractionT)!,
-                                                distortionWidth: lerpDouble(0.0, 10, refractionT)!,
-                                                magnification: lerpDouble(1.0, 1.04, refractionT)!,
-                                                chromaticAberration: lerpDouble(0.0, 0.0012, refractionT)!,
-                                              ),
-                                            ),
-                                            child: const SizedBox.expand(),
-                                          ),
-                                          Positioned.fill(
-                                            child: DecoratedBox(
-                                              decoration: BoxDecoration(
-                                                gradient: LinearGradient(
-                                                  begin: Alignment.topCenter,
-                                                  end: Alignment.bottomCenter,
-                                                  stops: const [0.0, 0.55, 1.0],
-                                                  colors: context.isDark
-                                                      ? [
-                                                          Colors.white.withOpacity(0.26),
-                                                          Colors.white.withOpacity(0.04),
-                                                          Colors.white.withOpacity(0.10),
-                                                        ]
-                                                      : [
-                                                          Colors.white.withOpacity(0.85),
-                                                          Colors.white.withOpacity(0.18),
-                                                          Colors.white.withOpacity(0.42),
-                                                        ],
-                                                ),
-                                                border: Border.all(
-                                                  color: Colors.white.withOpacity(context.isDark ? 0.16 : 0.65),
-                                                  width: 0.8,
-                                                ),
-                                                borderRadius: BorderRadius.circular(capsuleRadius),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                    ),
-                  );
+              GlassSegmentedControl(
+                segments: filterKeys.map((k) => Strings.t(lang, 'filter_$k')).toList(),
+                selectedIndex: filterKeys.indexOf(filter),
+                onSegmentSelected: (index) {
+                  setState(() {
+                    filter = filterKeys[index];
+                    _resetPaging();
+                  });
                 },
+                quality: GlassQuality.standard,
               ),
               const SizedBox(height: 10),
               SingleChildScrollView(
