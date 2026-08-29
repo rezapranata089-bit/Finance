@@ -2055,6 +2055,25 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
       return;
     }
     _isAnimating = true;
+    const radius = 20.0;
+    final glassStyle = liquid_glass.LiquidGlassStyle(
+      shape: liquid_glass.LiquidGlassShape.roundedRectangle(
+        cornerRadius: radius - 1,
+        borderColor: Colors.transparent,
+        borderWidth: 0,
+      ),
+      appearance: liquid_glass.LiquidGlassAppearance(
+        color: context.isDark ? Colors.black.withOpacity(0.38) : Colors.white.withOpacity(0.30),
+        blur: const liquid_glass.LiquidGlassBlur(sigmaX: 6, sigmaY: 6),
+        saturation: context.isDark ? 1.1 : 1.25,
+      ),
+      refraction: const liquid_glass.LiquidGlassRefraction(
+        distortion: 0.04,
+        distortionWidth: 22,
+        magnification: 1.1,
+        chromaticAberration: 0.0035,
+      ),
+    );
     setState(() => _open = true);
     _entry = OverlayEntry(
       builder: (overlayContext) => Stack(
@@ -2071,7 +2090,6 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
                 builder: (context, menuChild) {
                   final t = _controller.value.clamp(0.0, 1.0);
                   final size = Size.lerp(_closedSize, _openSize, t)!;
-                  const radius = 20.0;
                   final iconOpacity = (1 - t / 0.4).clamp(0.0, 1.0);
                   final menuOpacity = ((t - 0.35) / 0.65).clamp(0.0, 1.0);
                   final menuOffset = (1 - menuOpacity) * 12;
@@ -2122,24 +2140,7 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
                           ),
                           padding: const EdgeInsets.all(1.1),
                           child: liquid_glass.LiquidGlassLens(
-                            style: liquid_glass.LiquidGlassStyle(
-                              shape: liquid_glass.LiquidGlassShape.roundedRectangle(
-                                cornerRadius: radius - 1,
-                                borderColor: Colors.transparent,
-                                borderWidth: 0,
-                              ),
-                              appearance: liquid_glass.LiquidGlassAppearance(
-                                color: context.isDark ? Colors.black.withOpacity(0.38) : Colors.white.withOpacity(0.30),
-                                blur: const liquid_glass.LiquidGlassBlur(sigmaX: 6, sigmaY: 6),
-                                saturation: context.isDark ? 1.1 : 1.25,
-                              ),
-                              refraction: const liquid_glass.LiquidGlassRefraction(
-                                distortion: 0.04,
-                                distortionWidth: 22,
-                                magnification: 1.1,
-                                chromaticAberration: 0.0035,
-                              ),
-                            ),
+                            style: glassStyle,
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(radius - 1),
                               child: Stack(
@@ -2407,6 +2408,25 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> with SingleTicker
     final spaceAbove = buttonPos.dy - statusBarHeight;
     _openUpward = spaceAbove >= _openSize.height + 12;
     final anchor = _openUpward ? Alignment.bottomRight : Alignment.topRight;
+    const radius = 16.0;
+    final glassStyle = liquid_glass.LiquidGlassStyle(
+      shape: liquid_glass.LiquidGlassShape.roundedRectangle(
+        cornerRadius: radius - 1,
+        borderColor: Colors.transparent,
+        borderWidth: 0,
+      ),
+      appearance: liquid_glass.LiquidGlassAppearance(
+        color: context.isDark ? Colors.black.withOpacity(0.38) : Colors.white.withOpacity(0.30),
+        blur: const liquid_glass.LiquidGlassBlur(sigmaX: 6, sigmaY: 6),
+        saturation: context.isDark ? 1.1 : 1.25,
+      ),
+      refraction: const liquid_glass.LiquidGlassRefraction(
+        distortion: 0.04,
+        distortionWidth: 22,
+        magnification: 1.1,
+        chromaticAberration: 0.0035,
+      ),
+    );
     setState(() => _open = true);
     _entry = OverlayEntry(
       builder: (overlayContext) => Stack(
@@ -2423,7 +2443,6 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> with SingleTicker
                 builder: (context, menuChild) {
                   final t = _controller.value.clamp(0.0, 1.0);
                   final size = Size.lerp(_closedSize, _openSize, t)!;
-                  const radius = 16.0;
                   final iconOpacity = (1 - t / 0.4).clamp(0.0, 1.0);
                   final menuOpacity = ((t - 0.35) / 0.65).clamp(0.0, 1.0);
                   final menuOffset = (1 - menuOpacity) * 12;
@@ -2475,24 +2494,7 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> with SingleTicker
                           ),
                           padding: const EdgeInsets.all(1.1),
                           child: liquid_glass.LiquidGlassLens(
-                            style: liquid_glass.LiquidGlassStyle(
-                              shape: liquid_glass.LiquidGlassShape.roundedRectangle(
-                                cornerRadius: radius - 1,
-                                borderColor: Colors.transparent,
-                                borderWidth: 0,
-                              ),
-                              appearance: liquid_glass.LiquidGlassAppearance(
-                                color: isDark ? Colors.black.withOpacity(0.38) : Colors.white.withOpacity(0.30),
-                                blur: const liquid_glass.LiquidGlassBlur(sigmaX: 6, sigmaY: 6),
-                                saturation: isDark ? 1.1 : 1.25,
-                              ),
-                              refraction: const liquid_glass.LiquidGlassRefraction(
-                                distortion: 0.04,
-                                distortionWidth: 22,
-                                magnification: 1.1,
-                                chromaticAberration: 0.0035,
-                              ),
-                            ),
+                            style: glassStyle,
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(radius - 1),
                               child: Stack(
@@ -2688,6 +2690,25 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
     final rawSelected = ref.read(selectedCardProvider);
     final selected = rawSelected == -1 ? -1 : _safeIndex(rawSelected, cards.length);
     final openSize = Size(196, (cards.length + 2) * _rowHeight + 14);
+    const radius = 18.0;
+    final glassStyle = liquid_glass.LiquidGlassStyle(
+      shape: liquid_glass.LiquidGlassShape.roundedRectangle(
+        cornerRadius: radius - 1,
+        borderColor: Colors.transparent,
+        borderWidth: 0,
+      ),
+      appearance: liquid_glass.LiquidGlassAppearance(
+        color: context.isDark ? Colors.black.withOpacity(0.38) : Colors.white.withOpacity(0.30),
+        blur: const liquid_glass.LiquidGlassBlur(sigmaX: 6, sigmaY: 6),
+        saturation: context.isDark ? 1.1 : 1.25,
+      ),
+      refraction: const liquid_glass.LiquidGlassRefraction(
+        distortion: 0.04,
+        distortionWidth: 22,
+        magnification: 1.1,
+        chromaticAberration: 0.0035,
+      ),
+    );
     _entry = OverlayEntry(
       builder: (overlayContext) => Stack(
         children: [
@@ -2708,7 +2729,6 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
                 builder: (context, menuChild) {
                   final t = _controller.value.clamp(0.0, 1.0);
                   final size = Size.lerp(_measuredClosedSize, openSize, t)!;
-                  const radius = 18.0;
                   final closedOpacity = (1 - t / 0.4).clamp(0.0, 1.0);
                   final openOpacity = ((t - 0.35) / 0.65).clamp(0.0, 1.0);
                   final openOffset = (1 - openOpacity) * 12;
@@ -2761,24 +2781,7 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
                           ),
                           padding: const EdgeInsets.all(1.1),
                           child: liquid_glass.LiquidGlassLens(
-                            style: liquid_glass.LiquidGlassStyle(
-                              shape: liquid_glass.LiquidGlassShape.roundedRectangle(
-                                cornerRadius: radius - 1,
-                                borderColor: Colors.transparent,
-                                borderWidth: 0,
-                              ),
-                              appearance: liquid_glass.LiquidGlassAppearance(
-                                color: context.isDark ? Colors.black.withOpacity(0.38) : Colors.white.withOpacity(0.30),
-                                blur: const liquid_glass.LiquidGlassBlur(sigmaX: 6, sigmaY: 6),
-                                saturation: context.isDark ? 1.1 : 1.25,
-                              ),
-                              refraction: const liquid_glass.LiquidGlassRefraction(
-                                distortion: 0.04,
-                                distortionWidth: 22,
-                                magnification: 1.1,
-                                chromaticAberration: 0.0035,
-                              ),
-                            ),
+                            style: glassStyle,
                             child: ClipRRect(
                               borderRadius: BorderRadius.circular(radius - 1),
                               child: Stack(
