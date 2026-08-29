@@ -2067,43 +2067,82 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
                   final t = _controller.value.clamp(0.0, 1.0);
                   final size = Size.lerp(_closedSize, _openSize, t)!;
                   const radius = 20.0;
-                  final iconOpacity = (1 - t / 0.45).clamp(0.0, 1.0);
+                  final iconOpacity = (1 - t / 0.4).clamp(0.0, 1.0);
                   final menuOpacity = ((t - 0.35) / 0.65).clamp(0.0, 1.0);
-                  final menuOffset = (1 - menuOpacity) * 14;
-                  final glassT = Curves.easeOut.transform(t);
-                  final showBlur = glassT > 0.85;
+                  final menuOffset = (1 - menuOpacity) * 12;
                   return Material(
                     color: Colors.transparent,
                     child: SizedBox(
                       width: size.width,
                       height: size.height,
-                      child: LiquidGlass(
-                        borderRadius: radius,
-                        tint: context.cardColor,
-                        intensity: glassT > 0.85 ? 1.6 : 1.0,
-                        blur: 6,
-                        useBlur: showBlur,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(radius),
-                          child: Stack(
-                            children: [
-                              if (iconOpacity > 0)
-                                Positioned(
-                                  top: 0, left: 0, width: 40, height: 40,
-                                  child: Opacity(
-                                    opacity: iconOpacity,
-                                    child: const Center(child: Icon(SolarIconsOutline.hamburgerMenu, size: 20)),
-                                  ),
-                                ),
-                              if (menuOpacity > 0)
-                                Opacity(
-                                  opacity: menuOpacity,
-                                  child: Transform.translate(
-                                    offset: Offset(menuOffset, menuOffset * -0.3),
-                                    child: menuChild,
-                                  ),
-                                ),
-                            ],
+                      child: liquid_glass.LiquidGlassShadow(
+                        blur: 10,
+                        opacity: 0.18,
+                        offset: const Offset(0, 6),
+                        cornerRadius: radius,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(radius + 1),
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              stops: const [0.0, 0.5, 1.0],
+                              colors: context.isDark
+                                  ? [
+                                      Colors.white.withOpacity(0.22),
+                                      Colors.white.withOpacity(0.03),
+                                      Colors.white.withOpacity(0.10),
+                                    ]
+                                  : [
+                                      Colors.white.withOpacity(0.95),
+                                      Colors.white.withOpacity(0.18),
+                                      Colors.white.withOpacity(0.50),
+                                    ],
+                            ),
+                          ),
+                          padding: const EdgeInsets.all(1.1),
+                          child: liquid_glass.LiquidGlassLens(
+                            style: liquid_glass.LiquidGlassStyle(
+                              shape: liquid_glass.LiquidGlassShape.roundedRectangle(
+                                cornerRadius: radius - 1,
+                                borderColor: Colors.transparent,
+                                borderWidth: 0,
+                              ),
+                              appearance: liquid_glass.LiquidGlassAppearance(
+                                color: context.isDark ? Colors.black.withOpacity(0.38) : Colors.white.withOpacity(0.30),
+                                blur: const liquid_glass.LiquidGlassBlur(sigmaX: 6, sigmaY: 6),
+                                saturation: context.isDark ? 1.1 : 1.25,
+                              ),
+                              refraction: const liquid_glass.LiquidGlassRefraction(
+                                distortion: 0.04,
+                                distortionWidth: 22,
+                                magnification: 1.1,
+                                chromaticAberration: 0.0035,
+                              ),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(radius - 1),
+                              child: Stack(
+                                children: [
+                                  if (iconOpacity > 0)
+                                    Positioned(
+                                      top: 0, left: 0, width: 40, height: 40,
+                                      child: Opacity(
+                                        opacity: iconOpacity,
+                                        child: const Center(child: Icon(SolarIconsOutline.hamburgerMenu, size: 20)),
+                                      ),
+                                    ),
+                                  if (menuOpacity > 0)
+                                    Opacity(
+                                      opacity: menuOpacity,
+                                      child: Transform.translate(
+                                        offset: Offset(menuOffset, menuOffset * -0.3),
+                                        child: menuChild,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -2117,7 +2156,7 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
       ),
     );
     Overlay.of(context).insert(_entry!);
-    await _controller.animateTo(1, duration: const Duration(milliseconds: 350), curve: _openCurve);
+    await _controller.animateTo(1, duration: const Duration(milliseconds: 340), curve: _openCurve);
   }
 
   void _closeImmediately() {
@@ -2357,50 +2396,88 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> with SingleTicker
                   final t = _controller.value.clamp(0.0, 1.0);
                   final size = Size.lerp(_closedSize, _openSize, t)!;
                   const radius = 16.0;
-                  final iconOpacity = (1 - t / 0.45).clamp(0.0, 1.0);
+                  final iconOpacity = (1 - t / 0.4).clamp(0.0, 1.0);
                   final menuOpacity = ((t - 0.35) / 0.65).clamp(0.0, 1.0);
-                  final menuOffset = (1 - menuOpacity) * 14;
-                  final glassT = Curves.easeOut.transform(t);
-                  final showBlur = glassT > 0.85;
+                  final menuOffset = (1 - menuOpacity) * 12;
                   final isDark = context.isDark;
                   return Material(
                     color: Colors.transparent,
                     child: SizedBox(
                       width: size.width,
                       height: size.height,
-                      child: LiquidGlass(
-                        borderRadius: radius,
-                        tint: isDark ? Colors.black : context.cardColor,
-                        intensity: isDark ? 1.6 : 1.0,
-                        blur: 6,
-                        useBlur: showBlur,
-                        borderColor: isDark ? context.borderColor : null,
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(radius),
-                          child: Stack(
-                            children: [
-                              if (iconOpacity > 0)
-                                Positioned(
-                                  top: _openUpward ? null : 0,
-                                  bottom: _openUpward ? 0 : null,
-                                  right: 0,
-                                  width: _closedSize.width, height: _closedSize.height,
-                                  child: Opacity(
-                                    opacity: iconOpacity,
-                                    child: Center(
-                                      child: Icon(SolarIconsOutline.menuDots, size: 22, color: isDark ? Colors.white : context.textPrimary),
+                      child: liquid_glass.LiquidGlassShadow(
+                        blur: 10,
+                        opacity: 0.18,
+                        offset: const Offset(0, 6),
+                        cornerRadius: radius,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(radius + 1),
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              stops: const [0.0, 0.5, 1.0],
+                              colors: isDark
+                                  ? [
+                                      Colors.white.withOpacity(0.22),
+                                      Colors.white.withOpacity(0.03),
+                                      Colors.white.withOpacity(0.10),
+                                    ]
+                                  : [
+                                      Colors.white.withOpacity(0.95),
+                                      Colors.white.withOpacity(0.18),
+                                      Colors.white.withOpacity(0.50),
+                                    ],
+                            ),
+                          ),
+                          padding: const EdgeInsets.all(1.1),
+                          child: liquid_glass.LiquidGlassLens(
+                            style: liquid_glass.LiquidGlassStyle(
+                              shape: liquid_glass.LiquidGlassShape.roundedRectangle(
+                                cornerRadius: radius - 1,
+                                borderColor: Colors.transparent,
+                                borderWidth: 0,
+                              ),
+                              appearance: liquid_glass.LiquidGlassAppearance(
+                                color: isDark ? Colors.black.withOpacity(0.38) : Colors.white.withOpacity(0.30),
+                                blur: const liquid_glass.LiquidGlassBlur(sigmaX: 6, sigmaY: 6),
+                                saturation: isDark ? 1.1 : 1.25,
+                              ),
+                              refraction: const liquid_glass.LiquidGlassRefraction(
+                                distortion: 0.04,
+                                distortionWidth: 22,
+                                magnification: 1.1,
+                                chromaticAberration: 0.0035,
+                              ),
+                            ),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(radius - 1),
+                              child: Stack(
+                                children: [
+                                  if (iconOpacity > 0)
+                                    Positioned(
+                                      top: _openUpward ? null : 0,
+                                      bottom: _openUpward ? 0 : null,
+                                      right: 0,
+                                      width: _closedSize.width, height: _closedSize.height,
+                                      child: Opacity(
+                                        opacity: iconOpacity,
+                                        child: Center(
+                                          child: Icon(SolarIconsOutline.menuDots, size: 22, color: isDark ? Colors.white : context.textPrimary),
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                ),
-                              if (menuOpacity > 0)
-                                Opacity(
-                                  opacity: menuOpacity,
-                                  child: Transform.translate(
-                                    offset: Offset(0, menuOffset),
-                                    child: menuChild,
-                                  ),
-                                ),
-                            ],
+                                  if (menuOpacity > 0)
+                                    Opacity(
+                                      opacity: menuOpacity,
+                                      child: Transform.translate(
+                                        offset: Offset(0, menuOffset),
+                                        child: menuChild,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
                           ),
                         ),
                       ),
@@ -2414,7 +2491,7 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> with SingleTicker
       ),
     );
     Overlay.of(context).insert(_entry!);
-    await _controller.animateTo(1, duration: const Duration(milliseconds: 350), curve: _openCurve);
+    await _controller.animateTo(1, duration: const Duration(milliseconds: 340), curve: _openCurve);
   }
 
   void _closeImmediately() {
