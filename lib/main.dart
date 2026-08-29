@@ -3064,25 +3064,74 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
               const SizedBox(height: 22),
               TextField(onChanged: (v) => setState(() { query = v; _resetPaging(); }), decoration: InputDecoration(hintText: Strings.t(lang, 'search_transactions'), prefixIcon: const Icon(Icons.search))),
               const SizedBox(height: 14),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                clipBehavior: Clip.none,
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 2),
-                child: Row(
-                  children: filterKeys
-                      .map<Widget>(
-                        (k) => Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: ChoiceChip(
-                            label: Text(Strings.t(lang, 'filter_$k')),
-                            selected: filter == k,
-                            onSelected: (_) => setState(() { filter = k; _resetPaging(); }),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  final selectedIndex = filterKeys.indexOf(filter).clamp(0, filterKeys.length - 1);
+                  final segmentWidth = constraints.maxWidth / filterKeys.length;
+                  return GestureDetector(
+                    onHorizontalDragEnd: (details) {
+                      final velocity = details.primaryVelocity ?? 0;
+                      if (velocity.abs() < 100) return;
+                      final nextIndex = (selectedIndex + (velocity < 0 ? 1 : -1)).clamp(0, filterKeys.length - 1);
+                      if (nextIndex != selectedIndex) {
+                        setState(() {
+                          filter = filterKeys[nextIndex];
+                          _resetPaging();
+                        });
+                      }
+                    },
+                    child: SizedBox(
+                      height: 48,
+                      child: Stack(
+                        children: [
+                          AnimatedPositioned(
+                            duration: const Duration(milliseconds: 280),
+                            curve: Curves.easeOutCubic,
+                            left: selectedIndex * segmentWidth + 3,
+                            top: 3,
+                            bottom: 3,
+                            width: segmentWidth - 6,
+                            child: IgnorePointer(
+                              child: liquid_glass.LiquidGlassLens(
+                                style: const liquid_glass.LiquidGlassStyle(
+                                  shape: liquid_glass.LiquidGlassShape.continuousRoundedRectangle(cornerRadius: 16),
+                                  refraction: liquid_glass.LiquidGlassRefraction(distortion: 0.08, distortionWidth: 18),
+                                ),
+                                child: const SizedBox.expand(),
+                              ),
+                            ),
                           ),
-                        ),
-                      )
-                      .toList(),
-                ),
+                          Row(
+                            children: filterKeys.map((k) {
+                              final isSelected = filter == k;
+                              return Expanded(
+                                child: GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () => setState(() {
+                                    filter = k;
+                                    _resetPaging();
+                                  }),
+                                  child: Center(
+                                    child: AnimatedDefaultTextStyle(
+                                      duration: const Duration(milliseconds: 180),
+                                      style: TextStyle(
+                                        fontFamily: 'Satoshi',
+                                        fontSize: 13,
+                                        fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                                        color: isSelected ? context.textPrimary : context.textMuted,
+                                      ),
+                                      child: Text(Strings.t(lang, 'filter_$k')),
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
               ),
               const SizedBox(height: 10),
               SingleChildScrollView(
