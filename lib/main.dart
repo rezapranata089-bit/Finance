@@ -3069,8 +3069,13 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
               LayoutBuilder(
                 builder: (context, constraints) {
                   final selectedIndex = filterKeys.indexOf(filter).clamp(0, filterKeys.length - 1);
-                  final segmentWidth = constraints.maxWidth / filterKeys.length;
-                  final thumbLeft = selectedIndex * segmentWidth + 3 + _filterDragOffset;
+                  const trackPadding = 4.0;
+                  final segmentWidth = (constraints.maxWidth - trackPadding * 2) / filterKeys.length;
+                  final dragProgress = (_filterDragOffset.abs() / segmentWidth).clamp(0.0, 1.0);
+                  final stretch = _isFilterDragging ? 1.0 + dragProgress * 0.16 : 1.0;
+                  final baseThumbWidth = segmentWidth - 6;
+                  final thumbWidth = baseThumbWidth * stretch;
+                  final thumbLeft = selectedIndex * segmentWidth + 3 + _filterDragOffset - (thumbWidth - baseThumbWidth) / 2;
                   return GestureDetector(
                     onHorizontalDragUpdate: (details) {
                       setState(() {
@@ -3089,36 +3094,63 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                         _resetPaging();
                       });
                     },
-                    child: SizedBox(
+                    child: Container(
                       height: 52,
+                      width: constraints.maxWidth,
+                      padding: const EdgeInsets.all(trackPadding),
+                      decoration: BoxDecoration(
+                        color: context.isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.035),
+                        borderRadius: BorderRadius.circular(22),
+                        border: Border.all(color: context.borderColor),
+                      ),
                       child: Stack(
                         children: [
                           AnimatedPositioned(
                             duration: _isFilterDragging ? Duration.zero : const Duration(milliseconds: 420),
-                            curve: Curves.easeOutBack,
+                            curve: const Cubic(0.34, 1.35, 0.64, 1.0),
                             left: thumbLeft,
-                            top: 2,
-                            bottom: 2,
-                            width: segmentWidth - 6,
+                            top: 0,
+                            bottom: 0,
+                            width: thumbWidth,
                             child: IgnorePointer(
-                              child: liquid_glass.LiquidGlassLens(
-                                touch: const liquid_glass.LiquidGlassTouch(
-                                  flex: liquid_glass.LiquidGlassFlex(),
-                                ),
-                                style: liquid_glass.LiquidGlassStyle(
-                                  appearance: liquid_glass.LiquidGlassAppearance(
-                                    color: Colors.white.withOpacity(0.22),
-                                    saturation: 1.25,
+                              child: liquid_glass.LiquidGlassShadow(
+                                blur: 12,
+                                opacity: context.isDark ? 0.22 : 0.10,
+                                offset: const Offset(0, 3),
+                                cornerRadius: 18,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(19),
+                                    gradient: LinearGradient(
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                      colors: context.isDark
+                                          ? [Colors.white.withOpacity(0.24), Colors.white.withOpacity(0.06)]
+                                          : [Colors.white.withOpacity(0.95), Colors.white.withOpacity(0.35)],
+                                    ),
                                   ),
-                                  shape: const liquid_glass.LiquidGlassShape.continuousRoundedRectangle(cornerRadius: 18),
-                                  refraction: const liquid_glass.LiquidGlassRefraction(
-                                    distortion: 0.16,
-                                    distortionWidth: 28,
-                                    magnification: 1.04,
-                                    chromaticAberration: 0.004,
+                                  padding: const EdgeInsets.all(1.1),
+                                  child: liquid_glass.LiquidGlassLens(
+                                    touch: const liquid_glass.LiquidGlassTouch(
+                                      flex: liquid_glass.LiquidGlassFlex(),
+                                    ),
+                                    style: liquid_glass.LiquidGlassStyle(
+                                      shape: const liquid_glass.LiquidGlassShape.continuousRoundedRectangle(cornerRadius: 18),
+                                      appearance: liquid_glass.LiquidGlassAppearance(
+                                        color: (context.isDark ? Colors.black : Colors.white).withOpacity(0.32),
+                                        blur: const liquid_glass.LiquidGlassBlur(sigmaX: 4, sigmaY: 4),
+                                        saturation: context.isDark ? 1.15 : 1.3,
+                                      ),
+                                      refraction: const liquid_glass.LiquidGlassRefraction(
+                                        distortion: 0.14,
+                                        distortionWidth: 26,
+                                        magnification: 1.06,
+                                        chromaticAberration: 0.0045,
+                                      ),
+                                    ),
+                                    child: const SizedBox.expand(),
                                   ),
                                 ),
-                                child: const SizedBox.expand(),
                               ),
                             ),
                           ),
