@@ -3022,6 +3022,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
                     .map((k) => GlassSegment(label: Strings.t(lang, 'filter_$k')))
                     .toList(),
                 selectedIndex: filterKeys.indexOf(filter),
+                indicatorColor: Theme.of(context).colorScheme.primary.withOpacity(context.isDark ? 0.25 : 0.15),
                 onSegmentSelected: (index) {
                   setState(() {
                     filter = filterKeys[index];
