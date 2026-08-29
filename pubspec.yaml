@@ -23,7 +23,7 @@ dependencies:
   number_flow_flutter: ^0.1.0
   flutter_staggered_animations: ^1.1.1
   visibility_detector: ^0.4.0+2
-  liquid_glass_easy: ^1.1.1
+  liquid_glass_easy: ^4.2.0
 
 dev_dependencies:
   flutter_test:
