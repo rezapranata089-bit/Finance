@@ -3189,6 +3189,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
                           final dev = _pillDeviation;
                           final growT = Curves.easeOutBack.transform(_pillGrowController.value.clamp(0.0, 1.0));
                           final growExtra = 14 * growT;
+                          final refractionT = _pillGrowController.value.clamp(0.0, 1.0);
                           final thumbWidth = (baseThumbWidth * (1 + dev * 0.5)).clamp(baseThumbWidth * 0.8, segW * 1.3);
                           final thumbHeight = ((baseThumbHeight + growExtra) * (1 - dev * 0.4)).clamp(baseThumbHeight * 0.8, baseThumbHeight + 20);
                           final capsuleRadius = thumbHeight / 2;
@@ -3261,11 +3262,11 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
                                                 color: Colors.white.withOpacity(context.isDark ? 0.16 : 0.46),
                                                 saturation: context.isDark ? 1.1 : 1.25,
                                               ),
-                                              refraction: const liquid_glass.LiquidGlassRefraction(
-                                                distortion: 0.14,
-                                                distortionWidth: 30,
-                                                magnification: 1.12,
-                                                chromaticAberration: 0.0055,
+                                              refraction: liquid_glass.LiquidGlassRefraction(
+                                                distortion: lerpDouble(0.0, 0.14, refractionT)!,
+                                                distortionWidth: lerpDouble(0.0, 30, refractionT)!,
+                                                magnification: lerpDouble(1.0, 1.12, refractionT)!,
+                                                chromaticAberration: lerpDouble(0.0, 0.0055, refractionT)!,
                                               ),
                                             ),
                                             child: const SizedBox.expand(),
