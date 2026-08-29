@@ -950,6 +950,9 @@ class LiquidGlass extends StatelessWidget {
           blur: useBlur ? blur : 0,
           thickness: 20,
           saturation: isDark ? 1.1 : 1.25,
+          refractiveIndex: 1.3,
+          lightIntensity: isDark ? 1.2 : 0.9,
+          lightAngle: 2.4,
           shadowElevation: 1,
           glowIntensity: 0.2,
         ),
@@ -1039,12 +1042,16 @@ class LiquidGlassLens extends StatelessWidget {
     return GlassContainer(
       shape: LiquidRoundedRectangle(borderRadius: style.shape.cornerRadius),
       useOwnLayer: true,
-      quality: GlassQuality.premium,
+      quality: GlassQuality.standard,
       settings: LiquidGlassSettings(
         glassColor: style.appearance.color,
         blur: style.appearance.blur.sigmaX,
         saturation: style.appearance.saturation,
         thickness: 20,
+        refractiveIndex: 1 + (style.refraction.magnification - 1) * 3,
+        lightIntensity: 1.1,
+        lightAngle: 2.4,
+        ambientStrength: 0.5,
         chromaticAberration: style.refraction.chromaticAberration,
         shadowElevation: 1,
       ),
@@ -2177,8 +2184,9 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
                 animation: _controller,
                 child: _MorphMenuContent(onSelect: _select),
                 builder: (context, menuChild) {
-                  final t = _controller.value.clamp(0.0, 1.0);
-                  final size = Size.lerp(_measuredClosedSize, _openSize, t)!;
+                  final rawT = _controller.value;
+                  final t = rawT.clamp(0.0, 1.0);
+                  final size = Size.lerp(_measuredClosedSize, _openSize, rawT)!;
                   final iconOpacity = (1 - t / 0.4).clamp(0.0, 1.0);
                   final menuOpacity = ((t - 0.35) / 0.65).clamp(0.0, 1.0);
                   final menuOffset = (1 - menuOpacity) * 12;
@@ -2488,8 +2496,9 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> with SingleTicker
                 animation: _controller,
                 child: _MoreMorphContent(onSelect: _select),
                 builder: (context, menuChild) {
-                  final t = _controller.value.clamp(0.0, 1.0);
-                  final size = Size.lerp(_closedSize, _openSize, t)!;
+                  final rawT = _controller.value;
+                  final t = rawT.clamp(0.0, 1.0);
+                  final size = Size.lerp(_closedSize, _openSize, rawT)!;
                   final iconOpacity = (1 - t / 0.4).clamp(0.0, 1.0);
                   final menuOpacity = ((t - 0.35) / 0.65).clamp(0.0, 1.0);
                   final menuOffset = (1 - menuOpacity) * 12;
@@ -2729,8 +2738,9 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
                   onAdd: _openAddCard,
                 ),
                 builder: (context, menuChild) {
-                  final t = _controller.value.clamp(0.0, 1.0);
-                  final size = Size.lerp(_measuredClosedSize, openSize, t)!;
+                  final rawT = _controller.value;
+                  final t = rawT.clamp(0.0, 1.0);
+                  final size = Size.lerp(_measuredClosedSize, openSize, rawT)!;
                   final closedOpacity = (1 - t / 0.4).clamp(0.0, 1.0);
                   final openOpacity = ((t - 0.35) / 0.65).clamp(0.0, 1.0);
                   final openOffset = (1 - openOpacity) * 12;
