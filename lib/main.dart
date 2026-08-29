@@ -2586,21 +2586,22 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
                       width: size.width,
                       height: size.height,
                       child: liquid_glass.LiquidGlassShadow(
-                        blur: 3.5,
-                        opacity: 0.22,
-                        offset: const Offset(0, 5),
+                        blur: 2.5,
+                        opacity: 0.10,
+                        offset: const Offset(0, 2),
                         cornerRadius: radius,
                         child: liquid_glass.LiquidGlassLens(
                           style: liquid_glass.LiquidGlassStyle(
                             shape: liquid_glass.LiquidGlassShape.roundedRectangle(cornerRadius: radius),
                             appearance: liquid_glass.LiquidGlassAppearance(
-                              color: (context.isDark ? Colors.black : Colors.white).withOpacity(glassT > 0.8 ? 0.28 : 0.18),
-                              blur: const liquid_glass.LiquidGlassBlur(sigmaX: 6, sigmaY: 6),
+                              color: (context.isDark ? Colors.black : Colors.white).withOpacity(glassT > 0.8 ? 0.14 : 0.08),
+                              blur: const liquid_glass.LiquidGlassBlur(sigmaX: 2.5, sigmaY: 2.5),
                             ),
                             refraction: const liquid_glass.LiquidGlassRefraction(
-                              distortion: 0.1,
-                              distortionWidth: 50,
-                              magnification: 1.0,
+                              distortion: 0.035,
+                              distortionWidth: 24,
+                              magnification: 1.02,
+                              chromaticAberration: 0.001,
                             ),
                           ),
                           child: ClipRRect(
