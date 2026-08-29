@@ -1818,21 +1818,23 @@ class _HomePageState extends ConsumerState<HomePage> {
                 Center(child: Text(Strings.t(lang, 'your_balance'), style: TextStyle(color: context.textMuted, fontSize: 13, fontWeight: FontWeight.w500))),
                 const SizedBox(height: 8),
                 Center(
-                  child: NumberFlow(
-                    value: balance,
-                    locale: 'id_ID',
-                    format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '),
-                    spring: NumberFlowSpring.ios,
-                    transformTiming: const TimingConfig(
-                      duration: Duration(milliseconds: 450),
-                      curve: Curves.easeInOut,
+                  child: RepaintBoundary(
+                    child: NumberFlow(
+                      value: balance,
+                      locale: 'id_ID',
+                      format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '),
+                      spring: NumberFlowSpring.ios,
+                      transformTiming: const TimingConfig(
+                        duration: Duration(milliseconds: 450),
+                        curve: Curves.easeInOut,
+                      ),
+                      opacityTiming: const TimingConfig(
+                        duration: Duration(milliseconds: 450),
+                        curve: Curves.easeOut,
+                      ),
+                      tabularNums: true,
+                      style: TextStyle(fontFamily: 'Satoshi', fontSize: 38, fontWeight: FontWeight.w700, letterSpacing: -1.8, color: context.textPrimary),
                     ),
-                    opacityTiming: const TimingConfig(
-                      duration: Duration(milliseconds: 450),
-                      curve: Curves.easeOut,
-                    ),
-                    tabularNums: true,
-                    style: TextStyle(fontFamily: 'Satoshi', fontSize: 38, fontWeight: FontWeight.w700, letterSpacing: -1.8, color: context.textPrimary),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -1865,10 +1867,12 @@ class _HomePageState extends ConsumerState<HomePage> {
                 ),
               Positioned.fill(
                 child: IgnorePointer(
-                  child: CustomPaint(
-                    painter: BottomRoundedBorderPainter(
-                      color: isDark ? Colors.black.withOpacity(0.35) : Colors.white.withOpacity(0.6),
-                      radius: 32,
+                  child: RepaintBoundary(
+                    child: CustomPaint(
+                      painter: BottomRoundedBorderPainter(
+                        color: isDark ? Colors.black.withOpacity(0.35) : Colors.white.withOpacity(0.6),
+                        radius: 32,
+                      ),
                     ),
                   ),
                 ),
@@ -3147,7 +3151,7 @@ class ReportsPage extends ConsumerWidget {
       const SizedBox(height: 24),
       SectionTitle(Strings.t(lang, 'cash_flow')),
       const SizedBox(height: 12),
-      Container(height: 190, padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(24), border: Border.all(color: context.borderColor)), child: CustomPaint(painter: SimpleChartPainter(primary: Theme.of(context).colorScheme.primary, gridColor: context.isDark ? Colors.white.withOpacity(0.08) : const Color(0xFFEDEAF2)))),
+      Container(height: 190, padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(24), border: Border.all(color: context.borderColor)), child: RepaintBoundary(child: CustomPaint(painter: SimpleChartPainter(primary: Theme.of(context).colorScheme.primary, gridColor: context.isDark ? Colors.white.withOpacity(0.08) : const Color(0xFFEDEAF2))))),
       const SizedBox(height: 24),
       SectionTitle(Strings.t(lang, 'expense_by_category')),
       const SizedBox(height: 12),
@@ -3802,6 +3806,7 @@ class NotificationsPage extends ConsumerWidget {
                   ? Center(child: Text(Strings.t(lang, 'not_available').replaceAll('{name}', Strings.t(lang, 'notifications')), style: TextStyle(color: context.textMuted)))
                   : ListView.separated(
                       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                      cacheExtent: 600,
                       itemCount: notifications.length,
                       separatorBuilder: (_, __) => const SizedBox(height: 12),
                       itemBuilder: (context, i) {
@@ -4456,11 +4461,13 @@ class CardManagementPage extends ConsumerWidget {
             Expanded(
               child: ListView.separated(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                cacheExtent: 600,
                 itemCount: cards.length,
                 separatorBuilder: (_, __) => const SizedBox(height: 12),
                 itemBuilder: (context, i) {
                   final card = cards[i];
-                  return StaggeredReveal(
+                  return RepaintBoundary(
+                    child: StaggeredReveal(
                     animate: false,
                     index: i,
                     child: Container(
@@ -4513,7 +4520,7 @@ class CardManagementPage extends ConsumerWidget {
                         ),
                       ],
                     ),
-                  ));
+                  )));
                 },
               ),
             ),
@@ -4696,6 +4703,7 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
                   ? Center(child: Text(Strings.t(lang, 'no_loans_yet'), style: TextStyle(color: context.textMuted)))
                   : ListView.separated(
                       padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                      cacheExtent: 600,
                       itemCount: filtered.length,
                       separatorBuilder: (_, __) => const SizedBox(height: 12),
                       itemBuilder: (context, i) {
@@ -5106,6 +5114,7 @@ Future<void> showLoanDetail(BuildContext context, WidgetRef ref, Loan loan) asyn
                   ? Center(child: Text(Strings.t(lang, 'no_payments_yet'), style: TextStyle(color: context.textMuted, fontSize: 13)))
                   : ListView.separated(
                       controller: scrollController,
+                      cacheExtent: 400,
                       itemCount: sortedPayments.length,
                       separatorBuilder: (_, __) => const SizedBox(height: 10),
                       itemBuilder: (context, i) {
