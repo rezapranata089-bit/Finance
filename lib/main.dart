@@ -2906,17 +2906,20 @@ class _MorphRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return SizedBox(
       height: 34,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10),
-          child: Row(
-            children: [
-              leading,
-              const SizedBox(width: 10),
-              Expanded(child: Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: labelColor))),
-              if (trailing != null) trailing!,
-            ],
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
+            child: Row(
+              children: [
+                leading,
+                const SizedBox(width: 10),
+                Expanded(child: Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: labelColor))),
+                if (trailing != null) trailing!,
+              ],
+            ),
           ),
         ),
       ),
