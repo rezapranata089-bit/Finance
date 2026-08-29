@@ -1607,12 +1607,21 @@ class FinanceShell extends ConsumerWidget {
     final tab = ref.watch(tabProvider);
     final lang = ref.watch(langProvider);
     return Scaffold(
-      body: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 100),
-        switchInCurve: Curves.easeOut,
-        switchOutCurve: Curves.easeIn,
-        transitionBuilder: (child, animation) => FadeTransition(opacity: animation, child: child),
-        child: KeyedSubtree(key: ValueKey<int>(tab), child: pages[tab]),
+      body: SizedBox.expand(
+        child: Stack(
+          children: List.generate(
+            pages.length,
+            (i) => AnimatedOpacity(
+              duration: const Duration(milliseconds: 100),
+              curve: tab == i ? Curves.easeOut : Curves.easeIn,
+              opacity: tab == i ? 1 : 0,
+              child: IgnorePointer(
+                ignoring: tab != i,
+                child: pages[i],
+              ),
+            ),
+          ),
+        ),
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
@@ -3030,6 +3039,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
     return SafeArea(top: false, child: ListView.builder(
       controller: _scrollController,
       padding: EdgeInsets.fromLTRB(20, MediaQuery.paddingOf(context).top + 22, 20, 24),
+      cacheExtent: 600,
       itemCount: visibleCount + 1 + (hasMore ? 1 : 0),
       itemBuilder: (context, index) {
         if (index == 0) {
