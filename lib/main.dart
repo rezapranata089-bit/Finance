@@ -3070,9 +3070,10 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                 builder: (context, constraints) {
                   final selectedIndex = filterKeys.indexOf(filter).clamp(0, filterKeys.length - 1);
                   const trackPadding = 4.0;
+                  const pillRadius = 22.0;
                   final segmentWidth = (constraints.maxWidth - trackPadding * 2) / filterKeys.length;
                   final dragProgress = (_filterDragOffset.abs() / segmentWidth).clamp(0.0, 1.0);
-                  final stretch = _isFilterDragging ? 1.0 + dragProgress * 0.16 : 1.0;
+                  final stretch = _isFilterDragging ? 1.0 + dragProgress * 0.20 : 1.0;
                   final baseThumbWidth = segmentWidth - 6;
                   final thumbWidth = baseThumbWidth * stretch;
                   final thumbLeft = selectedIndex * segmentWidth + 3 + _filterDragOffset - (thumbWidth - baseThumbWidth) / 2;
@@ -3085,7 +3086,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                     },
                     onHorizontalDragEnd: (_) {
                       final shouldMove = _filterDragOffset.abs() > segmentWidth * 0.22;
-                      final direction = _filterDragOffset > 0 ? -1 : 1;
+                      final direction = _filterDragOffset > 0 ? 1 : -1;
                       final nextIndex = (selectedIndex + (shouldMove ? direction : 0)).clamp(0, filterKeys.length - 1);
                       setState(() {
                         filter = filterKeys[nextIndex];
@@ -3094,66 +3095,23 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                         _resetPaging();
                       });
                     },
+                    onHorizontalDragCancel: () {
+                      setState(() {
+                        _filterDragOffset = 0;
+                        _isFilterDragging = false;
+                      });
+                    },
                     child: Container(
-                      height: 52,
+                      height: 56,
                       width: constraints.maxWidth,
                       padding: const EdgeInsets.all(trackPadding),
                       decoration: BoxDecoration(
-                        color: context.isDark ? Colors.white.withOpacity(0.05) : Colors.black.withOpacity(0.035),
-                        borderRadius: BorderRadius.circular(22),
+                        color: context.isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.045),
+                        borderRadius: BorderRadius.circular(pillRadius + trackPadding),
                         border: Border.all(color: context.borderColor),
                       ),
                       child: Stack(
                         children: [
-                          AnimatedPositioned(
-                            duration: _isFilterDragging ? Duration.zero : const Duration(milliseconds: 420),
-                            curve: const Cubic(0.34, 1.35, 0.64, 1.0),
-                            left: thumbLeft,
-                            top: 0,
-                            bottom: 0,
-                            width: thumbWidth,
-                            child: IgnorePointer(
-                              child: liquid_glass.LiquidGlassShadow(
-                                blur: 12,
-                                opacity: context.isDark ? 0.22 : 0.10,
-                                offset: const Offset(0, 3),
-                                cornerRadius: 18,
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(19),
-                                    gradient: LinearGradient(
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
-                                      colors: context.isDark
-                                          ? [Colors.white.withOpacity(0.24), Colors.white.withOpacity(0.06)]
-                                          : [Colors.white.withOpacity(0.95), Colors.white.withOpacity(0.35)],
-                                    ),
-                                  ),
-                                  padding: const EdgeInsets.all(1.1),
-                                  child: liquid_glass.LiquidGlassLens(
-                                    touch: const liquid_glass.LiquidGlassTouch(
-                                      flex: liquid_glass.LiquidGlassFlex(),
-                                    ),
-                                    style: liquid_glass.LiquidGlassStyle(
-                                      shape: const liquid_glass.LiquidGlassShape.continuousRoundedRectangle(cornerRadius: 18),
-                                      appearance: liquid_glass.LiquidGlassAppearance(
-                                        color: (context.isDark ? Colors.black : Colors.white).withOpacity(0.32),
-                                        blur: const liquid_glass.LiquidGlassBlur(sigmaX: 4, sigmaY: 4),
-                                        saturation: context.isDark ? 1.15 : 1.3,
-                                      ),
-                                      refraction: const liquid_glass.LiquidGlassRefraction(
-                                        distortion: 0.14,
-                                        distortionWidth: 26,
-                                        magnification: 1.06,
-                                        chromaticAberration: 0.0045,
-                                      ),
-                                    ),
-                                    child: const SizedBox.expand(),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
                           Row(
                             children: filterKeys.map((k) {
                               final isSelected = filter == k;
@@ -3180,6 +3138,39 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                                 ),
                               );
                             }).toList(),
+                          ),
+                          AnimatedPositioned(
+                            duration: _isFilterDragging ? Duration.zero : const Duration(milliseconds: 420),
+                            curve: const Cubic(0.34, 1.35, 0.64, 1.0),
+                            left: thumbLeft,
+                            top: 0,
+                            bottom: 0,
+                            width: thumbWidth,
+                            child: IgnorePointer(
+                              child: liquid_glass.LiquidGlassShadow(
+                                blur: 12,
+                                opacity: context.isDark ? 0.24 : 0.12,
+                                offset: const Offset(0, 3),
+                                cornerRadius: pillRadius,
+                                child: liquid_glass.LiquidGlassLens(
+                                  style: liquid_glass.LiquidGlassStyle(
+                                    shape: liquid_glass.LiquidGlassShape.continuousRoundedRectangle(cornerRadius: pillRadius),
+                                    appearance: liquid_glass.LiquidGlassAppearance(
+                                      color: Colors.white.withOpacity(context.isDark ? 0.16 : 0.34),
+                                      blur: const liquid_glass.LiquidGlassBlur(sigmaX: 6, sigmaY: 6),
+                                      saturation: context.isDark ? 1.1 : 1.3,
+                                    ),
+                                    refraction: const liquid_glass.LiquidGlassRefraction(
+                                      distortion: 0.18,
+                                      distortionWidth: 32,
+                                      magnification: 1.1,
+                                      chromaticAberration: 0.005,
+                                    ),
+                                  ),
+                                  child: const SizedBox.expand(),
+                                ),
+                              ),
+                            ),
                           ),
                         ],
                       ),
