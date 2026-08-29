@@ -2182,84 +2182,39 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
                   final iconOpacity = (1 - t / 0.4).clamp(0.0, 1.0);
                   final menuOpacity = ((t - 0.35) / 0.65).clamp(0.0, 1.0);
                   final menuOffset = (1 - menuOpacity) * 12;
-                  final shadowBlur = lerpDouble(14, 10, t)!;
-                  final shadowOpacity = lerpDouble(context.isDark ? 0.22 : 0.06, 0.18, t)!;
-                  final shadowDy = lerpDouble(5, 6, t)!;
-                  final highlightOpacity = lerpDouble(context.isDark ? 0.05 : 0.55, 0.0, t)!;
                   return Material(
                     color: Colors.transparent,
                     child: SizedBox(
                       width: size.width,
                       height: size.height,
-                      child: Stack(
-                        children: [
-                          LiquidGlassShadow(
-                            blur: shadowBlur,
-                            opacity: shadowOpacity,
-                            offset: Offset(0, shadowDy),
-                            cornerRadius: radius,
-                            child: Container(
-                              width: size.width,
-                              height: size.height,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(radius + 1),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.white.withOpacity(highlightOpacity),
-                                    blurRadius: 1,
-                                    offset: const Offset(0, 1),
+                      child: LiquidGlassLens(
+                        style: glassStyle,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(radius - 1),
+                          child: Stack(
+                            children: [
+                              if (iconOpacity > 0)
+                                Positioned(
+                                  top: 0, left: 0, width: _measuredClosedSize.width, height: _measuredClosedSize.height,
+                                  child: Opacity(
+                                    opacity: iconOpacity,
+                                    child: const Center(child: Icon(SolarIconsOutline.hamburgerMenu, size: 20)),
                                   ),
-                                ],
-                                gradient: LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  stops: const [0.0, 0.5, 1.0],
-                                  colors: context.isDark
-                                  ? [
-                                      Colors.white.withOpacity(0.22),
-                                      Colors.white.withOpacity(0.03),
-                                      Colors.white.withOpacity(0.10),
-                                    ]
-                                  : [
-                                      Colors.white.withOpacity(0.95),
-                                      Colors.white.withOpacity(0.18),
-                                      Colors.white.withOpacity(0.50),
-                                    ],
-                            ),
-                          ),
-                          padding: const EdgeInsets.all(1.1),
-                          child: LiquidGlassLens(
-                            style: glassStyle,
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(radius - 1),
-                              child: Stack(
-                                children: [
-                                  if (iconOpacity > 0)
-                                    Positioned(
-                                      top: 0, left: 0, width: _measuredClosedSize.width, height: _measuredClosedSize.height,
-                                      child: Opacity(
-                                        opacity: iconOpacity,
-                                        child: const Center(child: Icon(SolarIconsOutline.hamburgerMenu, size: 20)),
-                                      ),
-                                    ),
-                                  if (menuOpacity > 0)
-                                    Opacity(
-                                      opacity: menuOpacity,
-                                      child: Transform.translate(
-                                        offset: Offset(menuOffset, menuOffset * -0.3),
-                                        child: menuChild,
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
+                                ),
+                              if (menuOpacity > 0)
+                                Opacity(
+                                  opacity: menuOpacity,
+                                  child: Transform.translate(
+                                    offset: Offset(menuOffset, menuOffset * -0.3),
+                                    child: menuChild,
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
                       ),
-                      ],
                     ),
-                  ),
-                );
+                  );
                 },
               ),
             ),
@@ -2539,88 +2494,43 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> with SingleTicker
                   final menuOpacity = ((t - 0.35) / 0.65).clamp(0.0, 1.0);
                   final menuOffset = (1 - menuOpacity) * 12;
                   final isDark = context.isDark;
-                  final shadowBlur = lerpDouble(14, 10, t)!;
-                  final shadowOpacity = lerpDouble(isDark ? 0.22 : 0.06, 0.18, t)!;
-                  final shadowDy = lerpDouble(5, 6, t)!;
-                  final highlightOpacity = lerpDouble(isDark ? 0.05 : 0.55, 0.0, t)!;
                   return Material(
                     color: Colors.transparent,
                     child: SizedBox(
                       width: size.width,
                       height: size.height,
-                      child: Stack(
-                        children: [
-                          LiquidGlassShadow(
-                            blur: shadowBlur,
-                            opacity: shadowOpacity,
-                            offset: Offset(0, shadowDy),
-                            cornerRadius: radius,
-                            child: Container(
-                              width: size.width,
-                              height: size.height,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(radius + 1),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.white.withOpacity(highlightOpacity),
-                                    blurRadius: 1,
-                                    offset: const Offset(0, 1),
+                      child: LiquidGlassLens(
+                        style: glassStyle,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(radius - 1),
+                          child: Stack(
+                            children: [
+                              if (iconOpacity > 0)
+                                Positioned(
+                                  top: _openUpward ? null : 0,
+                                  bottom: _openUpward ? 0 : null,
+                                  right: 0,
+                                  width: _closedSize.width, height: _closedSize.height,
+                                  child: Opacity(
+                                    opacity: iconOpacity,
+                                    child: Center(
+                                      child: Icon(SolarIconsOutline.menuDots, size: 22, color: isDark ? Colors.white : context.textPrimary),
+                                    ),
                                   ),
-                                ],
-                                gradient: LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  stops: const [0.0, 0.5, 1.0],
-                                  colors: isDark
-                                  ? [
-                                      Colors.white.withOpacity(0.22),
-                                      Colors.white.withOpacity(0.03),
-                                      Colors.white.withOpacity(0.10),
-                                    ]
-                                  : [
-                                      Colors.white.withOpacity(0.95),
-                                      Colors.white.withOpacity(0.18),
-                                      Colors.white.withOpacity(0.50),
-                                    ],
-                            ),
-                          ),
-                          padding: const EdgeInsets.all(1.1),
-                          child: LiquidGlassLens(
-                            style: glassStyle,
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(radius - 1),
-                              child: Stack(
-                                children: [
-                                  if (iconOpacity > 0)
-                                    Positioned(
-                                      top: _openUpward ? null : 0,
-                                      bottom: _openUpward ? 0 : null,
-                                      right: 0,
-                                      width: _closedSize.width, height: _closedSize.height,
-                                      child: Opacity(
-                                        opacity: iconOpacity,
-                                        child: Center(
-                                          child: Icon(SolarIconsOutline.menuDots, size: 22, color: isDark ? Colors.white : context.textPrimary),
-                                        ),
-                                      ),
-                                    ),
-                                  if (menuOpacity > 0)
-                                    Opacity(
-                                      opacity: menuOpacity,
-                                      child: Transform.translate(
-                                        offset: Offset(0, menuOffset),
-                                        child: menuChild,
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
+                                ),
+                              if (menuOpacity > 0)
+                                Opacity(
+                                  opacity: menuOpacity,
+                                  child: Transform.translate(
+                                    offset: Offset(0, menuOffset),
+                                    child: menuChild,
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
                       ),
-                      ],
                     ),
-                  ),
                   );
                 },
               ),
@@ -2824,88 +2734,41 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
                   final closedOpacity = (1 - t / 0.4).clamp(0.0, 1.0);
                   final openOpacity = ((t - 0.35) / 0.65).clamp(0.0, 1.0);
                   final openOffset = (1 - openOpacity) * 12;
-                  final glassT = Curves.easeOut.transform(t);
-                  final showBlur = glassT > 0.8;
-                  final shadowBlur = lerpDouble(14, 10, t)!;
-                  final shadowOpacity = lerpDouble(context.isDark ? 0.22 : 0.06, 0.18, t)!;
-                  final shadowDy = lerpDouble(5, 6, t)!;
-                  final highlightOpacity = lerpDouble(context.isDark ? 0.05 : 0.55, 0.0, t)!;
                   return Material(
                     color: Colors.transparent,
                     child: SizedBox(
                       width: size.width,
                       height: size.height,
-                      child: Stack(
-                        children: [
-                          LiquidGlassShadow(
-                            blur: shadowBlur,
-                            opacity: shadowOpacity,
-                            offset: Offset(0, shadowDy),
-                            cornerRadius: radius,
-                            child: Container(
-                              width: size.width,
-                              height: size.height,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(radius + 1),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.white.withOpacity(highlightOpacity),
-                                    blurRadius: 1,
-                                    offset: const Offset(0, 1),
+                      child: LiquidGlassLens(
+                        style: glassStyle,
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(radius - 1),
+                          child: Stack(
+                            children: [
+                              if (closedOpacity > 0)
+                                Positioned(
+                                  left: (size.width - _measuredClosedSize.width) / 2,
+                                  top: 0,
+                                  width: _measuredClosedSize.width,
+                                  height: _measuredClosedSize.height,
+                                  child: Opacity(
+                                    opacity: closedOpacity,
+                                    child: _ClosedCardChip(cardLabel: _labelFor(cards, selected)),
                                   ),
-                                ],
-                                gradient: LinearGradient(
-                                  begin: Alignment.topLeft,
-                                  end: Alignment.bottomRight,
-                                  stops: const [0.0, 0.5, 1.0],
-                                  colors: context.isDark
-                                  ? [
-                                      Colors.white.withOpacity(0.22),
-                                      Colors.white.withOpacity(0.03),
-                                      Colors.white.withOpacity(0.10),
-                                    ]
-                                  : [
-                                      Colors.white.withOpacity(0.95),
-                                      Colors.white.withOpacity(0.18),
-                                      Colors.white.withOpacity(0.50),
-                                    ],
-                            ),
-                          ),
-                          padding: const EdgeInsets.all(1.1),
-                          child: LiquidGlassLens(
-                            style: glassStyle,
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(radius - 1),
-                              child: Stack(
-                                children: [
-                                  if (closedOpacity > 0)
-                                    Positioned(
-                                      left: (size.width - _measuredClosedSize.width) / 2,
-                                      top: 0,
-                                      width: _measuredClosedSize.width,
-                                      height: _measuredClosedSize.height,
-                                      child: Opacity(
-                                        opacity: closedOpacity,
-                                        child: _ClosedCardChip(cardLabel: _labelFor(cards, selected)),
-                                      ),
-                                    ),
-                                  if (openOpacity > 0)
-                                    Opacity(
-                                      opacity: openOpacity,
-                                      child: Transform.translate(
-                                        offset: Offset(0, openOffset),
-                                        child: menuChild,
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ),
+                                ),
+                              if (openOpacity > 0)
+                                Opacity(
+                                  opacity: openOpacity,
+                                  child: Transform.translate(
+                                    offset: Offset(0, openOffset),
+                                    child: menuChild,
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
                       ),
-                      ],
                     ),
-                  ),
                   );
                 },
               ),
@@ -3145,7 +3008,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
                     _resetPaging();
                   });
                 },
-                quality: GlassQuality.standard,
+                quality: GlassQuality.premium,
               ),
               const SizedBox(height: 10),
               SingleChildScrollView(
