@@ -2598,21 +2598,51 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
                               borderWidth: 1.3,
                             ),
                             appearance: liquid_glass.LiquidGlassAppearance(
-                              color: (context.isDark ? Colors.black : Colors.white).withOpacity(context.isDark ? 0.30 : 0.38),
-                              blur: const liquid_glass.LiquidGlassBlur(sigmaX: 12, sigmaY: 12),
-                              saturation: 1.4,
+                              color: context.isDark ? Colors.white.withOpacity(0.10) : Colors.white.withOpacity(0.32),
+                              blur: const liquid_glass.LiquidGlassBlur(sigmaX: 18, sigmaY: 18),
+                              saturation: 1.6,
                             ),
                             refraction: const liquid_glass.LiquidGlassRefraction(
-                              distortion: 0.035,
-                              distortionWidth: 26,
-                              magnification: 1.06,
-                              chromaticAberration: 0.0018,
+                              distortion: 0.04,
+                              distortionWidth: 28,
+                              magnification: 1.08,
+                              chromaticAberration: 0.002,
                             ),
                           ),
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(radius),
                             child: Stack(
                               children: [
+                                Positioned.fill(
+                                  child: IgnorePointer(
+                                    child: DecoratedBox(
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                          stops: const [0.0, 0.28, 0.55],
+                                          colors: [
+                                            Colors.white.withOpacity(context.isDark ? 0.22 : 0.55),
+                                            Colors.white.withOpacity(context.isDark ? 0.05 : 0.12),
+                                            Colors.white.withOpacity(0.0),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Positioned.fill(
+                                  child: IgnorePointer(
+                                    child: DecoratedBox(
+                                      decoration: BoxDecoration(
+                                        border: Border(
+                                          top: BorderSide(color: Colors.white.withOpacity(context.isDark ? 0.28 : 0.75), width: 1),
+                                        ),
+                                        borderRadius: BorderRadius.circular(radius),
+                                      ),
+                                    ),
+                                  ),
+                                ),
                                 if (closedOpacity > 0)
                                   Positioned(
                                     left: (size.width - _closedSize.width) / 2,
