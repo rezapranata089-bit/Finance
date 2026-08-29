@@ -2025,6 +2025,7 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
   OverlayEntry? _entry;
   late final AnimationController _controller = AnimationController(vsync: this, value: 0);
   bool _open = false;
+  bool _isAnimating = false;
 
   static const _closedSize = Size(40, 40);
   static const _openSize = Size(200, 230);
@@ -2044,12 +2045,16 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
   }
 
   Future<void> _toggle() async {
+    if (_isAnimating) return;
     if (_open) {
+      _isAnimating = true;
       setState(() => _open = false);
       await _controller.animateTo(0, duration: const Duration(milliseconds: 250), curve: _closeCurve);
       _removeOverlay();
+      if (mounted) _isAnimating = false;
       return;
     }
+    _isAnimating = true;
     setState(() => _open = true);
     _entry = OverlayEntry(
       builder: (overlayContext) => Stack(
@@ -2157,6 +2162,7 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
     );
     Overlay.of(context).insert(_entry!);
     await _controller.animateTo(1, duration: const Duration(milliseconds: 340), curve: _openCurve);
+    if (mounted) _isAnimating = false;
   }
 
   void _closeImmediately() {
@@ -2348,6 +2354,7 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> with SingleTicker
   late final AnimationController _controller = AnimationController(vsync: this, value: 0);
   bool _open = false;
   bool _openUpward = false;
+  bool _isAnimating = false;
 
   static const _closedSize = Size(68, 42);
   static const _openSize = Size(220, 184);
@@ -2367,12 +2374,16 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> with SingleTicker
   }
 
   Future<void> _toggle() async {
+    if (_isAnimating) return;
     if (_open) {
+      _isAnimating = true;
       setState(() => _open = false);
       await _controller.animateTo(0, duration: const Duration(milliseconds: 250), curve: _closeCurve);
       _removeOverlay();
+      if (mounted) _isAnimating = false;
       return;
     }
+    _isAnimating = true;
     final renderBox = context.findRenderObject() as RenderBox;
     final buttonPos = renderBox.localToGlobal(Offset.zero);
     final statusBarHeight = MediaQuery.paddingOf(context).top;
@@ -2492,6 +2503,7 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> with SingleTicker
     );
     Overlay.of(context).insert(_entry!);
     await _controller.animateTo(1, duration: const Duration(milliseconds: 340), curve: _openCurve);
+    if (mounted) _isAnimating = false;
   }
 
   void _closeImmediately() {
