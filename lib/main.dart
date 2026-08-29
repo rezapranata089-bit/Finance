@@ -2597,11 +2597,17 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                               stops: const [0.0, 0.5, 1.0],
-                              colors: [
-                                Colors.white.withOpacity(context.isDark ? 0.50 : 0.95),
-                                Colors.white.withOpacity(context.isDark ? 0.05 : 0.18),
-                                Colors.white.withOpacity(context.isDark ? 0.16 : 0.50),
-                              ],
+                              colors: context.isDark
+                                  ? [
+                                      Colors.white.withOpacity(0.22),
+                                      Colors.white.withOpacity(0.03),
+                                      Colors.white.withOpacity(0.10),
+                                    ]
+                                  : [
+                                      Colors.white.withOpacity(0.95),
+                                      Colors.white.withOpacity(0.18),
+                                      Colors.white.withOpacity(0.50),
+                                    ],
                             ),
                           ),
                           padding: const EdgeInsets.all(1.1),
@@ -2613,9 +2619,9 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
                                 borderWidth: 0,
                               ),
                               appearance: liquid_glass.LiquidGlassAppearance(
-                                color: Colors.white.withOpacity(context.isDark ? 0.12 : 0.30),
+                                color: context.isDark ? Colors.black.withOpacity(0.38) : Colors.white.withOpacity(0.30),
                                 blur: const liquid_glass.LiquidGlassBlur(sigmaX: 6, sigmaY: 6),
-                                saturation: 1.25,
+                                saturation: context.isDark ? 1.1 : 1.25,
                               ),
                               refraction: const liquid_glass.LiquidGlassRefraction(
                                 distortion: 0.06,
@@ -2628,40 +2634,6 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
                               borderRadius: BorderRadius.circular(radius - 1),
                               child: Stack(
                                 children: [
-                                  Positioned.fill(
-                                    child: IgnorePointer(
-                                      child: DecoratedBox(
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            begin: Alignment.topLeft,
-                                            end: Alignment.bottomRight,
-                                            stops: const [0.0, 0.42],
-                                            colors: [
-                                              Colors.white.withOpacity(context.isDark ? 0.18 : 0.45),
-                                              Colors.white.withOpacity(0.0),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  Positioned.fill(
-                                    child: IgnorePointer(
-                                      child: DecoratedBox(
-                                        decoration: BoxDecoration(
-                                          gradient: LinearGradient(
-                                            begin: Alignment.bottomCenter,
-                                            end: Alignment.topCenter,
-                                            stops: const [0.0, 0.22],
-                                            colors: [
-                                              Colors.black.withOpacity(context.isDark ? 0.24 : 0.05),
-                                              Colors.black.withOpacity(0.0),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
                                   if (closedOpacity > 0)
                                     Positioned(
                                       left: (size.width - _closedSize.width) / 2,
