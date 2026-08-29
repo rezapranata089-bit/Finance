@@ -3188,10 +3188,10 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
                           final baseThumbHeight = trackHeight - trackPadding * 2;
                           final dev = _pillDeviation;
                           final growT = Curves.easeOutBack.transform(_pillGrowController.value.clamp(0.0, 1.0));
-                          final growExtra = 30 * growT;
+                          final growExtra = 16 * growT;
                           final refractionT = _pillGrowController.value.clamp(0.0, 1.0);
                           final thumbWidth = (baseThumbWidth * (1 + dev * 0.5)).clamp(baseThumbWidth * 0.8, segW * 1.3);
-                          final thumbHeight = ((baseThumbHeight + growExtra) * (1 - dev * 0.4)).clamp(baseThumbHeight * 0.8, baseThumbHeight + 36);
+                          final thumbHeight = ((baseThumbHeight + growExtra) * (1 - dev * 0.4)).clamp(baseThumbHeight * 0.8, baseThumbHeight + 16);
                           final capsuleRadius = thumbHeight / 2;
                           final centerX = _pillController.value * segW + segW / 2;
                           return Stack(
@@ -3247,9 +3247,9 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
                                 height: thumbHeight,
                                 child: IgnorePointer(
                                   child: liquid_glass.LiquidGlassShadow(
-                                    blur: 12,
-                                    opacity: context.isDark ? 0.26 : 0.12,
-                                    offset: const Offset(0, 3),
+                                    blur: 10,
+                                    opacity: context.isDark ? 0.22 : 0.10,
+                                    offset: const Offset(0, 1),
                                     cornerRadius: capsuleRadius,
                                     child: ClipRRect(
                                       borderRadius: BorderRadius.circular(capsuleRadius),
