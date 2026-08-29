@@ -3008,6 +3008,8 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
   String query = '';
   String filter = 'all';
   int? cardFilter;
+  double _filterDragOffset = 0;
+  bool _isFilterDragging = false;
   int _displayCount = _pageSize;
   final ScrollController _scrollController = ScrollController();
   static const filterKeys = ['all', 'income', 'expense'];
@@ -3068,34 +3070,53 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                 builder: (context, constraints) {
                   final selectedIndex = filterKeys.indexOf(filter).clamp(0, filterKeys.length - 1);
                   final segmentWidth = constraints.maxWidth / filterKeys.length;
+                  final thumbLeft = selectedIndex * segmentWidth + 3 + _filterDragOffset;
                   return GestureDetector(
-                    onHorizontalDragEnd: (details) {
-                      final velocity = details.primaryVelocity ?? 0;
-                      if (velocity.abs() < 100) return;
-                      final nextIndex = (selectedIndex + (velocity < 0 ? 1 : -1)).clamp(0, filterKeys.length - 1);
-                      if (nextIndex != selectedIndex) {
-                        setState(() {
-                          filter = filterKeys[nextIndex];
-                          _resetPaging();
-                        });
-                      }
+                    onHorizontalDragUpdate: (details) {
+                      setState(() {
+                        _isFilterDragging = true;
+                        _filterDragOffset = (_filterDragOffset + details.delta.dx).clamp(-segmentWidth, segmentWidth);
+                      });
+                    },
+                    onHorizontalDragEnd: (_) {
+                      final shouldMove = _filterDragOffset.abs() > segmentWidth * 0.22;
+                      final direction = _filterDragOffset > 0 ? -1 : 1;
+                      final nextIndex = (selectedIndex + (shouldMove ? direction : 0)).clamp(0, filterKeys.length - 1);
+                      setState(() {
+                        filter = filterKeys[nextIndex];
+                        _filterDragOffset = 0;
+                        _isFilterDragging = false;
+                        _resetPaging();
+                      });
                     },
                     child: SizedBox(
-                      height: 48,
+                      height: 52,
                       child: Stack(
                         children: [
                           AnimatedPositioned(
-                            duration: const Duration(milliseconds: 280),
-                            curve: Curves.easeOutCubic,
-                            left: selectedIndex * segmentWidth + 3,
-                            top: 3,
-                            bottom: 3,
+                            duration: _isFilterDragging ? Duration.zero : const Duration(milliseconds: 420),
+                            curve: Curves.easeOutBack,
+                            left: thumbLeft,
+                            top: 2,
+                            bottom: 2,
                             width: segmentWidth - 6,
                             child: IgnorePointer(
                               child: liquid_glass.LiquidGlassLens(
-                                style: const liquid_glass.LiquidGlassStyle(
-                                  shape: liquid_glass.LiquidGlassShape.continuousRoundedRectangle(cornerRadius: 16),
-                                  refraction: liquid_glass.LiquidGlassRefraction(distortion: 0.08, distortionWidth: 18),
+                                touch: const liquid_glass.LiquidGlassTouch(
+                                  flex: liquid_glass.LiquidGlassFlex(),
+                                ),
+                                style: liquid_glass.LiquidGlassStyle(
+                                  appearance: liquid_glass.LiquidGlassAppearance(
+                                    color: Colors.white.withOpacity(0.22),
+                                    saturation: 1.25,
+                                  ),
+                                  shape: const liquid_glass.LiquidGlassShape.continuousRoundedRectangle(cornerRadius: 18),
+                                  refraction: const liquid_glass.LiquidGlassRefraction(
+                                    distortion: 0.16,
+                                    distortionWidth: 28,
+                                    magnification: 1.04,
+                                    chromaticAberration: 0.004,
+                                  ),
                                 ),
                                 child: const SizedBox.expand(),
                               ),
@@ -3109,6 +3130,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                                   behavior: HitTestBehavior.opaque,
                                   onTap: () => setState(() {
                                     filter = k;
+                                    _filterDragOffset = 0;
                                     _resetPaging();
                                   }),
                                   child: Center(
