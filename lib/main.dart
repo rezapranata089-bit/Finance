@@ -3719,7 +3719,7 @@ class CategorySettingsPage extends ConsumerWidget {
                             ref.read(categoryFeatureEnabledProvider.notifier).state = v;
                             ref.read(prefsProvider).setBool('category_feature_enabled', v);
                           },
-                          width: 63,
+                          width: 56,
                           height: 28,
                         ),
                       ],
