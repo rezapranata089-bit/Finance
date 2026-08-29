@@ -3072,16 +3072,27 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                   const trackPadding = 4.0;
                   const pillRadius = 22.0;
                   final segmentWidth = (constraints.maxWidth - trackPadding * 2) / filterKeys.length;
-                  final dragProgress = (_filterDragOffset.abs() / segmentWidth).clamp(0.0, 1.0);
-                  final stretch = _isFilterDragging ? 1.0 + dragProgress * 0.20 : 1.0;
                   final baseThumbWidth = segmentWidth - 6;
-                  final thumbWidth = baseThumbWidth * stretch;
-                  final thumbLeft = selectedIndex * segmentWidth + 3 + _filterDragOffset - (thumbWidth - baseThumbWidth) / 2;
+                  final anchorLeft = selectedIndex * segmentWidth + 3;
+                  // Liquid stretch: the edge opposite the drag direction stays anchored,
+                  // the leading edge reaches toward the finger, like a droplet pulling.
+                  double thumbLeft;
+                  double thumbWidth;
+                  if (_filterDragOffset >= 0) {
+                    thumbLeft = anchorLeft;
+                    thumbWidth = baseThumbWidth + _filterDragOffset;
+                  } else {
+                    thumbLeft = anchorLeft + _filterDragOffset;
+                    thumbWidth = baseThumbWidth - _filterDragOffset;
+                  }
+                  final selectedLabel = Strings.t(lang, 'filter_$filter');
                   return GestureDetector(
                     onHorizontalDragUpdate: (details) {
+                      final maxLeftDrag = -(selectedIndex * segmentWidth);
+                      final maxRightDrag = (filterKeys.length - 1 - selectedIndex) * segmentWidth;
                       setState(() {
                         _isFilterDragging = true;
-                        _filterDragOffset = (_filterDragOffset + details.delta.dx).clamp(-segmentWidth, segmentWidth);
+                        _filterDragOffset = (_filterDragOffset + details.delta.dx).clamp(maxLeftDrag, maxRightDrag);
                       });
                     },
                     onHorizontalDragEnd: (_) {
@@ -3114,7 +3125,6 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                         children: [
                           Row(
                             children: filterKeys.map((k) {
-                              final isSelected = filter == k;
                               return Expanded(
                                 child: GestureDetector(
                                   behavior: HitTestBehavior.opaque,
@@ -3124,15 +3134,14 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                                     _resetPaging();
                                   }),
                                   child: Center(
-                                    child: AnimatedDefaultTextStyle(
-                                      duration: const Duration(milliseconds: 180),
+                                    child: Text(
+                                      Strings.t(lang, 'filter_$k'),
                                       style: TextStyle(
                                         fontFamily: 'Satoshi',
                                         fontSize: 13,
-                                        fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
-                                        color: isSelected ? context.textPrimary : context.textMuted,
+                                        fontWeight: FontWeight.w600,
+                                        color: context.textMuted,
                                       ),
-                                      child: Text(Strings.t(lang, 'filter_$k')),
                                     ),
                                   ),
                                 ),
@@ -3146,30 +3155,52 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                             top: 0,
                             bottom: 0,
                             width: thumbWidth,
-                            child: IgnorePointer(
-                              child: liquid_glass.LiquidGlassShadow(
-                                blur: 12,
-                                opacity: context.isDark ? 0.24 : 0.12,
-                                offset: const Offset(0, 3),
-                                cornerRadius: pillRadius,
-                                child: liquid_glass.LiquidGlassLens(
-                                  style: liquid_glass.LiquidGlassStyle(
-                                    shape: liquid_glass.LiquidGlassShape.continuousRoundedRectangle(cornerRadius: pillRadius),
-                                    appearance: liquid_glass.LiquidGlassAppearance(
-                                      color: Colors.white.withOpacity(context.isDark ? 0.16 : 0.34),
-                                      blur: const liquid_glass.LiquidGlassBlur(sigmaX: 6, sigmaY: 6),
-                                      saturation: context.isDark ? 1.1 : 1.3,
-                                    ),
-                                    refraction: const liquid_glass.LiquidGlassRefraction(
-                                      distortion: 0.18,
-                                      distortionWidth: 32,
-                                      magnification: 1.1,
-                                      chromaticAberration: 0.005,
+                            child: Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                IgnorePointer(
+                                  child: liquid_glass.LiquidGlassShadow(
+                                    blur: 12,
+                                    opacity: context.isDark ? 0.24 : 0.12,
+                                    offset: const Offset(0, 3),
+                                    cornerRadius: pillRadius,
+                                    child: liquid_glass.LiquidGlassLens(
+                                      style: liquid_glass.LiquidGlassStyle(
+                                        shape: liquid_glass.LiquidGlassShape.continuousRoundedRectangle(cornerRadius: pillRadius),
+                                        appearance: liquid_glass.LiquidGlassAppearance(
+                                          color: Colors.white.withOpacity(context.isDark ? 0.20 : 0.55),
+                                          blur: const liquid_glass.LiquidGlassBlur(sigmaX: 2.5, sigmaY: 2.5),
+                                          saturation: context.isDark ? 1.1 : 1.3,
+                                        ),
+                                        refraction: const liquid_glass.LiquidGlassRefraction(
+                                          distortion: 0.10,
+                                          distortionWidth: 24,
+                                          magnification: 1.06,
+                                          chromaticAberration: 0.004,
+                                        ),
+                                      ),
+                                      child: const SizedBox.expand(),
                                     ),
                                   ),
-                                  child: const SizedBox.expand(),
                                 ),
-                              ),
+                                Positioned.fill(
+                                  child: IgnorePointer(
+                                    child: Center(
+                                      child: Text(
+                                        selectedLabel,
+                                        overflow: TextOverflow.visible,
+                                        softWrap: false,
+                                        style: TextStyle(
+                                          fontFamily: 'Satoshi',
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w800,
+                                          color: context.textPrimary,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
