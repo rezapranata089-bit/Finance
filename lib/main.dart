@@ -2075,24 +2075,39 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
                   final iconOpacity = (1 - t / 0.4).clamp(0.0, 1.0);
                   final menuOpacity = ((t - 0.35) / 0.65).clamp(0.0, 1.0);
                   final menuOffset = (1 - menuOpacity) * 12;
+                  final shadowBlur = lerpDouble(14, 10, t)!;
+                  final shadowOpacity = lerpDouble(context.isDark ? 0.22 : 0.06, 0.18, t)!;
+                  final shadowDy = lerpDouble(5, 6, t)!;
+                  final highlightOpacity = lerpDouble(context.isDark ? 0.05 : 0.55, 0.0, t)!;
                   return Material(
                     color: Colors.transparent,
                     child: SizedBox(
                       width: size.width,
                       height: size.height,
-                      child: liquid_glass.LiquidGlassShadow(
-                        blur: 10,
-                        opacity: 0.18,
-                        offset: const Offset(0, 6),
-                        cornerRadius: radius,
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(radius + 1),
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              stops: const [0.0, 0.5, 1.0],
-                              colors: context.isDark
+                      child: Stack(
+                        children: [
+                          liquid_glass.LiquidGlassShadow(
+                            blur: shadowBlur,
+                            opacity: shadowOpacity,
+                            offset: Offset(0, shadowDy),
+                            cornerRadius: radius,
+                            child: Container(
+                              width: size.width,
+                              height: size.height,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(radius + 1),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.white.withOpacity(highlightOpacity),
+                                    blurRadius: 1,
+                                    offset: const Offset(0, 1),
+                                  ),
+                                ],
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  stops: const [0.0, 0.5, 1.0],
+                                  colors: context.isDark
                                   ? [
                                       Colors.white.withOpacity(0.22),
                                       Colors.white.withOpacity(0.03),
@@ -2411,26 +2426,39 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> with SingleTicker
                   final menuOpacity = ((t - 0.35) / 0.65).clamp(0.0, 1.0);
                   final menuOffset = (1 - menuOpacity) * 12;
                   final isDark = context.isDark;
+                  final shadowBlur = lerpDouble(14, 10, t)!;
+                  final shadowOpacity = lerpDouble(isDark ? 0.22 : 0.06, 0.18, t)!;
+                  final shadowDy = lerpDouble(5, 6, t)!;
+                  final highlightOpacity = lerpDouble(isDark ? 0.05 : 0.55, 0.0, t)!;
                   return Material(
                     color: Colors.transparent,
                     child: SizedBox(
                       width: size.width,
                       height: size.height,
-                      child: liquid_glass.LiquidGlassShadow(
-                        blur: 10,
-                        opacity: 0.18,
-                        offset: const Offset(0, 6),
-                        cornerRadius: radius,
-                        child: Container(
-                          width: size.width,
-                          height: size.height,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(radius + 1),
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              stops: const [0.0, 0.5, 1.0],
-                              colors: isDark
+                      child: Stack(
+                        children: [
+                          liquid_glass.LiquidGlassShadow(
+                            blur: shadowBlur,
+                            opacity: shadowOpacity,
+                            offset: Offset(0, shadowDy),
+                            cornerRadius: radius,
+                            child: Container(
+                              width: size.width,
+                              height: size.height,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(radius + 1),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.white.withOpacity(highlightOpacity),
+                                    blurRadius: 1,
+                                    offset: const Offset(0, 1),
+                                  ),
+                                ],
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  stops: const [0.0, 0.5, 1.0],
+                                  colors: isDark
                                   ? [
                                       Colors.white.withOpacity(0.22),
                                       Colors.white.withOpacity(0.03),
@@ -2682,26 +2710,39 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
                   final openOffset = (1 - openOpacity) * 12;
                   final glassT = Curves.easeOut.transform(t);
                   final showBlur = glassT > 0.8;
+                  final shadowBlur = lerpDouble(14, 10, t)!;
+                  final shadowOpacity = lerpDouble(context.isDark ? 0.22 : 0.06, 0.18, t)!;
+                  final shadowDy = lerpDouble(5, 6, t)!;
+                  final highlightOpacity = lerpDouble(context.isDark ? 0.05 : 0.55, 0.0, t)!;
                   return Material(
                     color: Colors.transparent,
                     child: SizedBox(
                       width: size.width,
                       height: size.height,
-                      child: liquid_glass.LiquidGlassShadow(
-                        blur: 10,
-                        opacity: 0.18,
-                        offset: const Offset(0, 6),
-                        cornerRadius: radius,
-                        child: Container(
-                          width: size.width,
-                          height: size.height,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(radius + 1),
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              stops: const [0.0, 0.5, 1.0],
-                              colors: context.isDark
+                      child: Stack(
+                        children: [
+                          liquid_glass.LiquidGlassShadow(
+                            blur: shadowBlur,
+                            opacity: shadowOpacity,
+                            offset: Offset(0, shadowDy),
+                            cornerRadius: radius,
+                            child: Container(
+                              width: size.width,
+                              height: size.height,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(radius + 1),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.white.withOpacity(highlightOpacity),
+                                    blurRadius: 1,
+                                    offset: const Offset(0, 1),
+                                  ),
+                                ],
+                                gradient: LinearGradient(
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                  stops: const [0.0, 0.5, 1.0],
+                                  colors: context.isDark
                                   ? [
                                       Colors.white.withOpacity(0.22),
                                       Colors.white.withOpacity(0.03),
