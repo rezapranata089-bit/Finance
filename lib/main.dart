@@ -1062,7 +1062,6 @@ class LiquidGlassLens extends StatelessWidget {
         lightIntensity: isDark ? 1.1 : 1.4,
         lightAngle: 2.4,
         ambientStrength: isDark ? 0.5 : 0.7,
-        outlineIntensity: isDark ? 0.5 : 0.95,
         chromaticAberration: style.refraction.chromaticAberration,
         shadowElevation: isDark ? 1 : 4,
       ),
