@@ -939,8 +939,8 @@ class LiquidGlass extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = context.isDark;
     final base = tint ?? Colors.white;
-    final opacity = ((isDark ? 0.34 : 0.55) * intensity).clamp(0.0, 1.0);
-    final rimColor = borderColor ?? (isDark ? Colors.white.withOpacity(0.22) : Colors.white.withOpacity(0.75));
+    final opacity = ((isDark ? 0.34 : 0.86) * intensity).clamp(0.0, 1.0);
+    final rimColor = borderColor ?? (isDark ? Colors.white.withOpacity(0.22) : Colors.black.withOpacity(0.10));
     final content = Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(borderRadius),
@@ -948,13 +948,14 @@ class LiquidGlass extends StatelessWidget {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            base.withOpacity((opacity + (isDark ? 0.10 : 0.14)).clamp(0.0, 1.0)),
+            base.withOpacity((opacity + 0.10).clamp(0.0, 1.0)),
             base.withOpacity(opacity),
           ],
         ),
         border: Border.all(color: rimColor, width: 1),
         boxShadow: [
-          BoxShadow(color: Colors.white.withOpacity(isDark ? 0.06 : 0.4), blurRadius: 0, spreadRadius: -0.6, offset: const Offset(0, 0.6)),
+          BoxShadow(color: Colors.white.withOpacity(isDark ? 0.06 : 0.5), blurRadius: 0, spreadRadius: -0.6, offset: const Offset(0, 0.6)),
+          BoxShadow(color: isDark ? Colors.transparent : Colors.black.withOpacity(0.12), blurRadius: 12, spreadRadius: -3, offset: const Offset(0, 4)),
         ],
       ),
       child: child,
@@ -1047,6 +1048,7 @@ class LiquidGlassLens extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = context.isDark;
     return GlassContainer(
       shape: LiquidRoundedRectangle(borderRadius: style.shape.cornerRadius),
       useOwnLayer: true,
@@ -1057,11 +1059,12 @@ class LiquidGlassLens extends StatelessWidget {
         saturation: style.appearance.saturation,
         thickness: 20,
         refractiveIndex: 1 + (style.refraction.magnification - 1) * 3,
-        lightIntensity: 1.1,
+        lightIntensity: isDark ? 1.1 : 1.4,
         lightAngle: 2.4,
-        ambientStrength: 0.5,
+        ambientStrength: isDark ? 0.5 : 0.7,
+        outlineIntensity: isDark ? 0.5 : 0.95,
         chromaticAberration: style.refraction.chromaticAberration,
-        shadowElevation: 1,
+        shadowElevation: isDark ? 1 : 4,
       ),
       child: child,
     );
@@ -2167,7 +2170,7 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
         borderWidth: 0,
       ),
       appearance: LiquidGlassAppearance(
-        color: context.isDark ? Colors.black.withOpacity(0.38) : Colors.white.withOpacity(0.30),
+        color: context.isDark ? Colors.black.withOpacity(0.38) : Colors.white.withOpacity(0.68),
         blur: const LiquidGlassBlur(sigmaX: 6, sigmaY: 6),
         saturation: context.isDark ? 1.1 : 1.25,
       ),
@@ -2479,7 +2482,7 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> with SingleTicker
         borderWidth: 0,
       ),
       appearance: LiquidGlassAppearance(
-        color: context.isDark ? Colors.black.withOpacity(0.38) : Colors.white.withOpacity(0.30),
+        color: context.isDark ? Colors.black.withOpacity(0.38) : Colors.white.withOpacity(0.68),
         blur: const LiquidGlassBlur(sigmaX: 6, sigmaY: 6),
         saturation: context.isDark ? 1.1 : 1.25,
       ),
@@ -2717,7 +2720,7 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
         borderWidth: 0,
       ),
       appearance: LiquidGlassAppearance(
-        color: context.isDark ? Colors.black.withOpacity(0.38) : Colors.white.withOpacity(0.30),
+        color: context.isDark ? Colors.black.withOpacity(0.38) : Colors.white.withOpacity(0.68),
         blur: const LiquidGlassBlur(sigmaX: 6, sigmaY: 6),
         saturation: context.isDark ? 1.1 : 1.25,
       ),
