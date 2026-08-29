@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/physics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -3004,16 +3005,59 @@ class TransactionsPage extends ConsumerStatefulWidget {
   @override
   ConsumerState<TransactionsPage> createState() => _TransactionsPageState();
 }
-class _TransactionsPageState extends ConsumerState<TransactionsPage> {
+class _TransactionsPageState extends ConsumerState<TransactionsPage> with SingleTickerProviderStateMixin {
   String query = '';
   String filter = 'all';
   int? cardFilter;
-  double _filterDragOffset = 0;
-  bool _isFilterDragging = false;
   int _displayCount = _pageSize;
   final ScrollController _scrollController = ScrollController();
   static const filterKeys = ['all', 'income', 'expense'];
   static const _pageSize = 10;
+
+  // ── Liquid pill physics (mirrors liquid_glass_easy's animated nav bar:
+  // a positional spring carries the pill between tabs; a second-order
+  // finite-difference on that position gives real acceleration, which
+  // drives an oppositely-signed squash/stretch on width vs height). ──
+  late final AnimationController _pillController = AnimationController(
+    vsync: this,
+    lowerBound: 0,
+    upperBound: (filterKeys.length - 1).toDouble(),
+    value: filterKeys.indexOf(filter).toDouble(),
+  )..addListener(_onPillTick);
+  double _pillSegmentWidth = 0;
+  double _pillLastPixelPos = 0;
+  double _pillLastVelocity = 0;
+  Duration? _pillLastFrameTime;
+  double _pillDeviation = 0;
+
+  void _onPillTick() {
+    final segW = _pillSegmentWidth;
+    if (segW <= 0) return;
+    final now = WidgetsBinding.instance.currentSystemFrameTimeStamp;
+    final pixelPos = _pillController.value * segW;
+    if (_pillLastFrameTime != null) {
+      final dt = (now - _pillLastFrameTime!).inMicroseconds / 1e6;
+      if (dt > 0.0005) {
+        final velocity = (pixelPos - _pillLastPixelPos) / dt;
+        final accel = (velocity - _pillLastVelocity) / dt;
+        final rawDev = (accel * 0.000012).clamp(-0.16, 0.16);
+        _pillDeviation = _pillDeviation + (rawDev - _pillDeviation) * 0.4;
+        _pillLastVelocity = velocity;
+      }
+    }
+    _pillLastPixelPos = pixelPos;
+    _pillLastFrameTime = now;
+  }
+
+  void _animatePillTo(int targetIndex) {
+    final sim = SpringSimulation(
+      const SpringDescription(mass: 1, stiffness: 280, damping: 31.4),
+      _pillController.value,
+      targetIndex.toDouble(),
+      _pillController.velocity,
+    );
+    _pillController.animateWith(sim);
+  }
 
   @override
   void initState() {
@@ -3025,6 +3069,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _pillController.dispose();
     super.dispose();
   }
 
@@ -3068,52 +3113,41 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
               const SizedBox(height: 14),
               LayoutBuilder(
                 builder: (context, constraints) {
-                  final selectedIndex = filterKeys.indexOf(filter).clamp(0, filterKeys.length - 1);
                   const trackPadding = 4.0;
-                  const pillRadius = 22.0;
-                  final segmentWidth = (constraints.maxWidth - trackPadding * 2) / filterKeys.length;
-                  final baseThumbWidth = segmentWidth - 6;
-                  final anchorLeft = selectedIndex * segmentWidth + 3;
-                  // Liquid stretch: the edge opposite the drag direction stays anchored,
-                  // the leading edge reaches toward the finger, like a droplet pulling.
-                  double thumbLeft;
-                  double thumbWidth;
-                  if (_filterDragOffset >= 0) {
-                    thumbLeft = anchorLeft;
-                    thumbWidth = baseThumbWidth + _filterDragOffset;
-                  } else {
-                    thumbLeft = anchorLeft + _filterDragOffset;
-                    thumbWidth = baseThumbWidth - _filterDragOffset;
-                  }
-                  final selectedLabel = Strings.t(lang, 'filter_$filter');
+                  const pillRadius = 20.0;
+                  const trackHeight = 52.0;
+                  _pillSegmentWidth = (constraints.maxWidth - trackPadding * 2) / filterKeys.length;
+                  final segW = _pillSegmentWidth;
                   return GestureDetector(
+                    onHorizontalDragStart: (_) {
+                      _pillController.stop();
+                    },
                     onHorizontalDragUpdate: (details) {
-                      final maxLeftDrag = -(selectedIndex * segmentWidth);
-                      final maxRightDrag = (filterKeys.length - 1 - selectedIndex) * segmentWidth;
-                      setState(() {
-                        _isFilterDragging = true;
-                        _filterDragOffset = (_filterDragOffset + details.delta.dx).clamp(maxLeftDrag, maxRightDrag);
-                      });
+                      final deltaIndex = details.delta.dx / segW;
+                      final newValue = (_pillController.value + deltaIndex)
+                          .clamp(0.0, (filterKeys.length - 1).toDouble());
+                      _pillController.value = newValue;
+                      final nearest = newValue.round();
+                      if (filterKeys[nearest] != filter) {
+                        setState(() {
+                          filter = filterKeys[nearest];
+                          _resetPaging();
+                        });
+                      }
                     },
-                    onHorizontalDragEnd: (_) {
-                      final shouldMove = _filterDragOffset.abs() > segmentWidth * 0.22;
-                      final direction = _filterDragOffset > 0 ? 1 : -1;
-                      final nextIndex = (selectedIndex + (shouldMove ? direction : 0)).clamp(0, filterKeys.length - 1);
-                      setState(() {
-                        filter = filterKeys[nextIndex];
-                        _filterDragOffset = 0;
-                        _isFilterDragging = false;
-                        _resetPaging();
-                      });
-                    },
-                    onHorizontalDragCancel: () {
-                      setState(() {
-                        _filterDragOffset = 0;
-                        _isFilterDragging = false;
-                      });
+                    onHorizontalDragEnd: (details) {
+                      final targetIndex = filterKeys.indexOf(filter);
+                      final initialVelocity = details.velocity.pixelsPerSecond.dx / segW;
+                      final sim = SpringSimulation(
+                        const SpringDescription(mass: 1, stiffness: 280, damping: 31.4),
+                        _pillController.value,
+                        targetIndex.toDouble(),
+                        initialVelocity,
+                      );
+                      _pillController.animateWith(sim);
                     },
                     child: Container(
-                      height: 56,
+                      height: trackHeight,
                       width: constraints.maxWidth,
                       padding: const EdgeInsets.all(trackPadding),
                       decoration: BoxDecoration(
@@ -3121,61 +3155,70 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                         borderRadius: BorderRadius.circular(pillRadius + trackPadding),
                         border: Border.all(color: context.borderColor),
                       ),
-                      child: Stack(
-                        children: [
-                          Row(
-                            children: filterKeys.map((k) {
-                              return Expanded(
-                                child: GestureDetector(
-                                  behavior: HitTestBehavior.opaque,
-                                  onTap: () => setState(() {
-                                    filter = k;
-                                    _filterDragOffset = 0;
-                                    _resetPaging();
-                                  }),
-                                  child: Center(
-                                    child: Text(
-                                      Strings.t(lang, 'filter_$k'),
-                                      style: TextStyle(
-                                        fontFamily: 'Satoshi',
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                        color: context.textMuted,
+                      child: AnimatedBuilder(
+                        animation: _pillController,
+                        builder: (context, _) {
+                          final committedIndex = _pillController.value.round().clamp(0, filterKeys.length - 1);
+                          final baseThumbWidth = segW - 6;
+                          const baseThumbHeight = trackHeight - trackPadding * 2;
+                          final dev = _pillDeviation;
+                          final thumbWidth = (baseThumbWidth * (1 + dev)).clamp(baseThumbWidth * 0.7, segW * 1.4);
+                          final thumbHeight = (baseThumbHeight * (1 - dev)).clamp(baseThumbHeight * 0.7, baseThumbHeight * 1.3);
+                          final centerX = _pillController.value * segW + segW / 2;
+                          return Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              Row(
+                                children: filterKeys.asMap().entries.map((entry) {
+                                  final isCommitted = entry.key == committedIndex;
+                                  return Expanded(
+                                    child: GestureDetector(
+                                      behavior: HitTestBehavior.opaque,
+                                      onTap: () {
+                                        setState(() {
+                                          filter = entry.value;
+                                          _resetPaging();
+                                        });
+                                        _animatePillTo(entry.key);
+                                      },
+                                      child: Center(
+                                        child: AnimatedDefaultTextStyle(
+                                          duration: const Duration(milliseconds: 160),
+                                          style: TextStyle(
+                                            fontFamily: 'Satoshi',
+                                            fontSize: 13,
+                                            fontWeight: isCommitted ? FontWeight.w800 : FontWeight.w600,
+                                            color: isCommitted ? context.textPrimary : context.textMuted,
+                                          ),
+                                          child: Text(Strings.t(lang, 'filter_${entry.value}')),
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                          AnimatedPositioned(
-                            duration: _isFilterDragging ? Duration.zero : const Duration(milliseconds: 420),
-                            curve: const Cubic(0.34, 1.35, 0.64, 1.0),
-                            left: thumbLeft,
-                            top: 0,
-                            bottom: 0,
-                            width: thumbWidth,
-                            child: Stack(
-                              clipBehavior: Clip.none,
-                              children: [
-                                IgnorePointer(
+                                  );
+                                }).toList(),
+                              ),
+                              Positioned(
+                                left: centerX - thumbWidth / 2,
+                                top: (trackHeight - trackPadding * 2 - thumbHeight) / 2,
+                                width: thumbWidth,
+                                height: thumbHeight,
+                                child: IgnorePointer(
                                   child: liquid_glass.LiquidGlassShadow(
-                                    blur: 12,
-                                    opacity: context.isDark ? 0.24 : 0.12,
-                                    offset: const Offset(0, 3),
+                                    blur: 10,
+                                    opacity: context.isDark ? 0.22 : 0.10,
+                                    offset: const Offset(0, 2),
                                     cornerRadius: pillRadius,
                                     child: liquid_glass.LiquidGlassLens(
                                       style: liquid_glass.LiquidGlassStyle(
                                         shape: liquid_glass.LiquidGlassShape.continuousRoundedRectangle(cornerRadius: pillRadius),
                                         appearance: liquid_glass.LiquidGlassAppearance(
-                                          color: Colors.white.withOpacity(context.isDark ? 0.20 : 0.55),
-                                          blur: const liquid_glass.LiquidGlassBlur(sigmaX: 2.5, sigmaY: 2.5),
-                                          saturation: context.isDark ? 1.1 : 1.3,
+                                          color: Colors.white.withOpacity(context.isDark ? 0.14 : 0.40),
+                                          saturation: context.isDark ? 1.05 : 1.2,
                                         ),
                                         refraction: const liquid_glass.LiquidGlassRefraction(
-                                          distortion: 0.10,
-                                          distortionWidth: 24,
-                                          magnification: 1.06,
+                                          distortion: 0.11,
+                                          distortionWidth: 26,
+                                          magnification: 1.08,
                                           chromaticAberration: 0.004,
                                         ),
                                       ),
@@ -3183,27 +3226,10 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> {
                                     ),
                                   ),
                                 ),
-                                Positioned.fill(
-                                  child: IgnorePointer(
-                                    child: Center(
-                                      child: Text(
-                                        selectedLabel,
-                                        overflow: TextOverflow.visible,
-                                        softWrap: false,
-                                        style: TextStyle(
-                                          fontFamily: 'Satoshi',
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w800,
-                                          color: context.textPrimary,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
+                              ),
+                            ],
+                          );
+                        },
                       ),
                     ),
                   );
