@@ -943,6 +943,8 @@ class LiquidGlass extends StatelessWidget {
     return RepaintBoundary(
       child: GlassContainer(
         shape: LiquidRoundedRectangle(borderRadius: borderRadius),
+        useOwnLayer: true,
+        quality: GlassQuality.premium,
         settings: LiquidGlassSettings(
           glassColor: base.withOpacity(opacity),
           blur: useBlur ? blur : 0,
@@ -1036,6 +1038,8 @@ class LiquidGlassLens extends StatelessWidget {
   Widget build(BuildContext context) {
     return GlassContainer(
       shape: LiquidRoundedRectangle(borderRadius: style.shape.cornerRadius),
+      useOwnLayer: true,
+      quality: GlassQuality.premium,
       settings: LiquidGlassSettings(
         glassColor: style.appearance.color,
         blur: style.appearance.blur.sigmaX,
@@ -3780,6 +3784,8 @@ class CategorySettingsPage extends ConsumerWidget {
                           },
                           width: 56,
                           height: 28,
+                          quality: GlassQuality.premium,
+                          useOwnLayer: true,
                         ),
                       ],
                     ),
