@@ -940,11 +940,22 @@ class LiquidGlass extends StatelessWidget {
     final isDark = context.isDark;
     final base = tint ?? Colors.white;
     final opacity = ((isDark ? 0.34 : 0.55) * intensity).clamp(0.0, 1.0);
-    final content = DecoratedBox(
+    final rimColor = borderColor ?? (isDark ? Colors.white.withOpacity(0.22) : Colors.white.withOpacity(0.75));
+    final content = Container(
       decoration: BoxDecoration(
-        color: base.withOpacity(opacity),
         borderRadius: BorderRadius.circular(borderRadius),
-        border: borderColor != null ? Border.all(color: borderColor!, width: 1) : null,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            base.withOpacity((opacity + (isDark ? 0.10 : 0.14)).clamp(0.0, 1.0)),
+            base.withOpacity(opacity),
+          ],
+        ),
+        border: Border.all(color: rimColor, width: 1),
+        boxShadow: [
+          BoxShadow(color: Colors.white.withOpacity(isDark ? 0.06 : 0.4), blurRadius: 0, spreadRadius: -0.6, offset: const Offset(0, 0.6)),
+        ],
       ),
       child: child,
     );
