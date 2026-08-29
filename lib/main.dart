@@ -2166,8 +2166,10 @@ class _HamburgerMorphMenuState extends ConsumerState<HamburgerMorphMenu> with Si
                           ),
                         ),
                       ),
+                      ],
                     ),
-                  );
+                  ),
+                );
                 },
               ),
             ),
@@ -2522,7 +2524,9 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> with SingleTicker
                           ),
                         ),
                       ),
+                      ],
                     ),
+                  ),
                   );
                 },
               ),
@@ -2804,7 +2808,9 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
                           ),
                         ),
                       ),
+                      ],
                     ),
+                  ),
                   );
                 },
               ),
