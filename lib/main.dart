@@ -2585,44 +2585,49 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> with Si
                     child: SizedBox(
                       width: size.width,
                       height: size.height,
-                      child: liquid_glass.LiquidGlassView(
-                        backgroundWidget: const SizedBox.expand(),
-                        children: [
-                          liquid_glass.LiquidGlass(
-                            width: size.width,
-                            height: size.height,
-                            magnification: 1.0,
-                            distortion: 0.1,
-                            distortionWidth: 50,
-                            position: liquid_glass.LiquidGlassOffsetPosition(left: 0, top: 0),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(radius),
-                              child: Stack(
-                                children: [
-                                  if (closedOpacity > 0)
-                                    Positioned(
-                                      left: (size.width - _closedSize.width) / 2,
-                                      top: 0,
-                                      width: _closedSize.width,
-                                      height: _closedSize.height,
-                                      child: Opacity(
-                                        opacity: closedOpacity,
-                                        child: _ClosedCardChip(cardLabel: _labelFor(cards, selected)),
-                                      ),
-                                    ),
-                                  if (openOpacity > 0)
-                                    Opacity(
-                                      opacity: openOpacity,
-                                      child: Transform.translate(
-                                        offset: Offset(0, openOffset),
-                                        child: menuChild,
-                                      ),
-                                    ),
-                                ],
-                              ),
+                      child: liquid_glass.LiquidGlassLens(
+                        style: liquid_glass.LiquidGlassStyle(
+                          shape: liquid_glass.LiquidGlassShape.roundedRectangle(cornerRadius: radius),
+                          appearance: liquid_glass.LiquidGlassAppearance(
+                            color: (context.isDark ? Colors.black : Colors.white).withOpacity(glassT > 0.8 ? 0.28 : 0.18),
+                            blur: liquid_glass.LiquidGlassBlur(sigmaX: 6, sigmaY: 6),
+                            shadow: liquid_glass.LiquidGlassShadow(
+                              color: Colors.black.withOpacity(0.22),
+                              blurRadius: 14,
+                              offset: const Offset(0, 5),
                             ),
                           ),
-                        ],
+                          refraction: liquid_glass.LiquidGlassRefraction(
+                            distortion: 0.1,
+                            distortionWidth: 50,
+                          ),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(radius),
+                          child: Stack(
+                            children: [
+                              if (closedOpacity > 0)
+                                Positioned(
+                                  left: (size.width - _closedSize.width) / 2,
+                                  top: 0,
+                                  width: _closedSize.width,
+                                  height: _closedSize.height,
+                                  child: Opacity(
+                                    opacity: closedOpacity,
+                                    child: _ClosedCardChip(cardLabel: _labelFor(cards, selected)),
+                                  ),
+                                ),
+                              if (openOpacity > 0)
+                                Opacity(
+                                  opacity: openOpacity,
+                                  child: Transform.translate(
+                                    offset: Offset(0, openOffset),
+                                    child: menuChild,
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   );
