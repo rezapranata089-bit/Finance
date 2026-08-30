@@ -2636,23 +2636,10 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
               Text(Strings.t(lang, 'transactions_title'), style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 32, color: context.textPrimary)),
               Text(Strings.t(lang, 'transactions_subtitle'), style: TextStyle(color: context.textMuted)),
               const SizedBox(height: 22),
-              Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(22),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(context.isDark ? 0.28 : 0.12),
-                      blurRadius: 14,
-                      spreadRadius: -2,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: GlassSearchBar(
-                  placeholder: Strings.t(lang, 'search_transactions'),
-                  quality: GlassQuality.standard,
-                  onChanged: (v) => setState(() { query = v; _resetPaging(); }),
-                ),
+              GlassSearchBar(
+                placeholder: Strings.t(lang, 'search_transactions'),
+                quality: GlassQuality.standard,
+                onChanged: (v) => setState(() { query = v; _resetPaging(); }),
               ),
               const SizedBox(height: 14),
               GlassSegmentedControl(
