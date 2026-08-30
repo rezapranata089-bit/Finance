@@ -2712,9 +2712,9 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
                               borderRadius: BorderRadius.circular(thumbHeight / 2),
                               boxShadow: [
                                 BoxShadow(
-                                  color: Colors.black.withOpacity(context.isDark ? 0.45 : 0.28),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 3),
+                                  color: Colors.black.withOpacity(context.isDark ? 0.28 : 0.16),
+                                  blurRadius: 7,
+                                  offset: const Offset(0, 2),
                                 ),
                               ],
                             ),
