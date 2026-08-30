@@ -2618,7 +2618,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
     final items = all.where((e) =>
         (filter == 'all' || (filter == 'income' ? e.income : !e.income)) &&
         (cardFilter == null || e.cardIndex == cardFilter) &&
-        e.amount >= minAmountFilter &&
+        (!_minAmountExpanded || e.amount >= minAmountFilter) &&
         e.title.toLowerCase().contains(query.toLowerCase())).toList();
     final visibleCount = _displayCount < items.length ? _displayCount : items.length;
     final hasMore = visibleCount < items.length;
@@ -2681,69 +2681,92 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
                 ),
               ),
               const SizedBox(height: 18),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Nominal minimal', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: context.textMuted)),
-                  Text(rupiah(minAmountFilter), style: TextStyle(fontFamily: 'Satoshi', fontSize: 12, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.primary)),
-                ],
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => setState(() => _minAmountExpanded = !_minAmountExpanded),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('Nominal minimal', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: context.textMuted)),
+                        const SizedBox(width: 4),
+                        AnimatedRotation(
+                          turns: _minAmountExpanded ? 0.5 : 0.0,
+                          duration: const Duration(milliseconds: 200),
+                          child: Icon(SolarIconsOutline.altArrowDown, size: 14, color: context.iconMuted),
+                        ),
+                      ],
+                    ),
+                    if (_minAmountExpanded)
+                      Text(rupiah(minAmountFilter), style: TextStyle(fontFamily: 'Satoshi', fontSize: 12, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.primary)),
+                  ],
+                ),
               ),
-              const SizedBox(height: 4),
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  const thumbRadius = 15.0;
-                  const thumbWidth = thumbRadius * 2.6;
-                  const thumbHeight = thumbRadius * 1.6;
-                  const widgetHeight = thumbRadius * 2 + 16;
-                  final trackWidth = constraints.maxWidth - thumbRadius * 2;
-                  final normalized = ((minAmountFilter - 0) / (_maxAmountFilter - 0)).clamp(0.0, 1.0);
-                  final thumbCenterX = thumbRadius + trackWidth * normalized;
-                  const topPosition = (widgetHeight - thumbHeight) / 2;
-                  return Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      Positioned(
-                        left: thumbCenterX - thumbRadius,
-                        top: topPosition,
-                        child: IgnorePointer(
-                          child: AnimatedOpacity(
-                            opacity: _sliderDragging ? 0.0 : 1.0,
-                            duration: const Duration(milliseconds: 220),
-                            curve: Curves.easeOut,
-                            child: Container(
-                              width: thumbWidth,
-                              height: thumbHeight,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(thumbHeight / 2),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.black.withOpacity(context.isDark ? 0.28 : 0.16),
-                                    blurRadius: 7,
-                                    offset: const Offset(0, 2),
+              AnimatedCrossFade(
+                duration: const Duration(milliseconds: 220),
+                crossFadeState: _minAmountExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                firstChild: const SizedBox(width: double.infinity, height: 0),
+                secondChild: Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      const thumbRadius = 15.0;
+                      const thumbWidth = thumbRadius * 2.6;
+                      const thumbHeight = thumbRadius * 1.6;
+                      const widgetHeight = thumbRadius * 2 + 16;
+                      final trackWidth = constraints.maxWidth - thumbRadius * 2;
+                      final normalized = ((minAmountFilter - 0) / (_maxAmountFilter - 0)).clamp(0.0, 1.0);
+                      final thumbCenterX = thumbRadius + trackWidth * normalized;
+                      const topPosition = (widgetHeight - thumbHeight) / 2;
+                      return Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Positioned(
+                            left: thumbCenterX - thumbRadius,
+                            top: topPosition,
+                            child: IgnorePointer(
+                              child: AnimatedOpacity(
+                                opacity: _sliderDragging ? 0.0 : 1.0,
+                                duration: const Duration(milliseconds: 220),
+                                curve: Curves.easeOut,
+                                child: Container(
+                                  width: thumbWidth,
+                                  height: thumbHeight,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(thumbHeight / 2),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(context.isDark ? 0.28 : 0.16),
+                                        blurRadius: 7,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
                                   ),
-                                ],
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ),
-                      GlassSlider(
-                        value: minAmountFilter,
-                        min: 0,
-                        max: _maxAmountFilter,
-                        divisions: 20,
-                        activeColor: Theme.of(context).colorScheme.primary,
-                        quality: GlassQuality.premium,
-                        onChangeStart: (_) => setState(() => _sliderDragging = true),
-                        onChangeEnd: (_) => setState(() => _sliderDragging = false),
-                        onChanged: (v) => setState(() {
-                          minAmountFilter = v;
-                          _resetPaging();
-                        }),
-                      ),
-                    ],
-                  );
-                },
+                          GlassSlider(
+                            value: minAmountFilter,
+                            min: 0,
+                            max: _maxAmountFilter,
+                            divisions: 20,
+                            activeColor: Theme.of(context).colorScheme.primary,
+                            quality: GlassQuality.premium,
+                            onChangeStart: (_) => setState(() => _sliderDragging = true),
+                            onChangeEnd: (_) => setState(() => _sliderDragging = false),
+                            onChanged: (v) => setState(() {
+                              minAmountFilter = v;
+                              _resetPaging();
+                            }),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
               ),
               const SizedBox(height: 16),
             ],
