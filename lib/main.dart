@@ -940,11 +940,7 @@ class LiquidGlass extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = context.isDark;
     final base = tint ?? Colors.white;
-    final glowColor = isDark ? Colors.white : Theme.of(context).colorScheme.primary;
-    final rimColor = borderColor ?? glowColor.withOpacity(isDark ? 0.55 : 0.45);
-    final glowShadows = [
-      BoxShadow(color: glowColor.withOpacity(isDark ? 0.22 : 0.16), blurRadius: 10, spreadRadius: 0),
-    ];
+    final rimColor = borderColor ?? Colors.white.withOpacity(isDark ? 0.45 : 0.85);
 
     if (!useBlur) {
       final opacity = ((isDark ? 0.34 : 0.86) * intensity).clamp(0.0, 1.0);
@@ -962,7 +958,6 @@ class LiquidGlass extends StatelessWidget {
           border: Border.all(color: rimColor, width: 1.2),
           boxShadow: [
             BoxShadow(color: isDark ? Colors.transparent : Colors.black.withOpacity(0.05), blurRadius: 6, spreadRadius: -2, offset: const Offset(0, 2)),
-            ...glowShadows,
           ],
         ),
         child: child,
@@ -974,7 +969,6 @@ class LiquidGlass extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(borderRadius),
         border: Border.all(color: rimColor, width: 1.2),
-        boxShadow: glowShadows,
       ),
       child: GlassContainer(
         shape: LiquidRoundedRectangle(borderRadius: borderRadius),
