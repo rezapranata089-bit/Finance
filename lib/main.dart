@@ -2104,6 +2104,10 @@ class _HomePageState extends ConsumerState<HomePage> {
 class HamburgerMorphMenu extends ConsumerWidget {
   const HamburgerMorphMenu({super.key});
 
+  static const double _itemHeight = 40.0;
+  static const double _dividerHeight = 8.0;
+  static const double _iconSize = 18.0;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final lang = ref.watch(langProvider);
@@ -2112,8 +2116,13 @@ class HamburgerMorphMenu extends ConsumerWidget {
     final initial = profile.name.isNotEmpty ? profile.name.substring(0, 1).toUpperCase() : '?';
 
     return GlassMenu(
+      menuWidth: 188,
+      menuBorderRadius: 26,
+      itemBorderRadius: 18,
       items: [
         GlassMenuItem(
+          height: _itemHeight,
+          iconSize: _iconSize,
           title: profile.name.isNotEmpty ? profile.name : Strings.t(lang, 'view_profile'),
           icon: ProfileAvatar(
             photoPath: profile.photoPath,
@@ -2124,8 +2133,10 @@ class HamburgerMorphMenu extends ConsumerWidget {
           ),
           onTap: () => ref.read(tabProvider.notifier).state = 3,
         ),
-        const GlassMenuDivider(),
+        const GlassMenuDivider(height: _dividerHeight),
         GlassMenuItem(
+          height: _itemHeight,
+          iconSize: _iconSize,
           title: isDark ? Strings.t(lang, 'light') : Strings.t(lang, 'dark'),
           icon: Icon(isDark ? SolarIconsOutline.sun : SolarIconsOutline.moon),
           onTap: () {
@@ -2135,16 +2146,22 @@ class HamburgerMorphMenu extends ConsumerWidget {
           },
         ),
         GlassMenuItem(
+          height: _itemHeight,
+          iconSize: _iconSize,
           title: Strings.t(lang, 'appearance'),
           icon: const Icon(SolarIconsOutline.palette),
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ThemeSelectionPage())),
         ),
         GlassMenuItem(
+          height: _itemHeight,
+          iconSize: _iconSize,
           title: Strings.t(lang, 'language'),
           icon: const Icon(Icons.language),
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LanguageSelectionPage())),
         ),
         GlassMenuItem(
+          height: _itemHeight,
+          iconSize: _iconSize,
           title: Strings.t(lang, 'notifications'),
           icon: const Icon(SolarIconsOutline.bell),
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsPage())),
@@ -2177,6 +2194,10 @@ class HamburgerMorphMenu extends ConsumerWidget {
 class MoreMorphMenu extends ConsumerWidget {
   const MoreMorphMenu({super.key});
 
+  static const double _itemHeight = 40.0;
+  static const double _dividerHeight = 8.0;
+  static const double _iconSize = 18.0;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = context.isDark;
@@ -2185,30 +2206,43 @@ class MoreMorphMenu extends ConsumerWidget {
     return Column(
       children: [
         GlassMenu(
+          menuWidth: 188,
+          menuBorderRadius: 26,
+          itemBorderRadius: 18,
           items: [
             GlassMenuItem(
+              height: _itemHeight,
+              iconSize: _iconSize,
               title: Strings.t(lang, 'account_wallet'),
               icon: const Icon(SolarIconsOutline.wallet),
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CardManagementPage())),
             ),
             GlassMenuItem(
+              height: _itemHeight,
+              iconSize: _iconSize,
               title: Strings.t(lang, 'receivables'),
               icon: const Icon(SolarIconsOutline.usersGroupTwoRounded),
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoanManagementPage())),
             ),
-            const GlassMenuDivider(),
+            const GlassMenuDivider(height: _dividerHeight),
             GlassMenuItem(
+              height: _itemHeight,
+              iconSize: _iconSize,
               title: Strings.t(lang, 'appearance'),
               icon: const Icon(SolarIconsOutline.palette),
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ThemeSelectionPage())),
             ),
             GlassMenuItem(
+              height: _itemHeight,
+              iconSize: _iconSize,
               title: Strings.t(lang, 'language'),
               icon: const Icon(Icons.language),
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LanguageSelectionPage())),
             ),
-            const GlassMenuDivider(),
+            const GlassMenuDivider(height: _dividerHeight),
             GlassMenuItem(
+              height: _itemHeight,
+              iconSize: _iconSize,
               title: Strings.t(lang, 'savings_target'),
               icon: const Icon(SolarIconsOutline.safeSquare),
               onTap: () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(Strings.t(lang, 'not_available').replaceAll('{name}', Strings.t(lang, 'savings_target'))))),
