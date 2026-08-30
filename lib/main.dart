@@ -1968,22 +1968,11 @@ class _HomePageState extends ConsumerState<HomePage> {
               Positioned.fill(
                 child: IgnorePointer(
                   child: RepaintBoundary(
-                    child: GlassContainer(
-                      shape: const LiquidRoundedRectangle(borderRadius: 32),
-                      useOwnLayer: true,
-                      quality: GlassQuality.premium,
-                      settings: LiquidGlassSettings(
-                        blur: 18,
-                        thickness: 30,
-                        glassColor: isDark ? const Color.fromRGBO(0, 0, 0, 0.55) : const Color.fromRGBO(255, 255, 255, 0.12),
-                        whitenStrength: 0.0,
-                        lightIntensity: isDark ? 0.12 : 0.95,
-                        ambientStrength: isDark ? 0.08 : 0.55,
-                        saturation: isDark ? 1.6 : 1.9,
-                        refractiveIndex: isDark ? 0.18 : 1.85,
-                        chromaticAberration: isDark ? 0.0 : 2.2,
-                        fresnelStrength: isDark ? 0.0 : 1.0,
-                        glowIntensity: isDark ? 0.0 : 0.75,
+                    child: CustomPaint(
+                      painter: BottomRoundedBorderPainter(
+                        color: isDark ? context.borderColor : Colors.white.withOpacity(0.25),
+                        highlightColor: isDark ? Colors.white.withOpacity(0.3) : Colors.white.withOpacity(0.95),
+                        radius: 32,
                       ),
                     ),
                   ),
