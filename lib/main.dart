@@ -2669,6 +2669,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
                       child: ChoiceChip(
                         label: Text(Strings.t(lang, 'all_accounts')),
                         selected: cardFilter == null,
+                        shape: const StadiumBorder(),
                         onSelected: (_) => setState(() { cardFilter = null; _resetPaging(); }),
                       ),
                     ),
@@ -2678,6 +2679,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
                             child: ChoiceChip(
                               label: Text(e.value.name),
                               selected: cardFilter == e.key,
+                              shape: const StadiumBorder(),
                               onSelected: (_) => setState(() { cardFilter = e.key; _resetPaging(); }),
                             ),
                           ),
