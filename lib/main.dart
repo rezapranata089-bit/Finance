@@ -2131,7 +2131,9 @@ class HamburgerMorphMenu extends ConsumerWidget {
 
   static const double _itemHeight = 40.0;
   static const double _dividerHeight = 8.0;
-  static const double _iconSize = 15.0;
+  static const double _iconSize = 18.0;
+  static TextStyle _titleStyle(BuildContext context) =>
+      TextStyle(color: context.textPrimary.withOpacity(0.9), fontSize: 13.5, fontWeight: FontWeight.w400);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -2148,6 +2150,7 @@ class HamburgerMorphMenu extends ConsumerWidget {
         GlassMenuItem(
           height: _itemHeight,
           iconSize: _iconSize,
+          titleStyle: _titleStyle(context),
           title: profile.name.isNotEmpty ? profile.name : Strings.t(lang, 'view_profile'),
           icon: ProfileAvatar(
             photoPath: profile.photoPath,
@@ -2162,6 +2165,7 @@ class HamburgerMorphMenu extends ConsumerWidget {
         GlassMenuItem(
           height: _itemHeight,
           iconSize: _iconSize,
+          titleStyle: _titleStyle(context),
           title: isDark ? Strings.t(lang, 'light') : Strings.t(lang, 'dark'),
           icon: Icon(isDark ? SolarIconsOutline.sun : SolarIconsOutline.moon),
           onTap: () {
@@ -2173,6 +2177,7 @@ class HamburgerMorphMenu extends ConsumerWidget {
         GlassMenuItem(
           height: _itemHeight,
           iconSize: _iconSize,
+          titleStyle: _titleStyle(context),
           title: Strings.t(lang, 'appearance'),
           icon: const Icon(SolarIconsOutline.palette),
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ThemeSelectionPage())),
@@ -2180,6 +2185,7 @@ class HamburgerMorphMenu extends ConsumerWidget {
         GlassMenuItem(
           height: _itemHeight,
           iconSize: _iconSize,
+          titleStyle: _titleStyle(context),
           title: Strings.t(lang, 'language'),
           icon: const Icon(Icons.language),
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LanguageSelectionPage())),
@@ -2187,6 +2193,7 @@ class HamburgerMorphMenu extends ConsumerWidget {
         GlassMenuItem(
           height: _itemHeight,
           iconSize: _iconSize,
+          titleStyle: _titleStyle(context),
           title: Strings.t(lang, 'notifications'),
           icon: const Icon(SolarIconsOutline.bell),
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsPage())),
@@ -2222,7 +2229,9 @@ class MoreMorphMenu extends ConsumerStatefulWidget {
 
   static const double _itemHeight = 40.0;
   static const double _dividerHeight = 8.0;
-  static const double _iconSize = 15.0;
+  static const double _iconSize = 18.0;
+  static TextStyle _titleStyle(BuildContext context) =>
+      TextStyle(color: context.textPrimary.withOpacity(0.9), fontSize: 13.5, fontWeight: FontWeight.w400);
   // 5 items + 2 dividers + 24 padding (12 top + 12 bottom) + 6 gaps of 2px each.
   static const double _estimatedMenuHeight = 5 * _itemHeight + 2 * _dividerHeight + 24 + 12;
 
@@ -2276,6 +2285,7 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> {
             GlassMenuItem(
               height: MoreMorphMenu._itemHeight,
               iconSize: MoreMorphMenu._iconSize,
+              titleStyle: MoreMorphMenu._titleStyle(context),
               title: Strings.t(lang, 'account_wallet'),
               icon: const Icon(SolarIconsOutline.wallet),
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CardManagementPage())),
@@ -2283,6 +2293,7 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> {
             GlassMenuItem(
               height: MoreMorphMenu._itemHeight,
               iconSize: MoreMorphMenu._iconSize,
+              titleStyle: MoreMorphMenu._titleStyle(context),
               title: Strings.t(lang, 'receivables'),
               icon: const Icon(SolarIconsOutline.usersGroupTwoRounded),
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoanManagementPage())),
@@ -2291,6 +2302,7 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> {
             GlassMenuItem(
               height: MoreMorphMenu._itemHeight,
               iconSize: MoreMorphMenu._iconSize,
+              titleStyle: MoreMorphMenu._titleStyle(context),
               title: Strings.t(lang, 'appearance'),
               icon: const Icon(SolarIconsOutline.palette),
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ThemeSelectionPage())),
@@ -2298,6 +2310,7 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> {
             GlassMenuItem(
               height: MoreMorphMenu._itemHeight,
               iconSize: MoreMorphMenu._iconSize,
+              titleStyle: MoreMorphMenu._titleStyle(context),
               title: Strings.t(lang, 'language'),
               icon: const Icon(Icons.language),
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LanguageSelectionPage())),
@@ -2306,6 +2319,7 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> {
             GlassMenuItem(
               height: MoreMorphMenu._itemHeight,
               iconSize: MoreMorphMenu._iconSize,
+              titleStyle: MoreMorphMenu._titleStyle(context),
               title: Strings.t(lang, 'savings_target'),
               icon: const Icon(SolarIconsOutline.safeSquare),
               onTap: () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(Strings.t(lang, 'not_available').replaceAll('{name}', Strings.t(lang, 'savings_target'))))),
@@ -2410,9 +2424,9 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> {
         GlassMenuItem(
           title: Strings.t(lang, 'all_accounts'),
           icon: const Icon(Icons.dashboard_outlined),
-          iconSize: 15,
+          titleStyle: TextStyle(color: context.textPrimary.withOpacity(0.9), fontSize: 13.5, fontWeight: FontWeight.w400),
           isSelected: rawSelected == -1,
-          trailing: rawSelected == -1 ? Icon(Icons.check_rounded, color: primary, size: 14) : null,
+          trailing: rawSelected == -1 ? Icon(Icons.check_rounded, color: primary, size: 18) : null,
           height: _itemHeight,
           onTap: () => _applySelection(-1),
         ),
@@ -2439,9 +2453,9 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> {
                       return GlassMenuItem(
                         title: cards[i].name,
                         icon: const Icon(SolarIconsOutline.card),
-                        iconSize: 15,
+                        titleStyle: TextStyle(color: context.textPrimary.withOpacity(0.9), fontSize: 13.5, fontWeight: FontWeight.w400),
                         isSelected: isCurrent,
-                        trailing: isCurrent ? Icon(Icons.check_rounded, color: primary, size: 14) : null,
+                        trailing: isCurrent ? Icon(Icons.check_rounded, color: primary, size: 18) : null,
                         height: _itemHeight,
                         onTap: () {
                           _menuController.close();
@@ -2456,7 +2470,7 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> {
         GlassMenuItem(
           title: Strings.t(lang, 'add_card'),
           icon: const Icon(SolarIconsOutline.addCircle),
-          iconSize: 15,
+          titleStyle: TextStyle(color: context.textPrimary.withOpacity(0.9), fontSize: 13.5, fontWeight: FontWeight.w400),
           height: _itemHeight,
           onTap: () => Future.microtask(() => showCardForm(context: context, ref: ref)),
         ),
