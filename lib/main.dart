@@ -2148,7 +2148,7 @@ class HamburgerMorphMenu extends ConsumerWidget {
       itemBorderRadius: 18,
       items: [
         GlassMenuItem(
-          height: _itemHeight,
+          height: 56,
           iconSize: _iconSize,
           titleStyle: _titleStyle(context),
           title: profile.name.isNotEmpty ? profile.name : Strings.t(lang, 'view_profile'),
@@ -2157,7 +2157,7 @@ class HamburgerMorphMenu extends ConsumerWidget {
             photoBytesBase64: profile.photoBytesBase64,
             photoVersion: profile.photoVersion,
             initial: initial,
-            radius: 12,
+            radius: 18,
           ),
           onTap: () => ref.read(tabProvider.notifier).state = 3,
         ),
