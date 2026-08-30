@@ -2243,6 +2243,7 @@ class CardSelectorButton extends ConsumerWidget {
           icon: const Icon(Icons.dashboard_outlined),
           isSelected: rawSelected == -1,
           trailing: rawSelected == -1 ? Icon(Icons.check_rounded, color: primary, size: 18) : null,
+          height: 38,
           onTap: () => ref.read(selectedCardProvider.notifier).state = -1,
         ),
         const GlassMenuDivider(),
@@ -2253,6 +2254,7 @@ class CardSelectorButton extends ConsumerWidget {
             icon: const Icon(SolarIconsOutline.card),
             isSelected: isCurrent,
             trailing: isCurrent ? Icon(Icons.check_rounded, color: primary, size: 18) : null,
+            height: 38,
             onTap: () => ref.read(selectedCardProvider.notifier).state = e.key,
           );
         }),
@@ -2260,6 +2262,7 @@ class CardSelectorButton extends ConsumerWidget {
         GlassMenuItem(
           title: Strings.t(lang, 'add_card'),
           icon: const Icon(SolarIconsOutline.addCircle),
+          height: 38,
           onTap: () => Future.microtask(() => showCardForm(context: context, ref: ref)),
         ),
       ],
@@ -3794,7 +3797,7 @@ class CardManagementPage extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                 cacheExtent: 600,
                 itemCount: cards.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 8),
+                separatorBuilder: (_, __) => const SizedBox(height: 12),
                 itemBuilder: (context, i) {
                   final card = cards[i];
                   return RepaintBoundary(
