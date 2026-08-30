@@ -2131,7 +2131,7 @@ class HamburgerMorphMenu extends ConsumerWidget {
 
   static const double _itemHeight = 40.0;
   static const double _dividerHeight = 8.0;
-  static const double _iconSize = 18.0;
+  static const double _iconSize = 15.0;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -2141,7 +2141,7 @@ class HamburgerMorphMenu extends ConsumerWidget {
     final initial = profile.name.isNotEmpty ? profile.name.substring(0, 1).toUpperCase() : '?';
 
     return GlassMenu(
-      menuWidth: 224,
+      menuWidth: 196,
       menuBorderRadius: 26,
       itemBorderRadius: 18,
       items: [
@@ -2222,7 +2222,7 @@ class MoreMorphMenu extends ConsumerStatefulWidget {
 
   static const double _itemHeight = 40.0;
   static const double _dividerHeight = 8.0;
-  static const double _iconSize = 18.0;
+  static const double _iconSize = 15.0;
   // 5 items + 2 dividers + 24 padding (12 top + 12 bottom) + 6 gaps of 2px each.
   static const double _estimatedMenuHeight = 5 * _itemHeight + 2 * _dividerHeight + 24 + 12;
 
@@ -2269,7 +2269,7 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> {
       children: [
         GlassMenu(
           menuAlignment: _alignment,
-          menuWidth: 236,
+          menuWidth: 204,
           menuBorderRadius: 26,
           itemBorderRadius: 18,
           items: [
@@ -2410,8 +2410,9 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> {
         GlassMenuItem(
           title: Strings.t(lang, 'all_accounts'),
           icon: const Icon(Icons.dashboard_outlined),
+          iconSize: 15,
           isSelected: rawSelected == -1,
-          trailing: rawSelected == -1 ? Icon(Icons.check_rounded, color: primary, size: 18) : null,
+          trailing: rawSelected == -1 ? Icon(Icons.check_rounded, color: primary, size: 14) : null,
           height: _itemHeight,
           onTap: () => _applySelection(-1),
         ),
@@ -2438,8 +2439,9 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> {
                       return GlassMenuItem(
                         title: cards[i].name,
                         icon: const Icon(SolarIconsOutline.card),
+                        iconSize: 15,
                         isSelected: isCurrent,
-                        trailing: isCurrent ? Icon(Icons.check_rounded, color: primary, size: 18) : null,
+                        trailing: isCurrent ? Icon(Icons.check_rounded, color: primary, size: 14) : null,
                         height: _itemHeight,
                         onTap: () {
                           _menuController.close();
@@ -2454,6 +2456,7 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> {
         GlassMenuItem(
           title: Strings.t(lang, 'add_card'),
           icon: const Icon(SolarIconsOutline.addCircle),
+          iconSize: 15,
           height: _itemHeight,
           onTap: () => Future.microtask(() => showCardForm(context: context, ref: ref)),
         ),
