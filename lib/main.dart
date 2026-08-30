@@ -2229,6 +2229,8 @@ class HamburgerMorphMenu extends ConsumerWidget {
         saturation: isDark ? 1.0 : 1.35,
         refractiveIndex: isDark ? 1.05 : 1.85,
         chromaticAberration: isDark ? 0.0 : 2.2,
+        fresnelStrength: isDark ? 0.05 : 1.0,
+        glowIntensity: isDark ? 0.08 : 0.75,
       ),
       trigger: LiquidGlass(
         borderRadius: 999,
@@ -2360,6 +2362,8 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> {
             saturation: isDark ? 1.0 : 1.35,
             refractiveIndex: isDark ? 1.05 : 1.85,
             chromaticAberration: isDark ? 0.0 : 2.2,
+            fresnelStrength: isDark ? 0.05 : 1.0,
+            glowIntensity: isDark ? 0.08 : 0.75,
           ),
           triggerBuilder: (context, toggleMenu) => GestureDetector(
             onTap: () => _updateAlignmentThenToggle(toggleMenu),
@@ -2513,6 +2517,8 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> {
         saturation: isDark ? 1.0 : 1.35,
         refractiveIndex: isDark ? 1.05 : 1.85,
         chromaticAberration: isDark ? 0.0 : 2.2,
+        fresnelStrength: isDark ? 0.05 : 1.0,
+        glowIntensity: isDark ? 0.08 : 0.75,
       ),
       menuAlignment: GlassMenuAlignment.topCenter,
       menuWidth: 198,
