@@ -2688,17 +2688,54 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
                 ],
               ),
               const SizedBox(height: 4),
-              GlassSlider(
-                value: minAmountFilter,
-                min: 0,
-                max: _maxAmountFilter,
-                divisions: 20,
-                activeColor: Theme.of(context).colorScheme.primary,
-                quality: GlassQuality.premium,
-                onChanged: (v) => setState(() {
-                  minAmountFilter = v;
-                  _resetPaging();
-                }),
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  const thumbRadius = 15.0;
+                  const thumbWidth = thumbRadius * 2.6;
+                  const thumbHeight = thumbRadius * 1.6;
+                  const widgetHeight = thumbRadius * 2 + 16;
+                  const topPosition = (widgetHeight - thumbHeight) / 2;
+                  final trackWidth = constraints.maxWidth - thumbRadius * 2;
+                  final normalized = ((minAmountFilter - 0) / (_maxAmountFilter - 0)).clamp(0.0, 1.0);
+                  final thumbCenterX = thumbRadius + trackWidth * normalized;
+                  return Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Positioned(
+                        left: thumbCenterX - thumbWidth / 2,
+                        top: topPosition,
+                        child: IgnorePointer(
+                          child: Container(
+                            width: thumbWidth,
+                            height: thumbHeight,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(thumbHeight / 2),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(context.isDark ? 0.45 : 0.28),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      GlassSlider(
+                        value: minAmountFilter,
+                        min: 0,
+                        max: _maxAmountFilter,
+                        divisions: 20,
+                        activeColor: Theme.of(context).colorScheme.primary,
+                        quality: GlassQuality.premium,
+                        onChanged: (v) => setState(() {
+                          minAmountFilter = v;
+                          _resetPaging();
+                        }),
+                      ),
+                    ],
+                  );
+                },
               ),
               const SizedBox(height: 16),
             ],
