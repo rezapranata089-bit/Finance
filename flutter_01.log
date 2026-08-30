@@ -1,0 +1,102 @@
+Flutter crash report.
+Please report a bug at https://github.com/flutter/flutter/issues.
+
+## command
+
+flutter run -d web-server --web-port 8080
+
+## exception
+
+RPCError: ext.flutter.debugDumpRenderTree: (-32603) Unexpected DWDS error for callServiceExtension: TimeoutException after 0:00:10.000000: Service extension ext.flutter.debugDumpRenderTree timed out - received 0/1 responses
+
+```
+#0      new _OutstandingRequest (package:vm_service/src/vm_service.dart:278:34)
+#1      VmService._call.<anonymous closure> (package:vm_service/src/vm_service.dart:1960:25)
+#2      VmService._call (package:vm_service/src/vm_service.dart:1972:8)
+#3      VmService.callServiceExtension (package:vm_service/src/vm_service.dart:1911:14)
+#4      FlutterVmService._checkedCallServiceExtension (package:flutter_tools/src/vmservice.dart:786:28)
+#5      FlutterVmService.invokeFlutterExtensionRpcRaw (package:flutter_tools/src/vmservice.dart:804:49)
+#6      FlutterVmService.flutterDebugDumpRenderTree (package:flutter_tools/src/vmservice.dart:582:50)
+#7      ResidentHandlers.debugDumpRenderTree (package:flutter_tools/src/resident_runner.dart:637:53)
+<asynchronous suspension>
+#8      TerminalHandler.processTerminalInput (package:flutter_tools/src/resident_runner.dart:1937:7)
+<asynchronous suspension>
+```
+
+## flutter doctor
+
+```
+[32m[✓][39m Flutter (Channel stable, 3.47.1, on Debian GNU/Linux 13 (trixie) 6.17.0-PRoot-Distro, locale
+    en_US) [313ms]
+    [32m•[39m Flutter version 3.47.1 on channel stable at /root/flutter
+    [32m•[39m Upstream repository https://github.com/flutter/flutter.git
+    [32m•[39m Framework revision 6655482ec0 (11 days ago), 2026-08-19 10:07:23 -0700
+    [32m•[39m Engine revision 5d53178869
+    [32m•[39m Dart version 3.13.1
+    [32m•[39m DevTools version 2.60.0
+    [32m•[39m Feature flags: enable-web, enable-linux-desktop, enable-macos-desktop,
+      enable-windows-desktop, enable-android, enable-ios, cli-animations, enable-native-assets,
+      enable-record-use, enable-swift-package-manager, omit-legacy-version-file,
+      enable-lldb-debugging, enable-uiscene-migration
+
+[33m[!][39m Android toolchain - develop for Android devices (Android SDK version 34.0.0) [6.1s]
+    [32m•[39m Android SDK at /root/android-sdk
+    [32m•[39m Emulator version unknown
+    [31m✗[39m Flutter requires Android SDK 36 and the Android BuildTools 28.0.3
+      To update the Android SDK visit https://flutter.dev/to/linux-android-setup for detailed
+      instructions.
+    [32m•[39m All Android licenses accepted.
+
+[31m[✗][39m Chrome - develop for the web (Cannot find Chrome executable at google-chrome) [77ms]
+    [33m![39m Cannot find Chrome. Try setting CHROME_EXECUTABLE to a Chrome executable.
+
+[32m[✓][39m Linux toolchain - develop for Linux desktop [1,093ms]
+    [32m•[39m Debian clang version 19.1.7 (3+b1)
+    [32m•[39m cmake version 3.31.6
+    [32m•[39m ninja version 1.12.1
+    [32m•[39m pkg-config version 1.8.1
+    [33m![39m Unable to access driver information using 'eglinfo'.
+      It is likely available from your distribution (e.g.: apt install mesa-utils)
+
+[31m[☠][39m Connected device (the doctor check crashed)
+    [31m✗[39m Due to an error, the doctor check did not complete. If the error message below is not
+      helpful, please let us know about this issue at https://github.com/flutter/flutter/issues.
+    [31m✗[39m Error: Flutter failed to run "/root/android-sdk/platform-tools/adb devices -l". The file
+      or directory could not be found.
+      ProcessException: No such file or directory
+        Command: /root/android-sdk/platform-tools/adb devices -l
+      This can sometimes happen if the file was deleted or moved while the tool was running. Try
+      running "flutter clean" and try again.
+    [32m•[39m #0      throwToolExit (package:flutter_tools/src/base/common.dart:34:3)
+      #1      _throwFileSystemException
+      (package:flutter_tools/src/base/error_handling_io.dart:1492:3)
+      #2      _handlePosixException
+      (package:flutter_tools/src/base/error_handling_io.dart:1400:3)
+      #3      _onProcessException (package:flutter_tools/src/base/error_handling_io.dart:1350:5)
+      #4      _run (package:flutter_tools/src/base/error_handling_io.dart:1097:7)
+      <asynchronous suspension>
+      #5      _DefaultProcessUtils.run (package:flutter_tools/src/base/process.dart:369:37)
+      <asynchronous suspension>
+      #6      AndroidDevices.pollingGetDevices
+      (package:flutter_tools/src/android/android_device_discovery.dart:71:15)
+      <asynchronous suspension>
+      #7      PollingDeviceDiscovery._populateDevices
+      (package:flutter_tools/src/device.dart:558:36)
+      <asynchronous suspension>
+      #8      Future.wait.<anonymous closure> (dart:async/future.dart:567:21)
+      <asynchronous suspension>
+      #9      DeviceManager.refreshAllDevices (package:flutter_tools/src/device.dart:201:40)
+      <asynchronous suspension>
+      #10     DeviceValidator.validateImpl (package:flutter_tools/src/doctor.dart:781:34)
+      <asynchronous suspension>
+      #11     DoctorValidator.validate (package:flutter_tools/src/doctor_validator.dart:58:37)
+      <asynchronous suspension>
+      #12     Future.any.onValue (dart:async/future.dart:658:5)
+      <asynchronous suspension>
+
+
+[32m[✓][39m Network resources [663ms]
+    [32m•[39m All expected network resources are available.
+
+[33m![39m Doctor found issues in 3 categories.
+```
