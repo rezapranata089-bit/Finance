@@ -3895,7 +3895,7 @@ void _confirmDeleteTransaction(BuildContext context, WidgetRef ref, FinanceTrans
           child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(Strings.t(lang, 'delete_transaction_title'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: context.textPrimary)),
             const SizedBox(height: 12),
-            Text(Strings.t(lang, 'delete_transaction_confirm').replaceAll('{title}', item.title), style: TextStyle(fontSize: 14, height: 1.4, color: context.textMuted)),
+              Text(Strings.t(lang, 'delete_transaction_confirm').replaceAll('{title}', item.title), style: TextStyle(fontSize: 14, height: 1.4, color: isDark ? context.textMuted : const Color(0xFF4A4458))),
             const SizedBox(height: 18),
             Row(mainAxisAlignment: MainAxisAlignment.end, children: [
               TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(Strings.t(lang, 'cancel'))),
@@ -4164,7 +4164,7 @@ class CardManagementPage extends ConsumerWidget {
             child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(Strings.t(lang, 'delete_card_title'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: context.textPrimary)),
               const SizedBox(height: 12),
-              Text(Strings.t(lang, 'delete_card_confirm').replaceAll('{name}', card.name), style: TextStyle(fontSize: 14, height: 1.4, color: context.textMuted)),
+              Text(Strings.t(lang, 'delete_card_confirm').replaceAll('{name}', card.name), style: TextStyle(fontSize: 14, height: 1.4, color: isDark ? context.textMuted : const Color(0xFF4A4458))),
               const SizedBox(height: 18),
               Row(mainAxisAlignment: MainAxisAlignment.end, children: [
                 TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(Strings.t(lang, 'cancel'))),
@@ -4469,7 +4469,7 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
             child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(Strings.t(lang, 'delete_loan_title'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: context.textPrimary)),
               const SizedBox(height: 12),
-              Text(Strings.t(lang, 'delete_loan_confirm').replaceAll('{name}', loan.borrowerName), style: TextStyle(fontSize: 14, height: 1.4, color: context.textMuted)),
+              Text(Strings.t(lang, 'delete_loan_confirm').replaceAll('{name}', loan.borrowerName), style: TextStyle(fontSize: 14, height: 1.4, color: isDark ? context.textMuted : const Color(0xFF4A4458))),
               const SizedBox(height: 18),
               Row(mainAxisAlignment: MainAxisAlignment.end, children: [
                 TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(Strings.t(lang, 'cancel'))),
