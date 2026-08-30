@@ -957,7 +957,7 @@ class LiquidGlass extends StatelessWidget {
           ),
           border: Border.all(color: rimColor, width: 1.2),
           boxShadow: [
-            BoxShadow(color: isDark ? Colors.transparent : Colors.black.withOpacity(0.05), blurRadius: 6, spreadRadius: -2, offset: const Offset(0, 2)),
+            BoxShadow(color: Colors.black.withOpacity(isDark ? 0.28 : 0.12), blurRadius: 10, spreadRadius: -1, offset: const Offset(0, 3)),
           ],
         ),
         child: child,
@@ -969,6 +969,9 @@ class LiquidGlass extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(borderRadius),
         border: Border.all(color: rimColor, width: 1.2),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(isDark ? 0.28 : 0.12), blurRadius: 10, spreadRadius: -1, offset: const Offset(0, 3)),
+        ],
       ),
       child: GlassContainer(
         shape: LiquidRoundedRectangle(borderRadius: borderRadius),
