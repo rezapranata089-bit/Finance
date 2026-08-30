@@ -2163,7 +2163,7 @@ class HamburgerMorphMenu extends ConsumerWidget {
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsPage())),
         ),
       ],
-      child: Container(
+      trigger: Container(
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           boxShadow: [
@@ -2229,7 +2229,7 @@ class MoreMorphMenu extends ConsumerWidget {
               onTap: () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(Strings.t(lang, 'not_available').replaceAll('{name}', Strings.t(lang, 'savings_target'))))),
             ),
           ],
-          child: SizedBox(
+          trigger: SizedBox(
             width: 68,
             height: 42,
             child: LiquidGlass(
@@ -2282,7 +2282,7 @@ class CardSelectorButton extends ConsumerWidget {
           onTap: () => Future.microtask(() => showCardForm(context: context, ref: ref)),
         ),
       ],
-      child: _ClosedCardChip(
+      trigger: _ClosedCardChip(
         cardLabel: selected == -1 ? Strings.t(lang, 'all_accounts') : cards[selected].number,
         showArrow: true,
       ),
