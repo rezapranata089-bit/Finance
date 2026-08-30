@@ -2191,58 +2191,95 @@ class HamburgerMorphMenu extends ConsumerWidget {
   }
 }
 
-class MoreMorphMenu extends ConsumerWidget {
+class MoreMorphMenu extends ConsumerStatefulWidget {
   const MoreMorphMenu({super.key});
 
   static const double _itemHeight = 40.0;
   static const double _dividerHeight = 8.0;
   static const double _iconSize = 18.0;
+  // 5 items + 2 dividers + 24 padding (12 top + 12 bottom) + 6 gaps of 2px each.
+  static const double _estimatedMenuHeight = 5 * _itemHeight + 2 * _dividerHeight + 24 + 12;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MoreMorphMenu> createState() => _MoreMorphMenuState();
+}
+
+class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> {
+  final GlobalKey _triggerKey = GlobalKey();
+  GlassMenuAlignment _alignment = GlassMenuAlignment.bottomRight;
+
+  // Measures the trigger's live position right before opening, so the
+  // decision reacts to the current scroll offset instead of a stale value.
+  // Prefers opening UPWARD; only falls back to downward when the space
+  // above the trigger isn't enough to fit the menu.
+  void _updateAlignmentThenToggle(VoidCallback toggleMenu) {
+    final renderObject = _triggerKey.currentContext?.findRenderObject();
+    if (renderObject is RenderBox && renderObject.attached) {
+      final position = renderObject.localToGlobal(Offset.zero);
+      final size = renderObject.size;
+      final screenSize = MediaQuery.sizeOf(context);
+      final topInset = MediaQuery.paddingOf(context).top;
+      final spaceAbove = position.dy - topInset;
+      final isRightHalf = position.dx + size.width / 2 > screenSize.width / 2;
+      final preferUp = spaceAbove >= MoreMorphMenu._estimatedMenuHeight + 16;
+      final newAlignment = preferUp
+          ? (isRightHalf ? GlassMenuAlignment.bottomRight : GlassMenuAlignment.bottomLeft)
+          : (isRightHalf ? GlassMenuAlignment.topRight : GlassMenuAlignment.topLeft);
+      setState(() => _alignment = newAlignment);
+    }
+    // Wait one frame so GlassMenu rebuilds with the fresh alignment
+    // before the morph actually captures the trigger position.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) toggleMenu();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final isDark = context.isDark;
     final lang = ref.watch(langProvider);
 
     return Column(
       children: [
         GlassMenu(
+          menuAlignment: _alignment,
           menuWidth: 188,
           menuBorderRadius: 26,
           itemBorderRadius: 18,
           items: [
             GlassMenuItem(
-              height: _itemHeight,
-              iconSize: _iconSize,
+              height: MoreMorphMenu._itemHeight,
+              iconSize: MoreMorphMenu._iconSize,
               title: Strings.t(lang, 'account_wallet'),
               icon: const Icon(SolarIconsOutline.wallet),
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CardManagementPage())),
             ),
             GlassMenuItem(
-              height: _itemHeight,
-              iconSize: _iconSize,
+              height: MoreMorphMenu._itemHeight,
+              iconSize: MoreMorphMenu._iconSize,
               title: Strings.t(lang, 'receivables'),
               icon: const Icon(SolarIconsOutline.usersGroupTwoRounded),
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoanManagementPage())),
             ),
-            const GlassMenuDivider(height: _dividerHeight),
+            const GlassMenuDivider(height: MoreMorphMenu._dividerHeight),
             GlassMenuItem(
-              height: _itemHeight,
-              iconSize: _iconSize,
+              height: MoreMorphMenu._itemHeight,
+              iconSize: MoreMorphMenu._iconSize,
               title: Strings.t(lang, 'appearance'),
               icon: const Icon(SolarIconsOutline.palette),
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ThemeSelectionPage())),
             ),
             GlassMenuItem(
-              height: _itemHeight,
-              iconSize: _iconSize,
+              height: MoreMorphMenu._itemHeight,
+              iconSize: MoreMorphMenu._iconSize,
               title: Strings.t(lang, 'language'),
               icon: const Icon(Icons.language),
               onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LanguageSelectionPage())),
             ),
-            const GlassMenuDivider(height: _dividerHeight),
+            const GlassMenuDivider(height: MoreMorphMenu._dividerHeight),
             GlassMenuItem(
-              height: _itemHeight,
-              iconSize: _iconSize,
+              height: MoreMorphMenu._itemHeight,
+              iconSize: MoreMorphMenu._iconSize,
               title: Strings.t(lang, 'savings_target'),
               icon: const Icon(SolarIconsOutline.safeSquare),
               onTap: () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(Strings.t(lang, 'not_available').replaceAll('{name}', Strings.t(lang, 'savings_target'))))),
@@ -2258,16 +2295,20 @@ class MoreMorphMenu extends ConsumerWidget {
             refractiveIndex: 0.7,
             chromaticAberration: 0.0,
           ),
-          trigger: SizedBox(
-            width: 68,
-            height: 42,
-            child: LiquidGlass(
-              borderRadius: 16,
-              tint: isDark ? Colors.black : null,
-              intensity: isDark ? 1.6 : 1.0,
-              borderColor: isDark ? context.borderColor : null,
-              child: Center(
-                child: Icon(SolarIconsOutline.menuDots, color: isDark ? Colors.white : context.textPrimary, size: 22),
+          triggerBuilder: (context, toggleMenu) => GestureDetector(
+            onTap: () => _updateAlignmentThenToggle(toggleMenu),
+            child: SizedBox(
+              key: _triggerKey,
+              width: 68,
+              height: 42,
+              child: LiquidGlass(
+                borderRadius: 16,
+                tint: isDark ? Colors.black : null,
+                intensity: isDark ? 1.6 : 1.0,
+                borderColor: isDark ? context.borderColor : null,
+                child: Center(
+                  child: Icon(SolarIconsOutline.menuDots, color: isDark ? Colors.white : context.textPrimary, size: 22),
+                ),
               ),
             ),
           ),
