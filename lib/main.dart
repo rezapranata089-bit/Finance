@@ -1970,7 +1970,8 @@ class _HomePageState extends ConsumerState<HomePage> {
                   child: RepaintBoundary(
                     child: CustomPaint(
                       painter: BottomRoundedBorderPainter(
-                        color: isDark ? Colors.white.withOpacity(0.12) : Colors.white.withOpacity(0.78),
+                        color: isDark ? Colors.white.withOpacity(0.05) : Colors.white.withOpacity(0.25),
+                        highlightColor: isDark ? Colors.white.withOpacity(0.4) : Colors.white.withOpacity(0.95),
                         radius: 32,
                       ),
                     ),
@@ -3462,28 +3463,35 @@ class SimpleChartPainter extends CustomPainter {
 
 class BottomRoundedBorderPainter extends CustomPainter {
   final Color color;
+  final Color highlightColor;
   final double radius;
   final double strokeWidth;
-  const BottomRoundedBorderPainter({required this.color, required this.radius, this.strokeWidth = 1.2});
+  const BottomRoundedBorderPainter({required this.color, required this.highlightColor, required this.radius, this.strokeWidth = 1.2});
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = strokeWidth
-      ..strokeCap = StrokeCap.round;
     final path = Path()
       ..moveTo(0, size.height - radius)
       ..arcToPoint(Offset(radius, size.height), radius: Radius.circular(radius), clockwise: false)
       ..lineTo(size.width - radius, size.height)
       ..arcToPoint(Offset(size.width, size.height - radius), radius: Radius.circular(radius), clockwise: false);
+    final paint = Paint()
+      ..shader = LinearGradient(
+        colors: [color, highlightColor, color],
+        stops: const [0.0, 0.5, 1.0],
+      ).createShader(Rect.fromLTWH(0, size.height - radius, size.width, radius))
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.round;
     canvas.drawPath(path, paint);
   }
 
   @override
   bool shouldRepaint(covariant BottomRoundedBorderPainter oldDelegate) =>
-      oldDelegate.color != color || oldDelegate.radius != radius || oldDelegate.strokeWidth != strokeWidth;
+      oldDelegate.color != color ||
+      oldDelegate.highlightColor != highlightColor ||
+      oldDelegate.radius != radius ||
+      oldDelegate.strokeWidth != strokeWidth;
 }
 
 Future<void> showTransactionForm(BuildContext context, WidgetRef ref, bool income, {FinanceTransaction? existing}) async {
