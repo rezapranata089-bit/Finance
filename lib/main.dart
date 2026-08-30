@@ -2257,6 +2257,7 @@ class CardSelectorButton extends ConsumerWidget {
           onTap: () => Future.microtask(() => showCardForm(context: context, ref: ref)),
         ),
       ],
+      menuAlignment: GlassMenuAlignment.topCenter,
       trigger: _ClosedCardChip(
         cardLabel: selected == -1 ? Strings.t(lang, 'all_accounts') : cards[selected].number,
         showArrow: true,
