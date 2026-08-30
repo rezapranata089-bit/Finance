@@ -2460,7 +2460,7 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> {
           height: _itemHeight,
           onTap: () => _applySelection(-1),
         ),
-        const GlassMenuDivider(),
+        GlassMenuDivider(height: _dividerHeight),
         SizedBox(
           height: cardsAreaHeight,
           child: cards.isEmpty
@@ -2497,7 +2497,7 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> {
                   ),
                 ),
         ),
-        const GlassMenuDivider(),
+        GlassMenuDivider(height: _dividerHeight),
         GlassMenuItem(
           title: Strings.t(lang, 'add_card'),
           icon: const Icon(SolarIconsOutline.addCircle),
