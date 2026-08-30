@@ -2255,6 +2255,7 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> {
     final selected = rawSelected == -1 ? -1 : (rawSelected >= cards.length ? cards.length - 1 : (rawSelected < 0 ? 0 : rawSelected));
     final lang = ref.watch(langProvider);
     final primary = Theme.of(context).colorScheme.primary;
+    final isDark = context.isDark;
 
     final visibleCardCount = cards.length < _maxVisibleCards ? cards.length : _maxVisibleCards;
     final cardsAreaHeight = visibleCardCount == 0 ? 0.0 : visibleCardCount * _itemHeight + (visibleCardCount - 1) * _itemGap;
@@ -2323,6 +2324,16 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> {
           onTap: () => Future.microtask(() => showCardForm(context: context, ref: ref)),
         ),
       ],
+      settings: LiquidGlassSettings(
+        blur: 10,
+        thickness: 10,
+        glassColor: isDark ? const Color.fromRGBO(0, 0, 0, 0.55) : const Color.fromRGBO(255, 255, 255, 0.12),
+        lightIntensity: 0.7,
+        ambientStrength: 0.4,
+        saturation: 1.2,
+        refractiveIndex: 0.7,
+        chromaticAberration: 0.0,
+      ),
       menuAlignment: GlassMenuAlignment.topCenter,
       menuHeight: menuTotalHeight,
       trigger: _ClosedCardChip(
