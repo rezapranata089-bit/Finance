@@ -2716,7 +2716,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
                 secondChild: Padding(
                   padding: const EdgeInsets.only(top: 4),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 22),
+                    padding: const EdgeInsets.symmetric(horizontal: 15),
                     child: LayoutBuilder(
                     builder: (context, constraints) {
                       const thumbRadius = 15.0;
@@ -2761,7 +2761,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
                             max: _maxAmountFilter,
                             divisions: 20,
                             activeColor: Theme.of(context).colorScheme.primary,
-                            quality: GlassQuality.premium,
+                            quality: GlassQuality.standard,
                             onChangeStart: (_) => setState(() => _sliderDragging = true),
                             onChangeEnd: (_) => setState(() => _sliderDragging = false),
                             onChanged: (v) => setState(() {
