@@ -22,7 +22,7 @@ import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  VisibilityDetectorController.instance.updateInterval = const Duration(milliseconds: 50);
+  VisibilityDetectorController.instance.updateInterval = const Duration(milliseconds: 100);
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   await initializeDateFormatting('id_ID', null);
   await LiquidGlassWidgets.initialize();
@@ -1703,7 +1703,7 @@ class FinanceShell extends ConsumerWidget {
               opacity: tab == i ? 1 : 0,
               child: IgnorePointer(
                 ignoring: tab != i,
-                child: pages[i],
+                child: RepaintBoundary(child: pages[i]),
               ),
             ),
           ),
@@ -2010,10 +2010,12 @@ class _HomePageState extends ConsumerState<HomePage> {
                                 ),
                               ),
                               if (isAiCard)
-                                const SizedBox(
-                                  width: 70,
-                                  height: 70,
-                                  child: VisibilityAwareLottie(asset: 'assets/lottie/ai.json'),
+                                const RepaintBoundary(
+                                  child: SizedBox(
+                                    width: 70,
+                                    height: 70,
+                                    child: VisibilityAwareLottie(asset: 'assets/lottie/ai.json'),
+                                  ),
                                 )
                               else
                                 Container(
@@ -2638,7 +2640,7 @@ class ReportsPage extends ConsumerWidget {
       const SizedBox(height: 6),
       Text(isAllAccounts ? Strings.t(lang, 'all_accounts') : (cards.isEmpty ? '' : cards[safeSelectedCard].name), style: TextStyle(color: context.textFaint, fontSize: 12, fontWeight: FontWeight.w600)),
       const SizedBox(height: 22),
-      SummaryCard(income: income, expense: expense),
+      RepaintBoundary(child: SummaryCard(income: income, expense: expense)),
       const SizedBox(height: 24),
       SectionTitle(Strings.t(lang, 'cash_flow')),
       const SizedBox(height: 12),
@@ -4159,30 +4161,32 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Container(
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(22), border: Border.all(color: context.borderColor)),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(Strings.t(lang, 'total_outstanding'), style: TextStyle(color: context.textMuted, fontSize: 11)),
-                        const SizedBox(height: 6),
-                        NumberFlow(value: totalOutstanding, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: TextStyle(fontFamily: 'Satoshi', color: context.textPrimary, fontWeight: FontWeight.bold, fontSize: 15, letterSpacing: -0.2)),
-                      ]),
-                    ),
-                    Container(width: 1, height: 36, color: context.borderColor),
-                    Expanded(
-                      child: Padding(
-                        padding: const EdgeInsets.only(left: 12),
+              child: RepaintBoundary(
+                child: Container(
+                  padding: const EdgeInsets.all(18),
+                  decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(22), border: Border.all(color: context.borderColor)),
+                  child: Row(
+                    children: [
+                      Expanded(
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text(Strings.t(lang, 'total_interest_collected'), style: TextStyle(color: context.textMuted, fontSize: 11)),
+                          Text(Strings.t(lang, 'total_outstanding'), style: TextStyle(color: context.textMuted, fontSize: 11)),
                           const SizedBox(height: 6),
-                          NumberFlow(value: totalInterest, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: const TextStyle(fontFamily: 'Satoshi', color: Color(0xFF24A148), fontWeight: FontWeight.bold, fontSize: 15, letterSpacing: -0.2)),
+                          NumberFlow(value: totalOutstanding, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: TextStyle(fontFamily: 'Satoshi', color: context.textPrimary, fontWeight: FontWeight.bold, fontSize: 15, letterSpacing: -0.2)),
                         ]),
                       ),
-                    ),
-                  ],
+                      Container(width: 1, height: 36, color: context.borderColor),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.only(left: 12),
+                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                            Text(Strings.t(lang, 'total_interest_collected'), style: TextStyle(color: context.textMuted, fontSize: 11)),
+                            const SizedBox(height: 6),
+                            NumberFlow(value: totalInterest, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: const TextStyle(fontFamily: 'Satoshi', color: Color(0xFF24A148), fontWeight: FontWeight.bold, fontSize: 15, letterSpacing: -0.2)),
+                          ]),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
