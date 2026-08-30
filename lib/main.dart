@@ -2761,7 +2761,8 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
                             max: _maxAmountFilter,
                             divisions: 20,
                             activeColor: Theme.of(context).colorScheme.primary,
-                            quality: GlassQuality.standard,
+                            quality: GlassQuality.premium,
+                            useOwnLayer: true,
                             onChangeStart: (_) => setState(() => _sliderDragging = true),
                             onChangeEnd: (_) => setState(() => _sliderDragging = false),
                             onChanged: (v) => setState(() {
