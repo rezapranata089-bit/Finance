@@ -4133,28 +4133,59 @@ class CardManagementPage extends ConsumerWidget {
 
   void _confirmDelete(BuildContext context, WidgetRef ref, int index, FinanceCard card) {
     final lang = ref.read(langProvider);
+    final isDark = context.isDark;
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(Strings.t(lang, 'delete_card_title')),
-        content: Text(Strings.t(lang, 'delete_card_confirm').replaceAll('{name}', card.name)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(Strings.t(lang, 'cancel'))),
-          TextButton(
-            onPressed: () {
-              final selected = ref.read(selectedCardProvider);
-              ref.read(cardsProvider.notifier).remove(index);
-              final newLen = ref.read(cardsProvider).length;
-              if (selected != -1 && selected >= newLen) {
-                ref.read(selectedCardProvider.notifier).state = newLen - 1;
-              } else if (selected != -1 && index < selected) {
-                ref.read(selectedCardProvider.notifier).state = selected - 1;
-              }
-              Navigator.pop(dialogContext);
-            },
-            child: Text(Strings.t(lang, 'delete'), style: const TextStyle(color: Colors.redAccent)),
+      barrierColor: Colors.black.withOpacity(0.45),
+      builder: (dialogContext) => Dialog(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 28),
+        child: GlassContainer(
+          shape: const LiquidRoundedRectangle(borderRadius: 28),
+          useOwnLayer: true,
+          quality: GlassQuality.premium,
+          settings: LiquidGlassSettings(
+            blur: 22,
+            thickness: 34,
+            glassColor: isDark ? const Color.fromRGBO(0, 0, 0, 0.68) : const Color.fromRGBO(255, 255, 255, 0.42),
+            whitenStrength: 0.0,
+            lightIntensity: isDark ? 0.16 : 1.1,
+            ambientStrength: isDark ? 0.1 : 0.65,
+            saturation: isDark ? 1.6 : 1.9,
+            refractiveIndex: isDark ? 0.22 : 1.85,
+            chromaticAberration: isDark ? 0.0 : 2.4,
+            fresnelStrength: isDark ? 0.15 : 1.2,
+            glowIntensity: isDark ? 0.1 : 0.9,
+            shadowElevation: isDark ? 2 : 5,
           ),
-        ],
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(22, 22, 22, 14),
+            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(Strings.t(lang, 'delete_card_title'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: context.textPrimary)),
+              const SizedBox(height: 12),
+              Text(Strings.t(lang, 'delete_card_confirm').replaceAll('{name}', card.name), style: TextStyle(fontSize: 14, height: 1.4, color: context.textMuted)),
+              const SizedBox(height: 18),
+              Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(Strings.t(lang, 'cancel'))),
+                TextButton(
+                  onPressed: () {
+                    final selected = ref.read(selectedCardProvider);
+                    ref.read(cardsProvider.notifier).remove(index);
+                    final newLen = ref.read(cardsProvider).length;
+                    if (selected != -1 && selected >= newLen) {
+                      ref.read(selectedCardProvider.notifier).state = newLen - 1;
+                    } else if (selected != -1 && index < selected) {
+                      ref.read(selectedCardProvider.notifier).state = selected - 1;
+                    }
+                    Navigator.pop(dialogContext);
+                  },
+                  child: Text(Strings.t(lang, 'delete'), style: const TextStyle(color: Colors.redAccent)),
+                ),
+              ]),
+            ]),
+          ),
+        ),
       ),
     );
   }
@@ -4407,21 +4438,52 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
 
   void _confirmDeleteLoan(BuildContext context, WidgetRef ref, Loan loan) {
     final lang = ref.read(langProvider);
+    final isDark = context.isDark;
     showDialog(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(Strings.t(lang, 'delete_loan_title')),
-        content: Text(Strings.t(lang, 'delete_loan_confirm').replaceAll('{name}', loan.borrowerName)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(Strings.t(lang, 'cancel'))),
-          TextButton(
-            onPressed: () {
-              ref.read(loansProvider.notifier).removeLoan(loan.id);
-              Navigator.pop(dialogContext);
-            },
-            child: Text(Strings.t(lang, 'delete'), style: const TextStyle(color: Colors.redAccent)),
+      barrierColor: Colors.black.withOpacity(0.45),
+      builder: (dialogContext) => Dialog(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 28),
+        child: GlassContainer(
+          shape: const LiquidRoundedRectangle(borderRadius: 28),
+          useOwnLayer: true,
+          quality: GlassQuality.premium,
+          settings: LiquidGlassSettings(
+            blur: 22,
+            thickness: 34,
+            glassColor: isDark ? const Color.fromRGBO(0, 0, 0, 0.68) : const Color.fromRGBO(255, 255, 255, 0.42),
+            whitenStrength: 0.0,
+            lightIntensity: isDark ? 0.16 : 1.1,
+            ambientStrength: isDark ? 0.1 : 0.65,
+            saturation: isDark ? 1.6 : 1.9,
+            refractiveIndex: isDark ? 0.22 : 1.85,
+            chromaticAberration: isDark ? 0.0 : 2.4,
+            fresnelStrength: isDark ? 0.15 : 1.2,
+            glowIntensity: isDark ? 0.1 : 0.9,
+            shadowElevation: isDark ? 2 : 5,
           ),
-        ],
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(22, 22, 22, 14),
+            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(Strings.t(lang, 'delete_loan_title'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: context.textPrimary)),
+              const SizedBox(height: 12),
+              Text(Strings.t(lang, 'delete_loan_confirm').replaceAll('{name}', loan.borrowerName), style: TextStyle(fontSize: 14, height: 1.4, color: context.textMuted)),
+              const SizedBox(height: 18),
+              Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(Strings.t(lang, 'cancel'))),
+                TextButton(
+                  onPressed: () {
+                    ref.read(loansProvider.notifier).removeLoan(loan.id);
+                    Navigator.pop(dialogContext);
+                  },
+                  child: Text(Strings.t(lang, 'delete'), style: const TextStyle(color: Colors.redAccent)),
+                ),
+              ]),
+            ]),
+          ),
+        ),
       ),
     );
   }
