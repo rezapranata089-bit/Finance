@@ -2234,12 +2234,19 @@ class CardSelectorButton extends ConsumerStatefulWidget {
 
 class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> {
   final _menuController = GlassMenuController();
+  final _cardsScrollController = ScrollController();
 
   static const _itemHeight = 38.0;
   static const _dividerHeight = 12.0;
   static const _itemGap = 2.0;
   static const _edgePadding = 12.0;
   static const _maxVisibleCards = 3;
+
+  @override
+  void dispose() {
+    _cardsScrollController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -2278,25 +2285,32 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> {
           height: cardsAreaHeight,
           child: cards.isEmpty
               ? const SizedBox.shrink()
-              : ListView.separated(
-                  padding: EdgeInsets.zero,
-                  physics: const ClampingScrollPhysics(),
-                  itemCount: cards.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: _itemGap),
-                  itemBuilder: (context, i) {
-                    final isCurrent = rawSelected == i;
-                    return GlassMenuItem(
-                      title: cards[i].name,
-                      icon: const Icon(SolarIconsOutline.card),
-                      isSelected: isCurrent,
-                      trailing: isCurrent ? Icon(Icons.check_rounded, color: primary, size: 18) : null,
-                      height: _itemHeight,
-                      onTap: () {
-                        ref.read(selectedCardProvider.notifier).state = i;
-                        _menuController.close();
-                      },
-                    );
-                  },
+              : Scrollbar(
+                  controller: _cardsScrollController,
+                  thumbVisibility: cards.length > _maxVisibleCards,
+                  radius: const Radius.circular(8),
+                  thickness: 3,
+                  child: ListView.separated(
+                    controller: _cardsScrollController,
+                    padding: const EdgeInsets.only(right: 6),
+                    physics: const ClampingScrollPhysics(),
+                    itemCount: cards.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: _itemGap),
+                    itemBuilder: (context, i) {
+                      final isCurrent = rawSelected == i;
+                      return GlassMenuItem(
+                        title: cards[i].name,
+                        icon: const Icon(SolarIconsOutline.card),
+                        isSelected: isCurrent,
+                        trailing: isCurrent ? Icon(Icons.check_rounded, color: primary, size: 18) : null,
+                        height: _itemHeight,
+                        onTap: () {
+                          ref.read(selectedCardProvider.notifier).state = i;
+                          _menuController.close();
+                        },
+                      );
+                    },
+                  ),
                 ),
         ),
         const GlassMenuDivider(),
