@@ -964,7 +964,7 @@ class LiquidGlass extends StatelessWidget {
       );
     }
 
-    final glassOpacity = ((isDark ? 0.48 : 0.62) * intensity).clamp(0.0, 1.0);
+    final glassOpacity = ((isDark ? 0.38 : 0.30) * intensity).clamp(0.0, 1.0);
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(borderRadius),
@@ -2195,8 +2195,8 @@ class HamburgerMorphMenu extends ConsumerWidget {
       settings: LiquidGlassSettings(
         blur: 18,
         thickness: 30,
-        glassColor: isDark ? const Color.fromRGBO(0, 0, 0, 0.64) : const Color.fromRGBO(255, 255, 255, 0.42),
-        whitenStrength: isDark ? 0.0 : 0.4,
+        glassColor: isDark ? const Color.fromRGBO(0, 0, 0, 0.42) : const Color.fromRGBO(255, 255, 255, 0.20),
+        whitenStrength: isDark ? 0.0 : 0.16,
         lightIntensity: 0.95,
         ambientStrength: 0.55,
         saturation: 1.35,
@@ -2314,8 +2314,8 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> {
           settings: LiquidGlassSettings(
             blur: 18,
             thickness: 30,
-            glassColor: isDark ? const Color.fromRGBO(0, 0, 0, 0.64) : const Color.fromRGBO(255, 255, 255, 0.42),
-            whitenStrength: isDark ? 0.0 : 0.4,
+            glassColor: isDark ? const Color.fromRGBO(0, 0, 0, 0.42) : const Color.fromRGBO(255, 255, 255, 0.20),
+            whitenStrength: isDark ? 0.0 : 0.16,
             lightIntensity: 0.95,
             ambientStrength: 0.55,
             saturation: 1.35,
@@ -2461,8 +2461,8 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> {
       settings: LiquidGlassSettings(
         blur: 18,
         thickness: 30,
-        glassColor: isDark ? const Color.fromRGBO(0, 0, 0, 0.64) : const Color.fromRGBO(255, 255, 255, 0.42),
-        whitenStrength: isDark ? 0.0 : 0.4,
+        glassColor: isDark ? const Color.fromRGBO(0, 0, 0, 0.42) : const Color.fromRGBO(255, 255, 255, 0.20),
+        whitenStrength: isDark ? 0.0 : 0.16,
         lightIntensity: 0.95,
         ambientStrength: 0.55,
         saturation: 1.35,
