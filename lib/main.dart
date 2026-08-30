@@ -2579,6 +2579,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
   int? cardFilter;
   double minAmountFilter = 0;
   bool _sliderDragging = false;
+  bool _minAmountExpanded = false;
   int _displayCount = _pageSize;
   final ScrollController _scrollController = ScrollController();
   static const filterKeys = ['all', 'income', 'expense'];
