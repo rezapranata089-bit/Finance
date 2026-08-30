@@ -1569,7 +1569,7 @@ class MyFinanceApp extends ConsumerWidget {
       theme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.light,
-        scaffoldBackgroundColor: const Color(0xFFFAF9F7),
+        scaffoldBackgroundColor: Color.alphaBlend(theme.primary.withOpacity(0.08), Colors.white),
         colorScheme: ColorScheme.fromSeed(
           seedColor: theme.primary,
           primary: theme.primary,
