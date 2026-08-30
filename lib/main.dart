@@ -2225,48 +2225,90 @@ class MoreMorphMenu extends ConsumerWidget {
   }
 }
 
-class CardSelectorButton extends ConsumerWidget {
+class CardSelectorButton extends ConsumerStatefulWidget {
   const CardSelectorButton({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<CardSelectorButton> createState() => _CardSelectorButtonState();
+}
+
+class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> {
+  final _menuController = GlassMenuController();
+
+  static const _itemHeight = 38.0;
+  static const _dividerHeight = 12.0;
+  static const _itemGap = 2.0;
+  static const _edgePadding = 12.0;
+  static const _maxVisibleCards = 3;
+
+  @override
+  Widget build(BuildContext context) {
     final cards = ref.watch(cardsProvider);
     final rawSelected = ref.watch(selectedCardProvider);
     final selected = rawSelected == -1 ? -1 : (rawSelected >= cards.length ? cards.length - 1 : (rawSelected < 0 ? 0 : rawSelected));
     final lang = ref.watch(langProvider);
     final primary = Theme.of(context).colorScheme.primary;
 
+    final visibleCardCount = cards.length < _maxVisibleCards ? cards.length : _maxVisibleCards;
+    final cardsAreaHeight = visibleCardCount == 0 ? 0.0 : visibleCardCount * _itemHeight + (visibleCardCount - 1) * _itemGap;
+    final menuTotalHeight = _edgePadding * 2 +
+        _itemHeight +
+        _itemGap +
+        _dividerHeight +
+        _itemGap +
+        cardsAreaHeight +
+        _itemGap +
+        _dividerHeight +
+        _itemGap +
+        _itemHeight;
+
     return GlassMenu(
+      controller: _menuController,
       items: [
         GlassMenuItem(
           title: Strings.t(lang, 'all_accounts'),
           icon: const Icon(Icons.dashboard_outlined),
           isSelected: rawSelected == -1,
           trailing: rawSelected == -1 ? Icon(Icons.check_rounded, color: primary, size: 18) : null,
-          height: 38,
+          height: _itemHeight,
           onTap: () => ref.read(selectedCardProvider.notifier).state = -1,
         ),
         const GlassMenuDivider(),
-        ...cards.asMap().entries.map((e) {
-          final isCurrent = rawSelected == e.key;
-          return GlassMenuItem(
-            title: e.value.name,
-            icon: const Icon(SolarIconsOutline.card),
-            isSelected: isCurrent,
-            trailing: isCurrent ? Icon(Icons.check_rounded, color: primary, size: 18) : null,
-            height: 38,
-            onTap: () => ref.read(selectedCardProvider.notifier).state = e.key,
-          );
-        }),
+        SizedBox(
+          height: cardsAreaHeight,
+          child: cards.isEmpty
+              ? const SizedBox.shrink()
+              : ListView.separated(
+                  padding: EdgeInsets.zero,
+                  physics: const ClampingScrollPhysics(),
+                  itemCount: cards.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: _itemGap),
+                  itemBuilder: (context, i) {
+                    final isCurrent = rawSelected == i;
+                    return GlassMenuItem(
+                      title: cards[i].name,
+                      icon: const Icon(SolarIconsOutline.card),
+                      isSelected: isCurrent,
+                      trailing: isCurrent ? Icon(Icons.check_rounded, color: primary, size: 18) : null,
+                      height: _itemHeight,
+                      onTap: () {
+                        ref.read(selectedCardProvider.notifier).state = i;
+                        _menuController.close();
+                      },
+                    );
+                  },
+                ),
+        ),
         const GlassMenuDivider(),
         GlassMenuItem(
           title: Strings.t(lang, 'add_card'),
           icon: const Icon(SolarIconsOutline.addCircle),
-          height: 38,
+          height: _itemHeight,
           onTap: () => Future.microtask(() => showCardForm(context: context, ref: ref)),
         ),
       ],
       menuAlignment: GlassMenuAlignment.topCenter,
+      menuHeight: menuTotalHeight,
       trigger: _ClosedCardChip(
         cardLabel: selected == -1 ? Strings.t(lang, 'all_accounts') : cards[selected].number,
         showArrow: true,
