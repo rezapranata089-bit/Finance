@@ -2755,20 +2755,23 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
                               ),
                             ),
                           ),
-                          GlassSlider(
-                            value: minAmountFilter,
-                            min: 0,
-                            max: _maxAmountFilter,
-                            divisions: 20,
-                            activeColor: Theme.of(context).colorScheme.primary,
-                            quality: GlassQuality.premium,
-                            useOwnLayer: true,
-                            onChangeStart: (_) => setState(() => _sliderDragging = true),
-                            onChangeEnd: (_) => setState(() => _sliderDragging = false),
-                            onChanged: (v) => setState(() {
-                              minAmountFilter = v;
-                              _resetPaging();
-                            }),
+                          Padding(
+                            padding: const EdgeInsets.only(right: 14),
+                            child: GlassSlider(
+                              value: minAmountFilter,
+                              min: 0,
+                              max: _maxAmountFilter,
+                              divisions: 20,
+                              activeColor: Theme.of(context).colorScheme.primary,
+                              quality: GlassQuality.premium,
+                              useOwnLayer: true,
+                              onChangeStart: (_) => setState(() => _sliderDragging = true),
+                              onChangeEnd: (_) => setState(() => _sliderDragging = false),
+                              onChanged: (v) => setState(() {
+                                minAmountFilter = v;
+                                _resetPaging();
+                              }),
+                            ),
                           ),
                         ],
                       );
