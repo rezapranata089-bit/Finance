@@ -1970,7 +1970,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                   child: RepaintBoundary(
                     child: CustomPaint(
                       painter: BottomRoundedBorderPainter(
-                        color: isDark ? Colors.black.withOpacity(0.35) : Colors.white.withOpacity(0.6),
+                        color: isDark ? Colors.white.withOpacity(0.12) : Colors.white.withOpacity(0.78),
                         radius: 32,
                       ),
                     ),
