@@ -2222,7 +2222,7 @@ class HamburgerMorphMenu extends ConsumerWidget {
       settings: LiquidGlassSettings(
         blur: 18,
         thickness: 30,
-        glassColor: isDark ? const Color.fromRGBO(0, 0, 0, 0.72) : const Color.fromRGBO(255, 255, 255, 0.20),
+        glassColor: isDark ? const Color.fromRGBO(0, 0, 0, 0.55) : const Color.fromRGBO(255, 255, 255, 0.12),
         whitenStrength: 0.0,
         lightIntensity: isDark ? 0.12 : 0.95,
         ambientStrength: isDark ? 0.08 : 0.55,
@@ -2355,7 +2355,7 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> {
           settings: LiquidGlassSettings(
             blur: 18,
             thickness: 30,
-            glassColor: isDark ? const Color.fromRGBO(0, 0, 0, 0.72) : const Color.fromRGBO(255, 255, 255, 0.20),
+            glassColor: isDark ? const Color.fromRGBO(0, 0, 0, 0.55) : const Color.fromRGBO(255, 255, 255, 0.12),
             whitenStrength: 0.0,
             lightIntensity: isDark ? 0.12 : 0.95,
             ambientStrength: isDark ? 0.08 : 0.55,
@@ -2510,7 +2510,7 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> {
       settings: LiquidGlassSettings(
         blur: 18,
         thickness: 30,
-        glassColor: isDark ? const Color.fromRGBO(0, 0, 0, 0.72) : const Color.fromRGBO(255, 255, 255, 0.20),
+        glassColor: isDark ? const Color.fromRGBO(0, 0, 0, 0.55) : const Color.fromRGBO(255, 255, 255, 0.12),
         whitenStrength: 0.0,
         lightIntensity: isDark ? 0.12 : 0.95,
         ambientStrength: isDark ? 0.08 : 0.55,
