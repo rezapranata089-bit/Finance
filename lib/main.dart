@@ -2638,7 +2638,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
               const SizedBox(height: 22),
               GlassSearchBar(
                 placeholder: Strings.t(lang, 'search_transactions'),
-                quality: GlassQuality.premium,
+                quality: GlassQuality.standard,
                 onChanged: (v) => setState(() { query = v; _resetPaging(); }),
               ),
               const SizedBox(height: 14),
