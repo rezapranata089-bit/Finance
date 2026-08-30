@@ -3867,7 +3867,7 @@ void _confirmDeleteTransaction(BuildContext context, WidgetRef ref, FinanceTrans
   final isDark = context.isDark;
   showDialog(
     context: context,
-    barrierColor: Colors.black.withOpacity(0.28),
+    barrierColor: Colors.black.withOpacity(0.45),
     builder: (dialogContext) => Dialog(
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -3877,17 +3877,18 @@ void _confirmDeleteTransaction(BuildContext context, WidgetRef ref, FinanceTrans
         useOwnLayer: true,
         quality: GlassQuality.premium,
         settings: LiquidGlassSettings(
-          blur: 18,
-          thickness: 30,
-          glassColor: isDark ? const Color.fromRGBO(0, 0, 0, 0.55) : const Color.fromRGBO(255, 255, 255, 0.12),
+          blur: 22,
+          thickness: 34,
+          glassColor: isDark ? const Color.fromRGBO(0, 0, 0, 0.68) : const Color.fromRGBO(255, 255, 255, 0.42),
           whitenStrength: 0.0,
-          lightIntensity: isDark ? 0.12 : 0.95,
-          ambientStrength: isDark ? 0.08 : 0.55,
+          lightIntensity: isDark ? 0.16 : 1.1,
+          ambientStrength: isDark ? 0.1 : 0.65,
           saturation: isDark ? 1.6 : 1.9,
-          refractiveIndex: isDark ? 0.18 : 1.85,
-          chromaticAberration: isDark ? 0.0 : 2.2,
-          fresnelStrength: isDark ? 0.0 : 1.0,
-          glowIntensity: isDark ? 0.0 : 0.75,
+          refractiveIndex: isDark ? 0.22 : 1.85,
+          chromaticAberration: isDark ? 0.0 : 2.4,
+          fresnelStrength: isDark ? 0.15 : 1.2,
+          glowIntensity: isDark ? 0.1 : 0.9,
+          shadowElevation: isDark ? 2 : 5,
         ),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(22, 22, 22, 14),
