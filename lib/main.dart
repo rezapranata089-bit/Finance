@@ -954,8 +954,7 @@ class LiquidGlass extends StatelessWidget {
         ),
         border: Border.all(color: rimColor, width: 1),
         boxShadow: [
-          BoxShadow(color: Colors.white.withOpacity(isDark ? 0.06 : 0.5), blurRadius: 0, spreadRadius: -0.6, offset: const Offset(0, 0.6)),
-          BoxShadow(color: isDark ? Colors.transparent : Colors.black.withOpacity(0.12), blurRadius: 12, spreadRadius: -3, offset: const Offset(0, 4)),
+          BoxShadow(color: isDark ? Colors.transparent : Colors.black.withOpacity(0.05), blurRadius: 6, spreadRadius: -2, offset: const Offset(0, 2)),
         ],
       ),
       child: child,
@@ -1864,26 +1863,14 @@ class _HomePageState extends ConsumerState<HomePage> {
                       child: Stack(
                         clipBehavior: Clip.none,
                         children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(isDark ? 0.22 : 0.07),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                            ),
-                            child: LiquidGlass(
-                              borderRadius: 999,
-                              tint: isDark ? Colors.black : null,
-                              intensity: isDark ? 1.6 : 1.0,
-                              borderColor: isDark ? context.borderColor : null,
-                              child: Padding(
-                                padding: const EdgeInsets.all(10),
-                                child: Icon(SolarIconsOutline.bell, size: 20, color: context.textPrimary),
-                              ),
+                          LiquidGlass(
+                            borderRadius: 999,
+                            tint: isDark ? Colors.black : null,
+                            intensity: isDark ? 1.6 : 1.0,
+                            borderColor: isDark ? context.borderColor : null,
+                            child: Padding(
+                              padding: const EdgeInsets.all(10),
+                              child: Icon(SolarIconsOutline.bell, size: 20, color: context.textPrimary),
                             ),
                           ),
                           Positioned(
@@ -2163,26 +2150,14 @@ class HamburgerMorphMenu extends ConsumerWidget {
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsPage())),
         ),
       ],
-      trigger: Container(
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.22 : 0.07),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: LiquidGlass(
-          borderRadius: 999,
-          tint: isDark ? Colors.black : null,
-          intensity: isDark ? 1.6 : 1.0,
-          borderColor: isDark ? context.borderColor : null,
-          child: Padding(
-            padding: const EdgeInsets.all(10),
-            child: Icon(SolarIconsOutline.hamburgerMenu, size: 20, color: context.textPrimary),
-          ),
+      trigger: LiquidGlass(
+        borderRadius: 999,
+        tint: isDark ? Colors.black : null,
+        intensity: isDark ? 1.6 : 1.0,
+        borderColor: isDark ? context.borderColor : null,
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Icon(SolarIconsOutline.hamburgerMenu, size: 20, color: context.textPrimary),
         ),
       ),
     );
