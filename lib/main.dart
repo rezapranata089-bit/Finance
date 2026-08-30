@@ -2577,10 +2577,12 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
   String query = '';
   String filter = 'all';
   int? cardFilter;
+  double minAmountFilter = 0;
   int _displayCount = _pageSize;
   final ScrollController _scrollController = ScrollController();
   static const filterKeys = ['all', 'income', 'expense'];
   static const _pageSize = 10;
+  static const _maxAmountFilter = 5000000.0;
 
   @override
   void initState() {
@@ -2615,6 +2617,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
     final items = all.where((e) =>
         (filter == 'all' || (filter == 'income' ? e.income : !e.income)) &&
         (cardFilter == null || e.cardIndex == cardFilter) &&
+        e.amount >= minAmountFilter &&
         e.title.toLowerCase().contains(query.toLowerCase())).toList();
     final visibleCount = _displayCount < items.length ? _displayCount : items.length;
     final hasMore = visibleCount < items.length;
@@ -2676,7 +2679,28 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Nominal minimal', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: context.textMuted)),
+                  Text(rupiah(minAmountFilter), style: TextStyle(fontFamily: 'Satoshi', fontSize: 12, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.primary)),
+                ],
+              ),
+              const SizedBox(height: 4),
+              GlassSlider(
+                value: minAmountFilter,
+                min: 0,
+                max: _maxAmountFilter,
+                divisions: 20,
+                activeColor: Theme.of(context).colorScheme.primary,
+                quality: GlassQuality.standard,
+                onChanged: (v) => setState(() {
+                  minAmountFilter = v;
+                  _resetPaging();
+                }),
+              ),
+              const SizedBox(height: 16),
             ],
           );
         }
