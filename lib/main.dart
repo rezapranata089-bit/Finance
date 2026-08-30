@@ -2641,7 +2641,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
                     .map((k) => GlassSegment(label: Strings.t(lang, 'filter_$k')))
                     .toList(),
                 selectedIndex: filterKeys.indexOf(filter),
-                indicatorColor: context.isDark ? Theme.of(context).colorScheme.primary.withOpacity(0.25) : Colors.black.withOpacity(0.85),
+                indicatorColor: Theme.of(context).colorScheme.primary.withOpacity(context.isDark ? 0.25 : 0.15),
                 onSegmentSelected: (index) {
                   setState(() {
                     filter = filterKeys[index];
@@ -2694,6 +2694,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
                 max: _maxAmountFilter,
                 divisions: 20,
                 activeColor: Theme.of(context).colorScheme.primary,
+                thumbColor: context.isDark ? Colors.white : const Color(0xFF25212E),
                 quality: GlassQuality.premium,
                 onChanged: (v) => setState(() {
                   minAmountFilter = v;
