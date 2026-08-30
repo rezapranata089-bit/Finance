@@ -2698,35 +2698,31 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
                   final trackWidth = constraints.maxWidth - thumbRadius * 2;
                   final normalized = ((minAmountFilter - 0) / (_maxAmountFilter - 0)).clamp(0.0, 1.0);
                   final thumbCenterX = thumbRadius + trackWidth * normalized;
-                  final scale = _sliderDragging ? 1.35 : 1.0;
-                  final scaledWidth = thumbWidth * scale;
-                  final scaledHeight = thumbHeight * scale;
-                  final scaledTop = (widgetHeight - scaledHeight) / 2;
+                  const topPosition = (widgetHeight - thumbHeight) / 2;
                   return Stack(
                     clipBehavior: Clip.none,
                     children: [
-                      AnimatedPositioned(
-                        duration: const Duration(milliseconds: 200),
-                        curve: Curves.easeOut,
+                      Positioned(
                         left: thumbCenterX - thumbRadius,
-                        top: scaledTop,
+                        top: topPosition,
                         child: IgnorePointer(
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
+                          child: AnimatedOpacity(
+                            opacity: _sliderDragging ? 0.0 : 1.0,
+                            duration: const Duration(milliseconds: 220),
                             curve: Curves.easeOut,
-                            width: scaledWidth,
-                            height: scaledHeight,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(scaledHeight / 2),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(context.isDark
-                                      ? (_sliderDragging ? 0.34 : 0.28)
-                                      : (_sliderDragging ? 0.22 : 0.16)),
-                                  blurRadius: _sliderDragging ? 11 : 7,
-                                  offset: Offset(0, _sliderDragging ? 4 : 2),
-                                ),
-                              ],
+                            child: Container(
+                              width: thumbWidth,
+                              height: thumbHeight,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(thumbHeight / 2),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(context.isDark ? 0.28 : 0.16),
+                                    blurRadius: 7,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
