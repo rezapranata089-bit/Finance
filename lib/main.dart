@@ -2694,7 +2694,6 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
                 max: _maxAmountFilter,
                 divisions: 20,
                 activeColor: Theme.of(context).colorScheme.primary,
-                thumbColor: context.isDark ? Colors.white : const Color(0xFF25212E),
                 quality: GlassQuality.premium,
                 onChanged: (v) => setState(() {
                   minAmountFilter = v;
