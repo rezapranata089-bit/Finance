@@ -2148,16 +2148,29 @@ class HamburgerMorphMenu extends ConsumerWidget {
       itemBorderRadius: 18,
       items: [
         GlassMenuItem(
-          height: 48,
+          height: 60,
           iconSize: _iconSize,
           titleStyle: _titleStyle(context),
+          subtitle: Strings.t(lang, 'view_profile'),
+          subtitleStyle: TextStyle(color: context.textMuted, fontSize: 11, fontWeight: FontWeight.w500),
           title: profile.name.isNotEmpty ? profile.name : Strings.t(lang, 'view_profile'),
-          icon: ProfileAvatar(
-            photoPath: profile.photoPath,
-            photoBytesBase64: profile.photoBytesBase64,
-            photoVersion: profile.photoVersion,
-            initial: initial,
-            radius: 16,
+          icon: Transform.translate(
+            offset: const Offset(-4, 0),
+            child: ProfileAvatar(
+              photoPath: profile.photoPath,
+              photoBytesBase64: profile.photoBytesBase64,
+              photoVersion: profile.photoVersion,
+              initial: initial,
+              radius: 22,
+            ),
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.workspace_premium_rounded, size: 16, color: Theme.of(context).colorScheme.primary),
+              const SizedBox(width: 6),
+              Icon(SolarIconsOutline.altArrowRight, size: 16, color: context.iconMuted),
+            ],
           ),
           onTap: () => ref.read(tabProvider.notifier).state = 3,
         ),
@@ -2168,7 +2181,7 @@ class HamburgerMorphMenu extends ConsumerWidget {
           iconColor: Theme.of(context).colorScheme.primary,
           titleStyle: _titleStyle(context),
           title: isDark ? Strings.t(lang, 'light') : Strings.t(lang, 'dark'),
-          icon: Icon(isDark ? SolarIconsOutline.sun : SolarIconsOutline.moon),
+          icon: Transform.translate(offset: const Offset(-4, 0), child: Icon(isDark ? SolarIconsOutline.sun : SolarIconsOutline.moon)),
           onTap: () {
             final newMode = isDark ? ThemeMode.light : ThemeMode.dark;
             ref.read(themeModeProvider.notifier).state = newMode;
@@ -2181,7 +2194,7 @@ class HamburgerMorphMenu extends ConsumerWidget {
           iconColor: Theme.of(context).colorScheme.primary,
           titleStyle: _titleStyle(context),
           title: Strings.t(lang, 'appearance'),
-          icon: const Icon(SolarIconsOutline.palette),
+          icon: Transform.translate(offset: const Offset(-4, 0), child: const Icon(SolarIconsOutline.palette)),
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ThemeSelectionPage())),
         ),
         GlassMenuItem(
@@ -2190,7 +2203,7 @@ class HamburgerMorphMenu extends ConsumerWidget {
           iconColor: Theme.of(context).colorScheme.primary,
           titleStyle: _titleStyle(context),
           title: Strings.t(lang, 'language'),
-          icon: const Icon(Icons.language),
+          icon: Transform.translate(offset: const Offset(-4, 0), child: const Icon(Icons.language)),
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LanguageSelectionPage())),
         ),
         GlassMenuItem(
@@ -2199,7 +2212,7 @@ class HamburgerMorphMenu extends ConsumerWidget {
           iconColor: Theme.of(context).colorScheme.primary,
           titleStyle: _titleStyle(context),
           title: Strings.t(lang, 'notifications'),
-          icon: const Icon(SolarIconsOutline.bell),
+          icon: Transform.translate(offset: const Offset(-4, 0), child: const Icon(SolarIconsOutline.bell)),
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsPage())),
         ),
       ],
