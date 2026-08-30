@@ -2716,7 +2716,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
                 secondChild: Padding(
                   padding: const EdgeInsets.only(top: 4),
                   child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 15),
                     child: LayoutBuilder(
                     builder: (context, constraints) {
                       const thumbRadius = 15.0;
