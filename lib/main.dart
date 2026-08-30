@@ -940,82 +940,60 @@ class LiquidGlass extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = context.isDark;
     final base = tint ?? Colors.white;
-    final rimColor = borderColor ?? (isDark ? Colors.white.withOpacity(0.22) : Colors.black.withOpacity(0.10));
     final glowColor = isDark ? Colors.white : Theme.of(context).colorScheme.primary;
-    const glowBorderWidth = 1.4;
-    final glowBorderGradient = LinearGradient(
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-      colors: [
-        glowColor.withOpacity(isDark ? 0.90 : 0.65),
-        rimColor.withOpacity(0.35),
-        glowColor.withOpacity(isDark ? 0.55 : 0.35),
-      ],
-      stops: const [0.0, 0.55, 1.0],
-    );
+    final rimColor = borderColor ?? glowColor.withOpacity(isDark ? 0.55 : 0.45);
     final glowShadows = [
-      BoxShadow(color: glowColor.withOpacity(isDark ? 0.30 : 0.22), blurRadius: 14, spreadRadius: -1),
-      BoxShadow(color: glowColor.withOpacity(isDark ? 0.16 : 0.12), blurRadius: 28, spreadRadius: 1),
+      BoxShadow(color: glowColor.withOpacity(isDark ? 0.22 : 0.16), blurRadius: 10, spreadRadius: 0),
     ];
 
     if (!useBlur) {
       final opacity = ((isDark ? 0.34 : 0.86) * intensity).clamp(0.0, 1.0);
       return Container(
-        padding: const EdgeInsets.all(glowBorderWidth),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(borderRadius),
-          gradient: glowBorderGradient,
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              base.withOpacity((opacity + 0.10).clamp(0.0, 1.0)),
+              base.withOpacity(opacity),
+            ],
+          ),
+          border: Border.all(color: rimColor, width: 1.2),
           boxShadow: [
             BoxShadow(color: isDark ? Colors.transparent : Colors.black.withOpacity(0.05), blurRadius: 6, spreadRadius: -2, offset: const Offset(0, 2)),
             ...glowShadows,
           ],
         ),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(borderRadius - glowBorderWidth),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                base.withOpacity((opacity + 0.10).clamp(0.0, 1.0)),
-                base.withOpacity(opacity),
-              ],
-            ),
-          ),
-          child: child,
-        ),
+        child: child,
       );
     }
 
     final glassOpacity = ((isDark ? 0.38 : 0.30) * intensity).clamp(0.0, 1.0);
     return Container(
-      padding: const EdgeInsets.all(glowBorderWidth),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(borderRadius),
-        gradient: glowBorderGradient,
+        border: Border.all(color: rimColor, width: 1.2),
         boxShadow: glowShadows,
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(borderRadius - glowBorderWidth),
-        child: GlassContainer(
-          shape: LiquidRoundedRectangle(borderRadius: borderRadius - glowBorderWidth),
-          useOwnLayer: true,
-          quality: GlassQuality.premium,
-          settings: LiquidGlassSettings(
-            glassColor: base.withOpacity(glassOpacity),
-            blur: blur,
-            thickness: 30,
-            refractiveIndex: 1.85,
-            lightIntensity: isDark ? 1.1 : 1.35,
-            lightAngle: 2.4,
-            ambientStrength: isDark ? 0.5 : 0.68,
-            chromaticAberration: chromaticAberration,
-            whitenStrength: isDark ? 0.0 : 0.4,
-            saturation: 1.15,
-            shadowElevation: isDark ? 1 : 4,
-          ),
-          child: child,
+      child: GlassContainer(
+        shape: LiquidRoundedRectangle(borderRadius: borderRadius),
+        useOwnLayer: true,
+        quality: GlassQuality.premium,
+        settings: LiquidGlassSettings(
+          glassColor: base.withOpacity(glassOpacity),
+          blur: blur,
+          thickness: 30,
+          refractiveIndex: 1.85,
+          lightIntensity: isDark ? 1.1 : 1.35,
+          lightAngle: 2.4,
+          ambientStrength: isDark ? 0.5 : 0.68,
+          chromaticAberration: chromaticAberration,
+          whitenStrength: isDark ? 0.0 : 0.4,
+          saturation: 1.15,
+          shadowElevation: isDark ? 1 : 4,
         ),
+        child: child,
       ),
     );
   }
