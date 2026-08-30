@@ -2337,6 +2337,18 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> {
   static const _edgePadding = 12.0;
   static const _maxVisibleCards = 3;
 
+  // Matches the GlassMenu's normal-speed morph-close profile (~375ms) so the
+  // balance counter only starts animating once the popup has visually
+  // shrunk away, instead of running underneath it.
+  static const _selectionApplyDelay = Duration(milliseconds: 400);
+
+  void _applySelection(int index) {
+    Future.delayed(_selectionApplyDelay, () {
+      if (!mounted) return;
+      ref.read(selectedCardProvider.notifier).state = index;
+    });
+  }
+
   @override
   void dispose() {
     _cardsScrollController.dispose();
@@ -2374,7 +2386,7 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> {
           isSelected: rawSelected == -1,
           trailing: rawSelected == -1 ? Icon(Icons.check_rounded, color: primary, size: 18) : null,
           height: _itemHeight,
-          onTap: () => ref.read(selectedCardProvider.notifier).state = -1,
+          onTap: () => _applySelection(-1),
         ),
         const GlassMenuDivider(),
         SizedBox(
@@ -2403,8 +2415,8 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> {
                         trailing: isCurrent ? Icon(Icons.check_rounded, color: primary, size: 18) : null,
                         height: _itemHeight,
                         onTap: () {
-                          ref.read(selectedCardProvider.notifier).state = i;
                           _menuController.close();
+                          _applySelection(i);
                         },
                       );
                     },
