@@ -2118,7 +2118,7 @@ class HamburgerMorphMenu extends ConsumerWidget {
     final initial = profile.name.isNotEmpty ? profile.name.substring(0, 1).toUpperCase() : '?';
 
     return GlassMenu(
-      menuWidth: 216,
+      menuWidth: 196,
       menuBorderRadius: 26,
       itemBorderRadius: 18,
       items: [
@@ -2245,7 +2245,7 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> {
       children: [
         GlassMenu(
           menuAlignment: _alignment,
-          menuWidth: 230,
+          menuWidth: 204,
           menuBorderRadius: 26,
           itemBorderRadius: 18,
           items: [
@@ -2444,7 +2444,7 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> {
         chromaticAberration: 0.0,
       ),
       menuAlignment: GlassMenuAlignment.topCenter,
-      menuWidth: 226,
+      menuWidth: 198,
       menuHeight: menuTotalHeight,
       trigger: _ClosedCardChip(
         cardLabel: selected == -1 ? Strings.t(lang, 'all_accounts') : cards[selected].number,
