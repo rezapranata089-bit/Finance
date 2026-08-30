@@ -2129,9 +2129,9 @@ class _HomePageState extends ConsumerState<HomePage> {
 class HamburgerMorphMenu extends ConsumerWidget {
   const HamburgerMorphMenu({super.key});
 
-  static const double _itemHeight = 40.0;
-  static const double _dividerHeight = 8.0;
-  static const double _iconSize = 18.0;
+  static const double _itemHeight = 36.0;
+  static const double _dividerHeight = 4.0;
+  static const double _iconSize = 19.0;
   static TextStyle _titleStyle(BuildContext context) =>
       TextStyle(color: context.textPrimary.withOpacity(0.9), fontSize: 13.5, fontWeight: FontWeight.w600);
 
@@ -2148,7 +2148,7 @@ class HamburgerMorphMenu extends ConsumerWidget {
       itemBorderRadius: 18,
       items: [
         GlassMenuItem(
-          height: 56,
+          height: 48,
           iconSize: _iconSize,
           titleStyle: _titleStyle(context),
           title: profile.name.isNotEmpty ? profile.name : Strings.t(lang, 'view_profile'),
@@ -2157,7 +2157,7 @@ class HamburgerMorphMenu extends ConsumerWidget {
             photoBytesBase64: profile.photoBytesBase64,
             photoVersion: profile.photoVersion,
             initial: initial,
-            radius: 18,
+            radius: 16,
           ),
           onTap: () => ref.read(tabProvider.notifier).state = 3,
         ),
