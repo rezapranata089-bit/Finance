@@ -2703,7 +2703,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
                     clipBehavior: Clip.none,
                     children: [
                       Positioned(
-                        left: thumbCenterX - thumbWidth / 2,
+                        left: thumbCenterX - thumbRadius,
                         top: topPosition,
                         child: IgnorePointer(
                           child: AnimatedScale(
