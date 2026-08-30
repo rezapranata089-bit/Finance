@@ -2141,7 +2141,7 @@ class HamburgerMorphMenu extends ConsumerWidget {
     final initial = profile.name.isNotEmpty ? profile.name.substring(0, 1).toUpperCase() : '?';
 
     return GlassMenu(
-      menuWidth: 196,
+      menuWidth: 224,
       menuBorderRadius: 26,
       itemBorderRadius: 18,
       items: [
@@ -2269,7 +2269,7 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> {
       children: [
         GlassMenu(
           menuAlignment: _alignment,
-          menuWidth: 204,
+          menuWidth: 236,
           menuBorderRadius: 26,
           itemBorderRadius: 18,
           items: [
