@@ -2401,8 +2401,8 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> {
   final _menuController = GlassMenuController();
   final _cardsScrollController = ScrollController();
 
-  static const _itemHeight = 38.0;
-  static const _dividerHeight = 12.0;
+  static const _itemHeight = 36.0;
+  static const _dividerHeight = 4.0;
   static const _itemGap = 2.0;
   static const _edgePadding = 12.0;
   static const _maxVisibleCards = 3;
