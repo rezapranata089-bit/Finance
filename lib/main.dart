@@ -2133,7 +2133,7 @@ class HamburgerMorphMenu extends ConsumerWidget {
   static const double _dividerHeight = 8.0;
   static const double _iconSize = 18.0;
   static TextStyle _titleStyle(BuildContext context) =>
-      TextStyle(color: context.textPrimary.withOpacity(0.9), fontSize: 13.5, fontWeight: FontWeight.w400);
+      TextStyle(color: context.textPrimary.withOpacity(0.9), fontSize: 13.5, fontWeight: FontWeight.w600);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -2231,7 +2231,7 @@ class MoreMorphMenu extends ConsumerStatefulWidget {
   static const double _dividerHeight = 8.0;
   static const double _iconSize = 18.0;
   static TextStyle _titleStyle(BuildContext context) =>
-      TextStyle(color: context.textPrimary.withOpacity(0.9), fontSize: 13.5, fontWeight: FontWeight.w400);
+      TextStyle(color: context.textPrimary.withOpacity(0.9), fontSize: 13.5, fontWeight: FontWeight.w600);
   // 5 items + 2 dividers + 24 padding (12 top + 12 bottom) + 6 gaps of 2px each.
   static const double _estimatedMenuHeight = 5 * _itemHeight + 2 * _dividerHeight + 24 + 12;
 
@@ -2424,7 +2424,8 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> {
         GlassMenuItem(
           title: Strings.t(lang, 'all_accounts'),
           icon: const Icon(Icons.dashboard_outlined),
-          titleStyle: TextStyle(color: context.textPrimary.withOpacity(0.9), fontSize: 13.5, fontWeight: FontWeight.w400),
+          iconColor: rawSelected == -1 ? primary : null,
+          titleStyle: TextStyle(color: context.textPrimary.withOpacity(0.9), fontSize: 13.5, fontWeight: FontWeight.w600),
           isSelected: rawSelected == -1,
           trailing: rawSelected == -1 ? Icon(Icons.check_rounded, color: primary, size: 18) : null,
           height: _itemHeight,
@@ -2453,7 +2454,8 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> {
                       return GlassMenuItem(
                         title: cards[i].name,
                         icon: const Icon(SolarIconsOutline.card),
-                        titleStyle: TextStyle(color: context.textPrimary.withOpacity(0.9), fontSize: 13.5, fontWeight: FontWeight.w400),
+                        iconColor: isCurrent ? primary : null,
+                        titleStyle: TextStyle(color: context.textPrimary.withOpacity(0.9), fontSize: 13.5, fontWeight: FontWeight.w600),
                         isSelected: isCurrent,
                         trailing: isCurrent ? Icon(Icons.check_rounded, color: primary, size: 18) : null,
                         height: _itemHeight,
@@ -2470,7 +2472,8 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> {
         GlassMenuItem(
           title: Strings.t(lang, 'add_card'),
           icon: const Icon(SolarIconsOutline.addCircle),
-          titleStyle: TextStyle(color: context.textPrimary.withOpacity(0.9), fontSize: 13.5, fontWeight: FontWeight.w400),
+          iconColor: primary,
+          titleStyle: TextStyle(color: primary, fontSize: 13.5, fontWeight: FontWeight.w600),
           height: _itemHeight,
           onTap: () => Future.microtask(() => showCardForm(context: context, ref: ref)),
         ),
