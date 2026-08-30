@@ -2249,8 +2249,8 @@ class HamburgerMorphMenu extends ConsumerWidget {
 class MoreMorphMenu extends ConsumerStatefulWidget {
   const MoreMorphMenu({super.key});
 
-  static const double _itemHeight = 40.0;
-  static const double _dividerHeight = 8.0;
+  static const double _itemHeight = 36.0;
+  static const double _dividerHeight = 4.0;
   static const double _iconSize = 18.0;
   static TextStyle _titleStyle(BuildContext context) =>
       TextStyle(color: context.textPrimary.withOpacity(0.9), fontSize: 13.5, fontWeight: FontWeight.w600);
