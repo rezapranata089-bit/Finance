@@ -2285,11 +2285,13 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> {
           height: cardsAreaHeight,
           child: cards.isEmpty
               ? const SizedBox.shrink()
-              : Scrollbar(
+              : RawScrollbar(
                   controller: _cardsScrollController,
                   thumbVisibility: cards.length > _maxVisibleCards,
+                  thumbColor: primary.withOpacity(context.isDark ? 0.5 : 0.35),
                   radius: const Radius.circular(8),
                   thickness: 3,
+                  minThumbLength: 24,
                   child: ListView.separated(
                     controller: _cardsScrollController,
                     padding: const EdgeInsets.only(right: 6),
