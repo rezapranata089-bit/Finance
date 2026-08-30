@@ -2578,6 +2578,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
   String filter = 'all';
   int? cardFilter;
   double minAmountFilter = 0;
+  bool _sliderDragging = false;
   int _displayCount = _pageSize;
   final ScrollController _scrollController = ScrollController();
   static const filterKeys = ['all', 'income', 'expense'];
@@ -2705,18 +2706,27 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
                         left: thumbCenterX - thumbWidth / 2,
                         top: topPosition,
                         child: IgnorePointer(
-                          child: Container(
-                            width: thumbWidth,
-                            height: thumbHeight,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(thumbHeight / 2),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(context.isDark ? 0.28 : 0.16),
-                                  blurRadius: 7,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
+                          child: AnimatedScale(
+                            scale: _sliderDragging ? 1.3 : 1.0,
+                            duration: const Duration(milliseconds: 200),
+                            curve: Curves.easeOut,
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 200),
+                              curve: Curves.easeOut,
+                              width: thumbWidth,
+                              height: thumbHeight,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(thumbHeight / 2),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(context.isDark
+                                        ? (_sliderDragging ? 0.34 : 0.28)
+                                        : (_sliderDragging ? 0.22 : 0.16)),
+                                    blurRadius: _sliderDragging ? 11 : 7,
+                                    offset: Offset(0, _sliderDragging ? 4 : 2),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
@@ -2728,6 +2738,8 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
                         divisions: 20,
                         activeColor: Theme.of(context).colorScheme.primary,
                         quality: GlassQuality.premium,
+                        onChangeStart: (_) => setState(() => _sliderDragging = true),
+                        onChangeEnd: (_) => setState(() => _sliderDragging = false),
                         onChanged: (v) => setState(() {
                           minAmountFilter = v;
                           _resetPaging();
