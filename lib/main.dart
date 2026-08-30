@@ -3864,51 +3864,32 @@ void showTransactionLoanNotice(BuildContext context, WidgetRef ref, FinanceTrans
 
 void _confirmDeleteTransaction(BuildContext context, WidgetRef ref, FinanceTransaction item) {
   final lang = ref.read(langProvider);
-  final isDark = context.isDark;
-  showDialog(
+  GlassDialog.show(
     context: context,
-    barrierColor: Colors.black.withOpacity(0.28),
-    builder: (dialogContext) => Dialog(
-      backgroundColor: Colors.transparent,
-      elevation: 0,
-      insetPadding: const EdgeInsets.symmetric(horizontal: 28),
-      child: LiquidGlass(
-        borderRadius: 28,
-        tint: isDark ? Colors.black : Colors.white,
-        intensity: isDark ? 1.7 : 1.2,
-        blur: 18,
-        useBlur: true,
-        chromaticAberration: 2.2,
-        borderColor: isDark ? Colors.white.withOpacity(0.14) : Colors.white.withOpacity(0.7),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(22, 22, 22, 14),
-          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(Strings.t(lang, 'delete_transaction_title'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: context.textPrimary)),
-            const SizedBox(height: 12),
-            Text(Strings.t(lang, 'delete_transaction_confirm').replaceAll('{title}', item.title), style: TextStyle(fontSize: 14, height: 1.4, color: context.textMuted)),
-            const SizedBox(height: 18),
-            Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-              TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(Strings.t(lang, 'cancel'))),
-              TextButton(
-                onPressed: () {
-                  final loanId = item.loanId;
-                  if (loanId != null && item.category == 'Pinjaman Diberikan') {
-                    ref.read(loansProvider.notifier).removeLoan(loanId);
-                  } else {
-                    if (loanId != null) {
-                      ref.read(loansProvider.notifier).removePaymentByTransaction(loanId, item.id);
-                    }
-                    ref.read(transactionsProvider.notifier).remove(item);
-                  }
-                  Navigator.pop(dialogContext);
-                },
-                child: Text(Strings.t(lang, 'delete'), style: const TextStyle(color: Colors.redAccent)),
-              ),
-            ]),
-          ]),
-        ),
+    title: Strings.t(lang, 'delete_transaction_title'),
+    message: Strings.t(lang, 'delete_transaction_confirm').replaceAll('{title}', item.title),
+    actions: [
+      GlassDialogAction(
+        label: Strings.t(lang, 'cancel'),
+        onPressed: () => Navigator.pop(context),
       ),
-    ),
+      GlassDialogAction(
+        label: Strings.t(lang, 'delete'),
+        isDestructive: true,
+        onPressed: () {
+          final loanId = item.loanId;
+          if (loanId != null && item.category == 'Pinjaman Diberikan') {
+            ref.read(loansProvider.notifier).removeLoan(loanId);
+          } else {
+            if (loanId != null) {
+              ref.read(loansProvider.notifier).removePaymentByTransaction(loanId, item.id);
+            }
+            ref.read(transactionsProvider.notifier).remove(item);
+          }
+          Navigator.pop(context);
+        },
+      ),
+    ],
   );
 }
 
@@ -4123,29 +4104,31 @@ class CardManagementPage extends ConsumerWidget {
 
   void _confirmDelete(BuildContext context, WidgetRef ref, int index, FinanceCard card) {
     final lang = ref.read(langProvider);
-    showDialog(
+    GlassDialog.show(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(Strings.t(lang, 'delete_card_title')),
-        content: Text(Strings.t(lang, 'delete_card_confirm').replaceAll('{name}', card.name)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(Strings.t(lang, 'cancel'))),
-          TextButton(
-            onPressed: () {
-              final selected = ref.read(selectedCardProvider);
-              ref.read(cardsProvider.notifier).remove(index);
-              final newLen = ref.read(cardsProvider).length;
-              if (selected != -1 && selected >= newLen) {
-                ref.read(selectedCardProvider.notifier).state = newLen - 1;
-              } else if (selected != -1 && index < selected) {
-                ref.read(selectedCardProvider.notifier).state = selected - 1;
-              }
-              Navigator.pop(dialogContext);
-            },
-            child: Text(Strings.t(lang, 'delete'), style: const TextStyle(color: Colors.redAccent)),
-          ),
-        ],
-      ),
+      title: Strings.t(lang, 'delete_card_title'),
+      message: Strings.t(lang, 'delete_card_confirm').replaceAll('{name}', card.name),
+      actions: [
+        GlassDialogAction(
+          label: Strings.t(lang, 'cancel'),
+          onPressed: () => Navigator.pop(context),
+        ),
+        GlassDialogAction(
+          label: Strings.t(lang, 'delete'),
+          isDestructive: true,
+          onPressed: () {
+            final selected = ref.read(selectedCardProvider);
+            ref.read(cardsProvider.notifier).remove(index);
+            final newLen = ref.read(cardsProvider).length;
+            if (selected != -1 && selected >= newLen) {
+              ref.read(selectedCardProvider.notifier).state = newLen - 1;
+            } else if (selected != -1 && index < selected) {
+              ref.read(selectedCardProvider.notifier).state = selected - 1;
+            }
+            Navigator.pop(context);
+          },
+        ),
+      ],
     );
   }
 }
@@ -4397,22 +4380,24 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
 
   void _confirmDeleteLoan(BuildContext context, WidgetRef ref, Loan loan) {
     final lang = ref.read(langProvider);
-    showDialog(
+    GlassDialog.show(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(Strings.t(lang, 'delete_loan_title')),
-        content: Text(Strings.t(lang, 'delete_loan_confirm').replaceAll('{name}', loan.borrowerName)),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(Strings.t(lang, 'cancel'))),
-          TextButton(
-            onPressed: () {
-              ref.read(loansProvider.notifier).removeLoan(loan.id);
-              Navigator.pop(dialogContext);
-            },
-            child: Text(Strings.t(lang, 'delete'), style: const TextStyle(color: Colors.redAccent)),
-          ),
-        ],
-      ),
+      title: Strings.t(lang, 'delete_loan_title'),
+      message: Strings.t(lang, 'delete_loan_confirm').replaceAll('{name}', loan.borrowerName),
+      actions: [
+        GlassDialogAction(
+          label: Strings.t(lang, 'cancel'),
+          onPressed: () => Navigator.pop(context),
+        ),
+        GlassDialogAction(
+          label: Strings.t(lang, 'delete'),
+          isDestructive: true,
+          onPressed: () {
+            ref.read(loansProvider.notifier).removeLoan(loan.id);
+            Navigator.pop(context);
+          },
+        ),
+      ],
     );
   }
 }
