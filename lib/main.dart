@@ -2234,19 +2234,25 @@ class CardSelectorButton extends ConsumerWidget {
     final rawSelected = ref.watch(selectedCardProvider);
     final selected = rawSelected == -1 ? -1 : (rawSelected >= cards.length ? cards.length - 1 : (rawSelected < 0 ? 0 : rawSelected));
     final lang = ref.watch(langProvider);
+    final primary = Theme.of(context).colorScheme.primary;
 
     return GlassMenu(
       items: [
         GlassMenuItem(
           title: Strings.t(lang, 'all_accounts'),
           icon: const Icon(Icons.dashboard_outlined),
+          isSelected: rawSelected == -1,
+          trailing: rawSelected == -1 ? Icon(Icons.check_rounded, color: primary, size: 18) : null,
           onTap: () => ref.read(selectedCardProvider.notifier).state = -1,
         ),
         const GlassMenuDivider(),
         ...cards.asMap().entries.map((e) {
+          final isCurrent = rawSelected == e.key;
           return GlassMenuItem(
             title: e.value.name,
             icon: const Icon(SolarIconsOutline.card),
+            isSelected: isCurrent,
+            trailing: isCurrent ? Icon(Icons.check_rounded, color: primary, size: 18) : null,
             onTap: () => ref.read(selectedCardProvider.notifier).state = e.key,
           );
         }),
