@@ -2715,7 +2715,9 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
                 firstChild: const SizedBox(width: double.infinity, height: 0),
                 secondChild: Padding(
                   padding: const EdgeInsets.only(top: 4),
-                  child: LayoutBuilder(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    child: LayoutBuilder(
                     builder: (context, constraints) {
                       const thumbRadius = 15.0;
                       const thumbWidth = thumbRadius * 2.6;
@@ -2770,6 +2772,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
                         ],
                       );
                     },
+                    ),
                   ),
                 ),
               ),
