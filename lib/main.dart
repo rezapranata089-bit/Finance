@@ -2636,7 +2636,11 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
               Text(Strings.t(lang, 'transactions_title'), style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 32, color: context.textPrimary)),
               Text(Strings.t(lang, 'transactions_subtitle'), style: TextStyle(color: context.textMuted)),
               const SizedBox(height: 22),
-              TextField(onChanged: (v) => setState(() { query = v; _resetPaging(); }), decoration: InputDecoration(hintText: Strings.t(lang, 'search_transactions'), prefixIcon: const Icon(Icons.search))),
+              GlassSearchBar(
+                placeholder: Strings.t(lang, 'search_transactions'),
+                quality: GlassQuality.premium,
+                onChanged: (v) => setState(() { query = v; _resetPaging(); }),
+              ),
               const SizedBox(height: 14),
               GlassSegmentedControl(
                 segments: filterKeys
