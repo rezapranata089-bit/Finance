@@ -932,39 +932,62 @@ class LiquidGlass extends StatelessWidget {
   final double intensity;
   final bool useBlur;
   final Color? borderColor;
+  final double chromaticAberration;
 
-  const LiquidGlass({super.key, required this.child, this.borderRadius = 20, this.tint, this.blur = 6, this.intensity = 1.0, this.useBlur = false, this.borderColor});
+  const LiquidGlass({super.key, required this.child, this.borderRadius = 20, this.tint, this.blur = 6, this.intensity = 1.0, this.useBlur = false, this.borderColor, this.chromaticAberration = 0.0});
 
   @override
   Widget build(BuildContext context) {
     final isDark = context.isDark;
     final base = tint ?? Colors.white;
-    final opacity = ((isDark ? 0.34 : 0.86) * intensity).clamp(0.0, 1.0);
     final rimColor = borderColor ?? (isDark ? Colors.white.withOpacity(0.22) : Colors.black.withOpacity(0.10));
-    final content = Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(borderRadius),
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            base.withOpacity((opacity + 0.10).clamp(0.0, 1.0)),
-            base.withOpacity(opacity),
+
+    if (!useBlur) {
+      final opacity = ((isDark ? 0.34 : 0.86) * intensity).clamp(0.0, 1.0);
+      return Container(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(borderRadius),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              base.withOpacity((opacity + 0.10).clamp(0.0, 1.0)),
+              base.withOpacity(opacity),
+            ],
+          ),
+          border: Border.all(color: rimColor, width: 1),
+          boxShadow: [
+            BoxShadow(color: isDark ? Colors.transparent : Colors.black.withOpacity(0.05), blurRadius: 6, spreadRadius: -2, offset: const Offset(0, 2)),
           ],
         ),
+        child: child,
+      );
+    }
+
+    final glassOpacity = ((isDark ? 0.48 : 0.62) * intensity).clamp(0.0, 1.0);
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(borderRadius),
         border: Border.all(color: rimColor, width: 1),
-        boxShadow: [
-          BoxShadow(color: isDark ? Colors.transparent : Colors.black.withOpacity(0.05), blurRadius: 6, spreadRadius: -2, offset: const Offset(0, 2)),
-        ],
       ),
-      child: child,
-    );
-    if (!useBlur) return content;
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(borderRadius),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-        child: content,
+      child: GlassContainer(
+        shape: LiquidRoundedRectangle(borderRadius: borderRadius),
+        useOwnLayer: true,
+        quality: GlassQuality.premium,
+        settings: LiquidGlassSettings(
+          glassColor: base.withOpacity(glassOpacity),
+          blur: blur,
+          thickness: 30,
+          refractiveIndex: 1.85,
+          lightIntensity: isDark ? 1.1 : 1.35,
+          lightAngle: 2.4,
+          ambientStrength: isDark ? 0.5 : 0.68,
+          chromaticAberration: chromaticAberration,
+          whitenStrength: isDark ? 0.0 : 0.4,
+          saturation: 1.15,
+          shadowElevation: isDark ? 1 : 4,
+        ),
+        child: child,
       ),
     );
   }
@@ -2170,15 +2193,15 @@ class HamburgerMorphMenu extends ConsumerWidget {
         ),
       ],
       settings: LiquidGlassSettings(
-        blur: 10,
-        thickness: 16,
-        glassColor: isDark ? const Color.fromRGBO(0, 0, 0, 0.55) : const Color.fromRGBO(255, 255, 255, 0.16),
-        whitenStrength: isDark ? 0.0 : 0.32,
-        lightIntensity: 0.7,
-        ambientStrength: 0.4,
-        saturation: 1.2,
-        refractiveIndex: 1.4,
-        chromaticAberration: 0.0,
+        blur: 18,
+        thickness: 30,
+        glassColor: isDark ? const Color.fromRGBO(0, 0, 0, 0.64) : const Color.fromRGBO(255, 255, 255, 0.42),
+        whitenStrength: isDark ? 0.0 : 0.4,
+        lightIntensity: 0.95,
+        ambientStrength: 0.55,
+        saturation: 1.35,
+        refractiveIndex: 1.85,
+        chromaticAberration: 2.2,
       ),
       trigger: LiquidGlass(
         borderRadius: 999,
@@ -2289,15 +2312,15 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> {
             ),
           ],
           settings: LiquidGlassSettings(
-            blur: 10,
-            thickness: 16,
-            glassColor: isDark ? const Color.fromRGBO(0, 0, 0, 0.55) : const Color.fromRGBO(255, 255, 255, 0.16),
-            whitenStrength: isDark ? 0.0 : 0.32,
-            lightIntensity: 0.7,
-            ambientStrength: 0.4,
-            saturation: 1.2,
-            refractiveIndex: 1.4,
-            chromaticAberration: 0.0,
+            blur: 18,
+            thickness: 30,
+            glassColor: isDark ? const Color.fromRGBO(0, 0, 0, 0.64) : const Color.fromRGBO(255, 255, 255, 0.42),
+            whitenStrength: isDark ? 0.0 : 0.4,
+            lightIntensity: 0.95,
+            ambientStrength: 0.55,
+            saturation: 1.35,
+            refractiveIndex: 1.85,
+            chromaticAberration: 2.2,
           ),
           triggerBuilder: (context, toggleMenu) => GestureDetector(
             onTap: () => _updateAlignmentThenToggle(toggleMenu),
@@ -2436,15 +2459,15 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> {
         ),
       ],
       settings: LiquidGlassSettings(
-        blur: 10,
-        thickness: 16,
-        glassColor: isDark ? const Color.fromRGBO(0, 0, 0, 0.55) : const Color.fromRGBO(255, 255, 255, 0.16),
-        whitenStrength: isDark ? 0.0 : 0.32,
-        lightIntensity: 0.7,
-        ambientStrength: 0.4,
-        saturation: 1.2,
-        refractiveIndex: 1.4,
-        chromaticAberration: 0.0,
+        blur: 18,
+        thickness: 30,
+        glassColor: isDark ? const Color.fromRGBO(0, 0, 0, 0.64) : const Color.fromRGBO(255, 255, 255, 0.42),
+        whitenStrength: isDark ? 0.0 : 0.4,
+        lightIntensity: 0.95,
+        ambientStrength: 0.55,
+        saturation: 1.35,
+        refractiveIndex: 1.85,
+        chromaticAberration: 2.2,
       ),
       menuAlignment: GlassMenuAlignment.topCenter,
       menuWidth: 198,
@@ -3804,6 +3827,7 @@ void _confirmDeleteTransaction(BuildContext context, WidgetRef ref, FinanceTrans
         intensity: isDark ? 1.7 : 1.2,
         blur: 18,
         useBlur: true,
+        chromaticAberration: 2.2,
         borderColor: isDark ? Colors.white.withOpacity(0.14) : Colors.white.withOpacity(0.7),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(22, 22, 22, 14),
