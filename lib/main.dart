@@ -3794,7 +3794,7 @@ class CardManagementPage extends ConsumerWidget {
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
                 cacheExtent: 600,
                 itemCount: cards.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                separatorBuilder: (_, __) => const SizedBox(height: 8),
                 itemBuilder: (context, i) {
                   final card = cards[i];
                   return RepaintBoundary(
