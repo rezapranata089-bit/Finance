@@ -2150,6 +2150,16 @@ class HamburgerMorphMenu extends ConsumerWidget {
           onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsPage())),
         ),
       ],
+      settings: LiquidGlassSettings(
+        blur: 10,
+        thickness: 10,
+        glassColor: isDark ? const Color.fromRGBO(0, 0, 0, 0.55) : const Color.fromRGBO(255, 255, 255, 0.12),
+        lightIntensity: 0.7,
+        ambientStrength: 0.4,
+        saturation: 1.2,
+        refractiveIndex: 0.7,
+        chromaticAberration: 0.0,
+      ),
       trigger: LiquidGlass(
         borderRadius: 999,
         tint: isDark ? Colors.black : null,
@@ -2204,6 +2214,16 @@ class MoreMorphMenu extends ConsumerWidget {
               onTap: () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(Strings.t(lang, 'not_available').replaceAll('{name}', Strings.t(lang, 'savings_target'))))),
             ),
           ],
+          settings: LiquidGlassSettings(
+            blur: 10,
+            thickness: 10,
+            glassColor: isDark ? const Color.fromRGBO(0, 0, 0, 0.55) : const Color.fromRGBO(255, 255, 255, 0.12),
+            lightIntensity: 0.7,
+            ambientStrength: 0.4,
+            saturation: 1.2,
+            refractiveIndex: 0.7,
+            chromaticAberration: 0.0,
+          ),
           trigger: SizedBox(
             width: 68,
             height: 42,
