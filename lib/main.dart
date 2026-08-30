@@ -3872,58 +3872,49 @@ void _confirmDeleteTransaction(BuildContext context, WidgetRef ref, FinanceTrans
       backgroundColor: Colors.transparent,
       elevation: 0,
       insetPadding: const EdgeInsets.symmetric(horizontal: 28),
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(28),
-          border: Border.all(color: context.borderColor),
-          boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(isDark ? 0.28 : 0.12), blurRadius: 10, spreadRadius: -1, offset: const Offset(0, 3)),
-          ],
+      child: GlassContainer(
+        shape: const LiquidRoundedRectangle(borderRadius: 28),
+        useOwnLayer: true,
+        quality: GlassQuality.premium,
+        settings: LiquidGlassSettings(
+          blur: 18,
+          thickness: 30,
+          glassColor: isDark ? const Color.fromRGBO(0, 0, 0, 0.55) : const Color.fromRGBO(255, 255, 255, 0.12),
+          whitenStrength: 0.0,
+          lightIntensity: isDark ? 0.12 : 0.95,
+          ambientStrength: isDark ? 0.08 : 0.55,
+          saturation: isDark ? 1.6 : 1.9,
+          refractiveIndex: isDark ? 0.18 : 1.85,
+          chromaticAberration: isDark ? 0.0 : 2.2,
+          fresnelStrength: isDark ? 0.0 : 1.0,
+          glowIntensity: isDark ? 0.0 : 0.75,
         ),
-        child: GlassContainer(
-          shape: const LiquidRoundedRectangle(borderRadius: 28),
-          useOwnLayer: true,
-          quality: GlassQuality.premium,
-          settings: LiquidGlassSettings(
-            blur: 18,
-            thickness: 30,
-            glassColor: isDark ? const Color.fromRGBO(0, 0, 0, 0.55) : const Color.fromRGBO(255, 255, 255, 0.12),
-            whitenStrength: 0.0,
-            lightIntensity: isDark ? 0.12 : 0.95,
-            ambientStrength: isDark ? 0.08 : 0.55,
-            saturation: isDark ? 1.6 : 1.9,
-            refractiveIndex: isDark ? 0.18 : 1.85,
-            chromaticAberration: isDark ? 0.0 : 2.2,
-            fresnelStrength: isDark ? 0.0 : 1.0,
-            glowIntensity: isDark ? 0.0 : 0.75,
-          ),
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(22, 22, 22, 14),
-            child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(Strings.t(lang, 'delete_transaction_title'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: context.textPrimary)),
-              const SizedBox(height: 12),
-              Text(Strings.t(lang, 'delete_transaction_confirm').replaceAll('{title}', item.title), style: TextStyle(fontSize: 14, height: 1.4, color: context.textMuted)),
-              const SizedBox(height: 18),
-              Row(mainAxisAlignment: MainAxisAlignment.end, children: [
-                TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(Strings.t(lang, 'cancel'))),
-                TextButton(
-                  onPressed: () {
-                    final loanId = item.loanId;
-                    if (loanId != null && item.category == 'Pinjaman Diberikan') {
-                      ref.read(loansProvider.notifier).removeLoan(loanId);
-                    } else {
-                      if (loanId != null) {
-                        ref.read(loansProvider.notifier).removePaymentByTransaction(loanId, item.id);
-                      }
-                      ref.read(transactionsProvider.notifier).remove(item);
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(22, 22, 22, 14),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(Strings.t(lang, 'delete_transaction_title'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: context.textPrimary)),
+            const SizedBox(height: 12),
+            Text(Strings.t(lang, 'delete_transaction_confirm').replaceAll('{title}', item.title), style: TextStyle(fontSize: 14, height: 1.4, color: context.textMuted)),
+            const SizedBox(height: 18),
+            Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+              TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(Strings.t(lang, 'cancel'))),
+              TextButton(
+                onPressed: () {
+                  final loanId = item.loanId;
+                  if (loanId != null && item.category == 'Pinjaman Diberikan') {
+                    ref.read(loansProvider.notifier).removeLoan(loanId);
+                  } else {
+                    if (loanId != null) {
+                      ref.read(loansProvider.notifier).removePaymentByTransaction(loanId, item.id);
                     }
-                    Navigator.pop(dialogContext);
-                  },
-                  child: Text(Strings.t(lang, 'delete'), style: const TextStyle(color: Colors.redAccent)),
-                ),
-              ]),
+                    ref.read(transactionsProvider.notifier).remove(item);
+                  }
+                  Navigator.pop(dialogContext);
+                },
+                child: Text(Strings.t(lang, 'delete'), style: const TextStyle(color: Colors.redAccent)),
+              ),
             ]),
-          ),
+          ]),
         ),
       ),
     ),
