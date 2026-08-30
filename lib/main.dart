@@ -2695,6 +2695,12 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
                 divisions: 20,
                 activeColor: Theme.of(context).colorScheme.primary,
                 quality: GlassQuality.standard,
+                useOwnLayer: true,
+                settings: const LiquidGlassSettings(
+                  thickness: 24,
+                  blur: 4,
+                  refractiveIndex: 1.4,
+                ),
                 onChanged: (v) => setState(() {
                   minAmountFilter = v;
                   _resetPaging();
