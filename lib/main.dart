@@ -2165,6 +2165,7 @@ class HamburgerMorphMenu extends ConsumerWidget {
         GlassMenuItem(
           height: _itemHeight,
           iconSize: _iconSize,
+          iconColor: Theme.of(context).colorScheme.primary,
           titleStyle: _titleStyle(context),
           title: isDark ? Strings.t(lang, 'light') : Strings.t(lang, 'dark'),
           icon: Icon(isDark ? SolarIconsOutline.sun : SolarIconsOutline.moon),
@@ -2177,6 +2178,7 @@ class HamburgerMorphMenu extends ConsumerWidget {
         GlassMenuItem(
           height: _itemHeight,
           iconSize: _iconSize,
+          iconColor: Theme.of(context).colorScheme.primary,
           titleStyle: _titleStyle(context),
           title: Strings.t(lang, 'appearance'),
           icon: const Icon(SolarIconsOutline.palette),
@@ -2185,6 +2187,7 @@ class HamburgerMorphMenu extends ConsumerWidget {
         GlassMenuItem(
           height: _itemHeight,
           iconSize: _iconSize,
+          iconColor: Theme.of(context).colorScheme.primary,
           titleStyle: _titleStyle(context),
           title: Strings.t(lang, 'language'),
           icon: const Icon(Icons.language),
@@ -2193,6 +2196,7 @@ class HamburgerMorphMenu extends ConsumerWidget {
         GlassMenuItem(
           height: _itemHeight,
           iconSize: _iconSize,
+          iconColor: Theme.of(context).colorScheme.primary,
           titleStyle: _titleStyle(context),
           title: Strings.t(lang, 'notifications'),
           icon: const Icon(SolarIconsOutline.bell),
@@ -2285,6 +2289,7 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> {
             GlassMenuItem(
               height: MoreMorphMenu._itemHeight,
               iconSize: MoreMorphMenu._iconSize,
+              iconColor: Theme.of(context).colorScheme.primary,
               titleStyle: MoreMorphMenu._titleStyle(context),
               title: Strings.t(lang, 'account_wallet'),
               icon: const Icon(SolarIconsOutline.wallet),
@@ -2293,6 +2298,7 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> {
             GlassMenuItem(
               height: MoreMorphMenu._itemHeight,
               iconSize: MoreMorphMenu._iconSize,
+              iconColor: Theme.of(context).colorScheme.primary,
               titleStyle: MoreMorphMenu._titleStyle(context),
               title: Strings.t(lang, 'receivables'),
               icon: const Icon(SolarIconsOutline.usersGroupTwoRounded),
@@ -2302,6 +2308,7 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> {
             GlassMenuItem(
               height: MoreMorphMenu._itemHeight,
               iconSize: MoreMorphMenu._iconSize,
+              iconColor: Theme.of(context).colorScheme.primary,
               titleStyle: MoreMorphMenu._titleStyle(context),
               title: Strings.t(lang, 'appearance'),
               icon: const Icon(SolarIconsOutline.palette),
@@ -2310,6 +2317,7 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> {
             GlassMenuItem(
               height: MoreMorphMenu._itemHeight,
               iconSize: MoreMorphMenu._iconSize,
+              iconColor: Theme.of(context).colorScheme.primary,
               titleStyle: MoreMorphMenu._titleStyle(context),
               title: Strings.t(lang, 'language'),
               icon: const Icon(Icons.language),
@@ -2319,6 +2327,7 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> {
             GlassMenuItem(
               height: MoreMorphMenu._itemHeight,
               iconSize: MoreMorphMenu._iconSize,
+              iconColor: Theme.of(context).colorScheme.primary,
               titleStyle: MoreMorphMenu._titleStyle(context),
               title: Strings.t(lang, 'savings_target'),
               icon: const Icon(SolarIconsOutline.safeSquare),
