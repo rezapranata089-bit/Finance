@@ -3005,6 +3005,10 @@ class TransactionTile extends ConsumerWidget {
                   value: item.amount,
                   locale: 'id_ID',
                   format: NumberFlowFormat.currency(currencyCode: 'IDR', symbol: item.income ? '+Rp ' : '-Rp '),
+                  spring: NumberFlowSpring.ios,
+                  transformTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeInOut),
+                  opacityTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeOut),
+                  tabularNums: true,
                   style: TextStyle(fontFamily: 'Satoshi', fontWeight: FontWeight.w800, fontSize: 14, letterSpacing: -0.2, color: context.textPrimary),
                 ),
                 const SizedBox(height: 4),
@@ -3025,11 +3029,11 @@ class SummaryCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final lang = ref.watch(langProvider);
     return Container(padding: const EdgeInsets.all(18), decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(22), border: Border.all(color: context.borderColor)), child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-      _summary(context, Strings.t(lang, 'income'), NumberFlow(value: income, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: const TextStyle(fontFamily: 'Satoshi', color: Color(0xFF24A148), fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: -1.2))),
+      _summary(context, Strings.t(lang, 'income'), NumberFlow(value: income, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), spring: NumberFlowSpring.ios, transformTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeInOut), opacityTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeOut), tabularNums: true, style: const TextStyle(fontFamily: 'Satoshi', color: Color(0xFF24A148), fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: -1.2))),
       Container(width: 1, height: 44, color: context.borderColor),
-      _summary(context, Strings.t(lang, 'expense'), NumberFlow(value: expense, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: const TextStyle(fontFamily: 'Satoshi', color: Color(0xFFE05270), fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: -1.2))),
+      _summary(context, Strings.t(lang, 'expense'), NumberFlow(value: expense, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), spring: NumberFlowSpring.ios, transformTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeInOut), opacityTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeOut), tabularNums: true, style: const TextStyle(fontFamily: 'Satoshi', color: Color(0xFFE05270), fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: -1.2))),
       Container(width: 1, height: 44, color: context.borderColor),
-      _summary(context, Strings.t(lang, 'savings'), Row(mainAxisSize: MainAxisSize.min, children: [NumberFlow(value: income == 0 ? 0 : ((income - expense) / income * 100).round(), style: TextStyle(fontFamily: 'Satoshi', color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: -1.2)), Text('%', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: -1.2))])),
+      _summary(context, Strings.t(lang, 'savings'), Row(mainAxisSize: MainAxisSize.min, children: [NumberFlow(value: income == 0 ? 0 : ((income - expense) / income * 100).round(), spring: NumberFlowSpring.ios, transformTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeInOut), opacityTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeOut), tabularNums: true, style: TextStyle(fontFamily: 'Satoshi', color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: -1.2)), Text('%', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: -1.2))])),
     ]));
   }
   Widget _summary(BuildContext context, String title, Widget valueWidget) => Padding(padding: const EdgeInsets.symmetric(horizontal: 6), child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.center, children: [Text(title, style: TextStyle(color: context.textMuted, fontSize: 11)), const SizedBox(height: 7), FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.center, child: valueWidget)]));
@@ -3041,7 +3045,7 @@ class ReportRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ratio = total <= 0 ? 0.0 : (amount / total).clamp(0.0, 1.0);
-    return Padding(padding: const EdgeInsets.only(bottom: 16), child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label, style: TextStyle(fontWeight: FontWeight.w600, color: context.textPrimary)), Row(mainAxisSize: MainAxisSize.min, children: [NumberFlow(value: amount, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: TextStyle(fontFamily: 'Satoshi', color: context.textMuted, fontSize: 12, letterSpacing: -1.0)), Text(' · ${(ratio * 100).round()}%', style: TextStyle(color: context.textMuted, fontSize: 12))])]), const SizedBox(height: 8), LinearProgressIndicator(value: ratio, minHeight: 7, borderRadius: BorderRadius.circular(8), color: Theme.of(context).colorScheme.primary, backgroundColor: context.isDark ? Theme.of(context).colorScheme.primary.withOpacity(0.16) : Theme.of(context).colorScheme.tertiary)]));
+    return Padding(padding: const EdgeInsets.only(bottom: 16), child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label, style: TextStyle(fontWeight: FontWeight.w600, color: context.textPrimary)), Row(mainAxisSize: MainAxisSize.min, children: [NumberFlow(value: amount, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), spring: NumberFlowSpring.ios, transformTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeInOut), opacityTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeOut), tabularNums: true, style: TextStyle(fontFamily: 'Satoshi', color: context.textMuted, fontSize: 12, letterSpacing: -1.0)), Text(' · ${(ratio * 100).round()}%', style: TextStyle(color: context.textMuted, fontSize: 12))])]), const SizedBox(height: 8), LinearProgressIndicator(value: ratio, minHeight: 7, borderRadius: BorderRadius.circular(8), color: Theme.of(context).colorScheme.primary, backgroundColor: context.isDark ? Theme.of(context).colorScheme.primary.withOpacity(0.16) : Theme.of(context).colorScheme.tertiary)]));
   }
 }
 
@@ -3879,7 +3883,7 @@ void showTransactionActions(BuildContext context, WidgetRef ref, FinanceTransact
             decoration: BoxDecoration(color: context.isDark ? Colors.white.withOpacity(0.04) : const Color(0xFFF1EEF7), borderRadius: BorderRadius.circular(18)),
             child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
               Text(Strings.t(lang, item.income ? 'receive' : 'transfer'), style: TextStyle(color: context.textMuted)),
-              NumberFlow(value: item.amount, locale: 'id_ID', format: NumberFlowFormat.currency(currencyCode: 'IDR', symbol: item.income ? '+Rp ' : '-Rp '), style: TextStyle(fontFamily: 'Satoshi', fontWeight: FontWeight.w800, fontSize: 16, letterSpacing: -0.2, color: item.income ? const Color(0xFF24A148) : context.textPrimary)),
+              NumberFlow(value: item.amount, locale: 'id_ID', format: NumberFlowFormat.currency(currencyCode: 'IDR', symbol: item.income ? '+Rp ' : '-Rp '), spring: NumberFlowSpring.ios, transformTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeInOut), opacityTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeOut), tabularNums: true, style: TextStyle(fontFamily: 'Satoshi', fontWeight: FontWeight.w800, fontSize: 16, letterSpacing: -0.2, color: item.income ? const Color(0xFF24A148) : context.textPrimary)),
             ]),
           ),
           if (item.note.isNotEmpty) ...[
@@ -4229,7 +4233,7 @@ class CardManagementPage extends ConsumerWidget {
                               const SizedBox(height: 2),
                               Wrap(crossAxisAlignment: WrapCrossAlignment.center, children: [
                                 Text('${Strings.t(lang, 'initial_balance')}: ', style: TextStyle(color: context.textFaint, fontSize: 11)),
-                                NumberFlow(value: card.initialBalance, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: TextStyle(fontFamily: 'Satoshi', color: context.textFaint, fontSize: 11, letterSpacing: -1.0)),
+                                NumberFlow(value: card.initialBalance, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), spring: NumberFlowSpring.ios, transformTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeInOut), opacityTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeOut), tabularNums: true, style: TextStyle(fontFamily: 'Satoshi', color: context.textFaint, fontSize: 11, letterSpacing: -1.0)),
                               ]),
                             ],
                           ),
@@ -4422,7 +4426,7 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                           Text(Strings.t(lang, 'total_outstanding'), style: TextStyle(color: context.textMuted, fontSize: 11)),
                           const SizedBox(height: 6),
-                          NumberFlow(value: totalOutstanding, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: TextStyle(fontFamily: 'Satoshi', color: context.textPrimary, fontWeight: FontWeight.bold, fontSize: 15, letterSpacing: -0.2)),
+                          NumberFlow(value: totalOutstanding, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), spring: NumberFlowSpring.ios, transformTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeInOut), opacityTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeOut), tabularNums: true, style: TextStyle(fontFamily: 'Satoshi', color: context.textPrimary, fontWeight: FontWeight.bold, fontSize: 15, letterSpacing: -0.2)),
                         ]),
                       ),
                       Container(width: 1, height: 36, color: context.borderColor),
@@ -4432,7 +4436,7 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
                           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                             Text(Strings.t(lang, 'total_interest_collected'), style: TextStyle(color: context.textMuted, fontSize: 11)),
                             const SizedBox(height: 6),
-                            NumberFlow(value: totalInterest, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: const TextStyle(fontFamily: 'Satoshi', color: Color(0xFF24A148), fontWeight: FontWeight.bold, fontSize: 15, letterSpacing: -0.2)),
+                            NumberFlow(value: totalInterest, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), spring: NumberFlowSpring.ios, transformTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeInOut), opacityTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeOut), tabularNums: true, style: const TextStyle(fontFamily: 'Satoshi', color: Color(0xFF24A148), fontWeight: FontWeight.bold, fontSize: 15, letterSpacing: -0.2)),
                           ]),
                         ),
                       ),
@@ -4500,7 +4504,7 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
                                           const SizedBox(height: 4),
                                           Wrap(crossAxisAlignment: WrapCrossAlignment.center, children: [
                                             Text('${Strings.t(lang, 'remaining_principal')}: ', style: TextStyle(color: context.textMuted, fontSize: 12)),
-                                            NumberFlow(value: loan.remainingPrincipal, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: TextStyle(fontFamily: 'Satoshi', color: context.textMuted, fontSize: 12, letterSpacing: -0.1)),
+                                            NumberFlow(value: loan.remainingPrincipal, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), spring: NumberFlowSpring.ios, transformTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeInOut), opacityTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeOut), tabularNums: true, style: TextStyle(fontFamily: 'Satoshi', color: context.textMuted, fontSize: 12, letterSpacing: -0.1)),
                                           ]),
                                           if (sourceName.isNotEmpty) Text(sourceName, style: TextStyle(color: context.textFaint, fontSize: 11)),
                                         ],
@@ -4523,7 +4527,7 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
                                         const SizedBox(height: 6),
                                         Wrap(crossAxisAlignment: WrapCrossAlignment.center, alignment: WrapAlignment.end, children: [
                                           Text('${loan.interestPercent}% / ', style: TextStyle(color: context.textFaint, fontSize: 11, fontWeight: FontWeight.w600)),
-                                          NumberFlow(value: loan.currentInterest, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: TextStyle(fontFamily: 'Satoshi', color: context.textFaint, fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: -0.1)),
+                                          NumberFlow(value: loan.currentInterest, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), spring: NumberFlowSpring.ios, transformTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeInOut), opacityTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeOut), tabularNums: true, style: TextStyle(fontFamily: 'Satoshi', color: context.textFaint, fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: -0.1)),
                                         ]),
                                       ],
                                     ),
@@ -4854,7 +4858,7 @@ Future<void> showLoanDetail(BuildContext context, WidgetRef ref, Loan loan) asyn
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text(Strings.t(lang, 'principal_label'), style: TextStyle(color: context.textMuted, fontSize: 11)),
                     const SizedBox(height: 6),
-                    NumberFlow(value: loan.principal, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: TextStyle(fontFamily: 'Satoshi', color: context.textPrimary, fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: -0.2)),
+                    NumberFlow(value: loan.principal, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), spring: NumberFlowSpring.ios, transformTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeInOut), opacityTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeOut), tabularNums: true, style: TextStyle(fontFamily: 'Satoshi', color: context.textPrimary, fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: -0.2)),
                   ]),
                 ),
                 Container(width: 1, height: 34, color: context.borderColor),
@@ -4864,7 +4868,7 @@ Future<void> showLoanDetail(BuildContext context, WidgetRef ref, Loan loan) asyn
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text(Strings.t(lang, 'remaining_principal'), style: TextStyle(color: context.textMuted, fontSize: 11)),
                       const SizedBox(height: 6),
-                      NumberFlow(value: loan.remainingPrincipal, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: TextStyle(fontFamily: 'Satoshi', color: context.textPrimary, fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: -0.2)),
+                      NumberFlow(value: loan.remainingPrincipal, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), spring: NumberFlowSpring.ios, transformTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeInOut), opacityTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeOut), tabularNums: true, style: TextStyle(fontFamily: 'Satoshi', color: context.textPrimary, fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: -0.2)),
                     ]),
                   ),
                 ),
@@ -4948,7 +4952,7 @@ Future<void> showLoanDetail(BuildContext context, WidgetRef ref, Loan loan) asyn
                                 ],
                               ),
                             ),
-                            NumberFlow(value: amount, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: '+Rp '), style: TextStyle(fontFamily: 'Satoshi', fontWeight: FontWeight.w800, fontSize: 12.5, letterSpacing: -0.1, color: isInterest ? const Color(0xFF24A148) : context.textPrimary)),
+                            NumberFlow(value: amount, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: '+Rp '), spring: NumberFlowSpring.ios, transformTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeInOut), opacityTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeOut), tabularNums: true, style: TextStyle(fontFamily: 'Satoshi', fontWeight: FontWeight.w800, fontSize: 12.5, letterSpacing: -0.1, color: isInterest ? const Color(0xFF24A148) : context.textPrimary)),
                           ]),
                         );
                       },
