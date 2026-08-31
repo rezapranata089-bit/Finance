@@ -271,9 +271,8 @@ my_finance
 ├── .gitignore
 ├── .metadata
 ├── analysis_options.yaml
+├── flutter_01.log
 ├── flutter_01.png
-├── frtool_merge_20260829_213058.txt
-├── frtool_merge_20260829_223026.txt
 ├── my_finance.iml
 ├── pubspec.lock
 ├── pubspec.yaml
@@ -2560,11 +2559,14 @@ include(":app")
 ### FILE: lib/main.dart
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui';
 
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/physics.dart';
@@ -3484,6 +3486,180 @@ class ThousandsInputFormatter extends TextInputFormatter {
   }
 }
 
+class GlassPageRoute<T> extends CupertinoPageRoute<T> {
+  GlassPageRoute({required super.builder});
+}
+
+void showGlassSnackBar(BuildContext context, String message, {IconData? icon}) {
+  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 18, color: Colors.white),
+            const SizedBox(width: 10),
+          ],
+          Flexible(child: Text(message)),
+        ],
+      ),
+      behavior: SnackBarBehavior.floating,
+      duration: const Duration(milliseconds: 2200),
+    ),
+  );
+}
+
+class _ConfettiParticle {
+  final double x;
+  final double startDelay;
+  final double swaySeed;
+  final double sizeSeed;
+  final Color color;
+  _ConfettiParticle({required this.x, required this.startDelay, required this.swaySeed, required this.sizeSeed, required this.color});
+}
+
+void showLoanPaidConfetti(BuildContext context) {
+  final overlay = Overlay.of(context);
+  late OverlayEntry entry;
+  entry = OverlayEntry(
+    builder: (context) => _ConfettiOverlay(onDone: () => entry.remove()),
+  );
+  overlay.insert(entry);
+}
+
+class _ConfettiOverlay extends StatefulWidget {
+  final VoidCallback onDone;
+  const _ConfettiOverlay({required this.onDone});
+  @override
+  State<_ConfettiOverlay> createState() => _ConfettiOverlayState();
+}
+
+class _ConfettiOverlayState extends State<_ConfettiOverlay> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 1700));
+  late final List<_ConfettiParticle> _particles;
+  static const _colors = [Color(0xFF24A148), Color(0xFF7655D8), Color(0xFFE05270), Color(0xFFFFC107), Color(0xFF2196F3)];
+
+  @override
+  void initState() {
+    super.initState();
+    final rnd = Random();
+    _particles = List.generate(26, (i) => _ConfettiParticle(
+          x: rnd.nextDouble(),
+          startDelay: rnd.nextDouble() * 0.25,
+          swaySeed: rnd.nextDouble() * pi * 2,
+          sizeSeed: 5 + rnd.nextDouble() * 5,
+          color: _colors[rnd.nextInt(_colors.length)],
+        ));
+    _controller.forward().whenComplete(() {
+      if (mounted) widget.onDone();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, child) => CustomPaint(
+            size: size,
+            painter: _ConfettiPainter(particles: _particles, progress: _controller.value),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ConfettiPainter extends CustomPainter {
+  final List<_ConfettiParticle> particles;
+  final double progress;
+  _ConfettiPainter({required this.particles, required this.progress});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    for (final p in particles) {
+      final localT = ((progress - p.startDelay) / (1 - p.startDelay)).clamp(0.0, 1.0);
+      if (localT <= 0) continue;
+      final dy = size.height * 0.32 * localT;
+      final dx = sin(p.swaySeed + localT * pi * 3) * 22;
+      final opacity = (1 - localT).clamp(0.0, 1.0);
+      final paint = Paint()..color = p.color.withOpacity(opacity);
+      final cx = p.x * size.width + dx;
+      final cy = size.height * 0.22 + dy;
+      canvas.save();
+      canvas.translate(cx, cy);
+      canvas.rotate(localT * pi * 4);
+      canvas.drawRect(Rect.fromCenter(center: Offset.zero, width: p.sizeSeed, height: p.sizeSeed * 0.6), paint);
+      canvas.restore();
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _ConfettiPainter oldDelegate) => oldDelegate.progress != progress;
+}
+
+class CountUpNumberFlow extends StatefulWidget {
+  final num value;
+  final String locale;
+  final NumberFlowFormat format;
+  final TextStyle style;
+  final bool tabularNums;
+  const CountUpNumberFlow({
+    super.key,
+    required this.value,
+    required this.locale,
+    required this.format,
+    required this.style,
+    this.tabularNums = true,
+  });
+
+  @override
+  State<CountUpNumberFlow> createState() => _CountUpNumberFlowState();
+}
+
+class _CountUpNumberFlowState extends State<CountUpNumberFlow> {
+  num _displayValue = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() => _displayValue = widget.value);
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant CountUpNumberFlow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.value != widget.value) {
+      _displayValue = widget.value;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return NumberFlow(
+      value: _displayValue,
+      locale: widget.locale,
+      format: widget.format,
+      spring: NumberFlowSpring.ios,
+      transformTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeInOut),
+      opacityTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeOut),
+      tabularNums: widget.tabularNums,
+      style: widget.style,
+    );
+  }
+}
+
 class LiquidGlass extends StatelessWidget {
   final Widget child;
   final double borderRadius;
@@ -3556,104 +3732,6 @@ class LiquidGlass extends StatelessWidget {
   }
 }
 
-class LiquidGlassStyle {
-  final LiquidGlassShape shape;
-  final LiquidGlassAppearance appearance;
-  final LiquidGlassRefraction refraction;
-
-  const LiquidGlassStyle({required this.shape, required this.appearance, required this.refraction});
-}
-
-class LiquidGlassShape {
-  final double cornerRadius;
-
-  const LiquidGlassShape._(this.cornerRadius);
-
-  static LiquidGlassShape roundedRectangle({required double cornerRadius, Color? borderColor, double? borderWidth}) {
-    return LiquidGlassShape._(cornerRadius);
-  }
-}
-
-class LiquidGlassAppearance {
-  final Color color;
-  final LiquidGlassBlur blur;
-  final double saturation;
-
-  const LiquidGlassAppearance({required this.color, required this.blur, required this.saturation});
-}
-
-class LiquidGlassBlur {
-  final double sigmaX;
-  final double sigmaY;
-
-  const LiquidGlassBlur({required this.sigmaX, required this.sigmaY});
-}
-
-class LiquidGlassRefraction {
-  final double distortion;
-  final double distortionWidth;
-  final double magnification;
-  final double chromaticAberration;
-
-  const LiquidGlassRefraction({required this.distortion, required this.distortionWidth, required this.magnification, required this.chromaticAberration});
-}
-
-class LiquidGlassShadow extends StatelessWidget {
-  final double blur;
-  final double opacity;
-  final Offset offset;
-  final double cornerRadius;
-  final Widget child;
-
-  const LiquidGlassShadow({super.key, required this.blur, required this.opacity, required this.offset, required this.cornerRadius, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(cornerRadius),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(opacity),
-            blurRadius: blur,
-            offset: offset,
-          ),
-        ],
-      ),
-      child: child,
-    );
-  }
-}
-
-class LiquidGlassLens extends StatelessWidget {
-  final LiquidGlassStyle style;
-  final Widget child;
-
-  const LiquidGlassLens({super.key, required this.style, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = context.isDark;
-    return GlassContainer(
-      shape: LiquidRoundedRectangle(borderRadius: style.shape.cornerRadius),
-      useOwnLayer: true,
-      quality: GlassQuality.standard,
-      settings: LiquidGlassSettings(
-        glassColor: style.appearance.color,
-        blur: style.appearance.blur.sigmaX,
-        saturation: style.appearance.saturation,
-        thickness: 20,
-        refractiveIndex: 1 + (style.refraction.magnification - 1) * 3,
-        lightIntensity: isDark ? 1.1 : 1.4,
-        lightAngle: 2.4,
-        ambientStrength: isDark ? 0.5 : 0.7,
-        chromaticAberration: style.refraction.chromaticAberration,
-        shadowElevation: isDark ? 1 : 4,
-      ),
-      child: child,
-    );
-  }
-}
 
 class VisibilityAwareLottie extends StatefulWidget {
   final String asset;
@@ -3736,6 +3814,44 @@ class ShakeFieldState extends State<ShakeField> with SingleTickerProviderStateMi
       animation: _offset,
       builder: (context, child) => Transform.translate(offset: Offset(_offset.value, 0), child: child),
       child: widget.child,
+    );
+  }
+}
+
+class PressScale extends StatefulWidget {
+  final Widget child;
+  final VoidCallback onTap;
+  final VoidCallback? onLongPress;
+  const PressScale({super.key, required this.child, required this.onTap, this.onLongPress});
+  @override
+  State<PressScale> createState() => _PressScaleState();
+}
+
+class _PressScaleState extends State<PressScale> {
+  double _scale = 1.0;
+
+  void _setPressed(bool pressed) {
+    setState(() => _scale = pressed ? 0.92 : 1.0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => _setPressed(true),
+      onTapUp: (_) => _setPressed(false),
+      onTapCancel: () => _setPressed(false),
+      onTap: () {
+        HapticFeedback.selectionClick();
+        widget.onTap();
+      },
+      onLongPress: widget.onLongPress,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedScale(
+        scale: _scale,
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOut,
+        child: widget.child,
+      ),
     );
   }
 }
@@ -4056,6 +4172,9 @@ class TransactionNotifier extends StateNotifier<List<FinanceTransaction>> {
     _persist();
   }
 }
+
+final removingTransactionIdsProvider = StateProvider<Set<String>>((ref) => <String>{});
+
     final dummyDataActiveProvider = StateProvider<bool>(
       (ref) => ref.watch(prefsProvider).getBool('dummy_data_active') ?? false,
     );
@@ -4097,11 +4216,11 @@ void toggleDummyData(BuildContext context, WidgetRef ref) {
     ref.read(dummyTransactionsHolderProvider.notifier).state = [];
     ref.read(dummyDataActiveProvider.notifier).state = false;
     ref.read(prefsProvider).setBool('dummy_data_active', false);
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(Strings.t(lang, 'dummy_removed'))));
+    showGlassSnackBar(context, Strings.t(lang, 'dummy_removed'), icon: Icons.remove_circle_outline);
   } else {
     final cards = ref.read(cardsProvider);
     if (cards.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(Strings.t(lang, 'dummy_no_cards'))));
+      showGlassSnackBar(context, Strings.t(lang, 'dummy_no_cards'), icon: Icons.info_outline);
       return;
     }
     final dummy = _buildSmartDummyTransactions(cards);
@@ -4109,7 +4228,7 @@ void toggleDummyData(BuildContext context, WidgetRef ref) {
     ref.read(dummyTransactionsHolderProvider.notifier).state = dummy;
     ref.read(dummyDataActiveProvider.notifier).state = true;
     ref.read(prefsProvider).setBool('dummy_data_active', true);
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(Strings.t(lang, 'dummy_added'))));
+    showGlassSnackBar(context, Strings.t(lang, 'dummy_added'), icon: Icons.check_circle_outline);
   }
 }
 
@@ -4129,7 +4248,7 @@ class MyFinanceApp extends ConsumerWidget {
       theme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.light,
-        scaffoldBackgroundColor: Colors.white,
+        scaffoldBackgroundColor: Color.alphaBlend(theme.primary.withOpacity(0.03), const Color(0xFFFFFFFF)),
         colorScheme: ColorScheme.fromSeed(
           seedColor: theme.primary,
           primary: theme.primary,
@@ -4142,6 +4261,12 @@ class MyFinanceApp extends ConsumerWidget {
             .black
             .apply(fontFamily: 'Satoshi', bodyColor: const Color(0xFF25212E), displayColor: const Color(0xFF25212E)),
         appBarTheme: const AppBarTheme(backgroundColor: Colors.transparent, elevation: 0),
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          },
+        ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true, fillColor: const Color(0xFFF1EEF7),
           hintStyle: TextStyle(color: Colors.grey.shade500),
@@ -4153,7 +4278,7 @@ class MyFinanceApp extends ConsumerWidget {
       darkTheme: ThemeData(
         useMaterial3: true,
         brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF1E1B27),
+        scaffoldBackgroundColor: Color.alphaBlend(theme.primary.withOpacity(0.03), const Color(0xFF1E1B27)),
         colorScheme: ColorScheme.fromSeed(
           seedColor: theme.primary,
           brightness: Brightness.dark,
@@ -4170,6 +4295,12 @@ class MyFinanceApp extends ConsumerWidget {
         textTheme: Typography.material2021(platform: TargetPlatform.android)
             .white
             .apply(fontFamily: 'Satoshi', bodyColor: Colors.white, displayColor: Colors.white),
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          },
+        ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true, fillColor: const Color(0xFF29253363),
           hintStyle: const TextStyle(color: Colors.white38),
@@ -4270,29 +4401,66 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   }
 }
 
-class FinanceShell extends ConsumerWidget {
+class FinanceShell extends ConsumerStatefulWidget {
   const FinanceShell({super.key});
   static const pages = [HomePage(), ReportsPage(), TransactionsPage(), ProfilePage()];
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<FinanceShell> createState() => _FinanceShellState();
+}
+
+class _FinanceShellState extends ConsumerState<FinanceShell> with SingleTickerProviderStateMixin {
+  late final PageController _pageController;
+  late final AnimationController _fadeController;
+  late final Animation<double> _fadeAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(initialPage: ref.read(tabProvider));
+    // Kurangi durasi menjadi 100ms agar fade out & in lebih responsif (total 200ms)
+    _fadeController = AnimationController(vsync: this, duration: const Duration(milliseconds: 100));
+    _fadeAnimation = CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    _fadeController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final tab = ref.watch(tabProvider);
     final lang = ref.watch(langProvider);
+    ref.listen<int>(tabProvider, (previous, next) {
+      if (!_pageController.hasClients) return;
+      final current = _pageController.page?.round() ?? tab;
+      if (current != next) {
+        if ((current - next).abs() == 1) {
+          _pageController.animateToPage(
+            next,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOutCubic,
+          );
+        } else {
+          _fadeController.forward(from: 0).whenComplete(() {
+            if (mounted) {
+              _pageController.jumpToPage(next);
+              _fadeController.reverse();
+            }
+          });
+        }
+      }
+    });
     return Scaffold(
-      body: SizedBox.expand(
-        child: Stack(
-          children: List.generate(
-            pages.length,
-            (i) => AnimatedOpacity(
-              duration: const Duration(milliseconds: 100),
-              curve: tab == i ? Curves.easeOut : Curves.easeIn,
-              opacity: tab == i ? 1 : 0,
-              child: IgnorePointer(
-                ignoring: tab != i,
-                child: RepaintBoundary(child: pages[i]),
-              ),
-            ),
-          ),
+      body: FadeTransition(
+        opacity: ReverseAnimation(_fadeAnimation),
+        child: PageView(
+          controller: _pageController,
+          onPageChanged: (i) => ref.read(tabProvider.notifier).state = i,
+          children: FinanceShell.pages.map((p) => RepaintBoundary(child: p)).toList(),
         ),
       ),
       bottomNavigationBar: Container(
@@ -4329,7 +4497,9 @@ class FinanceShell extends ConsumerWidget {
     final isSelected = currentTab == index;
     final color = isSelected ? context.textPrimary : context.iconMuted;
     return GestureDetector(
-      onTap: () => ref.read(tabProvider.notifier).state = index,
+      onTap: () {
+        ref.read(tabProvider.notifier).state = index;
+      },
       onLongPress: onLongPress,
       behavior: HitTestBehavior.opaque,
       child: SizedBox(
@@ -4445,7 +4615,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     const HamburgerMorphMenu(),
                     Text(Strings.t(lang, 'my_account'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: context.textPrimary)),
                     GestureDetector(
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsPage())),
+                      onTap: () => Navigator.push(context, GlassPageRoute(builder: (_) => const NotificationsPage())),
                       child: Stack(
                         clipBehavior: Clip.none,
                         children: [
@@ -4483,7 +4653,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                       value: balance,
                       locale: 'id_ID',
                       format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '),
-                      spring: NumberFlowSpring.ios,
+                      spring: NumberFlowSpring.bouncy,
+                      motionBlur: 5.5,
+                      digitSquish: 0.32,
+                      stagger: const Duration(milliseconds: 40),
                       transformTiming: const TimingConfig(
                         duration: Duration(milliseconds: 450),
                         curve: Curves.easeInOut,
@@ -4493,6 +4666,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                         curve: Curves.easeOut,
                       ),
                       tabularNums: true,
+                      onAnimationsFinish: () => HapticFeedback.selectionClick(),
                       style: TextStyle(fontFamily: 'Satoshi', fontSize: 38, fontWeight: FontWeight.w700, letterSpacing: -1.8, color: context.textPrimary),
                     ),
                   ),
@@ -4646,11 +4820,14 @@ class _HomePageState extends ConsumerState<HomePage> {
                 Text(Strings.t(lang, 'today'), style: TextStyle(color: context.textFaint, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1)),
                 const SizedBox(height: 12),
                 ...items.take(4).toList().asMap().entries.map(
-                      (e) => StaggeredReveal(
-                        key: ValueKey(e.value.id),
-                        index: e.key,
-                        stagger: true,
-                        child: TransactionTile(item: e.value),
+                      (e) => AnimatedTransactionTile(
+                        item: e.value,
+                        child: StaggeredReveal(
+                          key: ValueKey(e.value.id),
+                          index: e.key,
+                          stagger: true,
+                          child: TransactionTile(item: e.value),
+                        ),
                       ),
                     ),
               ],
@@ -4665,7 +4842,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     final accent = Theme.of(context).colorScheme.secondary;
     final isDark = context.isDark;
     final useBlackGlass = blackGlassInDark && isDark;
-    return GestureDetector(
+    return PressScale(
       onTap: onTap,
       child: Column(
         children: [
@@ -4759,7 +4936,7 @@ class HamburgerMorphMenu extends ConsumerWidget {
           titleStyle: _titleStyle(context),
           title: Strings.t(lang, 'appearance'),
           icon: Transform.translate(offset: const Offset(-8, 0), child: const Icon(SolarIconsOutline.palette)),
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ThemeSelectionPage())),
+          onTap: () => Navigator.push(context, GlassPageRoute(builder: (_) => const ThemeSelectionPage())),
         ),
         GlassMenuItem(
           height: _itemHeight,
@@ -4768,7 +4945,7 @@ class HamburgerMorphMenu extends ConsumerWidget {
           titleStyle: _titleStyle(context),
           title: Strings.t(lang, 'language'),
           icon: Transform.translate(offset: const Offset(-8, 0), child: const Icon(Icons.language)),
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LanguageSelectionPage())),
+          onTap: () => Navigator.push(context, GlassPageRoute(builder: (_) => const LanguageSelectionPage())),
         ),
         GlassMenuItem(
           height: _itemHeight,
@@ -4777,7 +4954,7 @@ class HamburgerMorphMenu extends ConsumerWidget {
           titleStyle: _titleStyle(context),
           title: Strings.t(lang, 'notifications'),
           icon: Transform.translate(offset: const Offset(-8, 0), child: const Icon(SolarIconsOutline.bell)),
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsPage())),
+          onTap: () => Navigator.push(context, GlassPageRoute(builder: (_) => const NotificationsPage())),
         ),
       ],
       settings: LiquidGlassSettings(
@@ -4872,7 +5049,7 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> {
               titleStyle: MoreMorphMenu._titleStyle(context),
               title: Strings.t(lang, 'account_wallet'),
               icon: Transform.translate(offset: const Offset(-8, 0), child: const Icon(SolarIconsOutline.wallet)),
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CardManagementPage())),
+              onTap: () => Navigator.push(context, GlassPageRoute(builder: (_) => const CardManagementPage())),
             ),
             GlassMenuItem(
               height: MoreMorphMenu._itemHeight,
@@ -4881,7 +5058,7 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> {
               titleStyle: MoreMorphMenu._titleStyle(context),
               title: Strings.t(lang, 'receivables'),
               icon: Transform.translate(offset: const Offset(-8, 0), child: const Icon(SolarIconsOutline.usersGroupTwoRounded)),
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoanManagementPage())),
+              onTap: () => Navigator.push(context, GlassPageRoute(builder: (_) => const LoanManagementPage())),
             ),
             const GlassMenuDivider(height: MoreMorphMenu._dividerHeight),
             GlassMenuItem(
@@ -4891,7 +5068,7 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> {
               titleStyle: MoreMorphMenu._titleStyle(context),
               title: Strings.t(lang, 'appearance'),
               icon: Transform.translate(offset: const Offset(-8, 0), child: const Icon(SolarIconsOutline.palette)),
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ThemeSelectionPage())),
+              onTap: () => Navigator.push(context, GlassPageRoute(builder: (_) => const ThemeSelectionPage())),
             ),
             GlassMenuItem(
               height: MoreMorphMenu._itemHeight,
@@ -4900,7 +5077,7 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> {
               titleStyle: MoreMorphMenu._titleStyle(context),
               title: Strings.t(lang, 'language'),
               icon: Transform.translate(offset: const Offset(-8, 0), child: const Icon(Icons.language)),
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LanguageSelectionPage())),
+              onTap: () => Navigator.push(context, GlassPageRoute(builder: (_) => const LanguageSelectionPage())),
             ),
             const GlassMenuDivider(height: MoreMorphMenu._dividerHeight),
             GlassMenuItem(
@@ -4910,7 +5087,7 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> {
               titleStyle: MoreMorphMenu._titleStyle(context),
               title: Strings.t(lang, 'savings_target'),
               icon: Transform.translate(offset: const Offset(-8, 0), child: const Icon(SolarIconsOutline.safeSquare)),
-              onTap: () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(Strings.t(lang, 'not_available').replaceAll('{name}', Strings.t(lang, 'savings_target'))))),
+              onTap: () => showGlassSnackBar(context, Strings.t(lang, 'not_available').replaceAll('{name}', Strings.t(lang, 'savings_target')), icon: Icons.hourglass_empty_rounded),
             ),
           ],
           settings: LiquidGlassSettings(
@@ -5138,8 +5315,11 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
   String filter = 'all';
   int? cardFilter;
   double minAmountFilter = 0;
+  bool _sliderDragging = false;
+  bool _minAmountExpanded = false;
   int _displayCount = _pageSize;
   final ScrollController _scrollController = ScrollController();
+  final ValueNotifier<num> _minAmountNotifier = ValueNotifier<num>(0);
   static const filterKeys = ['all', 'income', 'expense'];
   static const _pageSize = 10;
   static const _maxAmountFilter = 5000000.0;
@@ -5154,6 +5334,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _minAmountNotifier.dispose();
     super.dispose();
   }
 
@@ -5177,13 +5358,13 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
     final items = all.where((e) =>
         (filter == 'all' || (filter == 'income' ? e.income : !e.income)) &&
         (cardFilter == null || e.cardIndex == cardFilter) &&
-        e.amount >= minAmountFilter &&
+        (!_minAmountExpanded || e.amount >= minAmountFilter) &&
         e.title.toLowerCase().contains(query.toLowerCase())).toList();
     final visibleCount = _displayCount < items.length ? _displayCount : items.length;
     final hasMore = visibleCount < items.length;
     return SafeArea(top: false, child: ListView.builder(
       controller: _scrollController,
-      padding: EdgeInsets.fromLTRB(20, MediaQuery.paddingOf(context).top + 22, 20, 24),
+      padding: EdgeInsets.fromLTRB(0, MediaQuery.paddingOf(context).top + 22, 0, 24),
       cacheExtent: 600,
       itemCount: visibleCount + 1 + (hasMore ? 1 : 0),
       itemBuilder: (context, index) {
@@ -5191,31 +5372,42 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(Strings.t(lang, 'transactions_title'), style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 32, color: context.textPrimary)),
-              Text(Strings.t(lang, 'transactions_subtitle'), style: TextStyle(color: context.textMuted)),
-              const SizedBox(height: 22),
-              TextField(onChanged: (v) => setState(() { query = v; _resetPaging(); }), decoration: InputDecoration(hintText: Strings.t(lang, 'search_transactions'), prefixIcon: const Icon(Icons.search))),
-              const SizedBox(height: 14),
-              GlassSegmentedControl(
-                segments: filterKeys
-                    .map((k) => GlassSegment(label: Strings.t(lang, 'filter_$k')))
-                    .toList(),
-                selectedIndex: filterKeys.indexOf(filter),
-                indicatorColor: Theme.of(context).colorScheme.primary.withOpacity(context.isDark ? 0.25 : 0.15),
-                onSegmentSelected: (index) {
-                  setState(() {
-                    filter = filterKeys[index];
-                    _resetPaging();
-                  });
-                },
-                quality: GlassQuality.premium,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(Strings.t(lang, 'transactions_title'), style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 32, color: context.textPrimary)),
+                    Text(Strings.t(lang, 'transactions_subtitle'), style: TextStyle(color: context.textMuted)),
+                    const SizedBox(height: 22),
+                    GlassSearchBar(
+                      placeholder: Strings.t(lang, 'search_transactions'),
+                      quality: GlassQuality.standard,
+                      onChanged: (v) => setState(() { query = v; _resetPaging(); }),
+                    ),
+                    const SizedBox(height: 14),
+                    GlassSegmentedControl(
+                      segments: filterKeys
+                          .map((k) => GlassSegment(label: Strings.t(lang, 'filter_$k')))
+                          .toList(),
+                      selectedIndex: filterKeys.indexOf(filter),
+                      indicatorColor: Theme.of(context).colorScheme.primary.withOpacity(context.isDark ? 0.25 : 0.15),
+                      onSegmentSelected: (index) {
+                        setState(() {
+                          filter = filterKeys[index];
+                          _resetPaging();
+                        });
+                      },
+                      quality: GlassQuality.premium,
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                ),
               ),
-              const SizedBox(height: 10),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                clipBehavior: Clip.none,
                 physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
                   children: [
                     Padding(
@@ -5223,6 +5415,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
                       child: ChoiceChip(
                         label: Text(Strings.t(lang, 'all_accounts')),
                         selected: cardFilter == null,
+                        shape: const StadiumBorder(),
                         onSelected: (_) => setState(() { cardFilter = null; _resetPaging(); }),
                       ),
                     ),
@@ -5232,6 +5425,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
                             child: ChoiceChip(
                               label: Text(e.value.name),
                               selected: cardFilter == e.key,
+                              shape: const StadiumBorder(),
                               onSelected: (_) => setState(() { cardFilter = e.key; _resetPaging(); }),
                             ),
                           ),
@@ -5239,28 +5433,119 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
                   ],
                 ),
               ),
-              const SizedBox(height: 18),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('Nominal minimal', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: context.textMuted)),
-                  Text(rupiah(minAmountFilter), style: TextStyle(fontFamily: 'Satoshi', fontSize: 12, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.primary)),
-                ],
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 18),
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => setState(() => _minAmountExpanded = !_minAmountExpanded),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text('Nominal minimal', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: context.textMuted)),
+                              const SizedBox(width: 4),
+                              AnimatedRotation(
+                                turns: _minAmountExpanded ? 0.5 : 0.0,
+                                duration: const Duration(milliseconds: 200),
+                                child: Icon(SolarIconsOutline.altArrowDown, size: 14, color: context.iconMuted),
+                              ),
+                            ],
+                          ),
+                          if (_minAmountExpanded)
+                            NumberFlow.scrub(
+                              value: _minAmountNotifier,
+                              format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '),
+                              tabularNums: true,
+                              style: TextStyle(fontFamily: 'Satoshi', fontSize: 12, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.primary),
+                            ),
+                        ],
+                      ),
+                    ),
+                    AnimatedCrossFade(
+                      duration: const Duration(milliseconds: 220),
+                      crossFadeState: _minAmountExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                      firstChild: const SizedBox(width: double.infinity, height: 0),
+                      secondChild: Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 15),
+                          child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            const thumbRadius = 15.0;
+                            const thumbWidth = thumbRadius * 2.6;
+                            const thumbHeight = thumbRadius * 1.6;
+                            const widgetHeight = thumbRadius * 2 + 16;
+                            const sliderRightPadding = 14.0;
+                            final trackWidth = constraints.maxWidth - sliderRightPadding - thumbRadius * 2;
+                            final normalized = ((minAmountFilter - 0) / (_maxAmountFilter - 0)).clamp(0.0, 1.0);
+                            final thumbCenterX = thumbRadius + trackWidth * normalized;
+                            const topPosition = (widgetHeight - thumbHeight) / 2;
+                            return Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                Positioned(
+                                  left: thumbCenterX - thumbRadius,
+                                  top: topPosition,
+                                  child: IgnorePointer(
+                                    child: AnimatedScale(
+                                      scale: _sliderDragging ? 1.18 : 1.0,
+                                      duration: const Duration(milliseconds: 160),
+                                      curve: Curves.easeOut,
+                                      child: Container(
+                                        width: thumbWidth,
+                                        height: thumbHeight,
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(thumbHeight / 2),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withOpacity(context.isDark ? 0.16 : 0.08),
+                                              blurRadius: 3,
+                                              offset: const Offset(0, 1),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.only(right: 14),
+                                  child: GlassSlider(
+                                    value: minAmountFilter,
+                                    min: 0,
+                                    max: _maxAmountFilter,
+                                    divisions: 20,
+                                    activeColor: Theme.of(context).colorScheme.primary,
+                                    quality: GlassQuality.premium,
+                                    useOwnLayer: true,
+                                    onChangeStart: (_) => setState(() => _sliderDragging = true),
+                                    onChangeEnd: (_) => setState(() => _sliderDragging = false),
+                                    onChanged: (v) {
+                                      _minAmountNotifier.value = v;
+                                      setState(() {
+                                        minAmountFilter = v;
+                                        _resetPaging();
+                                      });
+                                    },
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                ),
               ),
-              const SizedBox(height: 4),
-              GlassSlider(
-                value: minAmountFilter,
-                min: 0,
-                max: _maxAmountFilter,
-                divisions: 20,
-                activeColor: Theme.of(context).colorScheme.primary,
-                quality: GlassQuality.premium,
-                onChanged: (v) => setState(() {
-                  minAmountFilter = v;
-                  _resetPaging();
-                }),
-              ),
-              const SizedBox(height: 16),
             ],
           );
         }
@@ -5271,10 +5556,16 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
           );
         }
         final e = items[index - 1];
-        return StaggeredReveal(
-          animate: true,
-          index: index - 1,
-          child: TransactionTile(item: e),
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: AnimatedTransactionTile(
+            item: e,
+            child: StaggeredReveal(
+              animate: true,
+              index: index - 1,
+              child: TransactionTile(item: e),
+            ),
+          ),
         );
       },
     ));
@@ -5307,7 +5598,55 @@ class ReportsPage extends ConsumerWidget {
       const SizedBox(height: 24),
       SectionTitle(Strings.t(lang, 'cash_flow')),
       const SizedBox(height: 12),
-      Container(height: 190, padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(24), border: Border.all(color: context.borderColor)), child: RepaintBoundary(child: CustomPaint(painter: SimpleChartPainter(primary: Theme.of(context).colorScheme.primary, gridColor: context.isDark ? Colors.white.withOpacity(0.08) : const Color(0xFFEDEAF2))))),
+      Builder(builder: (context) {
+        final now = DateTime.now();
+        final dailyNet = List<double>.generate(7, (i) {
+          final day = DateTime(now.year, now.month, now.day).subtract(Duration(days: 6 - i));
+          final dayIncome = items.where((e) => e.income && _isSameDay(e.date, day)).fold<double>(0, (a, b) => a + b.amount);
+          final dayExpense = items.where((e) => !e.income && _isSameDay(e.date, day)).fold<double>(0, (a, b) => a + b.amount);
+          return dayIncome - dayExpense;
+        });
+        final maxAbs = dailyNet.map((v) => v.abs()).fold<double>(1, (a, b) => a > b ? a : b);
+        final chartPrimary = Theme.of(context).colorScheme.primary;
+        return Container(
+          height: 190,
+          padding: const EdgeInsets.fromLTRB(12, 20, 20, 12),
+          decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(24), border: Border.all(color: context.borderColor)),
+          child: LineChart(
+            LineChartData(
+              minY: -maxAbs * 1.2,
+              maxY: maxAbs * 1.2,
+              gridData: FlGridData(
+                show: true,
+                drawVerticalLine: false,
+                horizontalInterval: (maxAbs * 1.2) / 2,
+                getDrawingHorizontalLine: (_) => FlLine(color: context.isDark ? Colors.white.withOpacity(0.08) : const Color(0xFFEDEAF2), strokeWidth: 1),
+              ),
+              titlesData: const FlTitlesData(show: false),
+              borderData: FlBorderData(show: false),
+              lineTouchData: LineTouchData(
+                touchTooltipData: LineTouchTooltipData(
+                  getTooltipColor: (_) => context.isDark ? Colors.black87 : Colors.white,
+                  getTooltipItems: (spots) => spots.map((s) => LineTooltipItem(rupiah(s.y), TextStyle(color: chartPrimary, fontWeight: FontWeight.bold, fontSize: 11))).toList(),
+                ),
+              ),
+              lineBarsData: [
+                LineChartBarData(
+                  spots: List.generate(dailyNet.length, (i) => FlSpot(i.toDouble(), dailyNet[i])),
+                  isCurved: true,
+                  curveSmoothness: 0.35,
+                  color: chartPrimary,
+                  barWidth: 4,
+                  dotData: const FlDotData(show: false),
+                  belowBarData: BarAreaData(show: true, color: chartPrimary.withOpacity(context.isDark ? 0.18 : 0.12)),
+                ),
+              ],
+            ),
+            duration: const Duration(milliseconds: 450),
+            curve: Curves.easeInOut,
+          ),
+        );
+      }),
       const SizedBox(height: 24),
       SectionTitle(Strings.t(lang, 'expense_by_category')),
       const SizedBox(height: 12),
@@ -5432,6 +5771,40 @@ class SectionTitle extends StatelessWidget {
   Widget build(BuildContext context) => Text(text, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: context.textPrimary));
 }
 
+class AnimatedTransactionTile extends ConsumerWidget {
+  final FinanceTransaction item;
+  final Widget child;
+  const AnimatedTransactionTile({super.key, required this.item, required this.child});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isRemoving = ref.watch(removingTransactionIdsProvider).contains(item.id);
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      alignment: Alignment.topCenter,
+      child: AnimatedOpacity(
+        opacity: isRemoving ? 0.0 : 1.0,
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.easeOut,
+        // PENTING: child TIDAK boleh diganti dengan widget lain (mis. SizedBox kosong)
+        // saat isRemoving, karena itu membuat BuildContext dari tile ini ter-unmount
+        // sebelum callback penghapusan (Future.delayed) sempat berjalan. Akibatnya
+        // context.mounted menjadi false, ref.read(transactionsProvider.notifier).remove()
+        // batal dipanggil, transaksi tidak benar-benar terhapus, dan saldo utama tidak
+        // ter-update meski item sudah tidak terlihat di daftar.
+        child: IgnorePointer(
+          ignoring: isRemoving,
+          child: ConstrainedBox(
+            constraints: isRemoving ? const BoxConstraints(maxHeight: 0) : const BoxConstraints(),
+            child: ClipRect(child: child),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class TransactionTile extends ConsumerWidget {
   final FinanceTransaction item;
   const TransactionTile({super.key, required this.item});
@@ -5478,7 +5851,7 @@ class TransactionTile extends ConsumerWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                NumberFlow(
+                CountUpNumberFlow(
                   value: item.amount,
                   locale: 'id_ID',
                   format: NumberFlowFormat.currency(currencyCode: 'IDR', symbol: item.income ? '+Rp ' : '-Rp '),
@@ -5502,11 +5875,11 @@ class SummaryCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final lang = ref.watch(langProvider);
     return Container(padding: const EdgeInsets.all(18), decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(22), border: Border.all(color: context.borderColor)), child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-      _summary(context, Strings.t(lang, 'income'), NumberFlow(value: income, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: const TextStyle(fontFamily: 'Satoshi', color: Color(0xFF24A148), fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: -1.2))),
+      _summary(context, Strings.t(lang, 'income'), NumberFlow(value: income, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), spring: NumberFlowSpring.ios, transformTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeInOut), opacityTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeOut), tabularNums: true, style: const TextStyle(fontFamily: 'Satoshi', color: Color(0xFF24A148), fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: -1.2))),
       Container(width: 1, height: 44, color: context.borderColor),
-      _summary(context, Strings.t(lang, 'expense'), NumberFlow(value: expense, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: const TextStyle(fontFamily: 'Satoshi', color: Color(0xFFE05270), fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: -1.2))),
+      _summary(context, Strings.t(lang, 'expense'), NumberFlow(value: expense, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), spring: NumberFlowSpring.ios, transformTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeInOut), opacityTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeOut), tabularNums: true, style: const TextStyle(fontFamily: 'Satoshi', color: Color(0xFFE05270), fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: -1.2))),
       Container(width: 1, height: 44, color: context.borderColor),
-      _summary(context, Strings.t(lang, 'savings'), Row(mainAxisSize: MainAxisSize.min, children: [NumberFlow(value: income == 0 ? 0 : ((income - expense) / income * 100).round(), style: TextStyle(fontFamily: 'Satoshi', color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: -1.2)), Text('%', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: -1.2))])),
+      _summary(context, Strings.t(lang, 'savings'), Row(mainAxisSize: MainAxisSize.min, children: [NumberFlow(value: income == 0 ? 0 : ((income - expense) / income * 100).round(), spring: NumberFlowSpring.ios, transformTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeInOut), opacityTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeOut), tabularNums: true, style: TextStyle(fontFamily: 'Satoshi', color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: -1.2)), Text('%', style: TextStyle(color: Theme.of(context).colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 13, letterSpacing: -1.2))])),
     ]));
   }
   Widget _summary(BuildContext context, String title, Widget valueWidget) => Padding(padding: const EdgeInsets.symmetric(horizontal: 6), child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.center, children: [Text(title, style: TextStyle(color: context.textMuted, fontSize: 11)), const SizedBox(height: 7), FittedBox(fit: BoxFit.scaleDown, alignment: Alignment.center, child: valueWidget)]));
@@ -5518,7 +5891,7 @@ class ReportRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ratio = total <= 0 ? 0.0 : (amount / total).clamp(0.0, 1.0);
-    return Padding(padding: const EdgeInsets.only(bottom: 16), child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label, style: TextStyle(fontWeight: FontWeight.w600, color: context.textPrimary)), Row(mainAxisSize: MainAxisSize.min, children: [NumberFlow(value: amount, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: TextStyle(fontFamily: 'Satoshi', color: context.textMuted, fontSize: 12, letterSpacing: -1.0)), Text(' · ${(ratio * 100).round()}%', style: TextStyle(color: context.textMuted, fontSize: 12))])]), const SizedBox(height: 8), LinearProgressIndicator(value: ratio, minHeight: 7, borderRadius: BorderRadius.circular(8), color: Theme.of(context).colorScheme.primary, backgroundColor: context.isDark ? Theme.of(context).colorScheme.primary.withOpacity(0.16) : Theme.of(context).colorScheme.tertiary)]));
+    return Padding(padding: const EdgeInsets.only(bottom: 16), child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label, style: TextStyle(fontWeight: FontWeight.w600, color: context.textPrimary)), Row(mainAxisSize: MainAxisSize.min, children: [NumberFlow(value: amount, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), spring: NumberFlowSpring.ios, transformTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeInOut), opacityTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeOut), tabularNums: true, style: TextStyle(fontFamily: 'Satoshi', color: context.textMuted, fontSize: 12, letterSpacing: -1.0)), Text(' · ${(ratio * 100).round()}%', style: TextStyle(color: context.textMuted, fontSize: 12))])]), const SizedBox(height: 8), TweenAnimationBuilder<double>(tween: Tween(begin: 0.0, end: ratio), duration: const Duration(milliseconds: 650), curve: Curves.easeOutCubic, builder: (context, value, child) => LinearProgressIndicator(value: value, minHeight: 7, borderRadius: BorderRadius.circular(8), color: Theme.of(context).colorScheme.primary, backgroundColor: context.isDark ? Theme.of(context).colorScheme.primary.withOpacity(0.16) : Theme.of(context).colorScheme.tertiary))]));
   }
 }
 
@@ -5544,17 +5917,17 @@ class SettingList extends ConsumerWidget {
                 return ListTile(
                   onTap: () {
                     if (item.$1 == 'appearance') {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const ThemeSelectionPage()));
+                      Navigator.push(context, GlassPageRoute(builder: (_) => const ThemeSelectionPage()));
                     } else if (item.$1 == 'language') {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const LanguageSelectionPage()));
+                      Navigator.push(context, GlassPageRoute(builder: (_) => const LanguageSelectionPage()));
                     } else if (item.$1 == 'account_wallet') {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const CardManagementPage()));
+                      Navigator.push(context, GlassPageRoute(builder: (_) => const CardManagementPage()));
                     } else if (item.$1 == 'receivables') {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const LoanManagementPage()));
+                      Navigator.push(context, GlassPageRoute(builder: (_) => const LoanManagementPage()));
                     } else if (item.$1 == 'category') {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const CategorySettingsPage()));
+                      Navigator.push(context, GlassPageRoute(builder: (_) => const CategorySettingsPage()));
                     } else {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(Strings.t(lang, 'not_available').replaceAll('{name}', label))));
+                      showGlassSnackBar(context, Strings.t(lang, 'not_available').replaceAll('{name}', label), icon: Icons.hourglass_empty_rounded);
                     }
                   },
                   contentPadding: EdgeInsets.zero,
@@ -6029,21 +6402,7 @@ class NotificationsPage extends ConsumerWidget {
   }
 }
 
-class SimpleChartPainter extends CustomPainter {
-  final Color primary;
-  final Color gridColor;
-  SimpleChartPainter({required this.primary, required this.gridColor});
-  @override
-  void paint(Canvas canvas, Size size) {
-    final grid = Paint()..color = gridColor..strokeWidth = 1;
-    for (var i = 1; i < 5; i++) canvas.drawLine(Offset(0, size.height * i / 5), Offset(size.width, size.height * i / 5), grid);
-    final line = Paint()..color = primary..style = PaintingStyle.stroke..strokeWidth = 4..strokeCap = StrokeCap.round;
-    final path = Path()..moveTo(0, size.height * .72)..cubicTo(size.width * .16, size.height * .50, size.width * .2, size.height * .62, size.width * .35, size.height * .48)..cubicTo(size.width * .5, size.height * .32, size.width * .62, size.height * .6, size.width * .76, size.height * .28)..cubicTo(size.width * .84, size.height * .18, size.width * .92, size.height * .35, size.width, size.height * .15);
-    canvas.drawPath(path, line);
-  }
-  @override
-  bool shouldRepaint(covariant SimpleChartPainter oldDelegate) => oldDelegate.primary != primary || oldDelegate.gridColor != gridColor;
-}
+
 
 class BottomRoundedBorderPainter extends CustomPainter {
   final Color color;
@@ -6285,7 +6644,13 @@ Future<void> showTransactionForm(BuildContext context, WidgetRef ref, bool incom
           if (payPrincipalSelected) {
             ref.read(loansProvider.notifier).recordPayment(selectedLoanId!, isInterest: false, amount: principalValue, date: selectedDate, note: note.text.trim());
           }
+          final loanAfterPayment = ref.read(loansProvider).where((l) => l.id == selectedLoanId).toList();
+          final becamePaid = loanAfterPayment.isNotEmpty && loanAfterPayment.first.status == LoanStatus.paid;
           Navigator.pop(sheetContext);
+          if (becamePaid) {
+            HapticFeedback.mediumImpact();
+            showLoanPaidConfetti(context);
+          }
           return;
         }
         final hasAmountError = value <= 0;
@@ -6356,7 +6721,7 @@ void showTransactionActions(BuildContext context, WidgetRef ref, FinanceTransact
             decoration: BoxDecoration(color: context.isDark ? Colors.white.withOpacity(0.04) : const Color(0xFFF1EEF7), borderRadius: BorderRadius.circular(18)),
             child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
               Text(Strings.t(lang, item.income ? 'receive' : 'transfer'), style: TextStyle(color: context.textMuted)),
-              NumberFlow(value: item.amount, locale: 'id_ID', format: NumberFlowFormat.currency(currencyCode: 'IDR', symbol: item.income ? '+Rp ' : '-Rp '), style: TextStyle(fontFamily: 'Satoshi', fontWeight: FontWeight.w800, fontSize: 16, letterSpacing: -0.2, color: item.income ? const Color(0xFF24A148) : context.textPrimary)),
+              NumberFlow(value: item.amount, locale: 'id_ID', format: NumberFlowFormat.currency(currencyCode: 'IDR', symbol: item.income ? '+Rp ' : '-Rp '), spring: NumberFlowSpring.ios, transformTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeInOut), opacityTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeOut), tabularNums: true, style: TextStyle(fontFamily: 'Satoshi', fontWeight: FontWeight.w800, fontSize: 16, letterSpacing: -0.2, color: item.income ? const Color(0xFF24A148) : context.textPrimary)),
             ]),
           ),
           if (item.note.isNotEmpty) ...[
@@ -6442,7 +6807,7 @@ void showTransactionLoanNotice(BuildContext context, WidgetRef ref, FinanceTrans
             child: FilledButton.icon(
               onPressed: () {
                 Navigator.pop(sheetContext);
-                Navigator.push(context, MaterialPageRoute(builder: (_) => LoanManagementPage(initialLoanId: item.loanId)));
+                Navigator.push(context, GlassPageRoute(builder: (_) => LoanManagementPage(initialLoanId: item.loanId)));
               },
               icon: const Icon(SolarIconsOutline.usersGroupTwoRounded, size: 18),
               label: Text(Strings.t(lang, 'go_to_loans')),
@@ -6457,30 +6822,38 @@ void showTransactionLoanNotice(BuildContext context, WidgetRef ref, FinanceTrans
 void _confirmDeleteTransaction(BuildContext context, WidgetRef ref, FinanceTransaction item) {
   final lang = ref.read(langProvider);
   final isDark = context.isDark;
-  showDialog(
+  showGeneralDialog(
     context: context,
     barrierColor: Colors.black.withOpacity(0.45),
-    builder: (dialogContext) => Dialog(
+    barrierDismissible: true,
+    barrierLabel: 'dismiss',
+    transitionDuration: const Duration(milliseconds: 220),
+    transitionBuilder: (context, animation, secondaryAnimation, child) => Transform.scale(
+      scale: 0.92 + 0.08 * Curves.easeOutCubic.transform(animation.value),
+      alignment: Alignment.center,
+      child: child,
+    ),
+    pageBuilder: (dialogContext, animation, secondaryAnimation) => Dialog(
       backgroundColor: Colors.transparent,
       elevation: 0,
       insetPadding: const EdgeInsets.symmetric(horizontal: 28),
       child: GlassContainer(
         shape: const LiquidRoundedRectangle(borderRadius: 28),
         useOwnLayer: true,
-        quality: GlassQuality.premium,
+        quality: GlassQuality.standard,
         settings: LiquidGlassSettings(
-          blur: 20,
-          thickness: 24,
-          glassColor: isDark ? const Color.fromRGBO(0, 0, 0, 0.45) : const Color.fromRGBO(255, 255, 255, 0.22),
+          blur: 12,
+          thickness: 16,
+          glassColor: isDark ? const Color.fromRGBO(0, 0, 0, 0.5) : const Color.fromRGBO(255, 255, 255, 0.35),
           whitenStrength: 0.0,
-          lightIntensity: isDark ? 0.14 : 1.0,
-          ambientStrength: isDark ? 0.09 : 0.55,
-          saturation: isDark ? 1.6 : 1.9,
-          refractiveIndex: isDark ? 0.2 : 1.85,
-          chromaticAberration: isDark ? 0.0 : 2.2,
-          fresnelStrength: isDark ? 0.12 : 1.0,
-          glowIntensity: isDark ? 0.08 : 0.7,
-          shadowElevation: isDark ? 1.5 : 4,
+          lightIntensity: isDark ? 0.12 : 0.6,
+          ambientStrength: isDark ? 0.08 : 0.35,
+          saturation: 1.3,
+          refractiveIndex: isDark ? 0.15 : 1.2,
+          chromaticAberration: 0.0,
+          fresnelStrength: 0.0,
+          glowIntensity: 0.0,
+          shadowElevation: isDark ? 1 : 2,
         ),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(22, 22, 22, 14),
@@ -6493,16 +6866,23 @@ void _confirmDeleteTransaction(BuildContext context, WidgetRef ref, FinanceTrans
               TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(Strings.t(lang, 'cancel'))),
               TextButton(
                 onPressed: () {
-                  final loanId = item.loanId;
-                  if (loanId != null && item.category == 'Pinjaman Diberikan') {
-                    ref.read(loansProvider.notifier).removeLoan(loanId);
-                  } else {
-                    if (loanId != null) {
-                      ref.read(loansProvider.notifier).removePaymentByTransaction(loanId, item.id);
-                    }
-                    ref.read(transactionsProvider.notifier).remove(item);
-                  }
                   Navigator.pop(dialogContext);
+                  final currentRemoving = ref.read(removingTransactionIdsProvider);
+                  ref.read(removingTransactionIdsProvider.notifier).state = {...currentRemoving, item.id};
+                  Future.delayed(const Duration(milliseconds: 300), () {
+                    if (!context.mounted) return;
+                    final loanId = item.loanId;
+                    if (loanId != null && item.category == 'Pinjaman Diberikan') {
+                      ref.read(loansProvider.notifier).removeLoan(loanId);
+                    } else {
+                      if (loanId != null) {
+                        ref.read(loansProvider.notifier).removePaymentByTransaction(loanId, item.id);
+                      }
+                      ref.read(transactionsProvider.notifier).remove(item);
+                    }
+                    final afterRemoving = {...ref.read(removingTransactionIdsProvider)}..remove(item.id);
+                    ref.read(removingTransactionIdsProvider.notifier).state = afterRemoving;
+                  });
                 },
                 child: Text(Strings.t(lang, 'delete'), style: const TextStyle(color: Colors.redAccent)),
               ),
@@ -6698,7 +7078,7 @@ class CardManagementPage extends ConsumerWidget {
                               const SizedBox(height: 2),
                               Wrap(crossAxisAlignment: WrapCrossAlignment.center, children: [
                                 Text('${Strings.t(lang, 'initial_balance')}: ', style: TextStyle(color: context.textFaint, fontSize: 11)),
-                                NumberFlow(value: card.initialBalance, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: TextStyle(fontFamily: 'Satoshi', color: context.textFaint, fontSize: 11, letterSpacing: -1.0)),
+                                NumberFlow(value: card.initialBalance, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), spring: NumberFlowSpring.ios, transformTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeInOut), opacityTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeOut), tabularNums: true, style: TextStyle(fontFamily: 'Satoshi', color: context.textFaint, fontSize: 11, letterSpacing: -1.0)),
                               ]),
                             ],
                           ),
@@ -6726,30 +7106,38 @@ class CardManagementPage extends ConsumerWidget {
   void _confirmDelete(BuildContext context, WidgetRef ref, int index, FinanceCard card) {
     final lang = ref.read(langProvider);
     final isDark = context.isDark;
-    showDialog(
+    showGeneralDialog(
       context: context,
       barrierColor: Colors.black.withOpacity(0.45),
-      builder: (dialogContext) => Dialog(
+      barrierDismissible: true,
+      barrierLabel: 'dismiss',
+      transitionDuration: const Duration(milliseconds: 220),
+      transitionBuilder: (context, animation, secondaryAnimation, child) => Transform.scale(
+        scale: 0.92 + 0.08 * Curves.easeOutCubic.transform(animation.value),
+        alignment: Alignment.center,
+        child: child,
+      ),
+      pageBuilder: (dialogContext, animation, secondaryAnimation) => Dialog(
         backgroundColor: Colors.transparent,
         elevation: 0,
         insetPadding: const EdgeInsets.symmetric(horizontal: 28),
         child: GlassContainer(
           shape: const LiquidRoundedRectangle(borderRadius: 28),
           useOwnLayer: true,
-          quality: GlassQuality.premium,
+          quality: GlassQuality.standard,
           settings: LiquidGlassSettings(
-            blur: 20,
-            thickness: 24,
-            glassColor: isDark ? const Color.fromRGBO(0, 0, 0, 0.45) : const Color.fromRGBO(255, 255, 255, 0.22),
+            blur: 12,
+            thickness: 16,
+            glassColor: isDark ? const Color.fromRGBO(0, 0, 0, 0.5) : const Color.fromRGBO(255, 255, 255, 0.35),
             whitenStrength: 0.0,
-            lightIntensity: isDark ? 0.14 : 1.0,
-            ambientStrength: isDark ? 0.09 : 0.55,
-            saturation: isDark ? 1.6 : 1.9,
-            refractiveIndex: isDark ? 0.2 : 1.85,
-            chromaticAberration: isDark ? 0.0 : 2.2,
-            fresnelStrength: isDark ? 0.12 : 1.0,
-            glowIntensity: isDark ? 0.08 : 0.7,
-            shadowElevation: isDark ? 1.5 : 4,
+            lightIntensity: isDark ? 0.12 : 0.6,
+            ambientStrength: isDark ? 0.08 : 0.35,
+            saturation: 1.3,
+            refractiveIndex: isDark ? 0.15 : 1.2,
+            chromaticAberration: 0.0,
+            fresnelStrength: 0.0,
+            glowIntensity: 0.0,
+            shadowElevation: isDark ? 1 : 2,
           ),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(22, 22, 22, 14),
@@ -6883,7 +7271,7 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                           Text(Strings.t(lang, 'total_outstanding'), style: TextStyle(color: context.textMuted, fontSize: 11)),
                           const SizedBox(height: 6),
-                          NumberFlow(value: totalOutstanding, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: TextStyle(fontFamily: 'Satoshi', color: context.textPrimary, fontWeight: FontWeight.bold, fontSize: 15, letterSpacing: -0.2)),
+                          NumberFlow(value: totalOutstanding, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), spring: NumberFlowSpring.ios, transformTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeInOut), opacityTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeOut), tabularNums: true, style: TextStyle(fontFamily: 'Satoshi', color: context.textPrimary, fontWeight: FontWeight.bold, fontSize: 15, letterSpacing: -0.2)),
                         ]),
                       ),
                       Container(width: 1, height: 36, color: context.borderColor),
@@ -6893,7 +7281,7 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
                           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                             Text(Strings.t(lang, 'total_interest_collected'), style: TextStyle(color: context.textMuted, fontSize: 11)),
                             const SizedBox(height: 6),
-                            NumberFlow(value: totalInterest, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: const TextStyle(fontFamily: 'Satoshi', color: Color(0xFF24A148), fontWeight: FontWeight.bold, fontSize: 15, letterSpacing: -0.2)),
+                            NumberFlow(value: totalInterest, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), spring: NumberFlowSpring.ios, continuous: true, trend: 1, transformTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeInOut), opacityTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeOut), tabularNums: true, style: const TextStyle(fontFamily: 'Satoshi', color: Color(0xFF24A148), fontWeight: FontWeight.bold, fontSize: 15, letterSpacing: -0.2)),
                           ]),
                         ),
                       ),
@@ -6903,24 +7291,21 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
               ),
             ),
             const SizedBox(height: 16),
-            Padding(
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                clipBehavior: Clip.none,
-                physics: const BouncingScrollPhysics(),
-                child: Row(
-                  children: filterKeys
-                      .map<Widget>((k) => Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: ChoiceChip(
-                              label: Text(k == 'all' ? Strings.t(lang, 'filter_all') : Strings.t(lang, k)),
-                              selected: filter == k,
-                              onSelected: (_) => setState(() => filter = k),
-                            ),
-                          ))
-                      .toList(),
-                ),
+              child: Row(
+                children: filterKeys
+                    .map<Widget>((k) => Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: ChoiceChip(
+                            label: Text(k == 'all' ? Strings.t(lang, 'filter_all') : Strings.t(lang, k)),
+                            selected: filter == k,
+                            onSelected: (_) => setState(() => filter = k),
+                          ),
+                        ))
+                    .toList(),
               ),
             ),
             const SizedBox(height: 12),
@@ -6961,7 +7346,7 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
                                           const SizedBox(height: 4),
                                           Wrap(crossAxisAlignment: WrapCrossAlignment.center, children: [
                                             Text('${Strings.t(lang, 'remaining_principal')}: ', style: TextStyle(color: context.textMuted, fontSize: 12)),
-                                            NumberFlow(value: loan.remainingPrincipal, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: TextStyle(fontFamily: 'Satoshi', color: context.textMuted, fontSize: 12, letterSpacing: -0.1)),
+                                            NumberFlow(value: loan.remainingPrincipal, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), spring: NumberFlowSpring.ios, transformTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeInOut), opacityTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeOut), tabularNums: true, style: TextStyle(fontFamily: 'Satoshi', color: context.textMuted, fontSize: 12, letterSpacing: -0.1)),
                                           ]),
                                           if (sourceName.isNotEmpty) Text(sourceName, style: TextStyle(color: context.textFaint, fontSize: 11)),
                                         ],
@@ -6984,7 +7369,7 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
                                         const SizedBox(height: 6),
                                         Wrap(crossAxisAlignment: WrapCrossAlignment.center, alignment: WrapAlignment.end, children: [
                                           Text('${loan.interestPercent}% / ', style: TextStyle(color: context.textFaint, fontSize: 11, fontWeight: FontWeight.w600)),
-                                          NumberFlow(value: loan.currentInterest, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: TextStyle(fontFamily: 'Satoshi', color: context.textFaint, fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: -0.1)),
+                                          NumberFlow(value: loan.currentInterest, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), spring: NumberFlowSpring.ios, transformTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeInOut), opacityTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeOut), tabularNums: true, style: TextStyle(fontFamily: 'Satoshi', color: context.textFaint, fontSize: 11, fontWeight: FontWeight.w600, letterSpacing: -0.1)),
                                         ]),
                                       ],
                                     ),
@@ -7031,30 +7416,38 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
   void _confirmDeleteLoan(BuildContext context, WidgetRef ref, Loan loan) {
     final lang = ref.read(langProvider);
     final isDark = context.isDark;
-    showDialog(
+    showGeneralDialog(
       context: context,
       barrierColor: Colors.black.withOpacity(0.45),
-      builder: (dialogContext) => Dialog(
+      barrierDismissible: true,
+      barrierLabel: 'dismiss',
+      transitionDuration: const Duration(milliseconds: 220),
+      transitionBuilder: (context, animation, secondaryAnimation, child) => Transform.scale(
+        scale: 0.92 + 0.08 * Curves.easeOutCubic.transform(animation.value),
+        alignment: Alignment.center,
+        child: child,
+      ),
+      pageBuilder: (dialogContext, animation, secondaryAnimation) => Dialog(
         backgroundColor: Colors.transparent,
         elevation: 0,
         insetPadding: const EdgeInsets.symmetric(horizontal: 28),
         child: GlassContainer(
           shape: const LiquidRoundedRectangle(borderRadius: 28),
           useOwnLayer: true,
-          quality: GlassQuality.premium,
+          quality: GlassQuality.standard,
           settings: LiquidGlassSettings(
-            blur: 20,
-            thickness: 24,
-            glassColor: isDark ? const Color.fromRGBO(0, 0, 0, 0.45) : const Color.fromRGBO(255, 255, 255, 0.22),
+            blur: 12,
+            thickness: 16,
+            glassColor: isDark ? const Color.fromRGBO(0, 0, 0, 0.5) : const Color.fromRGBO(255, 255, 255, 0.35),
             whitenStrength: 0.0,
-            lightIntensity: isDark ? 0.14 : 1.0,
-            ambientStrength: isDark ? 0.09 : 0.55,
-            saturation: isDark ? 1.6 : 1.9,
-            refractiveIndex: isDark ? 0.2 : 1.85,
-            chromaticAberration: isDark ? 0.0 : 2.2,
-            fresnelStrength: isDark ? 0.12 : 1.0,
-            glowIntensity: isDark ? 0.08 : 0.7,
-            shadowElevation: isDark ? 1.5 : 4,
+            lightIntensity: isDark ? 0.12 : 0.6,
+            ambientStrength: isDark ? 0.08 : 0.35,
+            saturation: 1.3,
+            refractiveIndex: isDark ? 0.15 : 1.2,
+            chromaticAberration: 0.0,
+            fresnelStrength: 0.0,
+            glowIntensity: 0.0,
+            shadowElevation: isDark ? 1 : 2,
           ),
           child: Padding(
             padding: const EdgeInsets.fromLTRB(22, 22, 22, 14),
@@ -7307,7 +7700,7 @@ Future<void> showLoanDetail(BuildContext context, WidgetRef ref, Loan loan) asyn
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text(Strings.t(lang, 'principal_label'), style: TextStyle(color: context.textMuted, fontSize: 11)),
                     const SizedBox(height: 6),
-                    NumberFlow(value: loan.principal, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: TextStyle(fontFamily: 'Satoshi', color: context.textPrimary, fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: -0.2)),
+                    NumberFlow(value: loan.principal, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), spring: NumberFlowSpring.ios, transformTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeInOut), opacityTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeOut), tabularNums: true, style: TextStyle(fontFamily: 'Satoshi', color: context.textPrimary, fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: -0.2)),
                   ]),
                 ),
                 Container(width: 1, height: 34, color: context.borderColor),
@@ -7317,7 +7710,7 @@ Future<void> showLoanDetail(BuildContext context, WidgetRef ref, Loan loan) asyn
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Text(Strings.t(lang, 'remaining_principal'), style: TextStyle(color: context.textMuted, fontSize: 11)),
                       const SizedBox(height: 6),
-                      NumberFlow(value: loan.remainingPrincipal, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), style: TextStyle(fontFamily: 'Satoshi', color: context.textPrimary, fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: -0.2)),
+                      NumberFlow(value: loan.remainingPrincipal, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), spring: NumberFlowSpring.ios, transformTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeInOut), opacityTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeOut), tabularNums: true, style: TextStyle(fontFamily: 'Satoshi', color: context.textPrimary, fontWeight: FontWeight.bold, fontSize: 14, letterSpacing: -0.2)),
                     ]),
                   ),
                 ),
@@ -7401,7 +7794,7 @@ Future<void> showLoanDetail(BuildContext context, WidgetRef ref, Loan loan) asyn
                                 ],
                               ),
                             ),
-                            NumberFlow(value: amount, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: '+Rp '), style: TextStyle(fontFamily: 'Satoshi', fontWeight: FontWeight.w800, fontSize: 12.5, letterSpacing: -0.1, color: isInterest ? const Color(0xFF24A148) : context.textPrimary)),
+                            CountUpNumberFlow(value: amount, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: '+Rp '), style: TextStyle(fontFamily: 'Satoshi', fontWeight: FontWeight.w800, fontSize: 12.5, letterSpacing: -0.1, color: isInterest ? const Color(0xFF24A148) : context.textPrimary)),
                           ]),
                         );
                       },
@@ -7510,6 +7903,8 @@ class _StaggeredRevealState extends State<StaggeredReveal> with SingleTickerProv
 }
 
 String rupiah(double value) => AppFormatters.rupiah(value);
+
+bool _isSameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
 
 
 ### FILE: macos/Runner.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
