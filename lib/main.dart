@@ -926,24 +926,59 @@ class ThousandsInputFormatter extends TextInputFormatter {
   }
 }
 
-class GlassPageRoute<T> extends PageRouteBuilder<T> {
-  final WidgetBuilder builder;
-  GlassPageRoute({required this.builder})
-      : super(
-          transitionDuration: const Duration(milliseconds: 320),
-          reverseTransitionDuration: const Duration(milliseconds: 260),
-          pageBuilder: (context, animation, secondaryAnimation) => builder(context),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic);
-            return FadeTransition(
-              opacity: curved,
-              child: SlideTransition(
-                position: Tween<Offset>(begin: const Offset(0, 0.05), end: Offset.zero).animate(curved),
-                child: child,
+class PushPageTransitionsBuilder extends PageTransitionsBuilder {
+  const PushPageTransitionsBuilder();
+
+  @override
+  Widget buildTransitions<T>(
+    PageRoute<T> route,
+    BuildContext context,
+    Animation<double> animation,
+    Animation<double> secondaryAnimation,
+    Widget child,
+  ) {
+    final primaryCurve = CurvedAnimation(
+      parent: animation,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeOutCubic,
+    );
+    final secondaryCurve = CurvedAnimation(
+      parent: secondaryAnimation,
+      curve: Curves.easeOutCubic,
+      reverseCurve: Curves.easeOutCubic,
+    );
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return SlideTransition(
+      position: Tween<Offset>(
+        begin: Offset.zero,
+        end: const Offset(-0.25, 0.0),
+      ).animate(secondaryCurve),
+      child: SlideTransition(
+        position: Tween<Offset>(
+          begin: const Offset(1.0, 0.0),
+          end: Offset.zero,
+        ).animate(primaryCurve),
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(isDark ? 0.35 : 0.08),
+                blurRadius: 18,
+                spreadRadius: -4,
+                offset: const Offset(-6, 0),
               ),
-            );
-          },
-        );
+            ],
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+class GlassPageRoute<T> extends MaterialPageRoute<T> {
+  GlassPageRoute({required super.builder});
 }
 
 void showGlassSnackBar(BuildContext context, String message, {IconData? icon}) {
@@ -1717,6 +1752,12 @@ class MyFinanceApp extends ConsumerWidget {
             .black
             .apply(fontFamily: 'Satoshi', bodyColor: const Color(0xFF25212E), displayColor: const Color(0xFF25212E)),
         appBarTheme: const AppBarTheme(backgroundColor: Colors.transparent, elevation: 0),
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: PushPageTransitionsBuilder(),
+            TargetPlatform.iOS: PushPageTransitionsBuilder(),
+          },
+        ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true, fillColor: const Color(0xFFF1EEF7),
           hintStyle: TextStyle(color: Colors.grey.shade500),
@@ -1745,6 +1786,12 @@ class MyFinanceApp extends ConsumerWidget {
         textTheme: Typography.material2021(platform: TargetPlatform.android)
             .white
             .apply(fontFamily: 'Satoshi', bodyColor: Colors.white, displayColor: Colors.white),
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: PushPageTransitionsBuilder(),
+            TargetPlatform.iOS: PushPageTransitionsBuilder(),
+          },
+        ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true, fillColor: const Color(0xFF29253363),
           hintStyle: const TextStyle(color: Colors.white38),
