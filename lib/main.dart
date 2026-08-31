@@ -1845,30 +1845,49 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   }
 }
 
-class FinanceShell extends ConsumerWidget {
+class FinanceShell extends ConsumerStatefulWidget {
   const FinanceShell({super.key});
   static const pages = [HomePage(), ReportsPage(), TransactionsPage(), ProfilePage()];
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<FinanceShell> createState() => _FinanceShellState();
+}
+
+class _FinanceShellState extends ConsumerState<FinanceShell> {
+  late final PageController _pageController;
+
+  @override
+  void initState() {
+    super.initState();
+    _pageController = PageController(initialPage: ref.read(tabProvider));
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final tab = ref.watch(tabProvider);
     final lang = ref.watch(langProvider);
+    ref.listen<int>(tabProvider, (previous, next) {
+      if (!_pageController.hasClients) return;
+      final current = _pageController.page?.round() ?? tab;
+      if (current != next) {
+        _pageController.animateToPage(
+          next,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOutCubic,
+        );
+      }
+    });
     return Scaffold(
-      body: SizedBox.expand(
-        child: Stack(
-          children: List.generate(
-            pages.length,
-            (i) => AnimatedOpacity(
-              duration: const Duration(milliseconds: 100),
-              curve: tab == i ? Curves.easeOut : Curves.easeIn,
-              opacity: tab == i ? 1 : 0,
-              child: IgnorePointer(
-                ignoring: tab != i,
-                child: RepaintBoundary(child: pages[i]),
-              ),
-            ),
-          ),
-        ),
+      body: PageView(
+        controller: _pageController,
+        onPageChanged: (i) => ref.read(tabProvider.notifier).state = i,
+        children: FinanceShell.pages.map((p) => RepaintBoundary(child: p)).toList(),
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
