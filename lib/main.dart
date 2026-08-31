@@ -3167,8 +3167,8 @@ class ReportsPage extends ConsumerWidget {
                 ),
               ],
             ),
-            swapAnimationDuration: const Duration(milliseconds: 450),
-            swapAnimationCurve: Curves.easeInOut,
+            duration: const Duration(milliseconds: 450),
+            curve: Curves.easeInOut,
           ),
         );
       }),
