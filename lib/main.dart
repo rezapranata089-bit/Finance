@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui';
 
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:visibility_detector/visibility_detector.dart';
@@ -924,6 +926,216 @@ class ThousandsInputFormatter extends TextInputFormatter {
   }
 }
 
+class GlassPageRoute<T> extends PageRouteBuilder<T> {
+  final WidgetBuilder builder;
+  GlassPageRoute({required this.builder})
+      : super(
+          transitionDuration: const Duration(milliseconds: 320),
+          reverseTransitionDuration: const Duration(milliseconds: 260),
+          pageBuilder: (context, animation, secondaryAnimation) => builder(context),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic);
+            return FadeTransition(
+              opacity: curved,
+              child: SlideTransition(
+                position: Tween<Offset>(begin: const Offset(0, 0.05), end: Offset.zero).animate(curved),
+                child: child,
+              ),
+            );
+          },
+        );
+}
+
+void showGlassSnackBar(BuildContext context, String message, {IconData? icon}) {
+  final overlay = Overlay.of(context);
+  final isDark = context.isDark;
+  late OverlayEntry entry;
+  entry = OverlayEntry(
+    builder: (context) => _GlassSnackBarWidget(
+      message: message,
+      icon: icon,
+      isDark: isDark,
+      onDone: () => entry.remove(),
+    ),
+  );
+  overlay.insert(entry);
+}
+
+class _GlassSnackBarWidget extends StatefulWidget {
+  final String message;
+  final IconData? icon;
+  final bool isDark;
+  final VoidCallback onDone;
+  const _GlassSnackBarWidget({required this.message, required this.icon, required this.isDark, required this.onDone});
+  @override
+  State<_GlassSnackBarWidget> createState() => _GlassSnackBarWidgetState();
+}
+
+class _GlassSnackBarWidgetState extends State<_GlassSnackBarWidget> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 260));
+  late final Animation<double> _curve = CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic);
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.forward();
+    Future.delayed(const Duration(milliseconds: 2200), () async {
+      if (!mounted) return;
+      await _controller.reverse();
+      widget.onDone();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      left: 20, right: 20,
+      bottom: 32,
+      child: SafeArea(
+        child: AnimatedBuilder(
+          animation: _curve,
+          builder: (context, child) => Opacity(
+            opacity: _curve.value,
+            child: Transform.translate(offset: Offset(0, (1 - _curve.value) * 24), child: child),
+          ),
+          child: GlassContainer(
+            shape: const LiquidRoundedRectangle(borderRadius: 20),
+            useOwnLayer: true,
+            quality: GlassQuality.standard,
+            settings: LiquidGlassSettings(
+              blur: 14,
+              thickness: 18,
+              glassColor: widget.isDark ? const Color.fromRGBO(20, 18, 26, 0.85) : const Color.fromRGBO(255, 255, 255, 0.9),
+              whitenStrength: 0.0,
+              lightIntensity: widget.isDark ? 0.14 : 0.8,
+              ambientStrength: widget.isDark ? 0.08 : 0.4,
+              saturation: 1.2,
+              refractiveIndex: widget.isDark ? 0.15 : 1.3,
+              chromaticAberration: 0.0,
+              fresnelStrength: 0.0,
+              glowIntensity: 0.0,
+              shadowElevation: 3,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Row(mainAxisSize: MainAxisSize.min, children: [
+                if (widget.icon != null) ...[
+                  Icon(widget.icon, size: 18, color: widget.isDark ? Colors.white : const Color(0xFF25212E)),
+                  const SizedBox(width: 10),
+                ],
+                Flexible(child: Text(widget.message, style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: widget.isDark ? Colors.white : const Color(0xFF25212E)))),
+              ]),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ConfettiParticle {
+  final double x;
+  final double startDelay;
+  final double swaySeed;
+  final double sizeSeed;
+  final Color color;
+  _ConfettiParticle({required this.x, required this.startDelay, required this.swaySeed, required this.sizeSeed, required this.color});
+}
+
+void showLoanPaidConfetti(BuildContext context) {
+  final overlay = Overlay.of(context);
+  late OverlayEntry entry;
+  entry = OverlayEntry(
+    builder: (context) => _ConfettiOverlay(onDone: () => entry.remove()),
+  );
+  overlay.insert(entry);
+}
+
+class _ConfettiOverlay extends StatefulWidget {
+  final VoidCallback onDone;
+  const _ConfettiOverlay({required this.onDone});
+  @override
+  State<_ConfettiOverlay> createState() => _ConfettiOverlayState();
+}
+
+class _ConfettiOverlayState extends State<_ConfettiOverlay> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 1700));
+  late final List<_ConfettiParticle> _particles;
+  static const _colors = [Color(0xFF24A148), Color(0xFF7655D8), Color(0xFFE05270), Color(0xFFFFC107), Color(0xFF2196F3)];
+
+  @override
+  void initState() {
+    super.initState();
+    final rnd = Random();
+    _particles = List.generate(26, (i) => _ConfettiParticle(
+          x: rnd.nextDouble(),
+          startDelay: rnd.nextDouble() * 0.25,
+          swaySeed: rnd.nextDouble() * pi * 2,
+          sizeSeed: 5 + rnd.nextDouble() * 5,
+          color: _colors[rnd.nextInt(_colors.length)],
+        ));
+    _controller.forward().whenComplete(() {
+      if (mounted) widget.onDone();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, child) => CustomPaint(
+            size: size,
+            painter: _ConfettiPainter(particles: _particles, progress: _controller.value),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ConfettiPainter extends CustomPainter {
+  final List<_ConfettiParticle> particles;
+  final double progress;
+  _ConfettiPainter({required this.particles, required this.progress});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    for (final p in particles) {
+      final localT = ((progress - p.startDelay) / (1 - p.startDelay)).clamp(0.0, 1.0);
+      if (localT <= 0) continue;
+      final dy = size.height * 0.32 * localT;
+      final dx = sin(p.swaySeed + localT * pi * 3) * 22;
+      final opacity = (1 - localT).clamp(0.0, 1.0);
+      final paint = Paint()..color = p.color.withOpacity(opacity);
+      final cx = p.x * size.width + dx;
+      final cy = size.height * 0.22 + dy;
+      canvas.save();
+      canvas.translate(cx, cy);
+      canvas.rotate(localT * pi * 4);
+      canvas.drawRect(Rect.fromCenter(center: Offset.zero, width: p.sizeSeed, height: p.sizeSeed * 0.6), paint);
+      canvas.restore();
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _ConfettiPainter oldDelegate) => oldDelegate.progress != progress;
+}
+
 class LiquidGlass extends StatelessWidget {
   final Widget child;
   final double borderRadius;
@@ -1176,6 +1388,44 @@ class ShakeFieldState extends State<ShakeField> with SingleTickerProviderStateMi
       animation: _offset,
       builder: (context, child) => Transform.translate(offset: Offset(_offset.value, 0), child: child),
       child: widget.child,
+    );
+  }
+}
+
+class PressScale extends StatefulWidget {
+  final Widget child;
+  final VoidCallback onTap;
+  final VoidCallback? onLongPress;
+  const PressScale({super.key, required this.child, required this.onTap, this.onLongPress});
+  @override
+  State<PressScale> createState() => _PressScaleState();
+}
+
+class _PressScaleState extends State<PressScale> {
+  double _scale = 1.0;
+
+  void _setPressed(bool pressed) {
+    setState(() => _scale = pressed ? 0.92 : 1.0);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTapDown: (_) => _setPressed(true),
+      onTapUp: (_) => _setPressed(false),
+      onTapCancel: () => _setPressed(false),
+      onTap: () {
+        HapticFeedback.selectionClick();
+        widget.onTap();
+      },
+      onLongPress: widget.onLongPress,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedScale(
+        scale: _scale,
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOut,
+        child: widget.child,
+      ),
     );
   }
 }
@@ -1537,11 +1787,11 @@ void toggleDummyData(BuildContext context, WidgetRef ref) {
     ref.read(dummyTransactionsHolderProvider.notifier).state = [];
     ref.read(dummyDataActiveProvider.notifier).state = false;
     ref.read(prefsProvider).setBool('dummy_data_active', false);
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(Strings.t(lang, 'dummy_removed'))));
+    showGlassSnackBar(context, Strings.t(lang, 'dummy_removed'), icon: Icons.remove_circle_outline);
   } else {
     final cards = ref.read(cardsProvider);
     if (cards.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(Strings.t(lang, 'dummy_no_cards'))));
+      showGlassSnackBar(context, Strings.t(lang, 'dummy_no_cards'), icon: Icons.info_outline);
       return;
     }
     final dummy = _buildSmartDummyTransactions(cards);
@@ -1549,7 +1799,7 @@ void toggleDummyData(BuildContext context, WidgetRef ref) {
     ref.read(dummyTransactionsHolderProvider.notifier).state = dummy;
     ref.read(dummyDataActiveProvider.notifier).state = true;
     ref.read(prefsProvider).setBool('dummy_data_active', true);
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(Strings.t(lang, 'dummy_added'))));
+    showGlassSnackBar(context, Strings.t(lang, 'dummy_added'), icon: Icons.check_circle_outline);
   }
 }
 
@@ -1769,7 +2019,10 @@ class FinanceShell extends ConsumerWidget {
     final isSelected = currentTab == index;
     final color = isSelected ? context.textPrimary : context.iconMuted;
     return GestureDetector(
-      onTap: () => ref.read(tabProvider.notifier).state = index,
+      onTap: () {
+        HapticFeedback.selectionClick();
+        ref.read(tabProvider.notifier).state = index;
+      },
       onLongPress: onLongPress,
       behavior: HitTestBehavior.opaque,
       child: SizedBox(
@@ -1885,7 +2138,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                     const HamburgerMorphMenu(),
                     Text(Strings.t(lang, 'my_account'), style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: context.textPrimary)),
                     GestureDetector(
-                      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsPage())),
+                      onTap: () => Navigator.push(context, GlassPageRoute(builder: (_) => const NotificationsPage())),
                       child: Stack(
                         clipBehavior: Clip.none,
                         children: [
@@ -2105,7 +2358,7 @@ class _HomePageState extends ConsumerState<HomePage> {
     final accent = Theme.of(context).colorScheme.secondary;
     final isDark = context.isDark;
     final useBlackGlass = blackGlassInDark && isDark;
-    return GestureDetector(
+    return PressScale(
       onTap: onTap,
       child: Column(
         children: [
@@ -2199,7 +2452,7 @@ class HamburgerMorphMenu extends ConsumerWidget {
           titleStyle: _titleStyle(context),
           title: Strings.t(lang, 'appearance'),
           icon: Transform.translate(offset: const Offset(-8, 0), child: const Icon(SolarIconsOutline.palette)),
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ThemeSelectionPage())),
+          onTap: () => Navigator.push(context, GlassPageRoute(builder: (_) => const ThemeSelectionPage())),
         ),
         GlassMenuItem(
           height: _itemHeight,
@@ -2208,7 +2461,7 @@ class HamburgerMorphMenu extends ConsumerWidget {
           titleStyle: _titleStyle(context),
           title: Strings.t(lang, 'language'),
           icon: Transform.translate(offset: const Offset(-8, 0), child: const Icon(Icons.language)),
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LanguageSelectionPage())),
+          onTap: () => Navigator.push(context, GlassPageRoute(builder: (_) => const LanguageSelectionPage())),
         ),
         GlassMenuItem(
           height: _itemHeight,
@@ -2217,7 +2470,7 @@ class HamburgerMorphMenu extends ConsumerWidget {
           titleStyle: _titleStyle(context),
           title: Strings.t(lang, 'notifications'),
           icon: Transform.translate(offset: const Offset(-8, 0), child: const Icon(SolarIconsOutline.bell)),
-          onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsPage())),
+          onTap: () => Navigator.push(context, GlassPageRoute(builder: (_) => const NotificationsPage())),
         ),
       ],
       settings: LiquidGlassSettings(
@@ -2312,7 +2565,7 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> {
               titleStyle: MoreMorphMenu._titleStyle(context),
               title: Strings.t(lang, 'account_wallet'),
               icon: Transform.translate(offset: const Offset(-8, 0), child: const Icon(SolarIconsOutline.wallet)),
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const CardManagementPage())),
+              onTap: () => Navigator.push(context, GlassPageRoute(builder: (_) => const CardManagementPage())),
             ),
             GlassMenuItem(
               height: MoreMorphMenu._itemHeight,
@@ -2321,7 +2574,7 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> {
               titleStyle: MoreMorphMenu._titleStyle(context),
               title: Strings.t(lang, 'receivables'),
               icon: Transform.translate(offset: const Offset(-8, 0), child: const Icon(SolarIconsOutline.usersGroupTwoRounded)),
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LoanManagementPage())),
+              onTap: () => Navigator.push(context, GlassPageRoute(builder: (_) => const LoanManagementPage())),
             ),
             const GlassMenuDivider(height: MoreMorphMenu._dividerHeight),
             GlassMenuItem(
@@ -2331,7 +2584,7 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> {
               titleStyle: MoreMorphMenu._titleStyle(context),
               title: Strings.t(lang, 'appearance'),
               icon: Transform.translate(offset: const Offset(-8, 0), child: const Icon(SolarIconsOutline.palette)),
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ThemeSelectionPage())),
+              onTap: () => Navigator.push(context, GlassPageRoute(builder: (_) => const ThemeSelectionPage())),
             ),
             GlassMenuItem(
               height: MoreMorphMenu._itemHeight,
@@ -2340,7 +2593,7 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> {
               titleStyle: MoreMorphMenu._titleStyle(context),
               title: Strings.t(lang, 'language'),
               icon: Transform.translate(offset: const Offset(-8, 0), child: const Icon(Icons.language)),
-              onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const LanguageSelectionPage())),
+              onTap: () => Navigator.push(context, GlassPageRoute(builder: (_) => const LanguageSelectionPage())),
             ),
             const GlassMenuDivider(height: MoreMorphMenu._dividerHeight),
             GlassMenuItem(
@@ -2350,7 +2603,7 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> {
               titleStyle: MoreMorphMenu._titleStyle(context),
               title: Strings.t(lang, 'savings_target'),
               icon: Transform.translate(offset: const Offset(-8, 0), child: const Icon(SolarIconsOutline.safeSquare)),
-              onTap: () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(Strings.t(lang, 'not_available').replaceAll('{name}', Strings.t(lang, 'savings_target'))))),
+              onTap: () => showGlassSnackBar(context, Strings.t(lang, 'not_available').replaceAll('{name}', Strings.t(lang, 'savings_target')), icon: Icons.hourglass_empty_rounded),
             ),
           ],
           settings: LiquidGlassSettings(
@@ -2804,10 +3057,40 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
           );
         }
         final e = items[index - 1];
-        return StaggeredReveal(
-          animate: true,
-          index: index - 1,
-          child: TransactionTile(item: e),
+        final isLoanLinked = e.loanId != null;
+        return Dismissible(
+          key: ValueKey('dismiss-${e.id}'),
+          direction: isLoanLinked ? DismissDirection.none : DismissDirection.endToStart,
+          background: Container(
+            alignment: Alignment.centerRight,
+            padding: const EdgeInsets.only(right: 24),
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(color: Colors.redAccent.withOpacity(0.85), borderRadius: BorderRadius.circular(20)),
+            child: const Icon(Icons.delete_outline, color: Colors.white),
+          ),
+          confirmDismiss: (_) async {
+            final result = await showDialog<bool>(
+              context: context,
+              builder: (dialogContext) => AlertDialog(
+                title: Text(Strings.t(lang, 'delete_transaction_title')),
+                content: Text(Strings.t(lang, 'delete_transaction_confirm').replaceAll('{title}', e.title)),
+                actions: [
+                  TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: Text(Strings.t(lang, 'cancel'))),
+                  TextButton(onPressed: () => Navigator.pop(dialogContext, true), child: Text(Strings.t(lang, 'delete'), style: const TextStyle(color: Colors.redAccent))),
+                ],
+              ),
+            );
+            return result ?? false;
+          },
+          onDismissed: (_) {
+            HapticFeedback.mediumImpact();
+            ref.read(transactionsProvider.notifier).remove(e);
+          },
+          child: StaggeredReveal(
+            animate: true,
+            index: index - 1,
+            child: TransactionTile(item: e),
+          ),
         );
       },
     ));
@@ -2840,7 +3123,55 @@ class ReportsPage extends ConsumerWidget {
       const SizedBox(height: 24),
       SectionTitle(Strings.t(lang, 'cash_flow')),
       const SizedBox(height: 12),
-      Container(height: 190, padding: const EdgeInsets.all(20), decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(24), border: Border.all(color: context.borderColor)), child: RepaintBoundary(child: CustomPaint(painter: SimpleChartPainter(primary: Theme.of(context).colorScheme.primary, gridColor: context.isDark ? Colors.white.withOpacity(0.08) : const Color(0xFFEDEAF2))))),
+      Builder(builder: (context) {
+        final now = DateTime.now();
+        final dailyNet = List<double>.generate(7, (i) {
+          final day = DateTime(now.year, now.month, now.day).subtract(Duration(days: 6 - i));
+          final dayIncome = items.where((e) => e.income && _isSameDay(e.date, day)).fold<double>(0, (a, b) => a + b.amount);
+          final dayExpense = items.where((e) => !e.income && _isSameDay(e.date, day)).fold<double>(0, (a, b) => a + b.amount);
+          return dayIncome - dayExpense;
+        });
+        final maxAbs = dailyNet.map((v) => v.abs()).fold<double>(1, (a, b) => a > b ? a : b);
+        final chartPrimary = Theme.of(context).colorScheme.primary;
+        return Container(
+          height: 190,
+          padding: const EdgeInsets.fromLTRB(12, 20, 20, 12),
+          decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(24), border: Border.all(color: context.borderColor)),
+          child: LineChart(
+            LineChartData(
+              minY: -maxAbs * 1.2,
+              maxY: maxAbs * 1.2,
+              gridData: FlGridData(
+                show: true,
+                drawVerticalLine: false,
+                horizontalInterval: (maxAbs * 1.2) / 2,
+                getDrawingHorizontalLine: (_) => FlLine(color: context.isDark ? Colors.white.withOpacity(0.08) : const Color(0xFFEDEAF2), strokeWidth: 1),
+              ),
+              titlesData: const FlTitlesData(show: false),
+              borderData: FlBorderData(show: false),
+              lineTouchData: LineTouchData(
+                touchTooltipData: LineTouchTooltipData(
+                  getTooltipColor: (_) => context.isDark ? Colors.black87 : Colors.white,
+                  getTooltipItems: (spots) => spots.map((s) => LineTooltipItem(rupiah(s.y), TextStyle(color: chartPrimary, fontWeight: FontWeight.bold, fontSize: 11))).toList(),
+                ),
+              ),
+              lineBarsData: [
+                LineChartBarData(
+                  spots: List.generate(dailyNet.length, (i) => FlSpot(i.toDouble(), dailyNet[i])),
+                  isCurved: true,
+                  curveSmoothness: 0.35,
+                  color: chartPrimary,
+                  barWidth: 4,
+                  dotData: const FlDotData(show: false),
+                  belowBarData: BarAreaData(show: true, color: chartPrimary.withOpacity(context.isDark ? 0.18 : 0.12)),
+                ),
+              ],
+            ),
+            swapAnimationDuration: const Duration(milliseconds: 450),
+            swapAnimationCurve: Curves.easeInOut,
+          ),
+        );
+      }),
       const SizedBox(height: 24),
       SectionTitle(Strings.t(lang, 'expense_by_category')),
       const SizedBox(height: 12),
@@ -3055,7 +3386,7 @@ class ReportRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ratio = total <= 0 ? 0.0 : (amount / total).clamp(0.0, 1.0);
-    return Padding(padding: const EdgeInsets.only(bottom: 16), child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label, style: TextStyle(fontWeight: FontWeight.w600, color: context.textPrimary)), Row(mainAxisSize: MainAxisSize.min, children: [NumberFlow(value: amount, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), spring: NumberFlowSpring.ios, transformTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeInOut), opacityTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeOut), tabularNums: true, style: TextStyle(fontFamily: 'Satoshi', color: context.textMuted, fontSize: 12, letterSpacing: -1.0)), Text(' · ${(ratio * 100).round()}%', style: TextStyle(color: context.textMuted, fontSize: 12))])]), const SizedBox(height: 8), LinearProgressIndicator(value: ratio, minHeight: 7, borderRadius: BorderRadius.circular(8), color: Theme.of(context).colorScheme.primary, backgroundColor: context.isDark ? Theme.of(context).colorScheme.primary.withOpacity(0.16) : Theme.of(context).colorScheme.tertiary)]));
+    return Padding(padding: const EdgeInsets.only(bottom: 16), child: Column(children: [Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label, style: TextStyle(fontWeight: FontWeight.w600, color: context.textPrimary)), Row(mainAxisSize: MainAxisSize.min, children: [NumberFlow(value: amount, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), spring: NumberFlowSpring.ios, transformTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeInOut), opacityTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeOut), tabularNums: true, style: TextStyle(fontFamily: 'Satoshi', color: context.textMuted, fontSize: 12, letterSpacing: -1.0)), Text(' · ${(ratio * 100).round()}%', style: TextStyle(color: context.textMuted, fontSize: 12))])]), const SizedBox(height: 8), TweenAnimationBuilder<double>(tween: Tween(begin: 0.0, end: ratio), duration: const Duration(milliseconds: 650), curve: Curves.easeOutCubic, builder: (context, value, child) => LinearProgressIndicator(value: value, minHeight: 7, borderRadius: BorderRadius.circular(8), color: Theme.of(context).colorScheme.primary, backgroundColor: context.isDark ? Theme.of(context).colorScheme.primary.withOpacity(0.16) : Theme.of(context).colorScheme.tertiary))]));
   }
 }
 
@@ -3081,17 +3412,17 @@ class SettingList extends ConsumerWidget {
                 return ListTile(
                   onTap: () {
                     if (item.$1 == 'appearance') {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const ThemeSelectionPage()));
+                      Navigator.push(context, GlassPageRoute(builder: (_) => const ThemeSelectionPage()));
                     } else if (item.$1 == 'language') {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const LanguageSelectionPage()));
+                      Navigator.push(context, GlassPageRoute(builder: (_) => const LanguageSelectionPage()));
                     } else if (item.$1 == 'account_wallet') {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const CardManagementPage()));
+                      Navigator.push(context, GlassPageRoute(builder: (_) => const CardManagementPage()));
                     } else if (item.$1 == 'receivables') {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const LoanManagementPage()));
+                      Navigator.push(context, GlassPageRoute(builder: (_) => const LoanManagementPage()));
                     } else if (item.$1 == 'category') {
-                      Navigator.push(context, MaterialPageRoute(builder: (_) => const CategorySettingsPage()));
+                      Navigator.push(context, GlassPageRoute(builder: (_) => const CategorySettingsPage()));
                     } else {
-                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(Strings.t(lang, 'not_available').replaceAll('{name}', label))));
+                      showGlassSnackBar(context, Strings.t(lang, 'not_available').replaceAll('{name}', label), icon: Icons.hourglass_empty_rounded);
                     }
                   },
                   contentPadding: EdgeInsets.zero,
@@ -3822,7 +4153,13 @@ Future<void> showTransactionForm(BuildContext context, WidgetRef ref, bool incom
           if (payPrincipalSelected) {
             ref.read(loansProvider.notifier).recordPayment(selectedLoanId!, isInterest: false, amount: principalValue, date: selectedDate, note: note.text.trim());
           }
+          final loanAfterPayment = ref.read(loansProvider).where((l) => l.id == selectedLoanId).toList();
+          final becamePaid = loanAfterPayment.isNotEmpty && loanAfterPayment.first.status == LoanStatus.paid;
           Navigator.pop(sheetContext);
+          if (becamePaid) {
+            HapticFeedback.mediumImpact();
+            showLoanPaidConfetti(context);
+          }
           return;
         }
         final hasAmountError = value <= 0;
@@ -3979,7 +4316,7 @@ void showTransactionLoanNotice(BuildContext context, WidgetRef ref, FinanceTrans
             child: FilledButton.icon(
               onPressed: () {
                 Navigator.pop(sheetContext);
-                Navigator.push(context, MaterialPageRoute(builder: (_) => LoanManagementPage(initialLoanId: item.loanId)));
+                Navigator.push(context, GlassPageRoute(builder: (_) => LoanManagementPage(initialLoanId: item.loanId)));
               },
               icon: const Icon(SolarIconsOutline.usersGroupTwoRounded, size: 18),
               label: Text(Strings.t(lang, 'go_to_loans')),
@@ -5071,3 +5408,5 @@ class _StaggeredRevealState extends State<StaggeredReveal> with SingleTickerProv
 }
 
 String rupiah(double value) => AppFormatters.rupiah(value);
+
+bool _isSameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
