@@ -1799,6 +1799,9 @@ class TransactionNotifier extends StateNotifier<List<FinanceTransaction>> {
     _persist();
   }
 }
+
+final removingTransactionIdsProvider = StateProvider<Set<String>>((ref) => <String>{});
+
     final dummyDataActiveProvider = StateProvider<bool>(
       (ref) => ref.watch(prefsProvider).getBool('dummy_data_active') ?? false,
     );
@@ -2392,11 +2395,14 @@ class _HomePageState extends ConsumerState<HomePage> {
                 Text(Strings.t(lang, 'today'), style: TextStyle(color: context.textFaint, fontSize: 11, fontWeight: FontWeight.bold, letterSpacing: 1)),
                 const SizedBox(height: 12),
                 ...items.take(4).toList().asMap().entries.map(
-                      (e) => StaggeredReveal(
-                        key: ValueKey(e.value.id),
-                        index: e.key,
-                        stagger: true,
-                        child: TransactionTile(item: e.value),
+                      (e) => AnimatedTransactionTile(
+                        item: e.value,
+                        child: StaggeredReveal(
+                          key: ValueKey(e.value.id),
+                          index: e.key,
+                          stagger: true,
+                          child: TransactionTile(item: e.value),
+                        ),
                       ),
                     ),
               ],
@@ -3111,38 +3117,41 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
         }
         final e = items[index - 1];
         final isLoanLinked = e.loanId != null;
-        return Dismissible(
-          key: ValueKey('dismiss-tx-$index'),
-          direction: isLoanLinked ? DismissDirection.none : DismissDirection.endToStart,
-          background: Container(
-            alignment: Alignment.centerRight,
-            padding: const EdgeInsets.only(right: 24),
-            margin: const EdgeInsets.only(bottom: 16),
-            decoration: BoxDecoration(color: Colors.redAccent.withOpacity(0.85), borderRadius: BorderRadius.circular(20)),
-            child: const Icon(Icons.delete_outline, color: Colors.white),
-          ),
-          confirmDismiss: (_) async {
-            final result = await showDialog<bool>(
-              context: context,
-              builder: (dialogContext) => AlertDialog(
-                title: Text(Strings.t(lang, 'delete_transaction_title')),
-                content: Text(Strings.t(lang, 'delete_transaction_confirm').replaceAll('{title}', e.title)),
-                actions: [
-                  TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: Text(Strings.t(lang, 'cancel'))),
-                  TextButton(onPressed: () => Navigator.pop(dialogContext, true), child: Text(Strings.t(lang, 'delete'), style: const TextStyle(color: Colors.redAccent))),
-                ],
-              ),
-            );
-            return result ?? false;
-          },
-          onDismissed: (_) {
-            HapticFeedback.mediumImpact();
-            ref.read(transactionsProvider.notifier).remove(e);
-          },
-          child: StaggeredReveal(
-            animate: true,
-            index: index - 1,
-            child: TransactionTile(item: e),
+        return AnimatedTransactionTile(
+          item: e,
+          child: Dismissible(
+            key: ValueKey('dismiss-tx-$index'),
+            direction: isLoanLinked ? DismissDirection.none : DismissDirection.endToStart,
+            background: Container(
+              alignment: Alignment.centerRight,
+              padding: const EdgeInsets.only(right: 24),
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(color: Colors.redAccent.withOpacity(0.85), borderRadius: BorderRadius.circular(20)),
+              child: const Icon(Icons.delete_outline, color: Colors.white),
+            ),
+            confirmDismiss: (_) async {
+              final result = await showDialog<bool>(
+                context: context,
+                builder: (dialogContext) => AlertDialog(
+                  title: Text(Strings.t(lang, 'delete_transaction_title')),
+                  content: Text(Strings.t(lang, 'delete_transaction_confirm').replaceAll('{title}', e.title)),
+                  actions: [
+                    TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: Text(Strings.t(lang, 'cancel'))),
+                    TextButton(onPressed: () => Navigator.pop(dialogContext, true), child: Text(Strings.t(lang, 'delete'), style: const TextStyle(color: Colors.redAccent))),
+                  ],
+                ),
+              );
+              return result ?? false;
+            },
+            onDismissed: (_) {
+              HapticFeedback.mediumImpact();
+              ref.read(transactionsProvider.notifier).remove(e);
+            },
+            child: StaggeredReveal(
+              animate: true,
+              index: index - 1,
+              child: TransactionTile(item: e),
+            ),
           ),
         );
       },
@@ -3347,6 +3356,28 @@ class SectionTitle extends StatelessWidget {
   const SectionTitle(this.text, {super.key});
   @override
   Widget build(BuildContext context) => Text(text, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: context.textPrimary));
+}
+
+class AnimatedTransactionTile extends ConsumerWidget {
+  final FinanceTransaction item;
+  final Widget child;
+  const AnimatedTransactionTile({super.key, required this.item, required this.child});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isRemoving = ref.watch(removingTransactionIdsProvider).contains(item.id);
+    return AnimatedSize(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+      alignment: Alignment.topCenter,
+      child: AnimatedOpacity(
+        opacity: isRemoving ? 0.0 : 1.0,
+        duration: const Duration(milliseconds: 260),
+        curve: Curves.easeOut,
+        child: isRemoving ? const SizedBox(width: double.infinity) : child,
+      ),
+    );
+  }
 }
 
 class TransactionTile extends ConsumerWidget {
@@ -4424,16 +4455,23 @@ void _confirmDeleteTransaction(BuildContext context, WidgetRef ref, FinanceTrans
               TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(Strings.t(lang, 'cancel'))),
               TextButton(
                 onPressed: () {
-                  final loanId = item.loanId;
-                  if (loanId != null && item.category == 'Pinjaman Diberikan') {
-                    ref.read(loansProvider.notifier).removeLoan(loanId);
-                  } else {
-                    if (loanId != null) {
-                      ref.read(loansProvider.notifier).removePaymentByTransaction(loanId, item.id);
-                    }
-                    ref.read(transactionsProvider.notifier).remove(item);
-                  }
                   Navigator.pop(dialogContext);
+                  final currentRemoving = ref.read(removingTransactionIdsProvider);
+                  ref.read(removingTransactionIdsProvider.notifier).state = {...currentRemoving, item.id};
+                  Future.delayed(const Duration(milliseconds: 300), () {
+                    if (!context.mounted) return;
+                    final loanId = item.loanId;
+                    if (loanId != null && item.category == 'Pinjaman Diberikan') {
+                      ref.read(loansProvider.notifier).removeLoan(loanId);
+                    } else {
+                      if (loanId != null) {
+                        ref.read(loansProvider.notifier).removePaymentByTransaction(loanId, item.id);
+                      }
+                      ref.read(transactionsProvider.notifier).remove(item);
+                    }
+                    final afterRemoving = {...ref.read(removingTransactionIdsProvider)}..remove(item.id);
+                    ref.read(removingTransactionIdsProvider.notifier).state = afterRemoving;
+                  });
                 },
                 child: Text(Strings.t(lang, 'delete'), style: const TextStyle(color: Colors.redAccent)),
               ),
