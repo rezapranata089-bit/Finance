@@ -1136,6 +1136,59 @@ class _ConfettiPainter extends CustomPainter {
   bool shouldRepaint(covariant _ConfettiPainter oldDelegate) => oldDelegate.progress != progress;
 }
 
+class CountUpNumberFlow extends StatefulWidget {
+  final num value;
+  final String locale;
+  final NumberFlowFormat format;
+  final TextStyle style;
+  final bool tabularNums;
+  const CountUpNumberFlow({
+    super.key,
+    required this.value,
+    required this.locale,
+    required this.format,
+    required this.style,
+    this.tabularNums = true,
+  });
+
+  @override
+  State<CountUpNumberFlow> createState() => _CountUpNumberFlowState();
+}
+
+class _CountUpNumberFlowState extends State<CountUpNumberFlow> {
+  num _displayValue = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) setState(() => _displayValue = widget.value);
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant CountUpNumberFlow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.value != widget.value) {
+      _displayValue = widget.value;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return NumberFlow(
+      value: _displayValue,
+      locale: widget.locale,
+      format: widget.format,
+      spring: NumberFlowSpring.ios,
+      transformTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeInOut),
+      opacityTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeOut),
+      tabularNums: widget.tabularNums,
+      style: widget.style,
+    );
+  }
+}
+
 class LiquidGlass extends StatelessWidget {
   final Widget child;
   final double borderRadius;
@@ -3342,14 +3395,10 @@ class TransactionTile extends ConsumerWidget {
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                NumberFlow(
+                CountUpNumberFlow(
                   value: item.amount,
                   locale: 'id_ID',
                   format: NumberFlowFormat.currency(currencyCode: 'IDR', symbol: item.income ? '+Rp ' : '-Rp '),
-                  spring: NumberFlowSpring.ios,
-                  transformTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeInOut),
-                  opacityTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeOut),
-                  tabularNums: true,
                   style: TextStyle(fontFamily: 'Satoshi', fontWeight: FontWeight.w800, fontSize: 14, letterSpacing: -0.2, color: context.textPrimary),
                 ),
                 const SizedBox(height: 4),
@@ -5299,7 +5348,7 @@ Future<void> showLoanDetail(BuildContext context, WidgetRef ref, Loan loan) asyn
                                 ],
                               ),
                             ),
-                            NumberFlow(value: amount, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: '+Rp '), spring: NumberFlowSpring.ios, transformTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeInOut), opacityTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeOut), tabularNums: true, style: TextStyle(fontFamily: 'Satoshi', fontWeight: FontWeight.w800, fontSize: 12.5, letterSpacing: -0.1, color: isInterest ? const Color(0xFF24A148) : context.textPrimary)),
+                            CountUpNumberFlow(value: amount, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: '+Rp '), style: TextStyle(fontFamily: 'Satoshi', fontWeight: FontWeight.w800, fontSize: 12.5, letterSpacing: -0.1, color: isInterest ? const Color(0xFF24A148) : context.textPrimary)),
                           ]),
                         );
                       },
