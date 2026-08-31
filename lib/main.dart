@@ -2582,6 +2582,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
   bool _minAmountExpanded = false;
   int _displayCount = _pageSize;
   final ScrollController _scrollController = ScrollController();
+  final ValueNotifier<num> _minAmountNotifier = ValueNotifier<num>(0);
   static const filterKeys = ['all', 'income', 'expense'];
   static const _pageSize = 10;
   static const _maxAmountFilter = 5000000.0;
@@ -2596,6 +2597,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
   void dispose() {
     _scrollController.removeListener(_onScroll);
     _scrollController.dispose();
+    _minAmountNotifier.dispose();
     super.dispose();
   }
 
@@ -2707,7 +2709,12 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
                       ],
                     ),
                     if (_minAmountExpanded)
-                      Text(rupiah(minAmountFilter), style: TextStyle(fontFamily: 'Satoshi', fontSize: 12, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.primary)),
+                      NumberFlow.scrub(
+                        value: _minAmountNotifier,
+                        format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '),
+                        tabularNums: true,
+                        style: TextStyle(fontFamily: 'Satoshi', fontSize: 12, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.primary),
+                      ),
                   ],
                 ),
               ),
@@ -2770,10 +2777,13 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
                               useOwnLayer: true,
                               onChangeStart: (_) => setState(() => _sliderDragging = true),
                               onChangeEnd: (_) => setState(() => _sliderDragging = false),
-                              onChanged: (v) => setState(() {
-                                minAmountFilter = v;
-                                _resetPaging();
-                              }),
+                              onChanged: (v) {
+                                _minAmountNotifier.value = v;
+                                setState(() {
+                                  minAmountFilter = v;
+                                  _resetPaging();
+                                });
+                              },
                             ),
                           ),
                         ],
