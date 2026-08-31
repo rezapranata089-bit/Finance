@@ -947,96 +947,23 @@ class GlassPageRoute<T> extends PageRouteBuilder<T> {
 }
 
 void showGlassSnackBar(BuildContext context, String message, {IconData? icon}) {
-  final overlay = Overlay.of(context);
-  final isDark = context.isDark;
-  late OverlayEntry entry;
-  entry = OverlayEntry(
-    builder: (context) => _GlassSnackBarWidget(
-      message: message,
-      icon: icon,
-      isDark: isDark,
-      onDone: () => entry.remove(),
+  ScaffoldMessenger.of(context).hideCurrentSnackBar();
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 18, color: Colors.white),
+            const SizedBox(width: 10),
+          ],
+          Flexible(child: Text(message)),
+        ],
+      ),
+      behavior: SnackBarBehavior.floating,
+      duration: const Duration(milliseconds: 2200),
     ),
   );
-  overlay.insert(entry);
-}
-
-class _GlassSnackBarWidget extends StatefulWidget {
-  final String message;
-  final IconData? icon;
-  final bool isDark;
-  final VoidCallback onDone;
-  const _GlassSnackBarWidget({required this.message, required this.icon, required this.isDark, required this.onDone});
-  @override
-  State<_GlassSnackBarWidget> createState() => _GlassSnackBarWidgetState();
-}
-
-class _GlassSnackBarWidgetState extends State<_GlassSnackBarWidget> with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(vsync: this, duration: const Duration(milliseconds: 260));
-  late final Animation<double> _curve = CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic);
-
-  @override
-  void initState() {
-    super.initState();
-    _controller.forward();
-    Future.delayed(const Duration(milliseconds: 2200), () async {
-      if (!mounted) return;
-      await _controller.reverse();
-      widget.onDone();
-    });
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Positioned(
-      left: 20, right: 20,
-      bottom: 32,
-      child: SafeArea(
-        child: AnimatedBuilder(
-          animation: _curve,
-          builder: (context, child) => Opacity(
-            opacity: _curve.value,
-            child: Transform.translate(offset: Offset(0, (1 - _curve.value) * 24), child: child),
-          ),
-          child: GlassContainer(
-            shape: const LiquidRoundedRectangle(borderRadius: 20),
-            useOwnLayer: true,
-            quality: GlassQuality.standard,
-            settings: LiquidGlassSettings(
-              blur: 14,
-              thickness: 18,
-              glassColor: widget.isDark ? const Color.fromRGBO(20, 18, 26, 0.85) : const Color.fromRGBO(255, 255, 255, 0.9),
-              whitenStrength: 0.0,
-              lightIntensity: widget.isDark ? 0.14 : 0.8,
-              ambientStrength: widget.isDark ? 0.08 : 0.4,
-              saturation: 1.2,
-              refractiveIndex: widget.isDark ? 0.15 : 1.3,
-              chromaticAberration: 0.0,
-              fresnelStrength: 0.0,
-              glowIntensity: 0.0,
-              shadowElevation: 3,
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                if (widget.icon != null) ...[
-                  Icon(widget.icon, size: 18, color: widget.isDark ? Colors.white : const Color(0xFF25212E)),
-                  const SizedBox(width: 10),
-                ],
-                Flexible(child: Text(widget.message, style: TextStyle(fontSize: 13.5, fontWeight: FontWeight.w600, color: widget.isDark ? Colors.white : const Color(0xFF25212E)))),
-              ]),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
 }
 
 class _ConfettiParticle {
