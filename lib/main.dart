@@ -2737,27 +2737,21 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
                             left: thumbCenterX - thumbRadius,
                             top: topPosition,
                             child: IgnorePointer(
-                              child: AnimatedOpacity(
-                                opacity: _sliderDragging ? 0.0 : 1.0,
-                                duration: const Duration(milliseconds: 220),
-                                curve: Curves.easeOut,
-                                child: Container(
-                                  width: thumbWidth,
-                                  height: thumbHeight,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(thumbHeight / 2),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(context.isDark ? 0.28 : 0.16),
-                                        blurRadius: 7,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
+                              child: Container(
+                                width: thumbWidth,
+                                height: thumbHeight,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(thumbHeight / 2),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(context.isDark ? 0.16 : 0.08),
+                                      blurRadius: 3,
+                                      offset: const Offset(0, 1),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
-                          ),
                           Padding(
                             padding: const EdgeInsets.only(right: 14),
                             child: GlassSlider(
