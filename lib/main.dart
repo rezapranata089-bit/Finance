@@ -1856,12 +1856,14 @@ class FinanceShell extends ConsumerStatefulWidget {
 class _FinanceShellState extends ConsumerState<FinanceShell> with SingleTickerProviderStateMixin {
   late final PageController _pageController;
   late final AnimationController _fadeController;
+  late final Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: ref.read(tabProvider));
-    _fadeController = AnimationController(vsync: this, duration: const Duration(milliseconds: 150));
+    _fadeController = AnimationController(vsync: this, duration: const Duration(milliseconds: 200));
+    _fadeAnimation = CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut);
   }
 
   @override
@@ -1897,7 +1899,7 @@ class _FinanceShellState extends ConsumerState<FinanceShell> with SingleTickerPr
     });
     return Scaffold(
       body: FadeTransition(
-        opacity: ReverseAnimation(_fadeController),
+        opacity: ReverseAnimation(_fadeAnimation),
         child: PageView(
           controller: _pageController,
           onPageChanged: (i) => ref.read(tabProvider.notifier).state = i,
