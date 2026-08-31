@@ -2833,7 +2833,6 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
               ),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                clipBehavior: Clip.none,
                 physics: const BouncingScrollPhysics(),
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
@@ -4751,7 +4750,6 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
             const SizedBox(height: 16),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
-              clipBehavior: Clip.none,
               physics: const BouncingScrollPhysics(),
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
