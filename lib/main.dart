@@ -3979,10 +3979,18 @@ void showTransactionLoanNotice(BuildContext context, WidgetRef ref, FinanceTrans
 void _confirmDeleteTransaction(BuildContext context, WidgetRef ref, FinanceTransaction item) {
   final lang = ref.read(langProvider);
   final isDark = context.isDark;
-  showDialog(
+  showGeneralDialog(
     context: context,
     barrierColor: Colors.black.withOpacity(0.45),
-    builder: (dialogContext) => Dialog(
+    barrierDismissible: true,
+    barrierLabel: 'dismiss',
+    transitionDuration: const Duration(milliseconds: 220),
+    transitionBuilder: (context, animation, secondaryAnimation, child) => Transform.scale(
+      scale: 0.92 + 0.08 * Curves.easeOutCubic.transform(animation.value),
+      alignment: Alignment.center,
+      child: child,
+    ),
+    pageBuilder: (dialogContext, animation, secondaryAnimation) => Dialog(
       backgroundColor: Colors.transparent,
       elevation: 0,
       insetPadding: const EdgeInsets.symmetric(horizontal: 28),
@@ -4248,10 +4256,18 @@ class CardManagementPage extends ConsumerWidget {
   void _confirmDelete(BuildContext context, WidgetRef ref, int index, FinanceCard card) {
     final lang = ref.read(langProvider);
     final isDark = context.isDark;
-    showDialog(
+    showGeneralDialog(
       context: context,
       barrierColor: Colors.black.withOpacity(0.45),
-      builder: (dialogContext) => Dialog(
+      barrierDismissible: true,
+      barrierLabel: 'dismiss',
+      transitionDuration: const Duration(milliseconds: 220),
+      transitionBuilder: (context, animation, secondaryAnimation, child) => Transform.scale(
+        scale: 0.92 + 0.08 * Curves.easeOutCubic.transform(animation.value),
+        alignment: Alignment.center,
+        child: child,
+      ),
+      pageBuilder: (dialogContext, animation, secondaryAnimation) => Dialog(
         backgroundColor: Colors.transparent,
         elevation: 0,
         insetPadding: const EdgeInsets.symmetric(horizontal: 28),
@@ -4553,10 +4569,18 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
   void _confirmDeleteLoan(BuildContext context, WidgetRef ref, Loan loan) {
     final lang = ref.read(langProvider);
     final isDark = context.isDark;
-    showDialog(
+    showGeneralDialog(
       context: context,
       barrierColor: Colors.black.withOpacity(0.45),
-      builder: (dialogContext) => Dialog(
+      barrierDismissible: true,
+      barrierLabel: 'dismiss',
+      transitionDuration: const Duration(milliseconds: 220),
+      transitionBuilder: (context, animation, secondaryAnimation, child) => Transform.scale(
+        scale: 0.92 + 0.08 * Curves.easeOutCubic.transform(animation.value),
+        alignment: Alignment.center,
+        child: child,
+      ),
+      pageBuilder: (dialogContext, animation, secondaryAnimation) => Dialog(
         backgroundColor: Colors.transparent,
         elevation: 0,
         insetPadding: const EdgeInsets.symmetric(horizontal: 28),
