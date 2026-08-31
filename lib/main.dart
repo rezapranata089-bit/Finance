@@ -1853,18 +1853,21 @@ class FinanceShell extends ConsumerStatefulWidget {
   ConsumerState<FinanceShell> createState() => _FinanceShellState();
 }
 
-class _FinanceShellState extends ConsumerState<FinanceShell> {
+class _FinanceShellState extends ConsumerState<FinanceShell> with SingleTickerProviderStateMixin {
   late final PageController _pageController;
+  late final AnimationController _fadeController;
 
   @override
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: ref.read(tabProvider));
+    _fadeController = AnimationController(vsync: this, duration: const Duration(milliseconds: 150));
   }
 
   @override
   void dispose() {
     _pageController.dispose();
+    _fadeController.dispose();
     super.dispose();
   }
 
@@ -1876,18 +1879,30 @@ class _FinanceShellState extends ConsumerState<FinanceShell> {
       if (!_pageController.hasClients) return;
       final current = _pageController.page?.round() ?? tab;
       if (current != next) {
-        _pageController.animateToPage(
-          next,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOutCubic,
-        );
+        if ((current - next).abs() == 1) {
+          _pageController.animateToPage(
+            next,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOutCubic,
+          );
+        } else {
+          _fadeController.forward(from: 0).whenComplete(() {
+            if (mounted) {
+              _pageController.jumpToPage(next);
+              _fadeController.reverse();
+            }
+          });
+        }
       }
     });
     return Scaffold(
-      body: PageView(
-        controller: _pageController,
-        onPageChanged: (i) => ref.read(tabProvider.notifier).state = i,
-        children: FinanceShell.pages.map((p) => RepaintBoundary(child: p)).toList(),
+      body: FadeTransition(
+        opacity: ReverseAnimation(_fadeController),
+        child: PageView(
+          controller: _pageController,
+          onPageChanged: (i) => ref.read(tabProvider.notifier).state = i,
+          children: FinanceShell.pages.map((p) => RepaintBoundary(child: p)).toList(),
+        ),
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
