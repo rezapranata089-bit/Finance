@@ -2791,7 +2791,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
     final hasMore = visibleCount < items.length;
     return SafeArea(top: false, child: ListView.builder(
       controller: _scrollController,
-      padding: EdgeInsets.fromLTRB(20, MediaQuery.paddingOf(context).top + 22, 20, 24),
+      padding: EdgeInsets.fromLTRB(0, MediaQuery.paddingOf(context).top + 22, 0, 24),
       cacheExtent: 600,
       itemCount: visibleCount + 1 + (hasMore ? 1 : 0),
       itemBuilder: (context, index) {
@@ -2799,35 +2799,43 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(Strings.t(lang, 'transactions_title'), style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 32, color: context.textPrimary)),
-              Text(Strings.t(lang, 'transactions_subtitle'), style: TextStyle(color: context.textMuted)),
-              const SizedBox(height: 22),
-              GlassSearchBar(
-                placeholder: Strings.t(lang, 'search_transactions'),
-                quality: GlassQuality.standard,
-                onChanged: (v) => setState(() { query = v; _resetPaging(); }),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(Strings.t(lang, 'transactions_title'), style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 32, color: context.textPrimary)),
+                    Text(Strings.t(lang, 'transactions_subtitle'), style: TextStyle(color: context.textMuted)),
+                    const SizedBox(height: 22),
+                    GlassSearchBar(
+                      placeholder: Strings.t(lang, 'search_transactions'),
+                      quality: GlassQuality.standard,
+                      onChanged: (v) => setState(() { query = v; _resetPaging(); }),
+                    ),
+                    const SizedBox(height: 14),
+                    GlassSegmentedControl(
+                      segments: filterKeys
+                          .map((k) => GlassSegment(label: Strings.t(lang, 'filter_$k')))
+                          .toList(),
+                      selectedIndex: filterKeys.indexOf(filter),
+                      indicatorColor: Theme.of(context).colorScheme.primary.withOpacity(context.isDark ? 0.25 : 0.15),
+                      onSegmentSelected: (index) {
+                        setState(() {
+                          filter = filterKeys[index];
+                          _resetPaging();
+                        });
+                      },
+                      quality: GlassQuality.premium,
+                    ),
+                    const SizedBox(height: 10),
+                  ],
+                ),
               ),
-              const SizedBox(height: 14),
-              GlassSegmentedControl(
-                segments: filterKeys
-                    .map((k) => GlassSegment(label: Strings.t(lang, 'filter_$k')))
-                    .toList(),
-                selectedIndex: filterKeys.indexOf(filter),
-                indicatorColor: Theme.of(context).colorScheme.primary.withOpacity(context.isDark ? 0.25 : 0.15),
-                onSegmentSelected: (index) {
-                  setState(() {
-                    filter = filterKeys[index];
-                    _resetPaging();
-                  });
-                },
-                quality: GlassQuality.premium,
-              ),
-              const SizedBox(height: 10),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 clipBehavior: Clip.none,
                 physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
                   children: [
                     Padding(
@@ -2853,111 +2861,119 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
                   ],
                 ),
               ),
-              const SizedBox(height: 18),
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: () => setState(() => _minAmountExpanded = !_minAmountExpanded),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text('Nominal minimal', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: context.textMuted)),
-                        const SizedBox(width: 4),
-                        AnimatedRotation(
-                          turns: _minAmountExpanded ? 0.5 : 0.0,
-                          duration: const Duration(milliseconds: 200),
-                          child: Icon(SolarIconsOutline.altArrowDown, size: 14, color: context.iconMuted),
-                        ),
-                      ],
-                    ),
-                    if (_minAmountExpanded)
-                      NumberFlow.scrub(
-                        value: _minAmountNotifier,
-                        format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '),
-                        tabularNums: true,
-                        style: TextStyle(fontFamily: 'Satoshi', fontSize: 12, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.primary),
+                    const SizedBox(height: 18),
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => setState(() => _minAmountExpanded = !_minAmountExpanded),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text('Nominal minimal', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: context.textMuted)),
+                              const SizedBox(width: 4),
+                              AnimatedRotation(
+                                turns: _minAmountExpanded ? 0.5 : 0.0,
+                                duration: const Duration(milliseconds: 200),
+                                child: Icon(SolarIconsOutline.altArrowDown, size: 14, color: context.iconMuted),
+                              ),
+                            ],
+                          ),
+                          if (_minAmountExpanded)
+                            NumberFlow.scrub(
+                              value: _minAmountNotifier,
+                              format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '),
+                              tabularNums: true,
+                              style: TextStyle(fontFamily: 'Satoshi', fontSize: 12, fontWeight: FontWeight.w800, color: Theme.of(context).colorScheme.primary),
+                            ),
+                        ],
                       ),
+                    ),
+                    AnimatedCrossFade(
+                      duration: const Duration(milliseconds: 220),
+                      crossFadeState: _minAmountExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+                      firstChild: const SizedBox(width: double.infinity, height: 0),
+                      secondChild: Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 15),
+                          child: LayoutBuilder(
+                          builder: (context, constraints) {
+                            const thumbRadius = 15.0;
+                            const thumbWidth = thumbRadius * 2.6;
+                            const thumbHeight = thumbRadius * 1.6;
+                            const widgetHeight = thumbRadius * 2 + 16;
+                            const sliderRightPadding = 14.0;
+                            final trackWidth = constraints.maxWidth - sliderRightPadding - thumbRadius * 2;
+                            final normalized = ((minAmountFilter - 0) / (_maxAmountFilter - 0)).clamp(0.0, 1.0);
+                            final thumbCenterX = thumbRadius + trackWidth * normalized;
+                            const topPosition = (widgetHeight - thumbHeight) / 2;
+                            return Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                Positioned(
+                                  left: thumbCenterX - thumbRadius,
+                                  top: topPosition,
+                                  child: IgnorePointer(
+                                    child: AnimatedScale(
+                                      scale: _sliderDragging ? 1.18 : 1.0,
+                                      duration: const Duration(milliseconds: 160),
+                                      curve: Curves.easeOut,
+                                      child: Container(
+                                        width: thumbWidth,
+                                        height: thumbHeight,
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(thumbHeight / 2),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withOpacity(context.isDark ? 0.16 : 0.08),
+                                              blurRadius: 3,
+                                              offset: const Offset(0, 1),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.only(right: 14),
+                                  child: GlassSlider(
+                                    value: minAmountFilter,
+                                    min: 0,
+                                    max: _maxAmountFilter,
+                                    divisions: 20,
+                                    activeColor: Theme.of(context).colorScheme.primary,
+                                    quality: GlassQuality.premium,
+                                    useOwnLayer: true,
+                                    onChangeStart: (_) => setState(() => _sliderDragging = true),
+                                    onChangeEnd: (_) => setState(() => _sliderDragging = false),
+                                    onChanged: (v) {
+                                      _minAmountNotifier.value = v;
+                                      setState(() {
+                                        minAmountFilter = v;
+                                        _resetPaging();
+                                      });
+                                    },
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
                   ],
                 ),
               ),
-              AnimatedCrossFade(
-                duration: const Duration(milliseconds: 220),
-                crossFadeState: _minAmountExpanded ? CrossFadeState.showSecond : CrossFadeState.showFirst,
-                firstChild: const SizedBox(width: double.infinity, height: 0),
-                secondChild: Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 15),
-                    child: LayoutBuilder(
-                    builder: (context, constraints) {
-                      const thumbRadius = 15.0;
-                      const thumbWidth = thumbRadius * 2.6;
-                      const thumbHeight = thumbRadius * 1.6;
-                      const widgetHeight = thumbRadius * 2 + 16;
-                      const sliderRightPadding = 14.0;
-                      final trackWidth = constraints.maxWidth - sliderRightPadding - thumbRadius * 2;
-                      final normalized = ((minAmountFilter - 0) / (_maxAmountFilter - 0)).clamp(0.0, 1.0);
-                      final thumbCenterX = thumbRadius + trackWidth * normalized;
-                      const topPosition = (widgetHeight - thumbHeight) / 2;
-                      return Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          Positioned(
-                            left: thumbCenterX - thumbRadius,
-                            top: topPosition,
-                            child: IgnorePointer(
-                              child: AnimatedScale(
-                                scale: _sliderDragging ? 1.18 : 1.0,
-                                duration: const Duration(milliseconds: 160),
-                                curve: Curves.easeOut,
-                                child: Container(
-                                  width: thumbWidth,
-                                  height: thumbHeight,
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(thumbHeight / 2),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(context.isDark ? 0.16 : 0.08),
-                                        blurRadius: 3,
-                                        offset: const Offset(0, 1),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(right: 14),
-                            child: GlassSlider(
-                              value: minAmountFilter,
-                              min: 0,
-                              max: _maxAmountFilter,
-                              divisions: 20,
-                              activeColor: Theme.of(context).colorScheme.primary,
-                              quality: GlassQuality.premium,
-                              useOwnLayer: true,
-                              onChangeStart: (_) => setState(() => _sliderDragging = true),
-                              onChangeEnd: (_) => setState(() => _sliderDragging = false),
-                              onChanged: (v) {
-                                _minAmountNotifier.value = v;
-                                setState(() {
-                                  minAmountFilter = v;
-                                  _resetPaging();
-                                });
-                              },
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
             ],
           );
         }
@@ -2969,11 +2985,13 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
         }
         final e = items[index - 1];
         final isLoanLinked = e.loanId != null;
-        return AnimatedTransactionTile(
-          item: e,
-          child: Dismissible(
-            key: ValueKey('dismiss-tx-$index'),
-            direction: isLoanLinked ? DismissDirection.none : DismissDirection.endToStart,
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: AnimatedTransactionTile(
+            item: e,
+            child: Dismissible(
+              key: ValueKey('dismiss-tx-$index'),
+              direction: isLoanLinked ? DismissDirection.none : DismissDirection.endToStart,
             background: Container(
               alignment: Alignment.centerRight,
               padding: const EdgeInsets.only(right: 24),
@@ -3005,6 +3023,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
               child: TransactionTile(item: e),
             ),
           ),
+        ),
         );
       },
     ));
@@ -4730,24 +4749,22 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
               ),
             ),
             const SizedBox(height: 16),
-            Padding(
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              clipBehavior: Clip.none,
+              physics: const BouncingScrollPhysics(),
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                clipBehavior: Clip.none,
-                physics: const BouncingScrollPhysics(),
-                child: Row(
-                  children: filterKeys
-                      .map<Widget>((k) => Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: ChoiceChip(
-                              label: Text(k == 'all' ? Strings.t(lang, 'filter_all') : Strings.t(lang, k)),
-                              selected: filter == k,
-                              onSelected: (_) => setState(() => filter = k),
-                            ),
-                          ))
-                      .toList(),
-                ),
+              child: Row(
+                children: filterKeys
+                    .map<Widget>((k) => Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: ChoiceChip(
+                            label: Text(k == 'all' ? Strings.t(lang, 'filter_all') : Strings.t(lang, k)),
+                            selected: filter == k,
+                            onSelected: (_) => setState(() => filter = k),
+                          ),
+                        ))
+                    .toList(),
               ),
             ),
             const SizedBox(height: 12),
