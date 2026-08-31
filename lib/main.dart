@@ -1862,7 +1862,8 @@ class _FinanceShellState extends ConsumerState<FinanceShell> with SingleTickerPr
   void initState() {
     super.initState();
     _pageController = PageController(initialPage: ref.read(tabProvider));
-    _fadeController = AnimationController(vsync: this, duration: const Duration(milliseconds: 200));
+    // Kurangi durasi menjadi 100ms agar fade out & in lebih responsif (total 200ms)
+    _fadeController = AnimationController(vsync: this, duration: const Duration(milliseconds: 100));
     _fadeAnimation = CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut);
   }
 
