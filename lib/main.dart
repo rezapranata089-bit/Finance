@@ -3116,7 +3116,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
         final e = items[index - 1];
         final isLoanLinked = e.loanId != null;
         return Dismissible(
-          key: ValueKey('dismiss-${e.id}'),
+          key: ValueKey('dismiss-tx-$index'),
           direction: isLoanLinked ? DismissDirection.none : DismissDirection.endToStart,
           background: Container(
             alignment: Alignment.centerRight,
