@@ -3983,11 +3983,28 @@ void _confirmDeleteTransaction(BuildContext context, WidgetRef ref, FinanceTrans
     context: context,
     barrierColor: Colors.black.withOpacity(0.45),
     builder: (dialogContext) => Dialog(
-      backgroundColor: context.cardColor,
+      backgroundColor: Colors.transparent,
       elevation: 0,
       insetPadding: const EdgeInsets.symmetric(horizontal: 28),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-      child: Padding(
+      child: GlassContainer(
+        shape: const LiquidRoundedRectangle(borderRadius: 28),
+        useOwnLayer: false,
+        quality: GlassQuality.standard,
+        settings: LiquidGlassSettings(
+          blur: 12,
+          thickness: 16,
+          glassColor: isDark ? const Color.fromRGBO(0, 0, 0, 0.5) : const Color.fromRGBO(255, 255, 255, 0.35),
+          whitenStrength: 0.0,
+          lightIntensity: isDark ? 0.12 : 0.6,
+          ambientStrength: isDark ? 0.08 : 0.35,
+          saturation: 1.3,
+          refractiveIndex: isDark ? 0.15 : 1.2,
+          chromaticAberration: 0.0,
+          fresnelStrength: 0.0,
+          glowIntensity: 0.0,
+          shadowElevation: isDark ? 1 : 2,
+        ),
+        child: Padding(
           padding: const EdgeInsets.fromLTRB(22, 22, 22, 14),
           child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(Strings.t(lang, 'delete_transaction_title'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: context.textPrimary)),
@@ -4014,6 +4031,7 @@ void _confirmDeleteTransaction(BuildContext context, WidgetRef ref, FinanceTrans
             ]),
           ]),
         ),
+      ),
     ),
   );
 }
@@ -4234,11 +4252,28 @@ class CardManagementPage extends ConsumerWidget {
       context: context,
       barrierColor: Colors.black.withOpacity(0.45),
       builder: (dialogContext) => Dialog(
-        backgroundColor: context.cardColor,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         insetPadding: const EdgeInsets.symmetric(horizontal: 28),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-        child: Padding(
+        child: GlassContainer(
+          shape: const LiquidRoundedRectangle(borderRadius: 28),
+          useOwnLayer: false,
+          quality: GlassQuality.standard,
+          settings: LiquidGlassSettings(
+            blur: 12,
+            thickness: 16,
+            glassColor: isDark ? const Color.fromRGBO(0, 0, 0, 0.5) : const Color.fromRGBO(255, 255, 255, 0.35),
+            whitenStrength: 0.0,
+            lightIntensity: isDark ? 0.12 : 0.6,
+            ambientStrength: isDark ? 0.08 : 0.35,
+            saturation: 1.3,
+            refractiveIndex: isDark ? 0.15 : 1.2,
+            chromaticAberration: 0.0,
+            fresnelStrength: 0.0,
+            glowIntensity: 0.0,
+            shadowElevation: isDark ? 1 : 2,
+          ),
+          child: Padding(
             padding: const EdgeInsets.fromLTRB(22, 22, 22, 14),
             child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(Strings.t(lang, 'delete_card_title'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: context.textPrimary)),
@@ -4264,6 +4299,7 @@ class CardManagementPage extends ConsumerWidget {
               ]),
             ]),
           ),
+        ),
       ),
     );
   }
@@ -4521,11 +4557,28 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
       context: context,
       barrierColor: Colors.black.withOpacity(0.45),
       builder: (dialogContext) => Dialog(
-        backgroundColor: context.cardColor,
+        backgroundColor: Colors.transparent,
         elevation: 0,
         insetPadding: const EdgeInsets.symmetric(horizontal: 28),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-        child: Padding(
+        child: GlassContainer(
+          shape: const LiquidRoundedRectangle(borderRadius: 28),
+          useOwnLayer: false,
+          quality: GlassQuality.standard,
+          settings: LiquidGlassSettings(
+            blur: 12,
+            thickness: 16,
+            glassColor: isDark ? const Color.fromRGBO(0, 0, 0, 0.5) : const Color.fromRGBO(255, 255, 255, 0.35),
+            whitenStrength: 0.0,
+            lightIntensity: isDark ? 0.12 : 0.6,
+            ambientStrength: isDark ? 0.08 : 0.35,
+            saturation: 1.3,
+            refractiveIndex: isDark ? 0.15 : 1.2,
+            chromaticAberration: 0.0,
+            fresnelStrength: 0.0,
+            glowIntensity: 0.0,
+            shadowElevation: isDark ? 1 : 2,
+          ),
+          child: Padding(
             padding: const EdgeInsets.fromLTRB(22, 22, 22, 14),
             child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
               Text(Strings.t(lang, 'delete_loan_title'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: context.textPrimary)),
@@ -4544,6 +4597,7 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
               ]),
             ]),
           ),
+        ),
       ),
     );
   }
