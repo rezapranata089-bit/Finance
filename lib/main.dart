@@ -1942,7 +1942,6 @@ class _FinanceShellState extends ConsumerState<FinanceShell> with SingleTickerPr
     final color = isSelected ? context.textPrimary : context.iconMuted;
     return GestureDetector(
       onTap: () {
-        HapticFeedback.selectionClick();
         ref.read(tabProvider.notifier).state = index;
       },
       onLongPress: onLongPress,
@@ -3001,46 +3000,16 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
           );
         }
         final e = items[index - 1];
-        final isLoanLinked = e.loanId != null;
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
           child: AnimatedTransactionTile(
             item: e,
-            child: Dismissible(
-              key: ValueKey('dismiss-tx-$index'),
-              direction: isLoanLinked ? DismissDirection.none : DismissDirection.endToStart,
-            background: Container(
-              alignment: Alignment.centerRight,
-              padding: const EdgeInsets.only(right: 24),
-              margin: const EdgeInsets.only(bottom: 16),
-              decoration: BoxDecoration(color: Colors.redAccent.withOpacity(0.85), borderRadius: BorderRadius.circular(20)),
-              child: const Icon(Icons.delete_outline, color: Colors.white),
-            ),
-            confirmDismiss: (_) async {
-              final result = await showDialog<bool>(
-                context: context,
-                builder: (dialogContext) => AlertDialog(
-                  title: Text(Strings.t(lang, 'delete_transaction_title')),
-                  content: Text(Strings.t(lang, 'delete_transaction_confirm').replaceAll('{title}', e.title)),
-                  actions: [
-                    TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: Text(Strings.t(lang, 'cancel'))),
-                    TextButton(onPressed: () => Navigator.pop(dialogContext, true), child: Text(Strings.t(lang, 'delete'), style: const TextStyle(color: Colors.redAccent))),
-                  ],
-                ),
-              );
-              return result ?? false;
-            },
-            onDismissed: (_) {
-              HapticFeedback.mediumImpact();
-              ref.read(transactionsProvider.notifier).remove(e);
-            },
             child: StaggeredReveal(
               animate: true,
               index: index - 1,
               child: TransactionTile(item: e),
             ),
           ),
-        ),
         );
       },
     ));
