@@ -2737,18 +2737,23 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
                             left: thumbCenterX - thumbRadius,
                             top: topPosition,
                             child: IgnorePointer(
-                              child: Container(
-                                width: thumbWidth,
-                                height: thumbHeight,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(thumbHeight / 2),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(context.isDark ? 0.16 : 0.08),
-                                      blurRadius: 3,
-                                      offset: const Offset(0, 1),
-                                    ),
-                                  ],
+                              child: AnimatedScale(
+                                scale: _sliderDragging ? 1.18 : 1.0,
+                                duration: const Duration(milliseconds: 160),
+                                curve: Curves.easeOut,
+                                child: Container(
+                                  width: thumbWidth,
+                                  height: thumbHeight,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(thumbHeight / 2),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(context.isDark ? 0.16 : 0.08),
+                                        blurRadius: 3,
+                                        offset: const Offset(0, 1),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
