@@ -1702,6 +1702,12 @@ class MyFinanceApp extends ConsumerWidget {
             .black
             .apply(fontFamily: 'Satoshi', bodyColor: const Color(0xFF25212E), displayColor: const Color(0xFF25212E)),
         appBarTheme: const AppBarTheme(backgroundColor: Colors.transparent, elevation: 0),
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          },
+        ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true, fillColor: const Color(0xFFF1EEF7),
           hintStyle: TextStyle(color: Colors.grey.shade500),
@@ -1730,6 +1736,12 @@ class MyFinanceApp extends ConsumerWidget {
         textTheme: Typography.material2021(platform: TargetPlatform.android)
             .white
             .apply(fontFamily: 'Satoshi', bodyColor: Colors.white, displayColor: Colors.white),
+        pageTransitionsTheme: const PageTransitionsTheme(
+          builders: {
+            TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+            TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          },
+        ),
         inputDecorationTheme: InputDecorationTheme(
           filled: true, fillColor: const Color(0xFF29253363),
           hintStyle: const TextStyle(color: Colors.white38),

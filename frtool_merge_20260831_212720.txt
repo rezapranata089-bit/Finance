@@ -3489,24 +3489,8 @@ class ThousandsInputFormatter extends TextInputFormatter {
   }
 }
 
-class GlassPageRoute<T> extends PageRouteBuilder<T> {
-  final WidgetBuilder builder;
-  GlassPageRoute({required this.builder})
-      : super(
-          transitionDuration: const Duration(milliseconds: 320),
-          reverseTransitionDuration: const Duration(milliseconds: 260),
-          pageBuilder: (context, animation, secondaryAnimation) => builder(context),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            final curved = CurvedAnimation(parent: animation, curve: Curves.easeOutCubic, reverseCurve: Curves.easeInCubic);
-            return FadeTransition(
-              opacity: curved,
-              child: SlideTransition(
-                position: Tween<Offset>(begin: const Offset(0, 0.05), end: Offset.zero).animate(curved),
-                child: child,
-              ),
-            );
-          },
-        );
+class GlassPageRoute<T> extends CupertinoPageRoute<T> {
+  GlassPageRoute({required super.builder});
 }
 
 void showGlassSnackBar(BuildContext context, String message, {IconData? icon}) {
