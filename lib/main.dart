@@ -1188,104 +1188,6 @@ class LiquidGlass extends StatelessWidget {
   }
 }
 
-class LiquidGlassStyle {
-  final LiquidGlassShape shape;
-  final LiquidGlassAppearance appearance;
-  final LiquidGlassRefraction refraction;
-
-  const LiquidGlassStyle({required this.shape, required this.appearance, required this.refraction});
-}
-
-class LiquidGlassShape {
-  final double cornerRadius;
-
-  const LiquidGlassShape._(this.cornerRadius);
-
-  static LiquidGlassShape roundedRectangle({required double cornerRadius, Color? borderColor, double? borderWidth}) {
-    return LiquidGlassShape._(cornerRadius);
-  }
-}
-
-class LiquidGlassAppearance {
-  final Color color;
-  final LiquidGlassBlur blur;
-  final double saturation;
-
-  const LiquidGlassAppearance({required this.color, required this.blur, required this.saturation});
-}
-
-class LiquidGlassBlur {
-  final double sigmaX;
-  final double sigmaY;
-
-  const LiquidGlassBlur({required this.sigmaX, required this.sigmaY});
-}
-
-class LiquidGlassRefraction {
-  final double distortion;
-  final double distortionWidth;
-  final double magnification;
-  final double chromaticAberration;
-
-  const LiquidGlassRefraction({required this.distortion, required this.distortionWidth, required this.magnification, required this.chromaticAberration});
-}
-
-class LiquidGlassShadow extends StatelessWidget {
-  final double blur;
-  final double opacity;
-  final Offset offset;
-  final double cornerRadius;
-  final Widget child;
-
-  const LiquidGlassShadow({super.key, required this.blur, required this.opacity, required this.offset, required this.cornerRadius, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(cornerRadius),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(opacity),
-            blurRadius: blur,
-            offset: offset,
-          ),
-        ],
-      ),
-      child: child,
-    );
-  }
-}
-
-class LiquidGlassLens extends StatelessWidget {
-  final LiquidGlassStyle style;
-  final Widget child;
-
-  const LiquidGlassLens({super.key, required this.style, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = context.isDark;
-    return GlassContainer(
-      shape: LiquidRoundedRectangle(borderRadius: style.shape.cornerRadius),
-      useOwnLayer: true,
-      quality: GlassQuality.standard,
-      settings: LiquidGlassSettings(
-        glassColor: style.appearance.color,
-        blur: style.appearance.blur.sigmaX,
-        saturation: style.appearance.saturation,
-        thickness: 20,
-        refractiveIndex: 1 + (style.refraction.magnification - 1) * 3,
-        lightIntensity: isDark ? 1.1 : 1.4,
-        lightAngle: 2.4,
-        ambientStrength: isDark ? 0.5 : 0.7,
-        chromaticAberration: style.refraction.chromaticAberration,
-        shadowElevation: isDark ? 1 : 4,
-      ),
-      child: child,
-    );
-  }
-}
 
 class VisibilityAwareLottie extends StatefulWidget {
   final String asset;
@@ -3904,21 +3806,7 @@ class NotificationsPage extends ConsumerWidget {
   }
 }
 
-class SimpleChartPainter extends CustomPainter {
-  final Color primary;
-  final Color gridColor;
-  SimpleChartPainter({required this.primary, required this.gridColor});
-  @override
-  void paint(Canvas canvas, Size size) {
-    final grid = Paint()..color = gridColor..strokeWidth = 1;
-    for (var i = 1; i < 5; i++) canvas.drawLine(Offset(0, size.height * i / 5), Offset(size.width, size.height * i / 5), grid);
-    final line = Paint()..color = primary..style = PaintingStyle.stroke..strokeWidth = 4..strokeCap = StrokeCap.round;
-    final path = Path()..moveTo(0, size.height * .72)..cubicTo(size.width * .16, size.height * .50, size.width * .2, size.height * .62, size.width * .35, size.height * .48)..cubicTo(size.width * .5, size.height * .32, size.width * .62, size.height * .6, size.width * .76, size.height * .28)..cubicTo(size.width * .84, size.height * .18, size.width * .92, size.height * .35, size.width, size.height * .15);
-    canvas.drawPath(path, line);
-  }
-  @override
-  bool shouldRepaint(covariant SimpleChartPainter oldDelegate) => oldDelegate.primary != primary || oldDelegate.gridColor != gridColor;
-}
+
 
 class BottomRoundedBorderPainter extends CustomPainter {
   final Color color;
