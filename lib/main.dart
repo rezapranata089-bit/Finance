@@ -2752,6 +2752,7 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
                                 ),
                               ),
                             ),
+                          ),
                           Padding(
                             padding: const EdgeInsets.only(right: 14),
                             child: GlassSlider(
