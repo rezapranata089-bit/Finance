@@ -3040,63 +3040,59 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
                       const widgetHeight = thumbRadius * 2 + 16;
                       const sliderRightPadding = 14.0;
                       final trackWidth = constraints.maxWidth - sliderRightPadding - thumbRadius * 2;
+                      final normalized = ((minAmountFilter - 0) / (_maxAmountFilter - 0)).clamp(0.0, 1.0);
+                      final thumbCenterX = thumbRadius + trackWidth * normalized;
                       const topPosition = (widgetHeight - thumbHeight) / 2;
-                      return ValueListenableBuilder<num>(
-                        valueListenable: _minAmountNotifier,
-                        builder: (context, liveMinAmount, _) {
-                          final normalized = ((liveMinAmount - 0) / (_maxAmountFilter - 0)).clamp(0.0, 1.0);
-                          final thumbCenterX = thumbRadius + trackWidth * normalized;
-                          return Stack(
-                            clipBehavior: Clip.none,
-                            children: [
-                              Positioned(
-                                left: thumbCenterX - thumbRadius,
-                                top: topPosition,
-                                child: IgnorePointer(
-                                  child: AnimatedScale(
-                                    scale: _sliderDragging ? 1.18 : 1.0,
-                                    duration: const Duration(milliseconds: 160),
-                                    curve: Curves.easeOut,
-                                    child: Container(
-                                      width: thumbWidth,
-                                      height: thumbHeight,
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(thumbHeight / 2),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black.withOpacity(context.isDark ? 0.16 : 0.08),
-                                            blurRadius: 3,
-                                            offset: const Offset(0, 1),
-                                          ),
-                                        ],
+                      return Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Positioned(
+                            left: thumbCenterX - thumbRadius,
+                            top: topPosition,
+                            child: IgnorePointer(
+                              child: AnimatedScale(
+                                scale: _sliderDragging ? 1.18 : 1.0,
+                                duration: const Duration(milliseconds: 160),
+                                curve: Curves.easeOut,
+                                child: Container(
+                                  width: thumbWidth,
+                                  height: thumbHeight,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(thumbHeight / 2),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(context.isDark ? 0.16 : 0.08),
+                                        blurRadius: 3,
+                                        offset: const Offset(0, 1),
                                       ),
-                                    ),
+                                    ],
                                   ),
                                 ),
                               ),
-                              Padding(
-                                padding: const EdgeInsets.only(right: 14),
-                                child: GlassSlider(
-                                  value: liveMinAmount.toDouble(),
-                                  min: 0,
-                                  max: _maxAmountFilter,
-                                  divisions: 20,
-                                  activeColor: Theme.of(context).colorScheme.primary,
-                                  quality: GlassQuality.premium,
-                                  useOwnLayer: true,
-                                  onChangeStart: (_) => setState(() => _sliderDragging = true),
-                                  onChangeEnd: (v) => setState(() {
-                                    _sliderDragging = false;
-                                    minAmountFilter = v;
-                                    _minAmountNotifier.value = v;
-                                    _resetPaging();
-                                  }),
-                                  onChanged: (v) => _minAmountNotifier.value = v,
-                                ),
-                              ),
-                            ],
-                          );
-                        },
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(right: 14),
+                            child: GlassSlider(
+                              value: minAmountFilter,
+                              min: 0,
+                              max: _maxAmountFilter,
+                              divisions: 20,
+                              activeColor: Theme.of(context).colorScheme.primary,
+                              quality: GlassQuality.premium,
+                              useOwnLayer: true,
+                              onChangeStart: (_) => setState(() => _sliderDragging = true),
+                              onChangeEnd: (_) => setState(() => _sliderDragging = false),
+                              onChanged: (v) {
+                                _minAmountNotifier.value = v;
+                                setState(() {
+                                  minAmountFilter = v;
+                                  _resetPaging();
+                                });
+                              },
+                            ),
+                          ),
+                        ],
                       );
                     },
                     ),
