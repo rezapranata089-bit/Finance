@@ -2725,7 +2725,8 @@ class _TransactionsPageState extends ConsumerState<TransactionsPage> with Ticker
                       const thumbWidth = thumbRadius * 2.6;
                       const thumbHeight = thumbRadius * 1.6;
                       const widgetHeight = thumbRadius * 2 + 16;
-                      final trackWidth = constraints.maxWidth - thumbRadius * 2;
+                      const sliderRightPadding = 14.0;
+                      final trackWidth = constraints.maxWidth - sliderRightPadding - thumbRadius * 2;
                       final normalized = ((minAmountFilter - 0) / (_maxAmountFilter - 0)).clamp(0.0, 1.0);
                       final thumbCenterX = thumbRadius + trackWidth * normalized;
                       const topPosition = (widgetHeight - thumbHeight) / 2;
