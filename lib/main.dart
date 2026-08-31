@@ -2061,7 +2061,10 @@ class _HomePageState extends ConsumerState<HomePage> {
                       value: balance,
                       locale: 'id_ID',
                       format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '),
-                      spring: NumberFlowSpring.ios,
+                      spring: NumberFlowSpring.bouncy,
+                      motionBlur: 5.5,
+                      digitSquish: 0.32,
+                      stagger: const Duration(milliseconds: 40),
                       transformTiming: const TimingConfig(
                         duration: Duration(milliseconds: 450),
                         curve: Curves.easeInOut,
@@ -2071,6 +2074,7 @@ class _HomePageState extends ConsumerState<HomePage> {
                         curve: Curves.easeOut,
                       ),
                       tabularNums: true,
+                      onAnimationsFinish: () => HapticFeedback.selectionClick(),
                       style: TextStyle(fontFamily: 'Satoshi', fontSize: 38, fontWeight: FontWeight.w700, letterSpacing: -1.8, color: context.textPrimary),
                     ),
                   ),
@@ -4685,7 +4689,7 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
                           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                             Text(Strings.t(lang, 'total_interest_collected'), style: TextStyle(color: context.textMuted, fontSize: 11)),
                             const SizedBox(height: 6),
-                            NumberFlow(value: totalInterest, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), spring: NumberFlowSpring.ios, transformTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeInOut), opacityTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeOut), tabularNums: true, style: const TextStyle(fontFamily: 'Satoshi', color: Color(0xFF24A148), fontWeight: FontWeight.bold, fontSize: 15, letterSpacing: -0.2)),
+                            NumberFlow(value: totalInterest, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), spring: NumberFlowSpring.ios, continuous: true, trend: 1, transformTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeInOut), opacityTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeOut), tabularNums: true, style: const TextStyle(fontFamily: 'Satoshi', color: Color(0xFF24A148), fontWeight: FontWeight.bold, fontSize: 15, letterSpacing: -0.2)),
                           ]),
                         ),
                       ),
