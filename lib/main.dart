@@ -3909,72 +3909,240 @@ class ReportsPage extends ConsumerWidget {
   }
 }
 
-class ProfilePage extends ConsumerWidget {
+class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
+  @override
+  ConsumerState<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends ConsumerState<ProfilePage> {
+  final ScrollController _scrollController = ScrollController();
+  double _pullExtent = 0;
+
+  static const double _collapsedAvatarSize = 64;
+  static const double _avatarTopMargin = 16;
+  static const double _avatarLeftMargin = 20;
+  static const double _headerBottomGap = 16;
+  static const double _sheetTopRadius = 28;
+  static const double _maxPullForFullExpand = 220;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_handleScroll);
+  }
+
+  void _handleScroll() {
+    final offset = _scrollController.hasClients ? _scrollController.offset : 0.0;
+    final pull = offset < 0 ? -offset : 0.0;
+    if (pull != _pullExtent) {
+      setState(() => _pullExtent = pull);
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_handleScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final lang = ref.watch(langProvider);
     final profile = ref.watch(userProfileProvider);
     final initial = profile.name.isNotEmpty ? profile.name.substring(0, 1).toUpperCase() : '?';
-    final expandedPhotoHeight = MediaQuery.sizeOf(context).width;
+    final topInset = MediaQuery.paddingOf(context).top;
+    final screenWidth = MediaQuery.sizeOf(context).width;
 
-    return CustomScrollView(
-      physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-      slivers: [
-        SliverAppBar(
-          pinned: true,
-          stretch: true,
-          automaticallyImplyLeading: false,
-          backgroundColor: context.cardColor,
-          surfaceTintColor: Colors.transparent,
-          elevation: 0,
-          scrolledUnderElevation: 0,
-          expandedHeight: expandedPhotoHeight,
-          stretchTriggerOffset: 140,
-          titleSpacing: 16,
-          title: _ProfileCompactTitle(profile: profile, initial: initial, lang: lang),
-          actions: [
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: _HeaderIconButton(
-                icon: Icons.camera_alt_outlined,
-                onTap: () => showProfilePhotoOptions(context, ref),
+    final collapsedHeaderHeight = topInset + _avatarTopMargin + _collapsedAvatarSize + _headerBottomGap;
+    // t = 0 saat diam (avatar kecil bulat, posisi default), t = 1 saat foto/
+    // video sudah membesar penuh selebar layar (setelah ditarik ke bawah /
+    // overscroll). Didorong langsung oleh jarak overscroll ScrollController,
+    // jadi membesar & mengecil kembali live mengikuti gestur, termasuk saat
+    // "memantul" balik ke posisi normal setelah dilepas.
+    final t = (_pullExtent / _maxPullForFullExpand).clamp(0.0, 1.0);
+    final avatarSize = lerpDouble(_collapsedAvatarSize, screenWidth, t)!;
+    final avatarRadius = lerpDouble(avatarSize / 2, 0, t)!;
+    final avatarTop = lerpDouble(topInset + _avatarTopMargin, 0, t)!;
+    final avatarLeft = lerpDouble(_avatarLeftMargin, 0, t)!;
+    final rowOpacity = (1 - t * 2.4).clamp(0.0, 1.0);
+    final badgeOpacity = (1 - t * 5).clamp(0.0, 1.0);
+    final expandedNameOpacity = ((t - 0.5) * 2.4).clamp(0.0, 1.0);
+
+    return Stack(
+      children: [
+        CustomScrollView(
+          controller: _scrollController,
+          physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+          slivers: [
+            SliverToBoxAdapter(child: SizedBox(height: collapsedHeaderHeight)),
+            SliverToBoxAdapter(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: context.cardColor,
+                  borderRadius: const BorderRadius.only(topLeft: Radius.circular(_sheetTopRadius), topRight: Radius.circular(_sheetTopRadius)),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(context.isDark ? 0.24 : 0.06), blurRadius: 16, offset: const Offset(0, -6))],
+                ),
+                padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(Strings.t(lang, 'profile_title'), style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 28, color: context.textPrimary)),
+                    const SizedBox(height: 4),
+                    Text(Strings.t(lang, 'manage_account'), style: TextStyle(color: context.textMuted)),
+                    const SizedBox(height: 22),
+                    SectionTitle(Strings.t(lang, 'section_finance')),
+                    const SizedBox(height: 10),
+                    SettingList(items: const [
+                      ('savings_target', SolarIconsOutline.safeSquare),
+                      ('category', SolarIconsOutline.widget),
+                      ('account_wallet', SolarIconsOutline.wallet),
+                      ('receivables', SolarIconsOutline.usersGroupTwoRounded),
+                    ]),
+                    const SizedBox(height: 24),
+                    SectionTitle(Strings.t(lang, 'section_app')),
+                    const SizedBox(height: 10),
+                    SettingList(items: const [
+                      ('appearance', SolarIconsOutline.palette),
+                      ('language', Icons.language),
+                      ('notifications', SolarIconsOutline.bell),
+                      ('backup_data', SolarIconsOutline.cloudUpload),
+                    ]),
+                  ],
+                ),
               ),
             ),
           ],
-          flexibleSpace: FlexibleSpaceBar(
-            stretchModes: const [StretchMode.zoomBackground, StretchMode.blurBackground],
-            titlePadding: EdgeInsets.zero,
-            background: _ProfileHeaderPhoto(profile: profile, initial: initial, lang: lang),
+        ),
+        // Avatar overlay: default-nya lingkaran kecil di kiri atas. Ukuran &
+        // radius sudutnya berubah live mengikuti jarak overscroll (t), jadi
+        // benar-benar terlihat "membesar dari lingkaran jadi kotak penuh",
+        // bukan sekadar crossfade dua tampilan berbeda.
+        Positioned(
+          top: avatarTop,
+          left: avatarLeft,
+          child: GestureDetector(
+            onTap: () {
+              if (!profile.hasPhoto && !profile.hasVideo) return;
+              Navigator.push(context, GlassPageRoute(builder: (_) => const ProfileMediaViewerPage()));
+            },
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(avatarRadius),
+                  child: Hero(
+                    tag: 'profile-header-media',
+                    child: SizedBox(
+                      width: avatarSize,
+                      height: avatarSize,
+                      child: _ProfileHeaderMediaContent(profile: profile, initial: initial, side: avatarSize),
+                    ),
+                  ),
+                ),
+                if (badgeOpacity > 0)
+                  Positioned(
+                    right: -2,
+                    bottom: -2,
+                    child: Opacity(
+                      opacity: badgeOpacity,
+                      child: GestureDetector(
+                        onTap: () => showProfilePhotoOptions(context, ref),
+                        child: Container(
+                          padding: const EdgeInsets.all(5),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.secondary,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: context.cardColor, width: 2),
+                          ),
+                          child: const Icon(Icons.camera_alt_rounded, size: 12, color: Colors.black),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ),
-        SliverPadding(
-          padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
-          sliver: SliverList(
-            delegate: SliverChildListDelegate([
-              Text(Strings.t(lang, 'manage_account'), style: TextStyle(color: context.textMuted)),
-              const SizedBox(height: 22),
-              SectionTitle(Strings.t(lang, 'section_finance')),
-              const SizedBox(height: 10),
-              SettingList(items: const [
-                ('savings_target', SolarIconsOutline.safeSquare),
-                ('category', SolarIconsOutline.widget),
-                ('account_wallet', SolarIconsOutline.wallet),
-                ('receivables', SolarIconsOutline.usersGroupTwoRounded),
-              ]),
-              const SizedBox(height: 24),
-              SectionTitle(Strings.t(lang, 'section_app')),
-              const SizedBox(height: 10),
-              SettingList(items: const [
-                ('appearance', SolarIconsOutline.palette),
-                ('language', Icons.language),
-                ('notifications', SolarIconsOutline.bell),
-                ('backup_data', SolarIconsOutline.cloudUpload),
-              ]),
-            ]),
+        // Baris nama ringkas di samping avatar kecil; memudar seiring avatar
+        // membesar supaya tidak bertumpuk dengan foto besar.
+        if (rowOpacity > 0)
+          Positioned(
+            top: topInset + _avatarTopMargin,
+            left: _avatarLeftMargin + _collapsedAvatarSize + 14,
+            right: 16,
+            height: _collapsedAvatarSize,
+            child: IgnorePointer(
+              child: Opacity(
+                opacity: rowOpacity,
+                child: Row(
+                  children: [
+                    Flexible(
+                      child: Text(
+                        profile.name.isNotEmpty ? profile.name : Strings.t(lang, 'view_profile'),
+                        style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: context.textPrimary),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.primary.withOpacity(context.isDark ? 0.18 : 0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        Icon(Icons.workspace_premium_rounded, size: 11, color: Theme.of(context).colorScheme.primary),
+                        const SizedBox(width: 4),
+                        Text(Strings.t(lang, 'premium_member'), style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, height: 1.0, color: Theme.of(context).colorScheme.primary, letterSpacing: 0.2)),
+                      ]),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
-        ),
+        // Nama + tombol edit muncul sebagai caption di atas foto/video begitu
+        // avatar sudah membesar melewati separuh perjalanan.
+        if (expandedNameOpacity > 0)
+          Positioned(
+            left: 0,
+            right: 0,
+            top: avatarTop + avatarSize - 72,
+            height: 72,
+            child: IgnorePointer(
+              ignoring: expandedNameOpacity < 0.4,
+              child: Opacity(
+                opacity: expandedNameOpacity,
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Colors.transparent, Colors.black.withOpacity(0.55)],
+                    ),
+                  ),
+                  child: Row(children: [
+                    Flexible(
+                      child: Text(
+                        profile.name.isNotEmpty ? profile.name : Strings.t(lang, 'view_profile'),
+                        style: const TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => showEditNameDialog(context, ref),
+                      child: const Icon(Icons.edit_outlined, size: 18, color: Colors.white),
+                    ),
+                  ]),
+                ),
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -3997,40 +4165,6 @@ class _HeaderIconButton extends StatelessWidget {
         child: Icon(icon, size: 18, color: Colors.white),
       ),
     );
-  }
-}
-
-class _ProfileCompactTitle extends StatelessWidget {
-  final UserProfile profile;
-  final String initial;
-  final AppLang lang;
-  const _ProfileCompactTitle({required this.profile, required this.initial, required this.lang});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(mainAxisSize: MainAxisSize.min, children: [
-      ProfileAvatar(
-        photoPath: profile.photoPath,
-        photoBytesBase64: profile.photoBytesBase64,
-        photoVersion: profile.photoVersion,
-        videoPath: profile.videoPath,
-        videoVersion: profile.videoVersion,
-        videoCropScale: profile.videoCropScale,
-        videoCropOffsetX: profile.videoCropOffsetX,
-        videoCropOffsetY: profile.videoCropOffsetY,
-        videoThumbnailBytesBase64: profile.videoThumbnailBytesBase64,
-        initial: initial,
-        radius: 16,
-      ),
-      const SizedBox(width: 10),
-      Flexible(
-        child: Text(
-          profile.name.isNotEmpty ? profile.name : Strings.t(lang, 'view_profile'),
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: context.textPrimary),
-          overflow: TextOverflow.ellipsis,
-        ),
-      ),
-    ]);
   }
 }
 
@@ -4083,77 +4217,6 @@ class _ProfileHeaderMediaContent extends StatelessWidget {
       );
     }
     return _photoContent(context);
-  }
-}
-
-class _ProfileHeaderPhoto extends ConsumerWidget {
-  final UserProfile profile;
-  final String initial;
-  final AppLang lang;
-  const _ProfileHeaderPhoto({required this.profile, required this.initial, required this.lang});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    return GestureDetector(
-      onTap: () {
-        if (!profile.hasPhoto && !profile.hasVideo) return;
-        Navigator.push(context, GlassPageRoute(builder: (_) => const ProfileMediaViewerPage()));
-      },
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          Positioned.fill(
-            child: Hero(
-              tag: 'profile-header-media',
-              child: LayoutBuilder(builder: (context, constraints) {
-                final side = constraints.maxWidth > 0 ? constraints.maxWidth : constraints.maxHeight;
-                return _ProfileHeaderMediaContent(profile: profile, initial: initial, side: side);
-              }),
-            ),
-          ),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(20, 48, 20, 16),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Colors.transparent, Colors.black.withOpacity(0.6)],
-                ),
-              ),
-              child: Row(children: [
-                Flexible(
-                  child: Text(
-                    profile.name.isNotEmpty ? profile.name : Strings.t(lang, 'view_profile'),
-                    style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(20)),
-                  child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    const Icon(Icons.workspace_premium_rounded, size: 12, color: Colors.white),
-                    const SizedBox(width: 4),
-                    Text(Strings.t(lang, 'premium_member'), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.white)),
-                  ]),
-                ),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: () => showEditNameDialog(context, ref),
-                  child: const Icon(Icons.edit_outlined, size: 18, color: Colors.white),
-                ),
-              ]),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
 
