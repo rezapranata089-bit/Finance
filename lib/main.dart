@@ -4414,7 +4414,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       color: context.cardColor,
                       borderRadius: const BorderRadius.only(topLeft: Radius.circular(22), topRight: Radius.circular(22)),
                       boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(isDark ? 0.24 : 0.06), blurRadius: 16, offset: const Offset(0, -6)),
+                        BoxShadow(color: Colors.black.withOpacity(isDark ? 0.30 : 0.10), blurRadius: 28, spreadRadius: 6, offset: const Offset(0, -10)),
                       ],
                     ),
                     padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
