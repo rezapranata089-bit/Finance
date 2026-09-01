@@ -153,7 +153,28 @@ class ProfilePhotoPick {
   const ProfilePhotoPick({this.path, this.bytes});
 }
 
+const _galleryChooserChannel = MethodChannel('com.example.my_finance/gallery_picker');
+
 Future<ProfilePhotoPick?> pickAndCompressProfilePhoto(ImageSource source) async {
+  if (!kIsWeb && source == ImageSource.gallery && Platform.isAndroid) {
+    final String? pickedPath = await _galleryChooserChannel.invokeMethod<String>('pickImageWithChooser');
+    if (pickedPath == null) return null;
+
+    final dir = await getApplicationDocumentsDirectory();
+    final destPath = '${dir.path}/profile_photo.jpg';
+    final destFile = File(destPath);
+    if (await destFile.exists()) {
+      try {
+        await destFile.delete();
+      } catch (_) {}
+    }
+    await File(pickedPath).copy(destPath);
+    try {
+      await File(pickedPath).delete();
+    } catch (_) {}
+    return ProfilePhotoPick(path: destPath);
+  }
+
   final picker = ImagePicker();
   final XFile? picked = await picker.pickImage(
     source: source,
