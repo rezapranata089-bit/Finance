@@ -3954,28 +3954,54 @@ class ReportsPage extends ConsumerWidget {
 class _HeaderSnapScrollPhysics extends ScrollPhysics {
   final double boundary;
   final bool Function() isLocked;
+  final double maxBottomOverscroll;
 
-  const _HeaderSnapScrollPhysics({required this.boundary, required this.isLocked, super.parent});
+  const _HeaderSnapScrollPhysics({
+    required this.boundary, 
+    required this.isLocked, 
+    this.maxBottomOverscroll = 18.0,
+    super.parent,
+  });
 
   @override
   _HeaderSnapScrollPhysics applyTo(ScrollPhysics? ancestor) {
     return _HeaderSnapScrollPhysics(
       boundary: boundary,
       isLocked: isLocked,
+      maxBottomOverscroll: maxBottomOverscroll,
       parent: buildParent(ancestor),
     );
   }
 
   @override
   double applyBoundaryConditions(ScrollMetrics position, double value) {
-    // Selama satu gesture drag yang dimulai sebelum posisi default (media
-    // masih besar/sedang mengecil), tahan drag yang sama supaya tidak bisa
-    // langsung menembus posisi default itu ke scroll konten halaman. Begitu
-    // gesture dilepas, batas ini otomatis lepas lagi untuk gesture berikutnya.
+    // 1. Lock boundary during media minimize
     if (isLocked() && value > boundary && position.pixels <= boundary + 0.01) {
       return value - boundary;
     }
+    
+    // 2. Strict clamp for bottom overscroll to prevent sheet from flying up
+    final maxPos = position.maxScrollExtent + maxBottomOverscroll;
+    if (maxPos < value && position.pixels <= maxPos) {
+      return value - maxPos;
+    }
+    if (maxPos < position.pixels && position.pixels < value) {
+      return value - position.pixels;
+    }
+    
     return super.applyBoundaryConditions(position, value);
+  }
+
+  @override
+  double applyPhysicsToUserOffset(ScrollMetrics position, double offset) {
+    // Apply heavy resistance when overscrolling at the bottom
+    if (offset < 0.0 && position.pixels > position.maxScrollExtent) {
+      final overscroll = position.pixels - position.maxScrollExtent;
+      final fraction = (overscroll / maxBottomOverscroll).clamp(0.0, 1.0);
+      final friction = 1.0 - (fraction * fraction);
+      return super.applyPhysicsToUserOffset(position, offset) * friction;
+    }
+    return super.applyPhysicsToUserOffset(position, offset);
   }
 }
 
@@ -4417,7 +4443,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         BoxShadow(color: Colors.black.withOpacity(isDark ? 0.30 : 0.10), blurRadius: 90, spreadRadius: 90, offset: const Offset(0, -10)),
                       ],
                     ),
-                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -4440,6 +4466,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         ]),
                       ],
                     ),
+                  ),
+                ),
+                SliverFillRemaining(
+                  hasScrollBody: false,
+                  fillOverscroll: true,
+                  child: Container(
+                    color: context.cardColor,
+                    padding: const EdgeInsets.only(bottom: 24),
                   ),
                 ),
               ],
