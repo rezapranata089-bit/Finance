@@ -3915,99 +3915,46 @@ class ProfilePage extends ConsumerStatefulWidget {
   ConsumerState<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _ProfilePageState extends ConsumerState<ProfilePage> with SingleTickerProviderStateMixin {
-  final ScrollController _scrollController = ScrollController();
-  late final AnimationController _expandSpringController;
-
-  static const double _compactAvatarSize = 68.0;
-  static const double _expandedMediaHeight = 380.0;
-  static const double _maxOverscrollPull = 220.0;
-  static const double _expandSnapThreshold = 0.45;
-  static const double _sheetOverlap = 20.0;
-  static const double _identityParallaxRange = 170.0;
-
-  // Dedicated, persistent expansion state (0 = compact, 1 = fully pulled
-  // open). Changed ONLY by an active overscroll drag or by the spring that
-  // settles it afterwards — normal list scrolling never touches it, so it
-  // can never be silently reset just because the offset drifts near zero.
-  double _mediaExpandProgress = 0.0;
-  bool _isOverscrollDragging = false;
-
-  // Derived purely from normal (positive) scroll offset; drives only a
-  // subtle parallax move of the identity block. The actual hiding of the
-  // header comes from the sheet's own opaque surface sliding over it.
-  double _scrollPixels = 0.0;
+class _ProfilePageState extends ConsumerState<ProfilePage> {
+  late final ScrollController _scrollController;
+  bool _initialized = false;
+  double _scrollOffset = 0.0;
+  double _maxExpandScroll = 0.0;
 
   @override
-  void initState() {
-    super.initState();
-    _expandSpringController = AnimationController(vsync: this)
-      ..addListener(() {
-        if (mounted) setState(() => _mediaExpandProgress = _expandSpringController.value);
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      final topInset = MediaQuery.paddingOf(context).top;
+      final compactHeight = topInset + 18 + 68.0 + 16;
+      final sheetStartExpanded = 380.0 - 20.0; 
+      _maxExpandScroll = sheetStartExpanded - compactHeight;
+      
+      _scrollController = ScrollController(initialScrollOffset: _maxExpandScroll);
+      _scrollOffset = _maxExpandScroll;
+      
+      _scrollController.addListener(() {
+        setState(() {
+          _scrollOffset = _scrollController.offset;
+        });
       });
-    _scrollController.addListener(_handleScrollPixels);
-  }
-
-  void _handleScrollPixels() {
-    if (!_scrollController.hasClients) return;
-    final pixels = _scrollController.position.pixels.clamp(0.0, _identityParallaxRange);
-    if (pixels != _scrollPixels) setState(() => _scrollPixels = pixels);
-  }
-
-  // Distinguishes a real finger drag from momentum/settle animations via
-  // `dragDetails`, which Flutter only sets on ScrollUpdateNotification while
-  // a pointer is actively dragging. This is what prevents expansion from
-  // jumping back to 0 just because the offset briefly touches zero mid-drag.
-  bool _handleOverscrollNotification(ScrollNotification notification) {
-    final pixels = notification.metrics.pixels;
-
-    if (pixels < 0) {
-      final isRealDrag = notification is ScrollUpdateNotification && notification.dragDetails != null;
-      if (isRealDrag) {
-        if (!_isOverscrollDragging) {
-          _isOverscrollDragging = true;
-          _expandSpringController.stop();
-        }
-        final pull = (-pixels).clamp(0.0, _maxOverscrollPull);
-        final progress = (pull / _maxOverscrollPull).clamp(0.0, 1.0);
-        if (progress != _mediaExpandProgress) setState(() => _mediaExpandProgress = progress);
-      }
-      return false;
+      
+      _initialized = true;
     }
-
-    // Pixels back to >= 0: if a real drag was in progress, this is the
-    // moment it ended. Settle with a spring to whichever endpoint is
-    // closer, and STAY there — nothing else touches _mediaExpandProgress
-    // again until the next overscroll drag.
-    if (_isOverscrollDragging) {
-      _isOverscrollDragging = false;
-      final target = _mediaExpandProgress >= _expandSnapThreshold ? 1.0 : 0.0;
-      _settleExpand(target);
-    }
-    return false;
-  }
-
-  void _settleExpand(double target) {
-    final simulation = SpringSimulation(
-      const SpringDescription(mass: 1, stiffness: 210, damping: 26),
-      _mediaExpandProgress,
-      target,
-      0,
-    );
-    _expandSpringController.animateWith(simulation);
-  }
-
-  void _collapseMediaNow() {
-    _isOverscrollDragging = false;
-    _settleExpand(0.0);
   }
 
   @override
   void dispose() {
-    _scrollController.removeListener(_handleScrollPixels);
     _scrollController.dispose();
-    _expandSpringController.dispose();
     super.dispose();
+  }
+
+  void _collapseMediaNow() {
+    _scrollController.animateTo(
+      _maxExpandScroll,
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeOutCubic,
+    );
   }
 
   @override
@@ -4019,85 +3966,71 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with SingleTickerProv
     final topInset = MediaQuery.paddingOf(context).top;
     final screenWidth = MediaQuery.sizeOf(context).width;
 
-    // t = 0 compact … t = 1 fully pulled open. Every header measurement
-    // below is a pure lerp of this one value, so the whole header morphs as
-    // ONE continuous motion — matching the finger while dragging and the
-    // spring curve while settling, with no if/else jumps.
-    final t = _mediaExpandProgress;
+    final double t = (1 - (_scrollOffset / _maxExpandScroll)).clamp(0.0, 1.0);
+    final double overscrollDown = (_scrollOffset - _maxExpandScroll).clamp(0.0, double.infinity);
+    final double overscrollUp = (_scrollOffset < 0) ? -_scrollOffset : 0.0;
+    final double parallaxDownInSliver = overscrollDown * 0.5;
 
-    final compactHeaderTotal = topInset + 18 + _compactAvatarSize + 16;
-    final containerHeight = lerpDouble(compactHeaderTotal, _expandedMediaHeight, t)!;
-    final avatarWidth = lerpDouble(_compactAvatarSize, screenWidth, t)!;
-    final avatarHeight = lerpDouble(_compactAvatarSize, _expandedMediaHeight, t)!;
-    final avatarRadius = lerpDouble(_compactAvatarSize / 2, 0, t)!;
-    final avatarTop = lerpDouble(topInset + 18, 0, t)!;
-    final avatarLeft = lerpDouble(20, 0, t)!;
-    final imageZoom = 1 + t * 0.08;
+    final double avatarWidth = lerpDouble(68.0, screenWidth, t)!;
+    final double avatarHeight = lerpDouble(68.0, 380.0, t)!;
+    final double avatarRadius = lerpDouble(34.0, 0, t)!;
 
-    final compactRowOpacity = (1 - t * 2.6).clamp(0.0, 1.0);
-    final expandedCaptionOpacity = ((t - 0.45) / 0.55).clamp(0.0, 1.0);
-    final badgeOpacity = (1 - t * 5).clamp(0.0, 1.0);
-    final chevronOpacity = ((t - 0.5) / 0.5).clamp(0.0, 1.0);
-    final scrimAlpha = (0x99 * t).round();
+    final double compactAvatarTopSliver = topInset + 18 + _maxExpandScroll;
+    final double avatarTop = lerpDouble(compactAvatarTopSliver, 0.0, t)! + parallaxDownInSliver - overscrollUp;
+    final double avatarLeft = lerpDouble(20.0, 0.0, t)!;
+    
+    final double extraScale = overscrollUp > 0 ? 1.0 + (overscrollUp / 300) : 1.0;
+    final double scaledAvatarHeight = avatarHeight * extraScale;
+    final double expandedCaptionTop = avatarTop + scaledAvatarHeight - 76;
+    final double chevronTop = topInset + 10 + parallaxDownInSliver - overscrollUp;
+    
+    final double compactRowOpacity = (1 - t * 2.6).clamp(0.0, 1.0);
+    final double expandedCaptionOpacity = ((t - 0.45) / 0.55).clamp(0.0, 1.0);
+    final double badgeOpacity = (1 - t * 5).clamp(0.0, 1.0);
+    final double chevronOpacity = ((t - 0.5) / 0.5).clamp(0.0, 1.0);
+    final int scrimAlpha = (0x99 * t).round();
 
-    // Sheet overlaps the bottom edge of the media by up to `_sheetOverlap`
-    // while expanded; at rest (t = 0) the spacer exactly matches the
-    // original compact header height, so nothing shifts from today's look.
-    final overlapNow = lerpDouble(0, _sheetOverlap, t)!;
-    final spacerHeight = (containerHeight - overlapNow).clamp(0.0, double.infinity);
-
-    // Subtle parallax + minimum-floor fade for the identity block on top of
-    // the sheet's own covering — never relies on opacity alone to hide it.
-    final identityParallax = -(_scrollPixels * 0.35);
-    final identityFade = (1 - (_scrollPixels / _identityParallaxRange) * 0.6).clamp(0.4, 1.0);
+    final double identityFade = (1 - (overscrollDown / 150)).clamp(0.0, 1.0);
+    
+    final isDark = context.isDark;
+    final primary = Theme.of(context).colorScheme.primary;
 
     return Scaffold(
-      body: Stack(
-        children: [
-          // ---- Layer 1: media / profile photo, always BEHIND the sheet --
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: containerHeight,
-            child: Stack(clipBehavior: Clip.none, children: [
-              Positioned(
-                top: avatarTop,
-                left: avatarLeft,
-                width: avatarWidth,
-                height: avatarHeight,
-                child: GestureDetector(
-                  onTap: () {
-                    if (!hasMedia) return;
-                    Navigator.push(context, GlassPageRoute(builder: (_) => const ProfileMediaViewerPage()));
-                  },
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(avatarRadius),
-                    child: Hero(
-                      tag: 'profile-header-media',
-                      child: SizedBox.expand(
-                        child: Transform.scale(
-                          scale: imageZoom,
-                          child: _ProfileHeaderMediaContent(profile: profile, initial: initial),
+      body: CustomScrollView(
+        controller: _scrollController,
+        physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+        slivers: [
+          SliverToBoxAdapter(
+            child: SizedBox(
+              height: 360.0,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Positioned(
+                    top: avatarTop,
+                    left: avatarLeft,
+                    width: avatarWidth,
+                    height: avatarHeight,
+                    child: Transform.scale(
+                      scale: extraScale,
+                      alignment: Alignment.topCenter,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(avatarRadius),
+                        child: GestureDetector(
+                          onTap: () {
+                            if (!hasMedia) return;
+                            Navigator.push(context, GlassPageRoute(builder: (_) => const ProfileMediaViewerPage()));
+                          },
+                          child: Hero(
+                            tag: 'profile-header-media',
+                            child: SizedBox.expand(
+                              child: _ProfileHeaderMediaContent(profile: profile, initial: initial),
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              ),
-            ]),
-          ),
-          // ---- Layer 2: profile identity, also behind the sheet ---------
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            height: containerHeight,
-            child: Transform.translate(
-              offset: Offset(0, identityParallax),
-              child: Opacity(
-                opacity: identityFade,
-                child: Stack(clipBehavior: Clip.none, children: [
                   if (scrimAlpha > 0)
                     Positioned(
                       top: avatarTop,
@@ -4105,14 +4038,18 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with SingleTickerProv
                       width: avatarWidth,
                       height: avatarHeight,
                       child: IgnorePointer(
-                        child: DecoratedBox(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(avatarRadius),
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [Colors.transparent, Colors.transparent, Color(scrimAlpha << 24)],
-                              stops: const [0.0, 0.5, 1.0],
+                        child: Transform.scale(
+                          scale: extraScale,
+                          alignment: Alignment.topCenter,
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(avatarRadius),
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [Colors.transparent, Colors.transparent, Color(scrimAlpha << 24)],
+                                stops: const [0.0, 0.5, 1.0],
+                              ),
                             ),
                           ),
                         ),
@@ -4124,67 +4061,74 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with SingleTickerProv
                       left: avatarLeft,
                       width: avatarWidth,
                       height: avatarHeight,
-                      child: Stack(children: [
-                        Positioned(
-                          right: -2,
-                          bottom: -2,
-                          child: Opacity(
-                            opacity: badgeOpacity,
-                            child: GestureDetector(
-                              onTap: () => showProfilePhotoOptions(context, ref),
-                              child: Container(
-                                padding: const EdgeInsets.all(5),
-                                decoration: BoxDecoration(
-                                  color: Theme.of(context).colorScheme.secondary,
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: context.cardColor, width: 2),
+                      child: Opacity(
+                        opacity: badgeOpacity * identityFade,
+                        child: Stack(
+                          children: [
+                            Positioned(
+                              right: -2,
+                              bottom: -2,
+                              child: GestureDetector(
+                                onTap: () => showProfilePhotoOptions(context, ref),
+                                child: Container(
+                                  padding: const EdgeInsets.all(5),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).colorScheme.secondary,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(color: context.cardColor, width: 2),
+                                  ),
+                                  child: const Icon(Icons.camera_alt_rounded, size: 12, color: Colors.black),
                                 ),
-                                child: const Icon(Icons.camera_alt_rounded, size: 12, color: Colors.black),
                               ),
                             ),
-                          ),
+                          ],
                         ),
-                      ]),
+                      ),
                     ),
                   if (compactRowOpacity > 0)
                     Positioned(
-                      top: topInset + 18,
-                      left: 20 + _compactAvatarSize + 14,
+                      top: compactAvatarTopSliver + parallaxDownInSliver,
+                      left: 20 + 68.0 + 14,
                       right: 60,
-                      height: _compactAvatarSize,
+                      height: 68.0,
                       child: IgnorePointer(
                         child: Opacity(
-                          opacity: compactRowOpacity,
-                          child: Row(children: [
-                            Flexible(
-                              child: Text(
-                                profile.name.isNotEmpty ? profile.name : Strings.t(lang, 'view_profile'),
-                                style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: context.textPrimary),
-                                overflow: TextOverflow.ellipsis,
+                          opacity: compactRowOpacity * identityFade,
+                          child: Row(
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  profile.name.isNotEmpty ? profile.name : Strings.t(lang, 'view_profile'),
+                                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: context.textPrimary),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.primary.withOpacity(context.isDark ? 0.18 : 0.1),
-                                borderRadius: BorderRadius.circular(20),
+                              const SizedBox(width: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                                decoration: BoxDecoration(
+                                  color: primary.withOpacity(isDark ? 0.18 : 0.1),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.workspace_premium_rounded, size: 11, color: primary),
+                                    const SizedBox(width: 4),
+                                    Text(Strings.t(lang, 'premium_member'), style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, height: 1.0, color: primary, letterSpacing: 0.2)),
+                                  ],
+                                ),
                               ),
-                              child: Row(mainAxisSize: MainAxisSize.min, children: [
-                                Icon(Icons.workspace_premium_rounded, size: 11, color: Theme.of(context).colorScheme.primary),
-                                const SizedBox(width: 4),
-                                Text(Strings.t(lang, 'premium_member'), style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, height: 1.0, color: Theme.of(context).colorScheme.primary, letterSpacing: 0.2)),
-                              ]),
-                            ),
-                          ]),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   if (expandedCaptionOpacity > 0)
                     Positioned(
-                      left: 0,
-                      right: 0,
-                      top: avatarTop + avatarHeight - 76,
+                      left: avatarLeft,
+                      right: avatarLeft,
+                      top: expandedCaptionTop,
                       height: 76,
                       child: IgnorePointer(
                         ignoring: expandedCaptionOpacity < 0.4,
@@ -4199,86 +4143,76 @@ class _ProfilePageState extends ConsumerState<ProfilePage> with SingleTickerProv
                                 colors: [Colors.transparent, Color(0x8C000000)],
                               ),
                             ),
-                            child: Row(children: [
-                              Flexible(
-                                child: Text(
-                                  profile.name.isNotEmpty ? profile.name : Strings.t(lang, 'view_profile'),
-                                  style: const TextStyle(color: Colors.white, fontSize: 21, fontWeight: FontWeight.bold),
-                                  overflow: TextOverflow.ellipsis,
+                            child: Row(
+                              children: [
+                                Flexible(
+                                  child: Text(
+                                    profile.name.isNotEmpty ? profile.name : Strings.t(lang, 'view_profile'),
+                                    style: const TextStyle(color: Colors.white, fontSize: 21, fontWeight: FontWeight.bold),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 8),
-                              GestureDetector(
-                                behavior: HitTestBehavior.opaque,
-                                onTap: () => showEditNameDialog(context, ref),
-                                child: const Icon(Icons.edit_outlined, size: 18, color: Colors.white),
-                              ),
-                            ]),
+                                const SizedBox(width: 8),
+                                GestureDetector(
+                                  behavior: HitTestBehavior.opaque,
+                                  onTap: () => showEditNameDialog(context, ref),
+                                  child: const Icon(Icons.edit_outlined, size: 18, color: Colors.white),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
                     ),
                   if (chevronOpacity > 0)
                     Positioned(
-                      top: topInset + 10,
+                      top: chevronTop,
                       right: 14,
                       child: Opacity(
                         opacity: chevronOpacity,
                         child: _HeaderIconButton(icon: Icons.keyboard_arrow_down_rounded, onTap: _collapseMediaNow),
                       ),
                     ),
-                ]),
+                ],
               ),
             ),
           ),
-          // ---- Layer 3: sheet surface — always on top. Its own opaque ---
-          // surface is what actually hides layers 1 & 2 as the user
-          // scrolls, driven by ordinary CustomScrollView scrolling rather
-          // than any manual opacity/threshold trick on the header itself.
-          NotificationListener<ScrollNotification>(
-            onNotification: _handleOverscrollNotification,
-            child: CustomScrollView(
-              controller: _scrollController,
-              physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-              slivers: [
-                SliverToBoxAdapter(child: SizedBox(height: spacerHeight)),
-                SliverToBoxAdapter(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: context.cardColor,
-                      borderRadius: const BorderRadius.only(topLeft: Radius.circular(28), topRight: Radius.circular(28)),
-                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(context.isDark ? 0.24 : 0.06), blurRadius: 16, offset: const Offset(0, -6))],
-                    ),
-                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(Strings.t(lang, 'profile_title'), style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 28, color: context.textPrimary)),
-                        const SizedBox(height: 4),
-                        Text(Strings.t(lang, 'manage_account'), style: TextStyle(color: context.textMuted)),
-                        const SizedBox(height: 22),
-                        SectionTitle(Strings.t(lang, 'section_finance')),
-                        const SizedBox(height: 10),
-                        SettingList(items: const [
-                          ('savings_target', SolarIconsOutline.safeSquare),
-                          ('category', SolarIconsOutline.widget),
-                          ('account_wallet', SolarIconsOutline.wallet),
-                          ('receivables', SolarIconsOutline.usersGroupTwoRounded),
-                        ]),
-                        const SizedBox(height: 24),
-                        SectionTitle(Strings.t(lang, 'section_app')),
-                        const SizedBox(height: 10),
-                        SettingList(items: const [
-                          ('appearance', SolarIconsOutline.palette),
-                          ('language', Icons.language),
-                          ('notifications', SolarIconsOutline.bell),
-                          ('backup_data', SolarIconsOutline.cloudUpload),
-                        ]),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+          SliverToBoxAdapter(
+            child: Container(
+              decoration: BoxDecoration(
+                color: context.cardColor,
+                borderRadius: const BorderRadius.only(topLeft: Radius.circular(28), topRight: Radius.circular(28)),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withOpacity(isDark ? 0.24 : 0.06), blurRadius: 16, offset: const Offset(0, -6)),
+                ],
+              ),
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(Strings.t(lang, 'profile_title'), style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 28, color: context.textPrimary)),
+                  const SizedBox(height: 4),
+                  Text(Strings.t(lang, 'manage_account'), style: TextStyle(color: context.textMuted)),
+                  const SizedBox(height: 22),
+                  SectionTitle(Strings.t(lang, 'section_finance')),
+                  const SizedBox(height: 10),
+                  SettingList(items: const [
+                    ('savings_target', SolarIconsOutline.safeSquare),
+                    ('category', SolarIconsOutline.widget),
+                    ('account_wallet', SolarIconsOutline.wallet),
+                    ('receivables', SolarIconsOutline.usersGroupTwoRounded),
+                  ]),
+                  const SizedBox(height: 24),
+                  SectionTitle(Strings.t(lang, 'section_app')),
+                  const SizedBox(height: 10),
+                  SettingList(items: const [
+                    ('appearance', SolarIconsOutline.palette),
+                    ('language', Icons.language),
+                    ('notifications', SolarIconsOutline.bell),
+                    ('backup_data', SolarIconsOutline.cloudUpload),
+                  ]),
+                ],
+              ),
             ),
           ),
         ],
