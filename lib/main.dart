@@ -2745,16 +2745,19 @@ class _FinanceShellState extends ConsumerState<FinanceShell> with SingleTickerPr
         builder: (context, ref, child) {
           final previewProgress = ref.watch(profilePreviewProgressProvider);
           final opacity = (1.0 - previewProgress).clamp(0.0, 1.0);
+          final currentBg = Color.lerp(context.cardColor, Colors.black, previewProgress)!;
+          final currentBorder = Color.lerp(context.borderColor, Colors.transparent, previewProgress)!;
+
           return IgnorePointer(
             ignoring: opacity == 0.0,
-            child: Opacity(
-              opacity: opacity,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: context.cardColor,
-                  border: Border(top: BorderSide(color: context.borderColor)),
-                ),
-                padding: const EdgeInsets.only(top: 12, bottom: 20),
+            child: Container(
+              decoration: BoxDecoration(
+                color: currentBg,
+                border: Border(top: BorderSide(color: currentBorder)),
+              ),
+              padding: const EdgeInsets.only(top: 12, bottom: 20),
+              child: Opacity(
+                opacity: opacity,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
