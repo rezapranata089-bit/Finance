@@ -14,6 +14,7 @@ import java.io.FileOutputStream
 class MainActivity : FlutterActivity() {
     private val channelName = "com.example.my_finance/gallery_picker"
     private val pickImageRequestCode = 9001
+    private val pickMediaRequestCode = 9002
     private var pendingResult: MethodChannel.Result? = null
 
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
@@ -77,6 +78,51 @@ class MainActivity : FlutterActivity() {
                         startActivityForResult(baseIntent, pickImageRequestCode)
                     }
                 }
+            } else if (call.method == "pickMediaWithChooser") {
+                pendingResult = result
+
+                // Same native "real gallery app" chooser as pickImageWithChooser,
+                // but accepts both images and videos so a single "Choose from
+                // gallery" option lets the user pick either media type.
+                val baseIntent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                    type = "*/*"
+                    putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("image/*", "video/*"))
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                }
+
+                val resolvedActivities = packageManager.queryIntentActivities(baseIntent, PackageManager.MATCH_DEFAULT_ONLY)
+
+                val photoPickerMarkers = listOf("photopicker", "media.module")
+                fun isPhotoPicker(pkg: String, cls: String): Boolean =
+                    photoPickerMarkers.any { marker -> pkg.contains(marker, ignoreCase = true) || cls.contains(marker, ignoreCase = true) }
+
+                val realGalleryApps = resolvedActivities.filter { info ->
+                    !isPhotoPicker(info.activityInfo.packageName, info.activityInfo.name)
+                }
+
+                when {
+                    realGalleryApps.size == 1 -> {
+                        val info = realGalleryApps.first().activityInfo
+                        val directIntent = Intent(baseIntent).apply {
+                            setClassName(info.packageName, info.name)
+                        }
+                        startActivityForResult(directIntent, pickMediaRequestCode)
+                    }
+                    realGalleryApps.size > 1 -> {
+                        val targetedIntents = realGalleryApps.map { info ->
+                            Intent(baseIntent).apply {
+                                setClassName(info.activityInfo.packageName, info.activityInfo.name)
+                            }
+                        }
+                        val chooser = Intent.createChooser(targetedIntents.first(), "Pilih Foto atau Video Profil").apply {
+                            putExtra(Intent.EXTRA_INITIAL_INTENTS, targetedIntents.drop(1).toTypedArray())
+                        }
+                        startActivityForResult(chooser, pickMediaRequestCode)
+                    }
+                    else -> {
+                        startActivityForResult(baseIntent, pickMediaRequestCode)
+                    }
+                }
             } else {
                 result.notImplemented()
             }
@@ -99,6 +145,34 @@ class MainActivity : FlutterActivity() {
                     return
                 }
                 val outputFile = File(cacheDir, "picked_profile_${System.currentTimeMillis()}.jpg")
+                FileOutputStream(outputFile).use { output ->
+                    inputStream.copyTo(output)
+                }
+                inputStream.close()
+                result?.success(outputFile.absolutePath)
+            } catch (e: Exception) {
+                result?.error("COPY_FAILED", e.message, null)
+            }
+        } else if (requestCode == pickMediaRequestCode) {
+            val result = pendingResult
+            pendingResult = null
+            if (resultCode != Activity.RESULT_OK || data?.data == null) {
+                result?.success(null)
+                return
+            }
+            val uri: Uri = data.data!!
+            try {
+                // Determine whether the picked file is an image or a video so
+                // the Dart side can route it to the right (crop vs trim+crop) flow.
+                val mimeType = contentResolver.getType(uri) ?: ""
+                val isVideo = mimeType.startsWith("video/")
+                val extension = if (isVideo) "mp4" else "jpg"
+                val inputStream = contentResolver.openInputStream(uri)
+                if (inputStream == null) {
+                    result?.error("READ_FAILED", "Tidak bisa membaca berkas yang dipilih", null)
+                    return
+                }
+                val outputFile = File(cacheDir, "picked_profile_media_${System.currentTimeMillis()}.$extension")
                 FileOutputStream(outputFile).use { output ->
                     inputStream.copyTo(output)
                 }

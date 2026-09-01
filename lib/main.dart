@@ -362,8 +362,7 @@ Future<ProfilePhotoPick?> pickAndCropProfilePhoto(BuildContext context, ImageSou
             title: Text(Strings.t(lang, 'choose_from_gallery')),
             onTap: () async {
               Navigator.pop(sheetContext);
-              final result = await pickAndCropProfilePhoto(context, ImageSource.gallery);
-              if (result != null) ref.read(userProfileProvider.notifier).updatePhoto(path: result.path, bytes: result.bytes);
+              await pickAndSetProfileMediaFromGallery(context, ref);
             },
           ),
           ListTile(
@@ -388,15 +387,6 @@ Future<ProfilePhotoPick?> pickAndCropProfilePhoto(BuildContext context, ImageSou
             ),
           if (!kIsWeb) ...[
             Divider(height: 26, color: context.borderColor),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Icon(Icons.video_library_outlined, color: Theme.of(context).colorScheme.primary),
-              title: Text(Strings.t(lang, 'choose_video_from_gallery')),
-              onTap: () {
-                Navigator.pop(sheetContext);
-                pickAndSetProfileVideo(context, ref, ImageSource.gallery);
-              },
-            ),
             ListTile(
               contentPadding: EdgeInsets.zero,
               leading: Icon(Icons.videocam_outlined, color: Theme.of(context).colorScheme.primary),
@@ -945,6 +935,115 @@ Future<void> pickAndSetProfileVideo(BuildContext context, WidgetRef ref, ImageSo
         offsetY: cropResult.offsetY,
       );
 }
+
+class _GalleryMediaPick {
+  final bool isVideo;
+  final String? path;
+  final Uint8List? bytes;
+  const _GalleryMediaPick({required this.isVideo, this.path, this.bytes});
+}
+
+const _videoFileExtensions = ['.mp4', '.mov', '.avi', '.mkv', '.webm', '.3gp', '.m4v', '.wmv', '.flv'];
+
+bool _looksLikeVideoPath(String path) {
+  final lower = path.toLowerCase();
+  return _videoFileExtensions.any((ext) => lower.endsWith(ext));
+}
+
+// Unified gallery picker: opens the same native "real gallery app" chooser
+// used for images, but now accepts both photos and videos in one dialog.
+Future<_GalleryMediaPick?> _pickMediaFromGallery() async {
+  if (!kIsWeb && Platform.isAndroid) {
+    final String? pickedPath = await _galleryChooserChannel.invokeMethod<String>('pickMediaWithChooser');
+    if (pickedPath == null) return null;
+    return _GalleryMediaPick(isVideo: _looksLikeVideoPath(pickedPath), path: pickedPath);
+  }
+
+  final picker = ImagePicker();
+  final XFile? picked = await picker.pickMedia();
+  if (picked == null) return null;
+  final isVideo = _looksLikeVideoPath(picked.path);
+
+  if (kIsWeb) {
+    final bytes = await picked.readAsBytes();
+    return _GalleryMediaPick(isVideo: isVideo, bytes: bytes);
+  }
+  return _GalleryMediaPick(isVideo: isVideo, path: picked.path);
+}
+
+// Called from the "Choose from gallery" menu item: lets the user pick either
+// a photo or a video from the gallery, then routes to the matching
+// crop (photo) or trim+crop (video) flow.
+Future<void> pickAndSetProfileMediaFromGallery(BuildContext context, WidgetRef ref) async {
+  final pick = await _pickMediaFromGallery();
+  if (pick == null || !context.mounted) return;
+
+  if (pick.isVideo) {
+    final sourcePath = pick.path;
+    if (sourcePath == null) return;
+
+    final trimmedPath = await Navigator.push<String>(
+      context,
+      GlassPageRoute(builder: (_) => _VideoTrimPage(sourcePath: sourcePath)),
+    );
+    if (trimmedPath == null || !context.mounted) return;
+
+    final cropResult = await Navigator.push<_VideoCropResult>(
+      context,
+      GlassPageRoute(builder: (_) => _VideoCropPage(videoPath: trimmedPath)),
+    );
+    if (cropResult == null) return;
+
+    final dir = await getApplicationDocumentsDirectory();
+    final destPath = '${dir.path}/profile_video.mp4';
+    final destFile = File(destPath);
+    if (await destFile.exists()) {
+      try {
+        await destFile.delete();
+      } catch (_) {}
+    }
+    await File(trimmedPath).copy(destPath);
+    try {
+      await File(trimmedPath).delete();
+    } catch (_) {}
+
+    ref.read(userProfileProvider.notifier).updateVideo(
+          path: destPath,
+          scale: cropResult.scale,
+          offsetX: cropResult.offsetX,
+          offsetY: cropResult.offsetY,
+        );
+  } else {
+    Uint8List? rawBytes = pick.bytes;
+    if (rawBytes == null && pick.path != null) {
+      rawBytes = await File(pick.path!).readAsBytes();
+    }
+    if (rawBytes == null || !context.mounted) return;
+
+    final croppedBytes = await Navigator.push<Uint8List>(
+      context,
+      GlassPageRoute(builder: (_) => _CropperPage(imageBytes: rawBytes!)),
+    );
+    if (croppedBytes == null) return;
+
+    if (kIsWeb) {
+      ref.read(userProfileProvider.notifier).updatePhoto(bytes: croppedBytes);
+      return;
+    }
+
+    final dir = await getApplicationDocumentsDirectory();
+    final destPath = '${dir.path}/profile_photo.jpg';
+    final destFile = File(destPath);
+    if (await destFile.exists()) {
+      try {
+        await destFile.delete();
+      } catch (_) {}
+    }
+    await destFile.writeAsBytes(croppedBytes);
+    ref.read(userProfileProvider.notifier).updatePhoto(path: destPath);
+  }
+}
+
 class AppThemePalette {
   final String name;
   final Color primary, secondary, tertiary;
