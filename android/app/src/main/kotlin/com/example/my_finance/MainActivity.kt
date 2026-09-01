@@ -21,26 +21,41 @@ class MainActivity : FlutterActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, channelName).setMethodCallHandler { call, result ->
             if (call.method == "pickImageWithChooser") {
                 pendingResult = result
-                val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+
+                // Samsung Galaxy devices (including A-series like A55) ship
+                // their own Gallery app under this package. Target it
+                // directly so it opens with no picker/chooser dialog at all.
+                val samsungGalleryPackage = "com.sec.android.gallery3d"
+                val directIntent = Intent(Intent.ACTION_GET_CONTENT).apply {
                     type = "image/*"
                     addCategory(Intent.CATEGORY_OPENABLE)
+                    setPackage(samsungGalleryPackage)
                 }
-                val chooser = Intent.createChooser(intent, "Pilih Foto Profil")
+                val samsungGalleryAvailable = directIntent.resolveActivity(packageManager) != null
 
-                // Android Photo Picker (styled like Google Photos) intercepts
-                // ACTION_GET_CONTENT for image/* on Android 11+/13+. Excluding
-                // its known component names forces the system to fall back to
-                // a normal chooser listing other apps (real gallery apps,
-                // file managers, the actual Google Photos app, etc.).
-                val excludedComponents = arrayOf(
-                    ComponentName("com.google.android.providers.media.module", "com.android.providers.media.photopicker.PhotoPickerActivity"),
-                    ComponentName("com.android.providers.media.module", "com.android.providers.media.photopicker.PhotoPickerActivity"),
-                    ComponentName("com.google.android.providers.media.module", "com.android.providers.media.photopicker.PickerFragmentActivity"),
-                    ComponentName("com.android.providers.media.module", "com.android.providers.media.photopicker.PickerFragmentActivity")
-                )
-                chooser.putExtra(Intent.EXTRA_EXCLUDE_COMPONENTS, excludedComponents)
-
-                startActivityForResult(chooser, pickImageRequestCode)
+                if (samsungGalleryAvailable) {
+                    startActivityForResult(directIntent, pickImageRequestCode)
+                } else {
+                    // Fallback: Samsung Gallery not found under the expected
+                    // package on this device/ROM variant. Show a normal
+                    // chooser, excluding the Android Photo Picker (which
+                    // intercepts ACTION_GET_CONTENT for image/* on Android
+                    // 11+/13+ and looks like Google Photos) so a real app
+                    // list shows instead.
+                    val fallbackIntent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                        type = "image/*"
+                        addCategory(Intent.CATEGORY_OPENABLE)
+                    }
+                    val chooser = Intent.createChooser(fallbackIntent, "Pilih Foto Profil")
+                    val excludedComponents = arrayOf(
+                        ComponentName("com.google.android.providers.media.module", "com.android.providers.media.photopicker.PhotoPickerActivity"),
+                        ComponentName("com.android.providers.media.module", "com.android.providers.media.photopicker.PhotoPickerActivity"),
+                        ComponentName("com.google.android.providers.media.module", "com.android.providers.media.photopicker.PickerFragmentActivity"),
+                        ComponentName("com.android.providers.media.module", "com.android.providers.media.photopicker.PickerFragmentActivity")
+                    )
+                    chooser.putExtra(Intent.EXTRA_EXCLUDE_COMPONENTS, excludedComponents)
+                    startActivityForResult(chooser, pickImageRequestCode)
+                }
             } else {
                 result.notImplemented()
             }
