@@ -3926,14 +3926,19 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     super.didChangeDependencies();
     if (!_initialized) {
       final topInset = MediaQuery.paddingOf(context).top;
-      final compactHeight = topInset + 18 + 68.0 + 16;
-      final sheetStartExpanded = 380.0 - 20.0; 
-      _maxExpandScroll = sheetStartExpanded - compactHeight;
+      // Posisi di mana Sheet akan berada ketika compact
+      final compactHeight = topInset + 18.0 + 68.0 + 16.0;
+      // Posisi awal Sheet (ruang kosong transparent) ketika di-expand, dikurangi overlap 20px
+      final expandedSheetTop = 380.0 - 20.0; 
       
+      _maxExpandScroll = expandedSheetTop - compactHeight;
+      
+      // Setup ScrollController agar langsung berada pada posisi compact (scrolled down)
       _scrollController = ScrollController(initialScrollOffset: _maxExpandScroll);
       _scrollOffset = _maxExpandScroll;
       
       _scrollController.addListener(() {
+        if (!mounted) return;
         setState(() {
           _scrollOffset = _scrollController.offset;
         });
@@ -3950,11 +3955,33 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 
   void _collapseMediaNow() {
-    _scrollController.animateTo(
-      _maxExpandScroll,
-      duration: const Duration(milliseconds: 400),
-      curve: Curves.easeOutCubic,
-    );
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        _maxExpandScroll,
+        duration: const Duration(milliseconds: 400),
+        curve: Curves.easeOutCubic,
+      );
+    }
+  }
+
+  bool _handleScrollNotification(ScrollNotification notification) {
+    if (notification is ScrollEndNotification) {
+      final offset = _scrollController.offset;
+      // Apabila gesture dilepas di tengah-tengah area ekspansi, snap ke batas terdekat (berjalan sendiri)
+      if (offset > 0 && offset < _maxExpandScroll) {
+        final target = offset > (_maxExpandScroll * 0.5) ? _maxExpandScroll : 0.0;
+        Future.microtask(() {
+          if (mounted && _scrollController.hasClients) {
+            _scrollController.animateTo(
+              target,
+              duration: const Duration(milliseconds: 350),
+              curve: Curves.easeOutCubic,
+            );
+          }
+        });
+      }
+    }
+    return false;
   }
 
   @override
@@ -3966,23 +3993,30 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final topInset = MediaQuery.paddingOf(context).top;
     final screenWidth = MediaQuery.sizeOf(context).width;
 
-    final double t = (1 - (_scrollOffset / _maxExpandScroll)).clamp(0.0, 1.0);
-    final double overscrollDown = (_scrollOffset - _maxExpandScroll).clamp(0.0, double.infinity);
-    final double overscrollUp = (_scrollOffset < 0) ? -_scrollOffset : 0.0;
-    final double parallaxDownInSliver = overscrollDown * 0.5;
+    double t = 1.0;
+    double parallaxOffset = 0.0;
+    double extraScale = 1.0;
+
+    if (_scrollOffset > _maxExpandScroll) {
+      // User scroll list ke atas -> Header sembunyi perlahan di belakang sheet
+      t = 0.0;
+      parallaxOffset = (_scrollOffset - _maxExpandScroll) * 0.4;
+    } else if (_scrollOffset >= 0) {
+      // User berada di area ekspansi (0.0 sampai _maxExpandScroll)
+      t = 1.0 - (_scrollOffset / _maxExpandScroll);
+      parallaxOffset = 0.0;
+    } else {
+      // User overscroll / pull berlebih ke bawah -> Scale membesar
+      t = 1.0;
+      parallaxOffset = 0.0; 
+      extraScale = 1.0 + (-_scrollOffset / 300);
+    }
 
     final double avatarWidth = lerpDouble(68.0, screenWidth, t)!;
     final double avatarHeight = lerpDouble(68.0, 380.0, t)!;
     final double avatarRadius = lerpDouble(34.0, 0, t)!;
-
-    final double compactAvatarTopSliver = topInset + 18 + _maxExpandScroll;
-    final double avatarTop = lerpDouble(compactAvatarTopSliver, 0.0, t)! + parallaxDownInSliver - overscrollUp;
+    final double avatarTop = lerpDouble(topInset + 18.0, 0.0, t)!;
     final double avatarLeft = lerpDouble(20.0, 0.0, t)!;
-    
-    final double extraScale = overscrollUp > 0 ? 1.0 + (overscrollUp / 300) : 1.0;
-    final double scaledAvatarHeight = avatarHeight * extraScale;
-    final double expandedCaptionTop = avatarTop + scaledAvatarHeight - 76;
-    final double chevronTop = topInset + 10 + parallaxDownInSliver - overscrollUp;
     
     final double compactRowOpacity = (1 - t * 2.6).clamp(0.0, 1.0);
     final double expandedCaptionOpacity = ((t - 0.45) / 0.55).clamp(0.0, 1.0);
@@ -3990,19 +4024,22 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final double chevronOpacity = ((t - 0.5) / 0.5).clamp(0.0, 1.0);
     final int scrimAlpha = (0x99 * t).round();
 
-    final double identityFade = (1 - (overscrollDown / 150)).clamp(0.0, 1.0);
-    
+    // Fade halus tambahan saat header perlahan menghilang tertutup sheet (parallax)
+    final double identityFade = (1 - ((_scrollOffset - _maxExpandScroll).clamp(0.0, double.infinity) / 150)).clamp(0.0, 1.0);
+
     final isDark = context.isDark;
     final primary = Theme.of(context).colorScheme.primary;
 
     return Scaffold(
-      body: CustomScrollView(
-        controller: _scrollController,
-        physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
-        slivers: [
-          SliverToBoxAdapter(
-            child: SizedBox(
-              height: 360.0,
+      body: Stack(
+        children: [
+          // ---- LAYER 1: Background Media & Profile Identity (Paling Bawah) ----
+          // Translasi akan membuatnya bergerak ke atas secara parallax 
+          // saat ScrollView (sheet) bergerak lebih cepat melaluinya
+          Positioned(
+            top: 0, left: 0, right: 0, bottom: 0,
+            child: Transform.translate(
+              offset: Offset(0, -parallaxOffset),
               child: Stack(
                 clipBehavior: Clip.none,
                 children: [
@@ -4087,9 +4124,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     ),
                   if (compactRowOpacity > 0)
                     Positioned(
-                      top: compactAvatarTopSliver + parallaxDownInSliver,
-                      left: 20 + 68.0 + 14,
-                      right: 60,
+                      top: topInset + 18.0,
+                      left: 20.0 + 68.0 + 14.0,
+                      right: 60.0,
                       height: 68.0,
                       child: IgnorePointer(
                         child: Opacity(
@@ -4126,10 +4163,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     ),
                   if (expandedCaptionOpacity > 0)
                     Positioned(
+                      top: avatarTop + (avatarHeight * extraScale) - 76.0,
                       left: avatarLeft,
                       right: avatarLeft,
-                      top: expandedCaptionTop,
-                      height: 76,
+                      height: 76.0,
                       child: IgnorePointer(
                         ignoring: expandedCaptionOpacity < 0.4,
                         child: Opacity(
@@ -4166,8 +4203,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     ),
                   if (chevronOpacity > 0)
                     Positioned(
-                      top: chevronTop,
-                      right: 14,
+                      top: topInset + 10.0,
+                      right: 14.0,
                       child: Opacity(
                         opacity: chevronOpacity,
                         child: _HeaderIconButton(icon: Icons.keyboard_arrow_down_rounded, onTap: _collapseMediaNow),
@@ -4177,42 +4214,63 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               ),
             ),
           ),
-          SliverToBoxAdapter(
-            child: Container(
-              decoration: BoxDecoration(
-                color: context.cardColor,
-                borderRadius: const BorderRadius.only(topLeft: Radius.circular(28), topRight: Radius.circular(28)),
-                boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(isDark ? 0.24 : 0.06), blurRadius: 16, offset: const Offset(0, -6)),
-                ],
-              ),
-              padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(Strings.t(lang, 'profile_title'), style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 28, color: context.textPrimary)),
-                  const SizedBox(height: 4),
-                  Text(Strings.t(lang, 'manage_account'), style: TextStyle(color: context.textMuted)),
-                  const SizedBox(height: 22),
-                  SectionTitle(Strings.t(lang, 'section_finance')),
-                  const SizedBox(height: 10),
-                  SettingList(items: const [
-                    ('savings_target', SolarIconsOutline.safeSquare),
-                    ('category', SolarIconsOutline.widget),
-                    ('account_wallet', SolarIconsOutline.wallet),
-                    ('receivables', SolarIconsOutline.usersGroupTwoRounded),
-                  ]),
-                  const SizedBox(height: 24),
-                  SectionTitle(Strings.t(lang, 'section_app')),
-                  const SizedBox(height: 10),
-                  SettingList(items: const [
-                    ('appearance', SolarIconsOutline.palette),
-                    ('language', Icons.language),
-                    ('notifications', SolarIconsOutline.bell),
-                    ('backup_data', SolarIconsOutline.cloudUpload),
-                  ]),
-                ],
-              ),
+          
+          // ---- LAYER 2: Sheet Surface (Scroll View) (Paling Atas) ----
+          // Container dengan warna solid sehingga akan memblok/menutupi 
+          // Layer 1 secara natural saat terscroll ke atas
+          NotificationListener<ScrollNotification>(
+            onNotification: _handleScrollNotification,
+            child: CustomScrollView(
+              controller: _scrollController,
+              physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+              slivers: [
+                const SliverToBoxAdapter(
+                  // Spacer ini selalu mengambil 360px. 
+                  // Karena initialOffset sudah dinaikkan sebesar _maxExpandScroll,
+                  // Sheet langsung terlihat tepat di bawah compact header.
+                  // Ketika digeser turun (offset 0), spacer menampilkan sheet pada 360px,
+                  // menyisakan 20px overlap yang menutupi media height (380px)
+                  child: SizedBox(height: 360.0), 
+                ),
+                SliverToBoxAdapter(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: context.cardColor,
+                      borderRadius: const BorderRadius.only(topLeft: Radius.circular(28), topRight: Radius.circular(28)),
+                      boxShadow: [
+                        BoxShadow(color: Colors.black.withOpacity(isDark ? 0.24 : 0.06), blurRadius: 16, offset: const Offset(0, -6)),
+                      ],
+                    ),
+                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(Strings.t(lang, 'profile_title'), style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 28, color: context.textPrimary)),
+                        const SizedBox(height: 4),
+                        Text(Strings.t(lang, 'manage_account'), style: TextStyle(color: context.textMuted)),
+                        const SizedBox(height: 22),
+                        SectionTitle(Strings.t(lang, 'section_finance')),
+                        const SizedBox(height: 10),
+                        const SettingList(items: [
+                          ('savings_target', SolarIconsOutline.safeSquare),
+                          ('category', SolarIconsOutline.widget),
+                          ('account_wallet', SolarIconsOutline.wallet),
+                          ('receivables', SolarIconsOutline.usersGroupTwoRounded),
+                        ]),
+                        const SizedBox(height: 24),
+                        SectionTitle(Strings.t(lang, 'section_app')),
+                        const SizedBox(height: 10),
+                        const SettingList(items: [
+                          ('appearance', SolarIconsOutline.palette),
+                          ('language', Icons.language),
+                          ('notifications', SolarIconsOutline.bell),
+                          ('backup_data', SolarIconsOutline.cloudUpload),
+                        ]),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
