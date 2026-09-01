@@ -4073,7 +4073,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     
     final double compactRowOpacity = (1 - t * 2.6).clamp(0.0, 1.0);
     final double expandedCaptionOpacity = ((t - 0.45) / 0.55).clamp(0.0, 1.0);
-    final double badgeOpacity = (1 - t * 5).clamp(0.0, 1.0);
+    // Tombol edit media (kamera) sekarang selalu tampil di semua posisi
+    // (kecil saat compact, besar saat header masih expanded/default),
+    // bukan hanya saat compact seperti sebelumnya, supaya area header yang
+    // besar tidak terlihat kosong.
+    final double badgeOpacity = 1.0;
+    final double badgeIconScale = t;
     final double chevronOpacity = ((t - 0.5) / 0.5).clamp(0.0, 1.0);
     final int scrimAlpha = (0x99 * t).round();
 
@@ -4157,13 +4162,16 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                               child: GestureDetector(
                                 onTap: () => showProfilePhotoOptions(context, ref),
                                 child: Container(
-                                  padding: const EdgeInsets.all(5),
+                                  padding: EdgeInsets.all(lerpDouble(5, 11, badgeIconScale)!),
                                   decoration: BoxDecoration(
                                     color: Theme.of(context).colorScheme.secondary,
                                     shape: BoxShape.circle,
-                                    border: Border.all(color: context.cardColor, width: 2),
+                                    border: Border.all(color: context.cardColor, width: lerpDouble(2, 3, badgeIconScale)!),
+                                    boxShadow: [
+                                      BoxShadow(color: Colors.black.withOpacity(0.25), blurRadius: 6, offset: const Offset(0, 2)),
+                                    ],
                                   ),
-                                  child: const Icon(Icons.camera_alt_rounded, size: 12, color: Colors.black),
+                                  child: Icon(Icons.camera_alt_rounded, size: lerpDouble(12, 22, badgeIconScale), color: Colors.black),
                                 ),
                               ),
                             ),
@@ -4270,6 +4278,24 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       child: Opacity(
                         opacity: chevronOpacity,
                         child: _HeaderIconButton(icon: Icons.keyboard_arrow_down_rounded, onTap: _collapseMediaNow),
+                      ),
+                    ),
+                  if (chevronOpacity > 0)
+                    Positioned(
+                      top: topInset + 10.0,
+                      left: 14.0,
+                      child: Opacity(
+                        opacity: chevronOpacity,
+                        child: _HeaderIconButton(icon: Icons.photo_library_outlined, onTap: () => showProfilePhotoOptions(context, ref)),
+                      ),
+                    ),
+                  if (chevronOpacity > 0)
+                    Positioned(
+                      top: topInset + 10.0,
+                      left: 62.0,
+                      child: Opacity(
+                        opacity: chevronOpacity,
+                        child: _HeaderIconButton(icon: Icons.videocam_outlined, onTap: () => showProfilePhotoOptions(context, ref)),
                       ),
                     ),
                 ],
@@ -4385,6 +4411,30 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       child: GestureDetector(
                         behavior: HitTestBehavior.opaque,
                         onTap: _collapseMediaNow,
+                        child: const SizedBox.expand(),
+                      ),
+                    ),
+                  if (chevronOpacity > 0)
+                    Positioned(
+                      top: topInset + 10.0,
+                      left: 14.0,
+                      width: 36,
+                      height: 36,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => showProfilePhotoOptions(context, ref),
+                        child: const SizedBox.expand(),
+                      ),
+                    ),
+                  if (chevronOpacity > 0)
+                    Positioned(
+                      top: topInset + 10.0,
+                      left: 62.0,
+                      width: 36,
+                      height: 36,
+                      child: GestureDetector(
+                        behavior: HitTestBehavior.opaque,
+                        onTap: () => showProfilePhotoOptions(context, ref),
                         child: const SizedBox.expand(),
                       ),
                     ),
