@@ -4073,12 +4073,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     
     final double compactRowOpacity = (1 - t * 2.6).clamp(0.0, 1.0);
     final double expandedCaptionOpacity = ((t - 0.45) / 0.55).clamp(0.0, 1.0);
-    // Tombol edit media (kamera) sekarang selalu tampil di semua posisi
-    // (kecil saat compact, besar saat header masih expanded/default),
-    // bukan hanya saat compact seperti sebelumnya, supaya area header yang
-    // besar tidak terlihat kosong.
-    final double badgeOpacity = 1.0;
-    final double badgeIconScale = t;
+    // Badge kamera hanya tampil saat avatar sudah (hampir) sekecil ukuran
+    // compact, dengan ukuran tetap/kecil — TIDAK ikut membesar mengikuti
+    // ukuran header, supaya tidak terlihat aneh menempel di pojok gambar
+    // besar. Saat header masih expanded, jalur edit foto/video disediakan
+    // lewat tombol pensil di pojok kiri atas (lihat chevronOpacity).
+    final double badgeOpacity = (1 - t * 5).clamp(0.0, 1.0);
     final double chevronOpacity = ((t - 0.5) / 0.5).clamp(0.0, 1.0);
     final int scrimAlpha = (0x99 * t).round();
 
@@ -4162,16 +4162,13 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                               child: GestureDetector(
                                 onTap: () => showProfilePhotoOptions(context, ref),
                                 child: Container(
-                                  padding: EdgeInsets.all(lerpDouble(5, 11, badgeIconScale)!),
+                                  padding: const EdgeInsets.all(5),
                                   decoration: BoxDecoration(
                                     color: Theme.of(context).colorScheme.secondary,
                                     shape: BoxShape.circle,
-                                    border: Border.all(color: context.cardColor, width: lerpDouble(2, 3, badgeIconScale)!),
-                                    boxShadow: [
-                                      BoxShadow(color: Colors.black.withOpacity(0.25), blurRadius: 6, offset: const Offset(0, 2)),
-                                    ],
+                                    border: Border.all(color: context.cardColor, width: 2),
                                   ),
-                                  child: Icon(Icons.camera_alt_rounded, size: lerpDouble(12, 22, badgeIconScale), color: Colors.black),
+                                  child: const Icon(Icons.camera_alt_rounded, size: 12, color: Colors.black),
                                 ),
                               ),
                             ),
@@ -4233,37 +4230,71 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     ),
                   if (expandedCaptionOpacity > 0)
                     Positioned(
-                      top: avatarTop + (avatarHeight * extraScale) - 76.0,
+                      top: avatarTop + (avatarHeight * extraScale) - 108.0,
                       left: avatarLeft,
                       right: avatarLeft,
-                      height: 76.0,
+                      height: 108.0,
                       child: IgnorePointer(
                         ignoring: expandedCaptionOpacity < 0.4,
                         child: Opacity(
                           opacity: expandedCaptionOpacity,
                           child: Container(
-                            padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+                            padding: const EdgeInsets.fromLTRB(20, 28, 20, 16),
                             decoration: const BoxDecoration(
                               gradient: LinearGradient(
                                 begin: Alignment.topCenter,
                                 end: Alignment.bottomCenter,
-                                colors: [Colors.transparent, Color(0x8C000000)],
+                                colors: [Colors.transparent, Color(0xB0000000)],
                               ),
                             ),
-                            child: Row(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Flexible(
-                                  child: Text(
-                                    profile.name.isNotEmpty ? profile.name : Strings.t(lang, 'view_profile'),
-                                    style: const TextStyle(color: Colors.white, fontSize: 21, fontWeight: FontWeight.bold),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
+                                Row(
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        profile.name.isNotEmpty ? profile.name : Strings.t(lang, 'view_profile'),
+                                        style: const TextStyle(color: Colors.white, fontSize: 21, fontWeight: FontWeight.bold),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    GestureDetector(
+                                      behavior: HitTestBehavior.opaque,
+                                      onTap: () => showEditNameDialog(context, ref),
+                                      child: const Icon(Icons.edit_outlined, size: 18, color: Colors.white),
+                                    ),
+                                  ],
                                 ),
-                                const SizedBox(width: 8),
-                                GestureDetector(
-                                  behavior: HitTestBehavior.opaque,
-                                  onTap: () => showEditNameDialog(context, ref),
-                                  child: const Icon(Icons.edit_outlined, size: 18, color: Colors.white),
+                                const SizedBox(height: 7),
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.16),
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Icon(Icons.workspace_premium_rounded, size: 11, color: Colors.white),
+                                          const SizedBox(width: 4),
+                                          Text(Strings.t(lang, 'premium_member'), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, height: 1.0, color: Colors.white, letterSpacing: 0.2)),
+                                        ],
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Flexible(
+                                      child: Text(
+                                        Strings.t(lang, 'manage_account'),
+                                        style: TextStyle(color: Colors.white.withOpacity(0.78), fontSize: 12, fontWeight: FontWeight.w500),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
@@ -4286,16 +4317,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       left: 14.0,
                       child: Opacity(
                         opacity: chevronOpacity,
-                        child: _HeaderIconButton(icon: Icons.photo_library_outlined, onTap: () => showProfilePhotoOptions(context, ref)),
-                      ),
-                    ),
-                  if (chevronOpacity > 0)
-                    Positioned(
-                      top: topInset + 10.0,
-                      left: 62.0,
-                      child: Opacity(
-                        opacity: chevronOpacity,
-                        child: _HeaderIconButton(icon: Icons.videocam_outlined, onTap: () => showProfilePhotoOptions(context, ref)),
+                        child: _HeaderIconButton(icon: Icons.edit_outlined, onTap: () => showProfilePhotoOptions(context, ref)),
                       ),
                     ),
                 ],
@@ -4392,10 +4414,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     ),
                   if (expandedCaptionOpacity >= 0.4)
                     Positioned(
-                      top: avatarTop + (avatarHeight * extraScale) - 76.0,
+                      top: avatarTop + (avatarHeight * extraScale) - 108.0,
                       left: avatarLeft,
                       width: avatarWidth,
-                      height: 76.0,
+                      height: 108.0,
                       child: GestureDetector(
                         behavior: HitTestBehavior.opaque,
                         onTap: () => showEditNameDialog(context, ref),
@@ -4418,18 +4440,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     Positioned(
                       top: topInset + 10.0,
                       left: 14.0,
-                      width: 36,
-                      height: 36,
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onTap: () => showProfilePhotoOptions(context, ref),
-                        child: const SizedBox.expand(),
-                      ),
-                    ),
-                  if (chevronOpacity > 0)
-                    Positioned(
-                      top: topInset + 10.0,
-                      left: 62.0,
                       width: 36,
                       height: 36,
                       child: GestureDetector(
