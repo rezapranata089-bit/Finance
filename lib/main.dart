@@ -3922,6 +3922,34 @@ class ReportsPage extends ConsumerWidget {
   }
 }
 
+class _HeaderSnapScrollPhysics extends ScrollPhysics {
+  final double boundary;
+  final bool Function() isLocked;
+
+  const _HeaderSnapScrollPhysics({required this.boundary, required this.isLocked, super.parent});
+
+  @override
+  _HeaderSnapScrollPhysics applyTo(ScrollPhysics? ancestor) {
+    return _HeaderSnapScrollPhysics(
+      boundary: boundary,
+      isLocked: isLocked,
+      parent: buildParent(ancestor),
+    );
+  }
+
+  @override
+  double applyBoundaryConditions(ScrollMetrics position, double value) {
+    // Selama satu gesture drag yang dimulai sebelum posisi default (media
+    // masih besar/sedang mengecil), tahan drag yang sama supaya tidak bisa
+    // langsung menembus posisi default itu ke scroll konten halaman. Begitu
+    // gesture dilepas, batas ini otomatis lepas lagi untuk gesture berikutnya.
+    if (isLocked() && value > boundary && position.pixels <= boundary + 0.01) {
+      return value - boundary;
+    }
+    return super.applyBoundaryConditions(position, value);
+  }
+}
+
 class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
   @override
@@ -3933,6 +3961,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   bool _initialized = false;
   double _scrollOffset = 0.0;
   double _maxExpandScroll = 0.0;
+  // Mengunci satu gesture drag yang dimulai sebelum posisi default (media
+  // masih besar/sedang mengecil) agar drag yang sama tidak bisa langsung
+  // menembus posisi default ke scroll konten halaman.
+  bool _gestureCrossingLocked = false;
 
   @override
   void didChangeDependencies() {
@@ -3978,7 +4010,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   }
 
   bool _handleScrollNotification(ScrollNotification notification) {
-    if (notification is ScrollEndNotification) {
+    if (notification is ScrollStartNotification) {
+      // Gesture drag baru (bukan animateTo/jumpTo programatik) yang mulai
+      // sebelum posisi default akan dikunci, supaya drag yang sama tidak
+      // bisa langsung menembus posisi default ke scroll konten halaman.
+      final startedBelowDefault = _scrollController.offset < _maxExpandScroll - 0.5;
+      _gestureCrossingLocked = notification.dragDetails != null && startedBelowDefault;
+    } else if (notification is ScrollEndNotification) {
+      _gestureCrossingLocked = false;
       final offset = _scrollController.offset;
       // Apabila gesture dilepas di tengah-tengah area ekspansi, snap ke batas terdekat (berjalan otomatis)
       if (offset > 0 && offset < _maxExpandScroll) {
@@ -4141,30 +4180,43 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       child: IgnorePointer(
                         child: Opacity(
                           opacity: compactRowOpacity,
-                          child: Row(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Flexible(
-                                child: Text(
-                                  profile.name.isNotEmpty ? profile.name : Strings.t(lang, 'view_profile'),
-                                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: context.textPrimary),
-                                  overflow: TextOverflow.ellipsis,
-                                ),
+                              Row(
+                                children: [
+                                  Flexible(
+                                    child: Text(
+                                      profile.name.isNotEmpty ? profile.name : Strings.t(lang, 'view_profile'),
+                                      style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold, color: context.textPrimary),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                                    decoration: BoxDecoration(
+                                      color: primary.withOpacity(isDark ? 0.18 : 0.1),
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.workspace_premium_rounded, size: 11, color: primary),
+                                        const SizedBox(width: 4),
+                                        Text(Strings.t(lang, 'premium_member'), style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, height: 1.0, color: primary, letterSpacing: 0.2)),
+                                      ],
+                                    ),
+                                  ),
+                                ],
                               ),
-                              const SizedBox(width: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                                decoration: BoxDecoration(
-                                  color: primary.withOpacity(isDark ? 0.18 : 0.1),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.workspace_premium_rounded, size: 11, color: primary),
-                                    const SizedBox(width: 4),
-                                    Text(Strings.t(lang, 'premium_member'), style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, height: 1.0, color: primary, letterSpacing: 0.2)),
-                                  ],
-                                ),
+                              const SizedBox(height: 4),
+                              Text(
+                                Strings.t(lang, 'manage_account'),
+                                style: TextStyle(fontSize: 11.5, color: context.textMuted, fontWeight: FontWeight.w500),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ],
                           ),
@@ -4232,7 +4284,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
             onNotification: _handleScrollNotification,
             child: CustomScrollView(
               controller: _scrollController,
-              physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+              physics: _HeaderSnapScrollPhysics(
+                boundary: _maxExpandScroll,
+                isLocked: () => _gestureCrossingLocked,
+                parent: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+              ),
               slivers: [
                 const SliverToBoxAdapter(
                   // Spacer ini selalu mengambil 360px. 
@@ -4246,7 +4302,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   child: Container(
                     decoration: BoxDecoration(
                       color: context.cardColor,
-                      borderRadius: const BorderRadius.only(topLeft: Radius.circular(28), topRight: Radius.circular(28)),
+                      borderRadius: const BorderRadius.only(topLeft: Radius.circular(22), topRight: Radius.circular(22)),
                       boxShadow: [
                         BoxShadow(color: Colors.black.withOpacity(isDark ? 0.24 : 0.06), blurRadius: 16, offset: const Offset(0, -6)),
                       ],
