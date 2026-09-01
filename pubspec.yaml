@@ -26,6 +26,8 @@ dependencies:
   liquid_glass_widgets: ^1.2.0
   telegram_image_cropper:
     path: packages/telegram_image_cropper
+  video_player: ^2.9.5
+  video_trimmer: ^5.0.0
 
 dev_dependencies:
   flutter_test:

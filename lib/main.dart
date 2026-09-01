@@ -21,6 +21,8 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:solar_icons/solar_icons.dart';
 import 'package:telegram_image_cropper/telegram_image_cropper.dart';
+import 'package:video_player/video_player.dart';
+import 'package:video_trimmer/video_trimmer.dart';
 
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
@@ -54,9 +56,25 @@ class UserProfile {
   final String? photoPath;
   final String? photoBytesBase64;
   final int photoVersion;
-  const UserProfile({this.name = '', this.photoPath, this.photoBytesBase64, this.photoVersion = 0});
+  final String? videoPath;
+  final int videoVersion;
+  final double videoCropScale;
+  final double videoCropOffsetX;
+  final double videoCropOffsetY;
+  const UserProfile({
+    this.name = '',
+    this.photoPath,
+    this.photoBytesBase64,
+    this.photoVersion = 0,
+    this.videoPath,
+    this.videoVersion = 0,
+    this.videoCropScale = 1.0,
+    this.videoCropOffsetX = 0.0,
+    this.videoCropOffsetY = 0.0,
+  });
 
   bool get hasPhoto => photoPath != null || photoBytesBase64 != null;
+  bool get hasVideo => videoPath != null;
 
   UserProfile copyWith({
     String? name,
@@ -64,12 +82,23 @@ class UserProfile {
     String? photoBytesBase64,
     bool clearPhoto = false,
     int? photoVersion,
+    String? videoPath,
+    bool clearVideo = false,
+    int? videoVersion,
+    double? videoCropScale,
+    double? videoCropOffsetX,
+    double? videoCropOffsetY,
   }) =>
       UserProfile(
         name: name ?? this.name,
         photoPath: clearPhoto ? null : (photoPath ?? this.photoPath),
         photoBytesBase64: clearPhoto ? null : (photoBytesBase64 ?? this.photoBytesBase64),
         photoVersion: photoVersion ?? this.photoVersion,
+        videoPath: clearVideo ? null : (videoPath ?? this.videoPath),
+        videoVersion: videoVersion ?? this.videoVersion,
+        videoCropScale: clearVideo ? 1.0 : (videoCropScale ?? this.videoCropScale),
+        videoCropOffsetX: clearVideo ? 0.0 : (videoCropOffsetX ?? this.videoCropOffsetX),
+        videoCropOffsetY: clearVideo ? 0.0 : (videoCropOffsetY ?? this.videoCropOffsetY),
       );
 
   Map<String, dynamic> toJson() => {
@@ -77,12 +106,22 @@ class UserProfile {
         'photoPath': photoPath,
         'photoBytesBase64': photoBytesBase64,
         'photoVersion': photoVersion,
+        'videoPath': videoPath,
+        'videoVersion': videoVersion,
+        'videoCropScale': videoCropScale,
+        'videoCropOffsetX': videoCropOffsetX,
+        'videoCropOffsetY': videoCropOffsetY,
       };
   factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
         name: json['name'] as String? ?? '',
         photoPath: json['photoPath'] as String?,
         photoBytesBase64: json['photoBytesBase64'] as String?,
         photoVersion: json['photoVersion'] as int? ?? 0,
+        videoPath: json['videoPath'] as String?,
+        videoVersion: json['videoVersion'] as int? ?? 0,
+        videoCropScale: (json['videoCropScale'] as num?)?.toDouble() ?? 1.0,
+        videoCropOffsetX: (json['videoCropOffsetX'] as num?)?.toDouble() ?? 0.0,
+        videoCropOffsetY: (json['videoCropOffsetY'] as num?)?.toDouble() ?? 0.0,
       );
 }
 
@@ -144,6 +183,31 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
       }
     }
     state = state.copyWith(clearPhoto: true, photoVersion: state.photoVersion + 1);
+    _persist();
+  }
+
+  Future<void> updateVideo({required String path, required double scale, required double offsetX, required double offsetY}) async {
+    state = state.copyWith(
+      videoPath: path,
+      videoVersion: state.videoVersion + 1,
+      videoCropScale: scale,
+      videoCropOffsetX: offsetX,
+      videoCropOffsetY: offsetY,
+    );
+    _persist();
+  }
+
+  Future<void> removeVideo() async {
+    final oldPath = state.videoPath;
+    if (oldPath != null) {
+      final file = File(oldPath);
+      if (await file.exists()) {
+        try {
+          await file.delete();
+        } catch (_) {}
+      }
+    }
+    state = state.copyWith(clearVideo: true, videoVersion: state.videoVersion + 1);
     _persist();
   }
 }
@@ -279,7 +343,9 @@ Future<ProfilePhotoPick?> pickAndCropProfilePhoto(BuildContext context, ImageSou
 
   Future<void> showProfilePhotoOptions(BuildContext context, WidgetRef ref) async {
   final lang = ref.read(langProvider);
-  final hasPhoto = ref.read(userProfileProvider).hasPhoto;
+  final currentProfile = ref.read(userProfileProvider);
+  final hasPhoto = currentProfile.hasPhoto;
+  final hasVideo = currentProfile.hasVideo;
   await showModalBottomSheet(
     context: context,
     backgroundColor: context.cardColor,
@@ -320,6 +386,37 @@ Future<ProfilePhotoPick?> pickAndCropProfilePhoto(BuildContext context, ImageSou
                 ref.read(userProfileProvider.notifier).removePhoto();
               },
             ),
+          if (!kIsWeb) ...[
+            Divider(height: 26, color: context.borderColor),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(Icons.video_library_outlined, color: Theme.of(context).colorScheme.primary),
+              title: Text(Strings.t(lang, 'choose_video_from_gallery')),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                pickAndSetProfileVideo(context, ref, ImageSource.gallery);
+              },
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: Icon(Icons.videocam_outlined, color: Theme.of(context).colorScheme.primary),
+              title: Text(Strings.t(lang, 'record_video')),
+              onTap: () {
+                Navigator.pop(sheetContext);
+                pickAndSetProfileVideo(context, ref, ImageSource.camera);
+              },
+            ),
+            if (hasVideo)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: const Icon(Icons.delete_outline, color: Colors.redAccent),
+                title: Text(Strings.t(lang, 'remove_video'), style: const TextStyle(color: Colors.redAccent)),
+                onTap: () {
+                  Navigator.pop(sheetContext);
+                  ref.read(userProfileProvider.notifier).removeVideo();
+                },
+              ),
+          ],
         ]),
       ),
     ),
@@ -374,6 +471,11 @@ class ProfileAvatar extends StatelessWidget {
   final String? photoPath;
   final String? photoBytesBase64;
   final int photoVersion;
+  final String? videoPath;
+  final int videoVersion;
+  final double videoCropScale;
+  final double videoCropOffsetX;
+  final double videoCropOffsetY;
   final String initial;
   final double radius;
   const ProfileAvatar({
@@ -381,6 +483,11 @@ class ProfileAvatar extends StatelessWidget {
     required this.photoPath,
     this.photoBytesBase64,
     required this.photoVersion,
+    this.videoPath,
+    this.videoVersion = 0,
+    this.videoCropScale = 1.0,
+    this.videoCropOffsetX = 0.0,
+    this.videoCropOffsetY = 0.0,
     required this.initial,
     this.radius = 31,
   });
@@ -391,8 +498,7 @@ class ProfileAvatar extends StatelessWidget {
         child: Text(initial, style: TextStyle(color: Colors.white, fontSize: radius * 0.8, fontWeight: FontWeight.bold)),
       );
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _photoOrFallback(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
     final diameter = radius * 2;
     final cacheDim = (diameter * MediaQuery.devicePixelRatioOf(context)).round();
@@ -434,6 +540,407 @@ class ProfileAvatar extends StatelessWidget {
       ),
     );
   }
+
+  @override
+  Widget build(BuildContext context) {
+    final diameter = radius * 2;
+    if (!kIsWeb && videoPath != null) {
+      return ClipOval(
+        key: ValueKey('avatar-video-$videoVersion'),
+        child: SizedBox(
+          width: diameter,
+          height: diameter,
+          child: _ProfileVideoAvatar(
+            videoPath: videoPath!,
+            diameter: diameter,
+            scale: videoCropScale,
+            offsetX: videoCropOffsetX,
+            offsetY: videoCropOffsetY,
+            fallback: _photoOrFallback(context),
+          ),
+        ),
+      );
+    }
+    return _photoOrFallback(context);
+  }
+}
+
+class _ProfileVideoAvatar extends StatefulWidget {
+  final String videoPath;
+  final double diameter;
+  final double scale;
+  final double offsetX;
+  final double offsetY;
+  final Widget fallback;
+  const _ProfileVideoAvatar({
+    required this.videoPath,
+    required this.diameter,
+    required this.scale,
+    required this.offsetX,
+    required this.offsetY,
+    required this.fallback,
+  });
+
+  @override
+  State<_ProfileVideoAvatar> createState() => _ProfileVideoAvatarState();
+}
+
+class _ProfileVideoAvatarState extends State<_ProfileVideoAvatar> {
+  VideoPlayerController? _controller;
+  bool _failed = false;
+  bool _isVisible = true;
+  late final Key _visibilityKey = UniqueKey();
+
+  @override
+  void initState() {
+    super.initState();
+    _setup();
+  }
+
+  Future<void> _setup() async {
+    final file = File(widget.videoPath);
+    if (!await file.exists()) {
+      if (mounted) setState(() => _failed = true);
+      return;
+    }
+    final controller = VideoPlayerController.file(file);
+    try {
+      await controller.initialize();
+      await controller.setLooping(true);
+      await controller.setVolume(0);
+      if (!mounted) {
+        controller.dispose();
+        return;
+      }
+      setState(() => _controller = controller);
+      controller.play();
+    } catch (_) {
+      controller.dispose();
+      if (mounted) setState(() => _failed = true);
+    }
+  }
+
+  void _handleVisibility(VisibilityInfo info) {
+    final controller = _controller;
+    if (controller == null || !controller.value.isInitialized) return;
+    final visible = info.visibleFraction > 0.04;
+    if (visible == _isVisible) return;
+    _isVisible = visible;
+    if (visible) {
+      controller.play();
+    } else {
+      controller.pause();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = _controller;
+    if (_failed || controller == null || !controller.value.isInitialized) {
+      return widget.fallback;
+    }
+    return VisibilityDetector(
+      key: _visibilityKey,
+      onVisibilityChanged: _handleVisibility,
+      child: ClipRect(
+        child: Transform.translate(
+          offset: Offset(widget.offsetX * widget.diameter, widget.offsetY * widget.diameter),
+          child: Transform.scale(
+            scale: widget.scale,
+            child: FittedBox(
+              fit: BoxFit.cover,
+              child: SizedBox(
+                width: controller.value.size.width,
+                height: controller.value.size.height,
+                child: VideoPlayer(controller),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _VideoCropResult {
+  final double scale;
+  final double offsetX;
+  final double offsetY;
+  const _VideoCropResult({required this.scale, required this.offsetX, required this.offsetY});
+}
+
+class _VideoCircleCutoutPainter extends CustomPainter {
+  final Color overlayColor;
+  const _VideoCircleCutoutPainter({required this.overlayColor});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final path = Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
+    final center = Offset(size.width / 2, size.height / 2);
+    final radius = size.shortestSide / 2;
+    path.addOval(Rect.fromCircle(center: center, radius: radius));
+    path.fillType = PathFillType.evenOdd;
+    canvas.drawPath(path, Paint()..color = overlayColor);
+  }
+
+  @override
+  bool shouldRepaint(covariant _VideoCircleCutoutPainter oldDelegate) => oldDelegate.overlayColor != overlayColor;
+}
+
+class _VideoTrimPage extends StatefulWidget {
+  final String sourcePath;
+  const _VideoTrimPage({required this.sourcePath});
+  @override
+  State<_VideoTrimPage> createState() => _VideoTrimPageState();
+}
+
+class _VideoTrimPageState extends State<_VideoTrimPage> {
+  final Trimmer _trimmer = Trimmer();
+  double _startValue = 0.0;
+  double _endValue = 0.0;
+  bool _isPlaying = false;
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _trimmer.loadVideo(videoFile: File(widget.sourcePath));
+  }
+
+  Future<void> _save() async {
+    setState(() => _saving = true);
+    final outputPath = await _trimmer.saveTrimmedVideo(startValue: _startValue, endValue: _endValue);
+    if (!mounted) return;
+    setState(() => _saving = false);
+    if (outputPath != null) {
+      Navigator.pop(context, outputPath);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: const Text('Potong Durasi Video', style: TextStyle(color: Colors.white, fontSize: 16)),
+        actions: [
+          TextButton(
+            onPressed: _saving ? null : _save,
+            child: _saving
+                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                : const Text('Lanjut', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(child: VideoViewer(trimmer: _trimmer)),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 20),
+              child: IconButton(
+                iconSize: 56,
+                color: Colors.white,
+                icon: Icon(_isPlaying ? Icons.pause_circle_filled : Icons.play_circle_fill),
+                onPressed: () async {
+                  final playing = await _trimmer.videoPlaybackControl(startValue: _startValue, endValue: _endValue);
+                  if (mounted) setState(() => _isPlaying = playing);
+                },
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+              child: TrimViewer(
+                trimmer: _trimmer,
+                viewerHeight: 50.0,
+                viewerWidth: MediaQuery.sizeOf(context).width - 40,
+                maxVideoLength: const Duration(seconds: 15),
+                onChangeStart: (value) => _startValue = value,
+                onChangeEnd: (value) => _endValue = value,
+                onChangePlaybackState: (value) => setState(() => _isPlaying = value),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _VideoCropPage extends StatefulWidget {
+  final String videoPath;
+  const _VideoCropPage({required this.videoPath});
+  @override
+  State<_VideoCropPage> createState() => _VideoCropPageState();
+}
+
+class _VideoCropPageState extends State<_VideoCropPage> {
+  static const double _previewSize = 280;
+  VideoPlayerController? _controller;
+  double _scale = 1.0;
+  double _baseScale = 1.0;
+  Offset _offset = Offset.zero;
+  Offset _baseOffset = Offset.zero;
+  Offset _startFocalPoint = Offset.zero;
+
+  @override
+  void initState() {
+    super.initState();
+    _setup();
+  }
+
+  Future<void> _setup() async {
+    final controller = VideoPlayerController.file(File(widget.videoPath));
+    await controller.initialize();
+    await controller.setLooping(true);
+    await controller.setVolume(0);
+    if (!mounted) {
+      controller.dispose();
+      return;
+    }
+    setState(() => _controller = controller);
+    controller.play();
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  void _onScaleStart(ScaleStartDetails details) {
+    _baseScale = _scale;
+    _baseOffset = _offset;
+    _startFocalPoint = details.focalPoint;
+  }
+
+  void _onScaleUpdate(ScaleUpdateDetails details) {
+    setState(() {
+      _scale = (_baseScale * details.scale).clamp(1.0, 4.0);
+      _offset = _baseOffset + (details.focalPoint - _startFocalPoint);
+    });
+  }
+
+  void _save() {
+    Navigator.pop(
+      context,
+      _VideoCropResult(
+        scale: _scale,
+        offsetX: _offset.dx / _previewSize,
+        offsetY: _offset.dy / _previewSize,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = _controller;
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+        title: const Text('Atur Posisi', style: TextStyle(color: Colors.white, fontSize: 16)),
+        actions: [
+          TextButton(
+            onPressed: controller == null ? null : _save,
+            child: const Text('Simpan', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: Center(
+          child: controller == null
+              ? const CircularProgressIndicator(color: Colors.white)
+              : GestureDetector(
+                  onScaleStart: _onScaleStart,
+                  onScaleUpdate: _onScaleUpdate,
+                  child: SizedBox(
+                    width: _previewSize,
+                    height: _previewSize,
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: ClipRect(
+                            child: Transform.translate(
+                              offset: _offset,
+                              child: Transform.scale(
+                                scale: _scale,
+                                child: FittedBox(
+                                  fit: BoxFit.cover,
+                                  child: SizedBox(
+                                    width: controller.value.size.width,
+                                    height: controller.value.size.height,
+                                    child: VideoPlayer(controller),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Positioned.fill(
+                          child: IgnorePointer(
+                            child: CustomPaint(
+                              painter: _VideoCircleCutoutPainter(overlayColor: Colors.black.withOpacity(0.55)),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+        ),
+      ),
+    );
+  }
+}
+
+Future<void> pickAndSetProfileVideo(BuildContext context, WidgetRef ref, ImageSource source) async {
+  final picker = ImagePicker();
+  final XFile? picked = await picker.pickVideo(source: source, maxDuration: const Duration(seconds: 60));
+  if (picked == null || !context.mounted) return;
+
+  final trimmedPath = await Navigator.push<String>(
+    context,
+    GlassPageRoute(builder: (_) => _VideoTrimPage(sourcePath: picked.path)),
+  );
+  if (trimmedPath == null || !context.mounted) return;
+
+  final cropResult = await Navigator.push<_VideoCropResult>(
+    context,
+    GlassPageRoute(builder: (_) => _VideoCropPage(videoPath: trimmedPath)),
+  );
+  if (cropResult == null) return;
+
+  final dir = await getApplicationDocumentsDirectory();
+  final destPath = '${dir.path}/profile_video.mp4';
+  final destFile = File(destPath);
+  if (await destFile.exists()) {
+    try {
+      await destFile.delete();
+    } catch (_) {}
+  }
+  await File(trimmedPath).copy(destPath);
+  try {
+    await File(trimmedPath).delete();
+  } catch (_) {}
+
+  ref.read(userProfileProvider.notifier).updateVideo(
+        path: destPath,
+        scale: cropResult.scale,
+        offsetX: cropResult.offsetX,
+        offsetY: cropResult.offsetY,
+      );
 }
 class AppThemePalette {
   final String name;
@@ -1445,6 +1952,9 @@ class Strings {
     'choose_from_gallery': {AppLang.en: 'Choose from gallery', AppLang.id: 'Pilih dari galeri'},
     'take_photo': {AppLang.en: 'Take a photo', AppLang.id: 'Ambil foto'},
     'remove_photo': {AppLang.en: 'Remove photo', AppLang.id: 'Hapus foto'},
+    'choose_video_from_gallery': {AppLang.en: 'Choose video from gallery', AppLang.id: 'Pilih video dari galeri'},
+    'record_video': {AppLang.en: 'Record a video', AppLang.id: 'Rekam video'},
+    'remove_video': {AppLang.en: 'Remove video profile', AppLang.id: 'Hapus video profil'},
     'edit_name': {AppLang.en: 'Edit name', AppLang.id: 'Edit nama'},
     'your_name': {AppLang.en: 'Your name', AppLang.id: 'Nama Anda'},
     'manage_account': {AppLang.en: 'Manage your finance account', AppLang.id: 'Kelola akun keuanganmu'},
@@ -2427,6 +2937,11 @@ class HamburgerMorphMenu extends ConsumerWidget {
               photoPath: profile.photoPath,
               photoBytesBase64: profile.photoBytesBase64,
               photoVersion: profile.photoVersion,
+              videoPath: profile.videoPath,
+              videoVersion: profile.videoVersion,
+              videoCropScale: profile.videoCropScale,
+              videoCropOffsetX: profile.videoCropOffsetX,
+              videoCropOffsetY: profile.videoCropOffsetY,
               initial: initial,
               radius: 18,
             ),
@@ -3215,6 +3730,11 @@ class ProfilePage extends ConsumerWidget {
                 photoPath: profile.photoPath,
                 photoBytesBase64: profile.photoBytesBase64,
                 photoVersion: profile.photoVersion,
+                videoPath: profile.videoPath,
+                videoVersion: profile.videoVersion,
+                videoCropScale: profile.videoCropScale,
+                videoCropOffsetX: profile.videoCropOffsetX,
+                videoCropOffsetY: profile.videoCropOffsetY,
                 initial: initial,
                 radius: 31,
               ),
