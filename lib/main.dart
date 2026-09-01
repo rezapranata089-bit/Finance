@@ -3954,11 +3954,13 @@ class ReportsPage extends ConsumerWidget {
 class _HeaderSnapScrollPhysics extends ScrollPhysics {
   final double boundary;
   final bool Function() isLocked;
+  final bool Function() hasMedia;
   final double maxBottomOverscroll;
 
   const _HeaderSnapScrollPhysics({
-    required this.boundary, 
-    required this.isLocked, 
+    required this.boundary,
+    required this.isLocked,
+    required this.hasMedia,
     this.maxBottomOverscroll = 18.0,
     super.parent,
   });
@@ -3968,6 +3970,7 @@ class _HeaderSnapScrollPhysics extends ScrollPhysics {
     return _HeaderSnapScrollPhysics(
       boundary: boundary,
       isLocked: isLocked,
+      hasMedia: hasMedia,
       maxBottomOverscroll: maxBottomOverscroll,
       parent: buildParent(ancestor),
     );
@@ -3975,12 +3978,10 @@ class _HeaderSnapScrollPhysics extends ScrollPhysics {
 
   @override
   double applyBoundaryConditions(ScrollMetrics position, double value) {
-    // 1. Lock boundary during media minimize
     if (isLocked() && value > boundary && position.pixels <= boundary + 0.01) {
       return value - boundary;
     }
     
-    // 2. Strict clamp for bottom overscroll to prevent sheet from flying up
     final maxPos = position.maxScrollExtent + maxBottomOverscroll;
     if (maxPos < value && position.pixels <= maxPos) {
       return value - maxPos;
@@ -3994,7 +3995,6 @@ class _HeaderSnapScrollPhysics extends ScrollPhysics {
 
   @override
   double applyPhysicsToUserOffset(ScrollMetrics position, double offset) {
-    // Apply heavy resistance when overscrolling at the bottom
     if (offset < 0.0 && position.pixels > position.maxScrollExtent) {
       final overscroll = position.pixels - position.maxScrollExtent;
       final fraction = (overscroll / maxBottomOverscroll).clamp(0.0, 1.0);
@@ -4002,6 +4002,50 @@ class _HeaderSnapScrollPhysics extends ScrollPhysics {
       return super.applyPhysicsToUserOffset(position, offset) * friction;
     }
     return super.applyPhysicsToUserOffset(position, offset);
+  }
+
+  @override
+  Simulation? createBallisticSimulation(ScrollMetrics position, double velocity) {
+    // 1. Pull down to preview snap
+    if (position.pixels < 0.0) {
+      if (hasMedia() && (position.pixels <= -50.0 || (velocity < -500.0 && position.pixels < -15.0))) {
+        return ScrollSpringSimulation(
+          spring,
+          position.pixels,
+          -100.0,
+          velocity,
+          tolerance: toleranceFor(position),
+        );
+      } else {
+        return ScrollSpringSimulation(
+          spring,
+          position.pixels,
+          0.0,
+          velocity,
+          tolerance: toleranceFor(position),
+        );
+      }
+    }
+    
+    // 2. Snap inside expansion area
+    if (position.pixels > 0 && position.pixels < boundary) {
+      if (velocity < -300.0) {
+        return ScrollSpringSimulation(spring, position.pixels, 0.0, velocity, tolerance: toleranceFor(position));
+      } else if (velocity > 300.0) {
+        return ScrollSpringSimulation(spring, position.pixels, boundary, velocity, tolerance: toleranceFor(position));
+      }
+      
+      final target = position.pixels > (boundary * 0.45) ? boundary : 0.0;
+      return ScrollSpringSimulation(
+        spring,
+        position.pixels,
+        target,
+        velocity,
+        tolerance: toleranceFor(position),
+      );
+    }
+    
+    return super.createBallisticSimulation(position, velocity);
   }
 }
 
@@ -4016,10 +4060,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   bool _initialized = false;
   double _scrollOffset = 0.0;
   double _maxExpandScroll = 0.0;
-  // Mengunci satu gesture drag yang dimulai sebelum posisi default (media
-  // masih besar/sedang mengecil) agar drag yang sama tidak bisa langsung
-  // menembus posisi default ke scroll konten halaman.
   bool _gestureCrossingLocked = false;
+  bool _previewPushed = false;
 
   @override
   void didChangeDependencies() {
@@ -4033,7 +4075,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       
       _maxExpandScroll = expandedSheetTop - compactHeight;
       
-      // Setup ScrollController agar langsung berada pada posisi compact (scrolled down)
       _scrollController = ScrollController(initialScrollOffset: _maxExpandScroll);
       _scrollOffset = _maxExpandScroll;
       
@@ -4042,6 +4083,19 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         setState(() {
           _scrollOffset = _scrollController.offset;
         });
+
+        if (_scrollOffset <= -98.0 && !_previewPushed) {
+          final profile = ref.read(userProfileProvider);
+          if (profile.hasPhoto || profile.hasVideo) {
+            _previewPushed = true;
+            Navigator.push(context, MediaPreviewRoute(builder: (_) => const ProfileMediaViewerPage())).then((_) {
+              _previewPushed = false;
+              if (mounted && _scrollController.hasClients) {
+                _scrollController.jumpTo(0.0);
+              }
+            });
+          }
+        }
       });
       
       _initialized = true;
@@ -4070,63 +4124,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       _gestureCrossingLocked = notification.dragDetails != null && startedBelowDefault;
     } else if (notification is ScrollEndNotification) {
       _gestureCrossingLocked = false;
-      
-      final offset = _scrollController.offset;
-      
-      // Handle interactive full-screen preview snap
-      if (offset < 0) {
-        if (offset <= -60.0) {
-          Future.microtask(() async {
-            if (mounted && _scrollController.hasClients) {
-              await _scrollController.animateTo(
-                -120.0,
-                duration: const Duration(milliseconds: 250),
-                curve: Curves.easeOutCubic,
-              );
-              if (!mounted) return;
-              final profile = ref.read(userProfileProvider);
-              final hasMedia = profile.hasPhoto || profile.hasVideo;
-              if (hasMedia) {
-                Navigator.push(context, MediaPreviewRoute(builder: (_) => const ProfileMediaViewerPage()));
-                // Wait for the push transition to complete before resetting the page behind it,
-                // so when the user dismisses the viewer, the image flies back to the top!
-                Future.delayed(const Duration(milliseconds: 450), () {
-                  if (mounted && _scrollController.hasClients) {
-                    _scrollController.jumpTo(0.0);
-                  }
-                });
-              } else {
-                 _scrollController.animateTo(0.0, duration: const Duration(milliseconds: 300), curve: Curves.easeOutCubic);
-              }
-            }
-          });
-        } else {
-          Future.microtask(() {
-            if (mounted && _scrollController.hasClients) {
-              _scrollController.animateTo(
-                0.0,
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeOutCubic,
-              );
-            }
-          });
-        }
-        return false;
-      }
-      
-      // Snap inside expansion area
-      if (offset > 0 && offset < _maxExpandScroll) {
-        final target = offset > (_maxExpandScroll * 0.45) ? _maxExpandScroll : 0.0;
-        Future.microtask(() {
-          if (mounted && _scrollController.hasClients) {
-            _scrollController.animateTo(
-              target,
-              duration: const Duration(milliseconds: 400),
-              curve: Curves.easeOutQuart,
-            );
-          }
-        });
-      }
     }
     return false;
   }
@@ -4153,7 +4150,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     } else {
       t = 1.0;
       parallaxOffset = 0.0; 
-      previewProgress = (-_scrollOffset / 120.0).clamp(0.0, 1.0);
+      previewProgress = (-_scrollOffset / 100.0).clamp(0.0, 1.0);
     }
 
     final double screenHeight = MediaQuery.sizeOf(context).height;
@@ -4449,6 +4446,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               physics: _HeaderSnapScrollPhysics(
                 boundary: _maxExpandScroll,
                 isLocked: () => _gestureCrossingLocked,
+                hasMedia: () => ref.read(userProfileProvider).hasPhoto || ref.read(userProfileProvider).hasVideo,
                 parent: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
               ),
               slivers: [
