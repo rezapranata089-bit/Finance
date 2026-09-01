@@ -3911,103 +3911,400 @@ class ReportsPage extends ConsumerWidget {
 
 class ProfilePage extends ConsumerWidget {
   const ProfilePage({super.key});
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final lang = ref.watch(langProvider);
     final profile = ref.watch(userProfileProvider);
     final initial = profile.name.isNotEmpty ? profile.name.substring(0, 1).toUpperCase() : '?';
-    return SafeArea(top: false, child: ListView(padding: EdgeInsets.fromLTRB(20, MediaQuery.paddingOf(context).top + 22, 20, 24), children: [
-      Text(Strings.t(lang, 'profile_title'), style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 32, color: context.textPrimary)),
-      const SizedBox(height: 22),
-      Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(24), border: Border.all(color: context.borderColor)),
-        child: Row(children: [
-          GestureDetector(
-            onTap: () => showProfilePhotoOptions(context, ref),
-            child: Stack(clipBehavior: Clip.none, children: [
-              ProfileAvatar(
-                photoPath: profile.photoPath,
-                photoBytesBase64: profile.photoBytesBase64,
-                photoVersion: profile.photoVersion,
-                videoPath: profile.videoPath,
-                videoVersion: profile.videoVersion,
-                videoCropScale: profile.videoCropScale,
-                videoCropOffsetX: profile.videoCropOffsetX,
-                videoCropOffsetY: profile.videoCropOffsetY,
-                videoThumbnailBytesBase64: profile.videoThumbnailBytesBase64,
-                initial: initial,
-                radius: 31,
+    final expandedPhotoHeight = MediaQuery.sizeOf(context).width;
+
+    return CustomScrollView(
+      physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+      slivers: [
+        SliverAppBar(
+          pinned: true,
+          stretch: true,
+          automaticallyImplyLeading: false,
+          backgroundColor: context.cardColor,
+          surfaceTintColor: Colors.transparent,
+          elevation: 0,
+          scrolledUnderElevation: 0,
+          expandedHeight: expandedPhotoHeight,
+          stretchTriggerOffset: 140,
+          titleSpacing: 16,
+          title: _ProfileCompactTitle(profile: profile, initial: initial, lang: lang),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: _HeaderIconButton(
+                icon: Icons.camera_alt_outlined,
+                onTap: () => showProfilePhotoOptions(context, ref),
               ),
-              Positioned(
-                right: -2, bottom: -2,
-                child: Container(
-                  padding: const EdgeInsets.all(5),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.secondary,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: context.cardColor, width: 2),
-                  ),
-                  child: const Icon(Icons.camera_alt_rounded, size: 12, color: Colors.black),
-                ),
-              ),
+            ),
+          ],
+          flexibleSpace: FlexibleSpaceBar(
+            stretchModes: const [StretchMode.zoomBackground, StretchMode.blurBackground],
+            titlePadding: EdgeInsets.zero,
+            background: _ProfileHeaderPhoto(profile: profile, initial: initial, lang: lang),
+          ),
+        ),
+        SliverPadding(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+          sliver: SliverList(
+            delegate: SliverChildListDelegate([
+              Text(Strings.t(lang, 'manage_account'), style: TextStyle(color: context.textMuted)),
+              const SizedBox(height: 22),
+              SectionTitle(Strings.t(lang, 'section_finance')),
+              const SizedBox(height: 10),
+              SettingList(items: const [
+                ('savings_target', SolarIconsOutline.safeSquare),
+                ('category', SolarIconsOutline.widget),
+                ('account_wallet', SolarIconsOutline.wallet),
+                ('receivables', SolarIconsOutline.usersGroupTwoRounded),
+              ]),
+              const SizedBox(height: 24),
+              SectionTitle(Strings.t(lang, 'section_app')),
+              const SizedBox(height: 10),
+              SettingList(items: const [
+                ('appearance', SolarIconsOutline.palette),
+                ('language', Icons.language),
+                ('notifications', SolarIconsOutline.bell),
+                ('backup_data', SolarIconsOutline.cloudUpload),
+              ]),
             ]),
           ),
-          const SizedBox(width: 15),
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [
-                Flexible(child: Text(profile.name, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: context.textPrimary), overflow: TextOverflow.ellipsis)),
-                const SizedBox(width: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primary.withOpacity(context.isDark ? 0.18 : 0.1),
-                    borderRadius: BorderRadius.circular(20),
+        ),
+      ],
+    );
+  }
+}
+
+class _HeaderIconButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback onTap;
+  const _HeaderIconButton({required this.icon, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(color: Colors.black.withOpacity(0.32), shape: BoxShape.circle),
+        child: Icon(icon, size: 18, color: Colors.white),
+      ),
+    );
+  }
+}
+
+class _ProfileCompactTitle extends StatelessWidget {
+  final UserProfile profile;
+  final String initial;
+  final AppLang lang;
+  const _ProfileCompactTitle({required this.profile, required this.initial, required this.lang});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      ProfileAvatar(
+        photoPath: profile.photoPath,
+        photoBytesBase64: profile.photoBytesBase64,
+        photoVersion: profile.photoVersion,
+        videoPath: profile.videoPath,
+        videoVersion: profile.videoVersion,
+        videoCropScale: profile.videoCropScale,
+        videoCropOffsetX: profile.videoCropOffsetX,
+        videoCropOffsetY: profile.videoCropOffsetY,
+        videoThumbnailBytesBase64: profile.videoThumbnailBytesBase64,
+        initial: initial,
+        radius: 16,
+      ),
+      const SizedBox(width: 10),
+      Flexible(
+        child: Text(
+          profile.name.isNotEmpty ? profile.name : Strings.t(lang, 'view_profile'),
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: context.textPrimary),
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+    ]);
+  }
+}
+
+class _ProfileHeaderMediaContent extends StatelessWidget {
+  final UserProfile profile;
+  final String initial;
+  final double side;
+  const _ProfileHeaderMediaContent({required this.profile, required this.initial, required this.side});
+
+  Widget _fallback(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
+    return Container(
+      color: primary,
+      alignment: Alignment.center,
+      child: Text(initial, style: TextStyle(color: Colors.white, fontSize: side * 0.26, fontWeight: FontWeight.bold)),
+    );
+  }
+
+  Widget _photoContent(BuildContext context) {
+    if (kIsWeb) {
+      if (profile.photoBytesBase64 == null) return _fallback(context);
+      try {
+        final bytes = base64Decode(profile.photoBytesBase64!);
+        return Image.memory(bytes, fit: BoxFit.cover, gaplessPlayback: true, errorBuilder: (c, e, s) => _fallback(context));
+      } catch (_) {
+        return _fallback(context);
+      }
+    }
+    if (profile.photoPath == null) return _fallback(context);
+    return Image.file(File(profile.photoPath!), fit: BoxFit.cover, errorBuilder: (c, e, s) => _fallback(context));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!kIsWeb && profile.videoPath != null) {
+      return ClipRect(
+        child: SizedBox(
+          width: side,
+          height: side,
+          child: _ProfileVideoAvatar(
+            videoPath: profile.videoPath!,
+            diameter: side,
+            scale: profile.videoCropScale,
+            offsetX: profile.videoCropOffsetX,
+            offsetY: profile.videoCropOffsetY,
+            fallback: _photoContent(context),
+            thumbnailBytesBase64: profile.videoThumbnailBytesBase64,
+          ),
+        ),
+      );
+    }
+    return _photoContent(context);
+  }
+}
+
+class _ProfileHeaderPhoto extends ConsumerWidget {
+  final UserProfile profile;
+  final String initial;
+  final AppLang lang;
+  const _ProfileHeaderPhoto({required this.profile, required this.initial, required this.lang});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return GestureDetector(
+      onTap: () {
+        if (!profile.hasPhoto && !profile.hasVideo) return;
+        Navigator.push(context, GlassPageRoute(builder: (_) => const ProfileMediaViewerPage()));
+      },
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Positioned.fill(
+            child: Hero(
+              tag: 'profile-header-media',
+              child: LayoutBuilder(builder: (context, constraints) {
+                final side = constraints.maxWidth > 0 ? constraints.maxWidth : constraints.maxHeight;
+                return _ProfileHeaderMediaContent(profile: profile, initial: initial, side: side);
+              }),
+            ),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 0,
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(20, 48, 20, 16),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [Colors.transparent, Colors.black.withOpacity(0.6)],
+                ),
+              ),
+              child: Row(children: [
+                Flexible(
+                  child: Text(
+                    profile.name.isNotEmpty ? profile.name : Strings.t(lang, 'view_profile'),
+                    style: const TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
+                    overflow: TextOverflow.ellipsis,
                   ),
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(20)),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    const Icon(Icons.workspace_premium_rounded, size: 12, color: Colors.white),
+                    const SizedBox(width: 4),
+                    Text(Strings.t(lang, 'premium_member'), style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.white)),
+                  ]),
+                ),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => showEditNameDialog(context, ref),
+                  child: const Icon(Icons.edit_outlined, size: 18, color: Colors.white),
+                ),
+              ]),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class ProfileMediaViewerPage extends ConsumerStatefulWidget {
+  const ProfileMediaViewerPage({super.key});
+  @override
+  ConsumerState<ProfileMediaViewerPage> createState() => _ProfileMediaViewerPageState();
+}
+
+class _ProfileMediaViewerPageState extends ConsumerState<ProfileMediaViewerPage> {
+  VideoPlayerController? _controller;
+  bool _muted = false;
+  bool _controlsVisible = true;
+  double _dragOffset = 0;
+  bool _videoFailed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    final profile = ref.read(userProfileProvider);
+    if (!kIsWeb && profile.videoPath != null) {
+      _setupVideo(profile.videoPath!);
+    }
+  }
+
+  Future<void> _setupVideo(String path) async {
+    final file = File(path);
+    if (!await file.exists()) {
+      if (mounted) setState(() => _videoFailed = true);
+      return;
+    }
+    final controller = VideoPlayerController.file(file);
+    try {
+      await controller.initialize();
+      await controller.setLooping(true);
+      await controller.setVolume(_muted ? 0 : 1);
+      if (!mounted) {
+        controller.dispose();
+        return;
+      }
+      setState(() => _controller = controller);
+      controller.play();
+    } catch (_) {
+      controller.dispose();
+      if (mounted) setState(() => _videoFailed = true);
+    }
+  }
+
+  void _toggleMute() {
+    setState(() => _muted = !_muted);
+    _controller?.setVolume(_muted ? 0 : 1);
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  Widget _staticFallback(UserProfile profile) {
+    if (kIsWeb && profile.photoBytesBase64 != null) {
+      try {
+        return InteractiveViewer(
+          maxScale: 4,
+          child: Image.memory(base64Decode(profile.photoBytesBase64!), fit: BoxFit.contain),
+        );
+      } catch (_) {
+        return const SizedBox.shrink();
+      }
+    }
+    if (profile.photoPath != null) {
+      return InteractiveViewer(
+        maxScale: 4,
+        child: Image.file(File(profile.photoPath!), fit: BoxFit.contain),
+      );
+    }
+    return const SizedBox.shrink();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final profile = ref.watch(userProfileProvider);
+    final isVideo = !kIsWeb && profile.videoPath != null;
+    final dismissProgress = (_dragOffset / 400).clamp(0.0, 1.0);
+
+    return GestureDetector(
+      onVerticalDragUpdate: (details) {
+        setState(() => _dragOffset = (_dragOffset + details.delta.dy).clamp(0, 500));
+      },
+      onVerticalDragEnd: (details) {
+        final velocity = details.primaryVelocity ?? 0;
+        if (_dragOffset > 130 || velocity > 800) {
+          Navigator.pop(context);
+        } else {
+          setState(() => _dragOffset = 0);
+        }
+      },
+      onTap: () => setState(() => _controlsVisible = !_controlsVisible),
+      child: Scaffold(
+        backgroundColor: Colors.black.withOpacity(1 - dismissProgress * 0.7),
+        body: Stack(
+          children: [
+            Center(
+              child: Transform.translate(
+                offset: Offset(0, _dragOffset),
+                child: Hero(
+                  tag: 'profile-header-media',
+                  child: AspectRatio(
+                    aspectRatio: 1,
+                    child: isVideo && !_videoFailed
+                        ? (_controller != null && _controller!.value.isInitialized
+                            ? ClipRect(
+                                child: FittedBox(
+                                  fit: BoxFit.cover,
+                                  child: SizedBox(
+                                    width: _controller!.value.size.width,
+                                    height: _controller!.value.size.height,
+                                    child: VideoPlayer(_controller!),
+                                  ),
+                                ),
+                              )
+                            : _staticFallback(profile))
+                        : _staticFallback(profile),
+                  ),
+                ),
+              ),
+            ),
+            AnimatedOpacity(
+              opacity: _controlsVisible ? 1 : 0,
+              duration: const Duration(milliseconds: 180),
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
                   child: Row(
-                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Icon(Icons.workspace_premium_rounded, size: 11, color: Theme.of(context).colorScheme.primary),
-                      const SizedBox(width: 4),
-                      Text(
-                        Strings.t(lang, 'premium_member'),
-                        style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, height: 1.0, color: Theme.of(context).colorScheme.primary, letterSpacing: 0.2),
-                      ),
+                      _HeaderIconButton(icon: Icons.close_rounded, onTap: () => Navigator.pop(context)),
+                      if (isVideo && !_videoFailed)
+                        _HeaderIconButton(
+                          icon: _muted ? Icons.volume_off_rounded : Icons.volume_up_rounded,
+                          onTap: _toggleMute,
+                        ),
                     ],
                   ),
                 ),
-                const SizedBox(width: 6),
-                GestureDetector(
-                  onTap: () => showEditNameDialog(context, ref),
-                  child: Icon(Icons.edit_outlined, size: 16, color: context.iconMuted),
-                ),
-              ]),
-              const SizedBox(height: 4),
-              Text(Strings.t(lang, 'manage_account'), style: TextStyle(color: context.textMuted)),
-            ]),
-          ),
-        ]),
+              ),
+            ),
+          ],
+        ),
       ),
-      const SizedBox(height: 26),
-      SectionTitle(Strings.t(lang, 'section_finance')),
-      const SizedBox(height: 10),
-      SettingList(items: const [
-        ('savings_target', SolarIconsOutline.safeSquare),
-        ('category', SolarIconsOutline.widget),
-        ('account_wallet', SolarIconsOutline.wallet),
-        ('receivables', SolarIconsOutline.usersGroupTwoRounded),
-      ]),
-      const SizedBox(height: 24),
-      SectionTitle(Strings.t(lang, 'section_app')),
-      const SizedBox(height: 10),
-      SettingList(items: const [
-        ('appearance', SolarIconsOutline.palette),
-        ('language', Icons.language),
-        ('notifications', SolarIconsOutline.bell),
-        ('backup_data', SolarIconsOutline.cloudUpload),
-      ]),
-    ]));
+    );
   }
 }
 
