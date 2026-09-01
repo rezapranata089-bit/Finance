@@ -4435,45 +4435,53 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   child: SizedBox(height: 360.0), 
                 ),
                 SliverToBoxAdapter(
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: context.cardColor,
-                      borderRadius: const BorderRadius.only(topLeft: Radius.circular(22), topRight: Radius.circular(22)),
-                      boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(isDark ? 0.30 : 0.10), blurRadius: 90, spreadRadius: 90, offset: const Offset(0, -10)),
-                      ],
-                    ),
-                    padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SectionTitle(Strings.t(lang, 'section_finance')),
-                        const SizedBox(height: 10),
-                        const SettingList(items: [
-                          ('savings_target', SolarIconsOutline.safeSquare),
-                          ('category', SolarIconsOutline.widget),
-                          ('account_wallet', SolarIconsOutline.wallet),
-                          ('receivables', SolarIconsOutline.usersGroupTwoRounded),
-                        ]),
-                        const SizedBox(height: 24),
-                        SectionTitle(Strings.t(lang, 'section_app')),
-                        const SizedBox(height: 10),
-                        const SettingList(items: [
-                          ('appearance', SolarIconsOutline.palette),
-                          ('language', Icons.language),
-                          ('notifications', SolarIconsOutline.bell),
-                          ('backup_data', SolarIconsOutline.cloudUpload),
-                        ]),
-                      ],
-                    ),
-                  ),
-                ),
-                SliverFillRemaining(
-                  hasScrollBody: false,
-                  fillOverscroll: true,
-                  child: Container(
-                    color: context.cardColor,
-                    padding: const EdgeInsets.only(bottom: 24),
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      // Layer Background: memanjang jauh ke bawah untuk selalu menutupi area kosong
+                      // saat overscroll terjadi, TANPA menambah area scrollable (maxScrollExtent).
+                      Positioned(
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: -1000, 
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: context.cardColor,
+                            borderRadius: const BorderRadius.only(topLeft: Radius.circular(22), topRight: Radius.circular(22)),
+                            boxShadow: [
+                              BoxShadow(color: Colors.black.withOpacity(isDark ? 0.30 : 0.10), blurRadius: 90, spreadRadius: 90, offset: const Offset(0, -10)),
+                            ],
+                          ),
+                        ),
+                      ),
+                      // Layer Content: tinggi layout sebenarnya (menentukan batas scroll)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SectionTitle(Strings.t(lang, 'section_finance')),
+                            const SizedBox(height: 10),
+                            const SettingList(items: [
+                              ('savings_target', SolarIconsOutline.safeSquare),
+                              ('category', SolarIconsOutline.widget),
+                              ('account_wallet', SolarIconsOutline.wallet),
+                              ('receivables', SolarIconsOutline.usersGroupTwoRounded),
+                            ]),
+                            const SizedBox(height: 24),
+                            SectionTitle(Strings.t(lang, 'section_app')),
+                            const SizedBox(height: 10),
+                            const SettingList(items: [
+                              ('appearance', SolarIconsOutline.palette),
+                              ('language', Icons.language),
+                              ('notifications', SolarIconsOutline.bell),
+                              ('backup_data', SolarIconsOutline.cloudUpload),
+                            ]),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
