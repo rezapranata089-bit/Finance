@@ -2786,14 +2786,17 @@ class _FinanceShellState extends ConsumerState<FinanceShell> with SingleTickerPr
 
           return IgnorePointer(
             ignoring: opacity == 0.0,
-            child: Opacity(
-              opacity: opacity,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: context.cardColor,
-                  border: Border(top: BorderSide(color: context.borderColor)),
-                ),
-                padding: const EdgeInsets.only(top: 12, bottom: 20),
+            child: Container(
+              foregroundDecoration: BoxDecoration(
+                color: Colors.black.withOpacity(previewProgress),
+              ),
+              decoration: BoxDecoration(
+                color: context.cardColor,
+                border: Border(top: BorderSide(color: context.borderColor)),
+              ),
+              padding: const EdgeInsets.only(top: 12, bottom: 20),
+              child: Opacity(
+                opacity: opacity,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
