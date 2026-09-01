@@ -3965,6 +3965,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   // masih besar/sedang mengecil) agar drag yang sama tidak bisa langsung
   // menembus posisi default ke scroll konten halaman.
   bool _gestureCrossingLocked = false;
+  // Melacak titik overscroll terjauh (paling negatif) yang benar-benar
+  // dicapai oleh jari pengguna (bukan animasi ballistic) selama satu
+  // gesture drag, untuk fitur pull-to-preview di bawah.
+  double _dragMinOffset = 0.0;
+  static const double _pullToPreviewThreshold = -85.0;
 
   @override
   void didChangeDependencies() {
@@ -4016,8 +4021,30 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       // bisa langsung menembus posisi default ke scroll konten halaman.
       final startedBelowDefault = _scrollController.offset < _maxExpandScroll - 0.5;
       _gestureCrossingLocked = notification.dragDetails != null && startedBelowDefault;
+      if (notification.dragDetails != null) {
+        _dragMinOffset = _scrollController.offset;
+      }
+    } else if (notification is ScrollUpdateNotification && notification.dragDetails != null) {
+      // Overscroll negatif hanya mungkin terjadi saat media sudah di posisi
+      // default (offset <= 0, sudah "membesar" penuh). Simpan titik
+      // terjauh yang benar-benar dicapai oleh jari, bukan oleh animasi.
+      _dragMinOffset = min(_dragMinOffset, notification.metrics.pixels);
     } else if (notification is ScrollEndNotification) {
       _gestureCrossingLocked = false;
+      // Pull-down-to-preview: apabila media sudah membesar penuh lalu
+      // ditarik lebih jauh ke bawah melewati ambang batas ini sebelum
+      // jari dilepas, buka preview gambar/video secara penuh — mirip
+      // gesture pull-to-preview foto profil di Instagram/Twitter.
+      if (_dragMinOffset <= _pullToPreviewThreshold) {
+        _dragMinOffset = 0;
+        final profile = ref.read(userProfileProvider);
+        final hasMedia = profile.hasPhoto || profile.hasVideo;
+        if (hasMedia && mounted) {
+          Navigator.push(context, GlassPageRoute(builder: (_) => const ProfileMediaViewerPage()));
+        }
+        return false;
+      }
+      _dragMinOffset = 0;
       final offset = _scrollController.offset;
       // Apabila gesture dilepas di tengah-tengah area ekspansi, snap ke batas terdekat (berjalan otomatis)
       if (offset > 0 && offset < _maxExpandScroll) {
@@ -4084,8 +4111,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
     final isDark = context.isDark;
     final primary = Theme.of(context).colorScheme.primary;
+    // Warna latar khusus halaman profil, sengaja dibuat berbeda dari
+    // context.cardColor milik sheet surface di bawahnya (yang di mode
+    // terang sebelumnya nyaris sama, Rp 0xFFFFFFFF vs 0xFFF8F7FB, sehingga
+    // batas antar keduanya di area header compact tidak terlihat).
+    final profileScaffoldBg = isDark ? const Color(0xFF17141D) : const Color(0xFFEFEAFB);
 
     return Scaffold(
+      backgroundColor: profileScaffoldBg,
       body: Stack(
         children: [
           // ---- LAYER 1: Background Media & Profile Identity (Paling Bawah) ----
