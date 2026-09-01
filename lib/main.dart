@@ -20,6 +20,7 @@ import 'package:number_flow_flutter/number_flow_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:solar_icons/solar_icons.dart';
+import 'package:telegram_image_cropper/telegram_image_cropper.dart';
 
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
@@ -201,6 +202,81 @@ Future<ProfilePhotoPick?> pickAndCompressProfilePhoto(ImageSource source) async 
   return ProfilePhotoPick(path: destPath);
 }
 
+Future<Uint8List?> _pickRawImageBytes(ImageSource source) async {
+  if (!kIsWeb && source == ImageSource.gallery && Platform.isAndroid) {
+    final String? pickedPath = await _galleryChooserChannel.invokeMethod<String>('pickImageWithChooser');
+    if (pickedPath == null) return null;
+    final bytes = await File(pickedPath).readAsBytes();
+    try {
+      await File(pickedPath).delete();
+    } catch (_) {}
+    return bytes;
+  }
+
+  final picker = ImagePicker();
+  final XFile? picked = await picker.pickImage(
+    source: source,
+    maxWidth: 1600,
+    maxHeight: 1600,
+    imageQuality: 90,
+  );
+  if (picked == null) return null;
+  return await picked.readAsBytes();
+}
+
+class _CropperPage extends StatelessWidget {
+  final Uint8List imageBytes;
+  const _CropperPage({required this.imageBytes});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+      body: SafeArea(
+        child: TelegramImageCropper(
+          imageBytes: imageBytes,
+          cropSize: 260,
+          showResultDialog: false,
+          cropButtonText: const Text('Potong Foto'),
+          onCropped: (bytes) => Navigator.pop(context, bytes),
+        ),
+      ),
+    );
+  }
+}
+
+Future<ProfilePhotoPick?> pickAndCropProfilePhoto(BuildContext context, ImageSource source) async {
+  final rawBytes = await _pickRawImageBytes(source);
+  if (rawBytes == null) return null;
+  if (!context.mounted) return null;
+
+  final croppedBytes = await Navigator.push<Uint8List>(
+    context,
+    GlassPageRoute(builder: (_) => _CropperPage(imageBytes: rawBytes)),
+  );
+  if (croppedBytes == null) return null;
+
+  if (kIsWeb) {
+    return ProfilePhotoPick(bytes: croppedBytes);
+  }
+
+  final dir = await getApplicationDocumentsDirectory();
+  final destPath = '${dir.path}/profile_photo.jpg';
+  final destFile = File(destPath);
+  if (await destFile.exists()) {
+    try {
+      await destFile.delete();
+    } catch (_) {}
+  }
+  await destFile.writeAsBytes(croppedBytes);
+  return ProfilePhotoPick(path: destPath);
+}
+
   Future<void> showProfilePhotoOptions(BuildContext context, WidgetRef ref) async {
   final lang = ref.read(langProvider);
   final hasPhoto = ref.read(userProfileProvider).hasPhoto;
@@ -220,7 +296,7 @@ Future<ProfilePhotoPick?> pickAndCompressProfilePhoto(ImageSource source) async 
             title: Text(Strings.t(lang, 'choose_from_gallery')),
             onTap: () async {
               Navigator.pop(sheetContext);
-              final result = await pickAndCompressProfilePhoto(ImageSource.gallery);
+              final result = await pickAndCropProfilePhoto(context, ImageSource.gallery);
               if (result != null) ref.read(userProfileProvider.notifier).updatePhoto(path: result.path, bytes: result.bytes);
             },
           ),
@@ -230,7 +306,7 @@ Future<ProfilePhotoPick?> pickAndCompressProfilePhoto(ImageSource source) async 
             title: Text(Strings.t(lang, 'take_photo')),
             onTap: () async {
               Navigator.pop(sheetContext);
-              final result = await pickAndCompressProfilePhoto(ImageSource.camera);
+              final result = await pickAndCropProfilePhoto(context, ImageSource.camera);
               if (result != null) ref.read(userProfileProvider.notifier).updatePhoto(path: result.path, bytes: result.bytes);
             },
           ),
