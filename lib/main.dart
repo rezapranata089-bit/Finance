@@ -715,12 +715,15 @@ class _VideoTrimPageState extends State<_VideoTrimPage> {
 
   Future<void> _save() async {
     setState(() => _saving = true);
-    final outputPath = await _trimmer.saveTrimmedVideo(startValue: _startValue, endValue: _endValue);
-    if (!mounted) return;
-    setState(() => _saving = false);
-    if (outputPath != null) {
-      Navigator.pop(context, outputPath);
-    }
+    await _trimmer.saveTrimmedVideo(
+      startValue: _startValue,
+      endValue: _endValue,
+      onSave: (outputPath) {
+        if (!mounted) return;
+        setState(() => _saving = false);
+        Navigator.pop(context, outputPath);
+      },
+    );
   }
 
   @override
