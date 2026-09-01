@@ -22,22 +22,46 @@ class MainActivity : FlutterActivity() {
             if (call.method == "pickImageWithChooser") {
                 pendingResult = result
 
-                // Samsung Galaxy devices (including A-series like A55) ship
-                // their own Gallery app under this package. Target it
-                // directly so it opens with no picker/chooser dialog at all.
-                val samsungGalleryPackage = "com.sec.android.gallery3d"
-                val directIntent = Intent(Intent.ACTION_GET_CONTENT).apply {
-                    type = "image/*"
-                    addCategory(Intent.CATEGORY_OPENABLE)
-                    setPackage(samsungGalleryPackage)
-                }
-                val samsungGalleryAvailable = directIntent.resolveActivity(packageManager) != null
+                // Known built-in Gallery app packages across common OEMs.
+                // Checked in order; the first one installed on the device
+                // is targeted directly so it opens with no dialog at all.
+                val knownGalleryPackages = listOf(
+                    "com.sec.android.gallery3d",      // Samsung
+                    "com.miui.gallery",                // Xiaomi / Redmi / POCO (MIUI, HyperOS)
+                    "com.coloros.gallery3d",           // Oppo / Realme / OnePlus (newer ColorOS)
+                    "com.oppo.gallery3d",               // Oppo (older ColorOS)
+                    "com.oneplus.gallery",              // OnePlus (older OxygenOS)
+                    "com.vivo.gallery",                  // Vivo / iQOO
+                    "com.huawei.photos",                 // Huawei
+                    "com.asus.gallery",                  // Asus
+                    "com.lenovo.gallery",                 // Lenovo
+                    "com.lge.gallery"                      // LG (legacy devices)
+                )
 
-                if (samsungGalleryAvailable) {
+                var targetPackage: String? = null
+                for (pkg in knownGalleryPackages) {
+                    val probeIntent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                        type = "image/*"
+                        addCategory(Intent.CATEGORY_OPENABLE)
+                        setPackage(pkg)
+                    }
+                    if (probeIntent.resolveActivity(packageManager) != null) {
+                        targetPackage = pkg
+                        break
+                    }
+                }
+
+                if (targetPackage != null) {
+                    val directIntent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                        type = "image/*"
+                        addCategory(Intent.CATEGORY_OPENABLE)
+                        setPackage(targetPackage)
+                    }
                     startActivityForResult(directIntent, pickImageRequestCode)
                 } else {
-                    // Fallback: Samsung Gallery not found under the expected
-                    // package on this device/ROM variant. Show a normal
+                    // No known OEM Gallery app found on this device (e.g.
+                    // Pixel / near-stock Android that relies on Google
+                    // Photos, or an unlisted brand). Fall back to a normal
                     // chooser, excluding the Android Photo Picker (which
                     // intercepts ACTION_GET_CONTENT for image/* on Android
                     // 11+/13+ and looks like Google Photos) so a real app
