@@ -4823,8 +4823,16 @@ class _ProfileMediaViewerPageState extends ConsumerState<ProfileMediaViewerPage>
     final isVideo = !kIsWeb && profile.videoPath != null;
     final dismissProgress = (_dragOffset / 400).clamp(0.0, 1.0);
 
-    return GestureDetector(
-      onVerticalDragUpdate: (details) {
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarIconBrightness: Brightness.light,
+      ),
+      child: GestureDetector(
+        onVerticalDragUpdate: (details) {
         setState(() => _dragOffset = (_dragOffset + details.delta.dy).clamp(0, 500));
       },
       onVerticalDragEnd: (details) {
@@ -4897,7 +4905,7 @@ class _ProfileMediaViewerPageState extends ConsumerState<ProfileMediaViewerPage>
           ],
         ),
       ),
-    );
+    ));
   }
 }
 
