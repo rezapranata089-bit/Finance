@@ -165,14 +165,37 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
   }
 
   Future<void> updatePhoto({String? path, Uint8List? bytes}) async {
+    // Foto dan video profil bersifat saling menggantikan: hanya salah satu
+    // yang boleh aktif dalam satu waktu. Saat pengguna mengatur foto baru,
+    // video profil yang sedang aktif (jika ada) otomatis dihapus beserta
+    // berkasnya di disk agar tidak menyisakan data yatim.
+    final oldVideoPath = state.videoPath;
+    if (!kIsWeb && oldVideoPath != null) {
+      final oldVideoFile = File(oldVideoPath);
+      if (await oldVideoFile.exists()) {
+        try {
+          await oldVideoFile.delete();
+        } catch (_) {}
+      }
+    }
     if (!kIsWeb && path != null) {
       final oldPath = state.photoPath;
       if (oldPath != null && oldPath != path) {
         PaintingBinding.instance.imageCache.evict(FileImage(File(oldPath)));
       }
-      state = state.copyWith(photoPath: path, photoVersion: state.photoVersion + 1);
+      state = state.copyWith(
+        photoPath: path,
+        photoVersion: state.photoVersion + 1,
+        clearVideo: true,
+        videoVersion: state.videoVersion + 1,
+      );
     } else if (kIsWeb && bytes != null) {
-      state = state.copyWith(photoBytesBase64: base64Encode(bytes), photoVersion: state.photoVersion + 1);
+      state = state.copyWith(
+        photoBytesBase64: base64Encode(bytes),
+        photoVersion: state.photoVersion + 1,
+        clearVideo: true,
+        videoVersion: state.videoVersion + 1,
+      );
     } else {
       return;
     }
@@ -195,6 +218,20 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
   }
 
   Future<void> updateVideo({required String path, required double scale, required double offsetX, required double offsetY, String? thumbnailBytesBase64}) async {
+    // Foto dan video profil bersifat saling menggantikan: hanya salah satu
+    // yang boleh aktif dalam satu waktu. Saat pengguna mengatur video baru,
+    // foto profil yang sedang aktif (jika ada) otomatis dihapus beserta
+    // berkasnya di disk agar tidak menyisakan data yatim.
+    final oldPhotoPath = state.photoPath;
+    if (!kIsWeb && oldPhotoPath != null) {
+      PaintingBinding.instance.imageCache.evict(FileImage(File(oldPhotoPath)));
+      final oldPhotoFile = File(oldPhotoPath);
+      if (await oldPhotoFile.exists()) {
+        try {
+          await oldPhotoFile.delete();
+        } catch (_) {}
+      }
+    }
     state = state.copyWith(
       videoPath: path,
       videoVersion: state.videoVersion + 1,
@@ -202,6 +239,8 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
       videoCropOffsetX: offsetX,
       videoCropOffsetY: offsetY,
       videoThumbnailBytesBase64: thumbnailBytesBase64,
+      clearPhoto: true,
+      photoVersion: state.photoVersion + 1,
     );
     _persist();
   }
