@@ -4020,11 +4020,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   // masih besar/sedang mengecil) agar drag yang sama tidak bisa langsung
   // menembus posisi default ke scroll konten halaman.
   bool _gestureCrossingLocked = false;
-  // Melacak titik overscroll terjauh (paling negatif) yang benar-benar
-  // dicapai oleh jari pengguna (bukan animasi ballistic) selama satu
-  // gesture drag, untuk fitur pull-to-preview di bawah.
-  double _dragMinOffset = 0.0;
-  static const double _pullToPreviewThreshold = -85.0;
 
   @override
   void didChangeDependencies() {
@@ -4071,39 +4066,56 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
   bool _handleScrollNotification(ScrollNotification notification) {
     if (notification is ScrollStartNotification) {
-      // Gesture drag baru (bukan animateTo/jumpTo programatik) yang mulai
-      // sebelum posisi default akan dikunci, supaya drag yang sama tidak
-      // bisa langsung menembus posisi default ke scroll konten halaman.
       final startedBelowDefault = _scrollController.offset < _maxExpandScroll - 0.5;
       _gestureCrossingLocked = notification.dragDetails != null && startedBelowDefault;
-      if (notification.dragDetails != null) {
-        _dragMinOffset = _scrollController.offset;
-      }
-    } else if (notification is ScrollUpdateNotification && notification.dragDetails != null) {
-      // Overscroll negatif hanya mungkin terjadi saat media sudah di posisi
-      // default (offset <= 0, sudah "membesar" penuh). Simpan titik
-      // terjauh yang benar-benar dicapai oleh jari, bukan oleh animasi.
-      _dragMinOffset = min(_dragMinOffset, notification.metrics.pixels);
     } else if (notification is ScrollEndNotification) {
       _gestureCrossingLocked = false;
-      // Pull-down-to-preview: apabila media sudah membesar penuh lalu
-      // ditarik lebih jauh ke bawah melewati ambang batas ini sebelum
-      // jari dilepas, buka preview gambar/video secara penuh — mirip
-      // gesture pull-to-preview foto profil di Instagram/Twitter.
-      if (_dragMinOffset <= _pullToPreviewThreshold) {
-        _dragMinOffset = 0;
-        final profile = ref.read(userProfileProvider);
-        final hasMedia = profile.hasPhoto || profile.hasVideo;
-        if (hasMedia && mounted) {
-          Navigator.push(context, MediaPreviewRoute(builder: (_) => const ProfileMediaViewerPage()));
+      
+      final offset = _scrollController.offset;
+      
+      // Handle interactive full-screen preview snap
+      if (offset < 0) {
+        if (offset <= -60.0) {
+          Future.microtask(() async {
+            if (mounted && _scrollController.hasClients) {
+              await _scrollController.animateTo(
+                -120.0,
+                duration: const Duration(milliseconds: 250),
+                curve: Curves.easeOutCubic,
+              );
+              if (!mounted) return;
+              final profile = ref.read(userProfileProvider);
+              final hasMedia = profile.hasPhoto || profile.hasVideo;
+              if (hasMedia) {
+                Navigator.push(context, MediaPreviewRoute(builder: (_) => const ProfileMediaViewerPage()));
+                // Wait for the push transition to complete before resetting the page behind it,
+                // so when the user dismisses the viewer, the image flies back to the top!
+                Future.delayed(const Duration(milliseconds: 450), () {
+                  if (mounted && _scrollController.hasClients) {
+                    _scrollController.jumpTo(0.0);
+                  }
+                });
+              } else {
+                 _scrollController.animateTo(0.0, duration: const Duration(milliseconds: 300), curve: Curves.easeOutCubic);
+              }
+            }
+          });
+        } else {
+          Future.microtask(() {
+            if (mounted && _scrollController.hasClients) {
+              _scrollController.animateTo(
+                0.0,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOutCubic,
+              );
+            }
+          });
         }
         return false;
       }
-      _dragMinOffset = 0;
-      final offset = _scrollController.offset;
-      // Apabila gesture dilepas di tengah-tengah area ekspansi, snap ke batas terdekat (berjalan otomatis)
+      
+      // Snap inside expansion area
       if (offset > 0 && offset < _maxExpandScroll) {
-        // Cukup ditarik ~45% untuk membuatnya snap terbuka penuh
         final target = offset > (_maxExpandScroll * 0.45) ? _maxExpandScroll : 0.0;
         Future.microtask(() {
           if (mounted && _scrollController.hasClients) {
@@ -4130,50 +4142,59 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
     double t = 1.0;
     double parallaxOffset = 0.0;
-    double extraScale = 1.0;
+    double previewProgress = 0.0;
 
     if (_scrollOffset > _maxExpandScroll) {
-      // User scroll list ke atas -> Header IKUT NAIK sepenuhnya (seperti bagian dari scroll)
       t = 0.0;
-      parallaxOffset = (_scrollOffset - _maxExpandScroll) * 1.0; // Bergerak seragam dengan scroll sheet
+      parallaxOffset = (_scrollOffset - _maxExpandScroll) * 1.0;
     } else if (_scrollOffset >= 0) {
-      // User berada di area ekspansi (0.0 sampai _maxExpandScroll)
       t = 1.0 - (_scrollOffset / _maxExpandScroll);
       parallaxOffset = 0.0;
     } else {
-      // User overscroll / pull berlebih ke bawah -> Scale membesar elastis
       t = 1.0;
       parallaxOffset = 0.0; 
-      extraScale = 1.0 + (-_scrollOffset / 300);
+      previewProgress = (-_scrollOffset / 120.0).clamp(0.0, 1.0);
     }
 
-    final double avatarWidth = lerpDouble(68.0, screenWidth, t)!;
-    final double avatarHeight = lerpDouble(68.0, 380.0, t)!;
-    final double avatarRadius = lerpDouble(34.0, 0, t)!;
-    final double avatarTop = lerpDouble(topInset + 18.0, 0.0, t)!;
-    final double avatarLeft = lerpDouble(20.0, 0.0, t)!;
+    final double screenHeight = MediaQuery.sizeOf(context).height;
+    
+    double avatarWidth;
+    double avatarHeight;
+    double avatarRadius;
+    double avatarTop;
+    double avatarLeft;
+    
+    if (previewProgress > 0.0) {
+      final targetHeight = screenWidth;
+      final targetTop = (screenHeight - targetHeight) / 2;
+      
+      avatarWidth = screenWidth;
+      avatarHeight = lerpDouble(380.0, targetHeight, previewProgress)!;
+      avatarTop = lerpDouble(0.0, targetTop, previewProgress)!;
+      avatarLeft = 0.0;
+      avatarRadius = 0.0;
+    } else {
+      avatarWidth = lerpDouble(68.0, screenWidth, t)!;
+      avatarHeight = lerpDouble(68.0, 380.0, t)!;
+      avatarRadius = lerpDouble(34.0, 0, t)!;
+      avatarTop = lerpDouble(topInset + 18.0, 0.0, t)!;
+      avatarLeft = lerpDouble(20.0, 0.0, t)!;
+    }
     
     final double compactRowOpacity = (1 - t * 2.6).clamp(0.0, 1.0);
-    final double expandedCaptionOpacity = ((t - 0.45) / 0.55).clamp(0.0, 1.0);
-    // Badge kamera hanya tampil saat avatar sudah (hampir) sekecil ukuran
-    // compact, dengan ukuran tetap/kecil — TIDAK ikut membesar mengikuti
-    // ukuran header, supaya tidak terlihat aneh menempel di pojok gambar
-    // besar. Saat header masih expanded, jalur edit foto/video disediakan
-    // lewat tombol pensil di pojok kiri atas (lihat chevronOpacity).
+    final double expandedCaptionOpacity = (((t - 0.45) / 0.55).clamp(0.0, 1.0)) * (1.0 - previewProgress);
     final double badgeOpacity = (1 - t * 5).clamp(0.0, 1.0);
-    final double chevronOpacity = ((t - 0.5) / 0.5).clamp(0.0, 1.0);
-    final int scrimAlpha = (0x99 * t).round();
+    final double chevronOpacity = (((t - 0.5) / 0.5).clamp(0.0, 1.0)) * (1.0 - previewProgress);
+    final int scrimAlpha = (0x99 * t * (1.0 - previewProgress)).round();
+    final double sheetOpacity = 1.0 - previewProgress;
 
     final isDark = context.isDark;
     final primary = Theme.of(context).colorScheme.primary;
-    // Warna latar khusus halaman profil, sengaja dibuat berbeda dari
-    // context.cardColor milik sheet surface di bawahnya (yang di mode
-    // terang sebelumnya nyaris sama, Rp 0xFFFFFFFF vs 0xFFF8F7FB, sehingga
-    // batas antar keduanya di area header compact tidak terlihat).
     final profileScaffoldBg = isDark ? const Color(0xFF17141D) : const Color(0xFFEFEAFB);
+    final Color currentScaffoldBg = Color.lerp(profileScaffoldBg, Colors.black, previewProgress)!;
 
     return Scaffold(
-      backgroundColor: profileScaffoldBg,
+      backgroundColor: currentScaffoldBg,
       body: Stack(
         children: [
           // ---- LAYER 1: Background Media & Profile Identity (Paling Bawah) ----
@@ -4190,21 +4211,28 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     left: avatarLeft,
                     width: avatarWidth,
                     height: avatarHeight,
-                    child: Transform.scale(
-                      scale: extraScale,
-                      alignment: Alignment.topCenter,
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(avatarRadius),
-                        child: GestureDetector(
-                          onTap: () {
-                            if (!hasMedia) return;
-                            Navigator.push(context, MediaPreviewRoute(builder: (_) => const ProfileMediaViewerPage()));
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(avatarRadius),
+                      child: GestureDetector(
+                        onTap: () {
+                          if (!hasMedia) return;
+                          Navigator.push(context, MediaPreviewRoute(builder: (_) => const ProfileMediaViewerPage()));
+                        },
+                        child: Hero(
+                          tag: 'profile-header-media',
+                          flightShuttleBuilder: (flightContext, animation, flightDirection, fromHeroContext, toHeroContext) {
+                            return AnimatedBuilder(
+                              animation: animation,
+                              builder: (context, child) {
+                                return ClipRRect(
+                                  borderRadius: BorderRadius.zero,
+                                  child: toHeroContext.widget,
+                                );
+                              },
+                            );
                           },
-                          child: Hero(
-                            tag: 'profile-header-media',
-                            child: SizedBox.expand(
-                              child: _ProfileHeaderMediaContent(profile: profile, initial: initial),
-                            ),
+                          child: SizedBox.expand(
+                            child: _ProfileHeaderMediaContent(profile: profile, initial: initial),
                           ),
                         ),
                       ),
@@ -4217,18 +4245,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       width: avatarWidth,
                       height: avatarHeight,
                       child: IgnorePointer(
-                        child: Transform.scale(
-                          scale: extraScale,
-                          alignment: Alignment.topCenter,
-                          child: DecoratedBox(
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(avatarRadius),
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [Colors.transparent, Colors.transparent, Color(scrimAlpha << 24)],
-                                stops: const [0.0, 0.5, 1.0],
-                              ),
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(avatarRadius),
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [Colors.transparent, Colors.transparent, Color(scrimAlpha << 24)],
+                              stops: const [0.0, 0.5, 1.0],
                             ),
                           ),
                         ),
@@ -4318,7 +4342,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     ),
                   if (expandedCaptionOpacity > 0)
                     Positioned(
-                      top: avatarTop + (avatarHeight * extraScale) - 108.0,
+                      top: avatarTop + avatarHeight - 108.0,
                       left: avatarLeft,
                       right: avatarLeft,
                       height: 108.0,
@@ -4416,9 +4440,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           // ---- LAYER 2: Sheet Surface (Scroll View) (Paling Atas) ----
           // Container dengan warna solid sehingga akan memblok/menutupi 
           // Layer 1 secara natural saat terscroll ke atas
-          NotificationListener<ScrollNotification>(
-            onNotification: _handleScrollNotification,
-            child: CustomScrollView(
+          Opacity(
+            opacity: sheetOpacity,
+            child: NotificationListener<ScrollNotification>(
+              onNotification: _handleScrollNotification,
+              child: CustomScrollView(
               controller: _scrollController,
               physics: _HeaderSnapScrollPhysics(
                 boundary: _maxExpandScroll,
@@ -4487,6 +4513,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               ],
             ),
           ),
+          ),
 
           // ---- LAYER 3: Kontrol interaktif header (Paling Atas) ----
           // Tombol edit nama, ganti foto/video, dan collapse sebelumnya berada
@@ -4506,7 +4533,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 children: [
                   if (badgeOpacity > 0)
                     Positioned(
-                      top: avatarTop + (avatarHeight * extraScale) - 44.0,
+                      top: avatarTop + avatarHeight - 44.0,
                       left: avatarLeft + avatarWidth - 44.0,
                       width: 44,
                       height: 44,
@@ -4518,7 +4545,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     ),
                   if (expandedCaptionOpacity >= 0.4)
                     Positioned(
-                      top: avatarTop + (avatarHeight * extraScale) - 108.0,
+                      top: avatarTop + avatarHeight - 108.0,
                       left: avatarLeft,
                       width: avatarWidth,
                       height: 108.0,
