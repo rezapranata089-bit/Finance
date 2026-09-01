@@ -90,7 +90,26 @@ class MainActivity : FlutterActivity() {
                     addCategory(Intent.CATEGORY_OPENABLE)
                 }
 
-                val resolvedActivities = packageManager.queryIntentActivities(baseIntent, PackageManager.MATCH_DEFAULT_ONLY)
+                // queryIntentActivities ignores EXTRA_MIME_TYPES and only looks at
+                // the intent's literal "type" field. Resolving with type "*/*"
+                // would match ANY app that can receive arbitrary content (file
+                // managers, sound pickers, contact pickers, etc), which is why
+                // apps like "Sound picker" or "My Files" showed up before.
+                // Resolve for image/* and video/* separately instead, then
+                // merge, so only apps that truly handle photos or videos appear.
+                val imageProbe = Intent(Intent.ACTION_GET_CONTENT).apply {
+                    type = "image/*"
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                }
+                val videoProbe = Intent(Intent.ACTION_GET_CONTENT).apply {
+                    type = "video/*"
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                }
+
+                val resolvedActivities = (
+                    packageManager.queryIntentActivities(imageProbe, PackageManager.MATCH_DEFAULT_ONLY) +
+                    packageManager.queryIntentActivities(videoProbe, PackageManager.MATCH_DEFAULT_ONLY)
+                ).distinctBy { "${it.activityInfo.packageName}/${it.activityInfo.name}" }
 
                 val photoPickerMarkers = listOf("photopicker", "media.module")
                 fun isPhotoPicker(pkg: String, cls: String): Boolean =

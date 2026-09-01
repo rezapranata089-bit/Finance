@@ -28,6 +28,7 @@ dependencies:
     path: packages/telegram_image_cropper
   video_player: ^2.9.5
   video_trimmer: ^5.0.0
+  get_thumbnail_video: ^0.7.3
 
 dev_dependencies:
   flutter_test:

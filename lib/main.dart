@@ -23,6 +23,7 @@ import 'package:solar_icons/solar_icons.dart';
 import 'package:telegram_image_cropper/telegram_image_cropper.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_trimmer/video_trimmer.dart';
+import 'package:get_thumbnail_video/video_thumbnail.dart';
 
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
@@ -61,6 +62,7 @@ class UserProfile {
   final double videoCropScale;
   final double videoCropOffsetX;
   final double videoCropOffsetY;
+  final String? videoThumbnailBytesBase64;
   const UserProfile({
     this.name = '',
     this.photoPath,
@@ -71,6 +73,7 @@ class UserProfile {
     this.videoCropScale = 1.0,
     this.videoCropOffsetX = 0.0,
     this.videoCropOffsetY = 0.0,
+    this.videoThumbnailBytesBase64,
   });
 
   bool get hasPhoto => photoPath != null || photoBytesBase64 != null;
@@ -88,6 +91,7 @@ class UserProfile {
     double? videoCropScale,
     double? videoCropOffsetX,
     double? videoCropOffsetY,
+    String? videoThumbnailBytesBase64,
   }) =>
       UserProfile(
         name: name ?? this.name,
@@ -99,6 +103,7 @@ class UserProfile {
         videoCropScale: clearVideo ? 1.0 : (videoCropScale ?? this.videoCropScale),
         videoCropOffsetX: clearVideo ? 0.0 : (videoCropOffsetX ?? this.videoCropOffsetX),
         videoCropOffsetY: clearVideo ? 0.0 : (videoCropOffsetY ?? this.videoCropOffsetY),
+        videoThumbnailBytesBase64: clearVideo ? null : (videoThumbnailBytesBase64 ?? this.videoThumbnailBytesBase64),
       );
 
   Map<String, dynamic> toJson() => {
@@ -111,6 +116,7 @@ class UserProfile {
         'videoCropScale': videoCropScale,
         'videoCropOffsetX': videoCropOffsetX,
         'videoCropOffsetY': videoCropOffsetY,
+        'videoThumbnailBytesBase64': videoThumbnailBytesBase64,
       };
   factory UserProfile.fromJson(Map<String, dynamic> json) => UserProfile(
         name: json['name'] as String? ?? '',
@@ -122,6 +128,7 @@ class UserProfile {
         videoCropScale: (json['videoCropScale'] as num?)?.toDouble() ?? 1.0,
         videoCropOffsetX: (json['videoCropOffsetX'] as num?)?.toDouble() ?? 0.0,
         videoCropOffsetY: (json['videoCropOffsetY'] as num?)?.toDouble() ?? 0.0,
+        videoThumbnailBytesBase64: json['videoThumbnailBytesBase64'] as String?,
       );
 }
 
@@ -186,13 +193,14 @@ class UserProfileNotifier extends StateNotifier<UserProfile> {
     _persist();
   }
 
-  Future<void> updateVideo({required String path, required double scale, required double offsetX, required double offsetY}) async {
+  Future<void> updateVideo({required String path, required double scale, required double offsetX, required double offsetY, String? thumbnailBytesBase64}) async {
     state = state.copyWith(
       videoPath: path,
       videoVersion: state.videoVersion + 1,
       videoCropScale: scale,
       videoCropOffsetX: offsetX,
       videoCropOffsetY: offsetY,
+      videoThumbnailBytesBase64: thumbnailBytesBase64,
     );
     _persist();
   }
@@ -466,6 +474,7 @@ class ProfileAvatar extends StatelessWidget {
   final double videoCropScale;
   final double videoCropOffsetX;
   final double videoCropOffsetY;
+  final String? videoThumbnailBytesBase64;
   final String initial;
   final double radius;
   const ProfileAvatar({
@@ -478,6 +487,7 @@ class ProfileAvatar extends StatelessWidget {
     this.videoCropScale = 1.0,
     this.videoCropOffsetX = 0.0,
     this.videoCropOffsetY = 0.0,
+    this.videoThumbnailBytesBase64,
     required this.initial,
     this.radius = 31,
   });
@@ -547,6 +557,7 @@ class ProfileAvatar extends StatelessWidget {
             offsetX: videoCropOffsetX,
             offsetY: videoCropOffsetY,
             fallback: _photoOrFallback(context),
+            thumbnailBytesBase64: videoThumbnailBytesBase64,
           ),
         ),
       );
@@ -562,6 +573,7 @@ class _ProfileVideoAvatar extends StatefulWidget {
   final double offsetX;
   final double offsetY;
   final Widget fallback;
+  final String? thumbnailBytesBase64;
   const _ProfileVideoAvatar({
     required this.videoPath,
     required this.diameter,
@@ -569,6 +581,7 @@ class _ProfileVideoAvatar extends StatefulWidget {
     required this.offsetX,
     required this.offsetY,
     required this.fallback,
+    this.thumbnailBytesBase64,
   });
 
   @override
@@ -632,7 +645,29 @@ class _ProfileVideoAvatarState extends State<_ProfileVideoAvatar> {
   @override
   Widget build(BuildContext context) {
     final controller = _controller;
-    if (_failed || controller == null || !controller.value.isInitialized) {
+    if (_failed) {
+      return widget.fallback;
+    }
+    if (controller == null || !controller.value.isInitialized) {
+      // While the real VideoPlayerController is still initializing, show the
+      // captured first-frame thumbnail (if any) instead of flashing the
+      // plain initial-letter placeholder.
+      final thumbBase64 = widget.thumbnailBytesBase64;
+      if (thumbBase64 != null) {
+        try {
+          final thumbBytes = base64Decode(thumbBase64);
+          return Image.memory(
+            thumbBytes,
+            width: widget.diameter,
+            height: widget.diameter,
+            fit: BoxFit.cover,
+            gaplessPlayback: true,
+            errorBuilder: (context, error, stackTrace) => widget.fallback,
+          );
+        } catch (_) {
+          return widget.fallback;
+        }
+      }
       return widget.fallback;
     }
     return VisibilityDetector(
@@ -928,12 +963,32 @@ Future<void> pickAndSetProfileVideo(BuildContext context, WidgetRef ref, ImageSo
     await File(trimmedPath).delete();
   } catch (_) {}
 
+  final thumbnailBase64 = await _generateVideoThumbnailBase64(destPath);
   ref.read(userProfileProvider.notifier).updateVideo(
         path: destPath,
         scale: cropResult.scale,
         offsetX: cropResult.offsetX,
         offsetY: cropResult.offsetY,
+        thumbnailBytesBase64: thumbnailBase64,
       );
+}
+
+// Captures a still image of the video's first frame so it can be shown
+// instantly as the avatar while the real VideoPlayerController is still
+// initializing, instead of flashing the plain initial-letter placeholder.
+Future<String?> _generateVideoThumbnailBase64(String videoPath) async {
+  try {
+    final bytes = await VideoThumbnail.thumbnailData(
+      video: videoPath,
+      imageFormat: ImageFormat.JPEG,
+      maxWidth: 256,
+      quality: 70,
+    );
+    if (bytes == null) return null;
+    return base64Encode(bytes);
+  } catch (_) {
+    return null;
+  }
 }
 
 class _GalleryMediaPick {
@@ -1007,11 +1062,13 @@ Future<void> pickAndSetProfileMediaFromGallery(BuildContext context, WidgetRef r
       await File(trimmedPath).delete();
     } catch (_) {}
 
+    final thumbnailBase64 = await _generateVideoThumbnailBase64(destPath);
     ref.read(userProfileProvider.notifier).updateVideo(
           path: destPath,
           scale: cropResult.scale,
           offsetX: cropResult.offsetX,
           offsetY: cropResult.offsetY,
+          thumbnailBytesBase64: thumbnailBase64,
         );
   } else {
     Uint8List? rawBytes = pick.bytes;
@@ -3044,6 +3101,7 @@ class HamburgerMorphMenu extends ConsumerWidget {
               videoCropScale: profile.videoCropScale,
               videoCropOffsetX: profile.videoCropOffsetX,
               videoCropOffsetY: profile.videoCropOffsetY,
+              videoThumbnailBytesBase64: profile.videoThumbnailBytesBase64,
               initial: initial,
               radius: 18,
             ),
@@ -3837,6 +3895,7 @@ class ProfilePage extends ConsumerWidget {
                 videoCropScale: profile.videoCropScale,
                 videoCropOffsetX: profile.videoCropOffsetX,
                 videoCropOffsetY: profile.videoCropOffsetY,
+                videoThumbnailBytesBase64: profile.videoThumbnailBytesBase64,
                 initial: initial,
                 radius: 31,
               ),
