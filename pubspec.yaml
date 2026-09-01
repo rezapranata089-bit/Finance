@@ -24,6 +24,8 @@ dependencies:
   flutter_staggered_animations: ^1.1.1
   visibility_detector: ^0.4.0+2
   liquid_glass_widgets: ^1.2.0
+  telegram_image_cropper:
+    path: packages/telegram_image_cropper
 
 dev_dependencies:
   flutter_test:
