@@ -606,6 +606,54 @@ class ProfileAvatar extends StatelessWidget {
   }
 }
 
+class ProfileVideoManager {
+  static VideoPlayerController? controller;
+  static String? currentPath;
+  static int refCount = 0;
+  static bool isPreviewActive = false;
+
+  static Future<VideoPlayerController?> acquire(String path) async {
+    if (currentPath == path && controller != null) {
+      refCount++;
+      return controller;
+    }
+    
+    if (controller != null) {
+      await controller!.dispose();
+      controller = null;
+    }
+    
+    final file = File(path);
+    if (!file.existsSync()) return null;
+    
+    final newController = VideoPlayerController.file(file);
+    try {
+      await newController.initialize();
+      await newController.setLooping(true);
+      await newController.setVolume(0);
+      newController.play();
+      controller = newController;
+      currentPath = path;
+      refCount = 1;
+      return controller;
+    } catch (_) {
+      newController.dispose();
+      return null;
+    }
+  }
+
+  static void release() {
+    if (refCount > 0) {
+      refCount--;
+      if (refCount == 0) {
+        controller?.dispose();
+        controller = null;
+        currentPath = null;
+      }
+    }
+  }
+}
+
 class _ProfileVideoAvatar extends StatefulWidget {
   final String videoPath;
   final double diameter;
@@ -641,25 +689,15 @@ class _ProfileVideoAvatarState extends State<_ProfileVideoAvatar> {
   }
 
   Future<void> _setup() async {
-    final file = File(widget.videoPath);
-    if (!await file.exists()) {
-      if (mounted) setState(() => _failed = true);
+    final c = await ProfileVideoManager.acquire(widget.videoPath);
+    if (!mounted) {
+      ProfileVideoManager.release();
       return;
     }
-    final controller = VideoPlayerController.file(file);
-    try {
-      await controller.initialize();
-      await controller.setLooping(true);
-      await controller.setVolume(0);
-      if (!mounted) {
-        controller.dispose();
-        return;
-      }
-      setState(() => _controller = controller);
-      controller.play();
-    } catch (_) {
-      controller.dispose();
-      if (mounted) setState(() => _failed = true);
+    if (c == null) {
+      setState(() => _failed = true);
+    } else {
+      setState(() => _controller = c);
     }
   }
 
@@ -669,7 +707,7 @@ class _ProfileVideoAvatarState extends State<_ProfileVideoAvatar> {
     final visible = info.visibleFraction > 0.04;
     if (visible == _isVisible) return;
     _isVisible = visible;
-    if (visible) {
+    if (visible || ProfileVideoManager.isPreviewActive) {
       controller.play();
     } else {
       controller.pause();
@@ -678,7 +716,7 @@ class _ProfileVideoAvatarState extends State<_ProfileVideoAvatar> {
 
   @override
   void dispose() {
-    _controller?.dispose();
+    ProfileVideoManager.release();
     super.dispose();
   }
 
@@ -4706,6 +4744,7 @@ class _ProfileMediaViewerPageState extends ConsumerState<ProfileMediaViewerPage>
   @override
   void initState() {
     super.initState();
+    ProfileVideoManager.isPreviewActive = true;
     final profile = ref.read(userProfileProvider);
     if (!kIsWeb && profile.videoPath != null) {
       _setupVideo(profile.videoPath!);
@@ -4713,25 +4752,17 @@ class _ProfileMediaViewerPageState extends ConsumerState<ProfileMediaViewerPage>
   }
 
   Future<void> _setupVideo(String path) async {
-    final file = File(path);
-    if (!await file.exists()) {
-      if (mounted) setState(() => _videoFailed = true);
+    final c = await ProfileVideoManager.acquire(path);
+    if (!mounted) {
+      ProfileVideoManager.release();
       return;
     }
-    final controller = VideoPlayerController.file(file);
-    try {
-      await controller.initialize();
-      await controller.setLooping(true);
-      await controller.setVolume(_muted ? 0 : 1);
-      if (!mounted) {
-        controller.dispose();
-        return;
-      }
-      setState(() => _controller = controller);
-      controller.play();
-    } catch (_) {
-      controller.dispose();
-      if (mounted) setState(() => _videoFailed = true);
+    if (c == null) {
+      setState(() => _videoFailed = true);
+    } else {
+      c.setVolume(_muted ? 0 : 1);
+      c.play();
+      setState(() => _controller = c);
     }
   }
 
@@ -4742,7 +4773,9 @@ class _ProfileMediaViewerPageState extends ConsumerState<ProfileMediaViewerPage>
 
   @override
   void dispose() {
-    _controller?.dispose();
+    ProfileVideoManager.isPreviewActive = false;
+    _controller?.setVolume(0);
+    ProfileVideoManager.release();
     super.dispose();
   }
 
