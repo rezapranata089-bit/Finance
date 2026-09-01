@@ -4301,7 +4301,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         child: Opacity(
                           opacity: expandedCaptionOpacity,
                           child: Container(
-                            padding: const EdgeInsets.fromLTRB(20, 28, 20, 16),
+                            padding: const EdgeInsets.fromLTRB(20, 14, 20, 20),
                             decoration: const BoxDecoration(
                               gradient: LinearGradient(
                                 begin: Alignment.topCenter,
