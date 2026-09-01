@@ -3967,15 +3967,16 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   bool _handleScrollNotification(ScrollNotification notification) {
     if (notification is ScrollEndNotification) {
       final offset = _scrollController.offset;
-      // Apabila gesture dilepas di tengah-tengah area ekspansi, snap ke batas terdekat (berjalan sendiri)
+      // Apabila gesture dilepas di tengah-tengah area ekspansi, snap ke batas terdekat (berjalan otomatis)
       if (offset > 0 && offset < _maxExpandScroll) {
-        final target = offset > (_maxExpandScroll * 0.5) ? _maxExpandScroll : 0.0;
+        // Cukup ditarik ~45% untuk membuatnya snap terbuka penuh
+        final target = offset > (_maxExpandScroll * 0.45) ? _maxExpandScroll : 0.0;
         Future.microtask(() {
           if (mounted && _scrollController.hasClients) {
             _scrollController.animateTo(
               target,
-              duration: const Duration(milliseconds: 350),
-              curve: Curves.easeOutCubic,
+              duration: const Duration(milliseconds: 400),
+              curve: Curves.easeOutQuart,
             );
           }
         });
@@ -3998,15 +3999,15 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     double extraScale = 1.0;
 
     if (_scrollOffset > _maxExpandScroll) {
-      // User scroll list ke atas -> Header sembunyi perlahan di belakang sheet
+      // User scroll list ke atas -> Header IKUT NAIK sepenuhnya (seperti bagian dari scroll)
       t = 0.0;
-      parallaxOffset = (_scrollOffset - _maxExpandScroll) * 0.4;
+      parallaxOffset = (_scrollOffset - _maxExpandScroll) * 1.0; // Bergerak seragam dengan scroll sheet
     } else if (_scrollOffset >= 0) {
       // User berada di area ekspansi (0.0 sampai _maxExpandScroll)
       t = 1.0 - (_scrollOffset / _maxExpandScroll);
       parallaxOffset = 0.0;
     } else {
-      // User overscroll / pull berlebih ke bawah -> Scale membesar
+      // User overscroll / pull berlebih ke bawah -> Scale membesar elastis
       t = 1.0;
       parallaxOffset = 0.0; 
       extraScale = 1.0 + (-_scrollOffset / 300);
@@ -4024,9 +4025,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final double chevronOpacity = ((t - 0.5) / 0.5).clamp(0.0, 1.0);
     final int scrimAlpha = (0x99 * t).round();
 
-    // Fade halus tambahan saat header perlahan menghilang tertutup sheet (parallax)
-    final double identityFade = (1 - ((_scrollOffset - _maxExpandScroll).clamp(0.0, double.infinity) / 150)).clamp(0.0, 1.0);
-
     final isDark = context.isDark;
     final primary = Theme.of(context).colorScheme.primary;
 
@@ -4034,8 +4032,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       body: Stack(
         children: [
           // ---- LAYER 1: Background Media & Profile Identity (Paling Bawah) ----
-          // Translasi akan membuatnya bergerak ke atas secara parallax 
-          // saat ScrollView (sheet) bergerak lebih cepat melaluinya
+          // Translasi akan membuatnya bergerak ke atas secara seragam dengan scroll
           Positioned(
             top: 0, left: 0, right: 0, bottom: 0,
             child: Transform.translate(
@@ -4099,7 +4096,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       width: avatarWidth,
                       height: avatarHeight,
                       child: Opacity(
-                        opacity: badgeOpacity * identityFade,
+                        opacity: badgeOpacity,
                         child: Stack(
                           children: [
                             Positioned(
@@ -4130,7 +4127,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       height: 68.0,
                       child: IgnorePointer(
                         child: Opacity(
-                          opacity: compactRowOpacity * identityFade,
+                          opacity: compactRowOpacity,
                           child: Row(
                             children: [
                               Flexible(
@@ -4245,10 +4242,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(Strings.t(lang, 'profile_title'), style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 28, color: context.textPrimary)),
-                        const SizedBox(height: 4),
-                        Text(Strings.t(lang, 'manage_account'), style: TextStyle(color: context.textMuted)),
-                        const SizedBox(height: 22),
                         SectionTitle(Strings.t(lang, 'section_finance')),
                         const SizedBox(height: 10),
                         const SettingList(items: [
@@ -4340,13 +4333,13 @@ class _ProfileHeaderMediaContent extends StatelessWidget {
               scale: profile.videoCropScale,
               offsetX: profile.videoCropOffsetX,
               offsetY: profile.videoCropOffsetY,
-              fallback: _photoContent(context, refSize),
+              fallback: SizedBox.expand(child: _photoContent(context, refSize)),
               thumbnailBytesBase64: profile.videoThumbnailBytesBase64,
             ),
           ),
         );
       }
-      return _photoContent(context, refSize);
+      return SizedBox.expand(child: _photoContent(context, refSize));
     });
   }
 }
