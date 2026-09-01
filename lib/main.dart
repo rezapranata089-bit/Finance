@@ -1747,6 +1747,35 @@ class GlassPageRoute<T> extends MaterialPageRoute<T> {
   GlassPageRoute({required super.builder});
 }
 
+// Route khusus untuk membuka preview media profil (foto/video) secara
+// fullscreen. Sengaja TIDAK memakai transisi slide bawaan MaterialPageRoute
+// (GlassPageRoute) karena itu akan "bertabrakan" dengan animasi Hero flight
+// bertag 'profile-header-media' — dua gerakan berbeda yang berjalan
+// bersamaan (halaman slide naik + hero berpindah posisi/ukuran) terlihat
+// patah-patah, bukan menyatu. Di sini halaman baru hanya di-fade in/out;
+// perpindahan posisi & ukuran media sepenuhnya diserahkan ke Hero flight,
+// sehingga transisi dari avatar yang sedang membesar (saat ditarik ke
+// bawah) menuju preview penuh terasa satu gerakan yang mulus & seamless.
+class MediaPreviewRoute<T> extends PageRouteBuilder<T> {
+  final WidgetBuilder builder;
+  MediaPreviewRoute({required this.builder})
+      : super(
+          opaque: false,
+          barrierColor: Colors.transparent,
+          transitionDuration: const Duration(milliseconds: 380),
+          reverseTransitionDuration: const Duration(milliseconds: 300),
+          pageBuilder: (context, animation, secondaryAnimation) => builder(context),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            final curved = CurvedAnimation(
+              parent: animation,
+              curve: Curves.easeOutCubic,
+              reverseCurve: Curves.easeInCubic,
+            );
+            return FadeTransition(opacity: curved, child: child);
+          },
+        );
+}
+
 void showGlassSnackBar(BuildContext context, String message, {IconData? icon}) {
   ScaffoldMessenger.of(context).hideCurrentSnackBar();
   ScaffoldMessenger.of(context).showSnackBar(
@@ -4040,7 +4069,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         final profile = ref.read(userProfileProvider);
         final hasMedia = profile.hasPhoto || profile.hasVideo;
         if (hasMedia && mounted) {
-          Navigator.push(context, GlassPageRoute(builder: (_) => const ProfileMediaViewerPage()));
+          Navigator.push(context, MediaPreviewRoute(builder: (_) => const ProfileMediaViewerPage()));
         }
         return false;
       }
@@ -4143,7 +4172,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         child: GestureDetector(
                           onTap: () {
                             if (!hasMedia) return;
-                            Navigator.push(context, GlassPageRoute(builder: (_) => const ProfileMediaViewerPage()));
+                            Navigator.push(context, MediaPreviewRoute(builder: (_) => const ProfileMediaViewerPage()));
                           },
                           child: Hero(
                             tag: 'profile-header-media',
