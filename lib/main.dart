@@ -1170,6 +1170,7 @@ const appPalettes = [
 
 final tabProvider = StateProvider<int>((ref) => 0);
 final selectedCardProvider = StateProvider<int>((ref) => -1);
+final profilePreviewProgressProvider = StateProvider<double>((ref) => 0.0);
 
 enum CardType { normal, piutang }
 
@@ -2740,32 +2741,44 @@ class _FinanceShellState extends ConsumerState<FinanceShell> with SingleTickerPr
           children: FinanceShell.pages.map((p) => RepaintBoundary(child: p)).toList(),
         ),
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: context.cardColor,
-          border: Border(top: BorderSide(color: context.borderColor)),
-        ),
-        padding: const EdgeInsets.only(top: 12, bottom: 20),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            _navItem(context, 0, SolarIconsOutline.home, SolarIconsBold.home, Strings.t(lang, 'nav_home'), tab, ref),
-            _navItem(context, 1, SolarIconsOutline.chart, SolarIconsBold.chart, Strings.t(lang, 'nav_statistic'), tab, ref),
-            GestureDetector(
-              onTap: () {},
+      bottomNavigationBar: Consumer(
+        builder: (context, ref, child) {
+          final previewProgress = ref.watch(profilePreviewProgressProvider);
+          final opacity = (1.0 - previewProgress).clamp(0.0, 1.0);
+          return IgnorePointer(
+            ignoring: opacity == 0.0,
+            child: Opacity(
+              opacity: opacity,
               child: Container(
-                width: 48, height: 48,
                 decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.secondary,
-                  borderRadius: BorderRadius.circular(16),
+                  color: context.cardColor,
+                  border: Border(top: BorderSide(color: context.borderColor)),
                 ),
-                child: const Icon(SolarIconsOutline.scanner, color: Colors.black),
+                padding: const EdgeInsets.only(top: 12, bottom: 20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _navItem(context, 0, SolarIconsOutline.home, SolarIconsBold.home, Strings.t(lang, 'nav_home'), tab, ref),
+                    _navItem(context, 1, SolarIconsOutline.chart, SolarIconsBold.chart, Strings.t(lang, 'nav_statistic'), tab, ref),
+                    GestureDetector(
+                      onTap: () {},
+                      child: Container(
+                        width: 48, height: 48,
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.secondary,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Icon(SolarIconsOutline.scanner, color: Colors.black),
+                      ),
+                    ),
+                    _navItem(context, 2, SolarIconsOutline.billList, SolarIconsBold.billList, Strings.t(lang, 'nav_card'), tab, ref),
+                    _navItem(context, 3, SolarIconsOutline.user, SolarIconsBold.user, Strings.t(lang, 'nav_profile'), tab, ref, onLongPress: () => toggleDummyData(context, ref)),
+                  ],
+                ),
               ),
             ),
-            _navItem(context, 2, SolarIconsOutline.billList, SolarIconsBold.billList, Strings.t(lang, 'nav_card'), tab, ref),
-            _navItem(context, 3, SolarIconsOutline.user, SolarIconsBold.user, Strings.t(lang, 'nav_profile'), tab, ref, onLongPress: () => toggleDummyData(context, ref)),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -2828,6 +2841,11 @@ class _HomePageState extends ConsumerState<HomePage> {
   @override
   void dispose() {
     _scrollController.dispose();
+    Future.microtask(() {
+      try {
+        ref.read(profilePreviewProgressProvider.notifier).state = 0.0;
+      } catch (_) {}
+    });
     super.dispose();
   }
 
@@ -4080,8 +4098,17 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       
       _scrollController.addListener(() {
         if (!mounted) return;
+        
+        final newOffset = _scrollController.offset;
         setState(() {
-          _scrollOffset = _scrollController.offset;
+          _scrollOffset = newOffset;
+        });
+        
+        final progress = newOffset < 0 ? (-newOffset / 100.0).clamp(0.0, 1.0) : 0.0;
+        Future.microtask(() {
+          if (mounted) {
+            ref.read(profilePreviewProgressProvider.notifier).state = progress;
+          }
         });
 
         if (_scrollOffset <= -98.0 && !_previewPushed) {
@@ -4105,6 +4132,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   @override
   void dispose() {
     _scrollController.dispose();
+    Future.microtask(() {
+      try {
+        ref.read(profilePreviewProgressProvider.notifier).state = 0.0;
+      } catch (_) {}
+    });
     super.dispose();
   }
 
