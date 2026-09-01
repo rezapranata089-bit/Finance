@@ -4253,14 +4253,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         child: Hero(
                           tag: 'profile-header-media',
                           flightShuttleBuilder: (flightContext, animation, flightDirection, fromHeroContext, toHeroContext) {
-                            return AnimatedBuilder(
-                              animation: animation,
-                              builder: (context, child) {
-                                return ClipRRect(
-                                  borderRadius: BorderRadius.zero,
-                                  child: toHeroContext.widget,
-                                );
-                              },
+                            return ClipRRect(
+                              borderRadius: BorderRadius.zero,
+                              child: _ProfileHeaderMediaContent(profile: profile, initial: initial),
                             );
                           },
                           child: SizedBox.expand(
@@ -4668,7 +4663,7 @@ class _ProfileHeaderMediaContent extends StatelessWidget {
       }
     }
     if (profile.photoPath == null) return _fallback(context, refSize);
-    return Image.file(File(profile.photoPath!), fit: BoxFit.cover, errorBuilder: (c, e, s) => _fallback(context, refSize));
+    return Image.file(File(profile.photoPath!), fit: BoxFit.cover, gaplessPlayback: true, errorBuilder: (c, e, s) => _fallback(context, refSize));
   }
 
   @override
@@ -4752,23 +4747,41 @@ class _ProfileMediaViewerPageState extends ConsumerState<ProfileMediaViewerPage>
   }
 
   Widget _staticFallback(UserProfile profile) {
+    final width = MediaQuery.sizeOf(context).width;
+    Widget child;
     if (kIsWeb && profile.photoBytesBase64 != null) {
       try {
-        return InteractiveViewer(
-          maxScale: 4,
-          child: Image.memory(base64Decode(profile.photoBytesBase64!), fit: BoxFit.contain),
-        );
+        child = Image.memory(base64Decode(profile.photoBytesBase64!), fit: BoxFit.contain, gaplessPlayback: true);
       } catch (_) {
-        return const SizedBox.shrink();
+        child = _textFallback(profile, width);
       }
+    } else if (profile.photoPath != null) {
+      child = Image.file(File(profile.photoPath!), fit: BoxFit.contain, gaplessPlayback: true);
+    } else if (profile.videoPath != null && profile.videoThumbnailBytesBase64 != null) {
+      try {
+        child = Image.memory(base64Decode(profile.videoThumbnailBytesBase64!), fit: BoxFit.contain, gaplessPlayback: true);
+      } catch (_) {
+        child = _textFallback(profile, width);
+      }
+    } else {
+      child = _textFallback(profile, width);
     }
-    if (profile.photoPath != null) {
-      return InteractiveViewer(
-        maxScale: 4,
-        child: Image.file(File(profile.photoPath!), fit: BoxFit.contain),
-      );
-    }
-    return const SizedBox.shrink();
+    
+    return InteractiveViewer(
+      maxScale: 4,
+      child: child,
+    );
+  }
+
+  Widget _textFallback(UserProfile profile, double width) {
+    return Container(
+      color: Theme.of(context).colorScheme.primary,
+      alignment: Alignment.center,
+      child: Text(
+        profile.name.isNotEmpty ? profile.name.substring(0, 1).toUpperCase() : '?',
+        style: TextStyle(color: Colors.white, fontSize: width * 0.26, fontWeight: FontWeight.bold),
+      ),
+    );
   }
 
   @override
@@ -4804,12 +4817,21 @@ class _ProfileMediaViewerPageState extends ConsumerState<ProfileMediaViewerPage>
                     child: isVideo && !_videoFailed
                         ? (_controller != null && _controller!.value.isInitialized
                             ? ClipRect(
-                                child: FittedBox(
-                                  fit: BoxFit.cover,
-                                  child: SizedBox(
-                                    width: _controller!.value.size.width,
-                                    height: _controller!.value.size.height,
-                                    child: VideoPlayer(_controller!),
+                                child: InteractiveViewer(
+                                  maxScale: 4,
+                                  child: Transform.translate(
+                                    offset: Offset(profile.videoCropOffsetX * MediaQuery.sizeOf(context).width, profile.videoCropOffsetY * MediaQuery.sizeOf(context).width),
+                                    child: Transform.scale(
+                                      scale: max(profile.videoCropScale, 1.0 + 2.0 * (profile.videoCropOffsetX.abs() + profile.videoCropOffsetY.abs())),
+                                      child: FittedBox(
+                                        fit: BoxFit.cover,
+                                        child: SizedBox(
+                                          width: _controller!.value.size.width,
+                                          height: _controller!.value.size.height,
+                                          child: VideoPlayer(_controller!),
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ),
                               )
