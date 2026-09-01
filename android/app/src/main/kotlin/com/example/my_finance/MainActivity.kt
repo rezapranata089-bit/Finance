@@ -1,6 +1,7 @@
 package com.example.my_finance
 
 import android.app.Activity
+import android.content.ComponentName
 import android.content.Intent
 import android.net.Uri
 import androidx.annotation.NonNull
@@ -25,6 +26,20 @@ class MainActivity : FlutterActivity() {
                     addCategory(Intent.CATEGORY_OPENABLE)
                 }
                 val chooser = Intent.createChooser(intent, "Pilih Foto Profil")
+
+                // Android Photo Picker (styled like Google Photos) intercepts
+                // ACTION_GET_CONTENT for image/* on Android 11+/13+. Excluding
+                // its known component names forces the system to fall back to
+                // a normal chooser listing other apps (real gallery apps,
+                // file managers, the actual Google Photos app, etc.).
+                val excludedComponents = arrayOf(
+                    ComponentName("com.google.android.providers.media.module", "com.android.providers.media.photopicker.PhotoPickerActivity"),
+                    ComponentName("com.android.providers.media.module", "com.android.providers.media.photopicker.PhotoPickerActivity"),
+                    ComponentName("com.google.android.providers.media.module", "com.android.providers.media.photopicker.PickerFragmentActivity"),
+                    ComponentName("com.android.providers.media.module", "com.android.providers.media.photopicker.PickerFragmentActivity")
+                )
+                chooser.putExtra(Intent.EXTRA_EXCLUDE_COMPONENTS, excludedComponents)
+
                 startActivityForResult(chooser, pickImageRequestCode)
             } else {
                 result.notImplemented()
