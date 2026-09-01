@@ -23,6 +23,7 @@ import 'package:solar_icons/solar_icons.dart';
 import 'package:telegram_image_cropper/telegram_image_cropper.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_trimmer/video_trimmer.dart';
+import 'package:get_thumbnail_video/index.dart';
 import 'package:get_thumbnail_video/video_thumbnail.dart';
 
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
