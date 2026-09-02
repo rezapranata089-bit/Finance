@@ -4219,8 +4219,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   // sementara yang kembali ke 0 saat gesture dilepas (lihat
   // _HeaderSnapScrollPhysics.createBallisticSimulation).
   static const double _rubberMaxRawOffset = 70.0;
-  static const double _mediaRubberMaxExtraScale = 0.06;
+  static const double _mediaRubberMaxExtraScale = 0.10;
   static const double _sheetRubberMaxOffsetPx = 8.0;
+  // Buffer tinggi ekstra di bawah sheet agar saat sheet digeser ke atas
+  // (koreksi rubber di Fase 2) tidak ada celah kosong yang muncul di dekat
+  // bottom nav — buffer ini tetap ter-clip oleh Stack saat posisi normal.
+  static const double _sheetBottomOverflowBuffer = 100.0;
 
   @override
   void didChangeDependencies() {
@@ -4661,7 +4665,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           // FASE 2 rubber: Transform.translate memberi sedikit pergeseran
           // vertikal elastis (sheetRubberOffsetPx), TIDAK mengubah urutan
           // layer — Sheet tetap selalu di depan Media.
-          Transform.translate(
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            // Extra height di bawah supaya translate ke atas saat rubber
+            // tidak membuka celah kosong dekat bottom nav.
+            bottom: -_sheetBottomOverflowBuffer,
+            child: Transform.translate(
             offset: Offset(0, sheetScrollPinCorrection + sheetRubberOffsetPx),
             child: Opacity(
             opacity: sheetOpacity,
@@ -4738,6 +4749,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 ),
               ],
             ),
+          ),
           ),
           ),
           ),
