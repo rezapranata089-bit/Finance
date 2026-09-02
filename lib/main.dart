@@ -4365,14 +4365,24 @@ class _HeaderSnapScrollPhysics extends ScrollPhysics {
     // alih di-freeze keras di 0, beri sedikit ruang overscroll elastis
     // (rubber) hingga maxTopRubberOffset; resistance-nya sendiri diberikan
     // lewat applyPhysicsToUserOffset di bawah, mirip pola overscroll bawah.
-    if (!allowPreviewEntry()) {
-      final double minPos = -maxTopRubberOffset;
-      if (value < minPos && position.pixels >= minPos) {
-        return value - minPos;
+    if (value <= 0.0) {
+      if (!allowPreviewEntry()) {
+        final double minPos = -maxTopRubberOffset;
+        if (value < minPos && position.pixels >= minPos) {
+          return value - minPos;
+        }
+        if (minPos > position.pixels && position.pixels > value) {
+          return value - position.pixels;
+        }
       }
-      if (minPos > position.pixels && position.pixels > value) {
-        return value - position.pixels;
-      }
+      // PENTING: setelah batas keras rubber di atas, offset negatif (baik
+      // untuk rubber Fase 2 maupun full preview Fase 3) HARUS selalu
+      // dibiarkan bebas (return 0.0 = tanpa correction) di sini, alih-alih
+      // jatuh ke `super`/physics parent (ClampingScrollPhysics). Clamping
+      // akan langsung mengunci pixels di 0 begitu value negatif, yang
+      // mematikan efek scale gambar/video Fase 2 (mediaRubberProgress
+      // selalu 0) sekaligus mematikan gesture full preview Fase 3.
+      return 0.0;
     }
     
     // Batas bawah DIKUNCI KERAS (tanpa efek rubber/pantul sama sekali) —
