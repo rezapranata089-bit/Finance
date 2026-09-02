@@ -2355,6 +2355,7 @@ class Strings {
     'set_username_title': {AppLang.en: 'What should we call you?', AppLang.id: 'Siapa nama Anda?'},
     'set_username_desc': {AppLang.en: 'Enter your name to personalize your experience.', AppLang.id: 'Masukkan nama untuk mempersonalisasi pengalaman Anda.'},
     'finish': {AppLang.en: 'Finish', AppLang.id: 'Selesai'},
+    'profile_picture_required': {AppLang.en: 'Please set a profile picture first', AppLang.id: 'Silakan atur foto profil terlebih dahulu'},
   };
 
   static String t(AppLang lang, String key) => _s[key]?[lang] ?? key;
@@ -2659,7 +2660,24 @@ class MyFinanceApp extends ConsumerWidget {
           ),
         );
       },
-      home: seen ? const FinanceShell() : const OnboardingPage(),
+      home: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 1200),
+        switchInCurve: Curves.easeOutExpo,
+        switchOutCurve: Curves.easeInExpo,
+        transitionBuilder: (child, animation) {
+          return FadeTransition(
+            opacity: animation,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0.0, 0.04),
+                end: Offset.zero,
+              ).animate(animation),
+              child: child,
+            ),
+          );
+        },
+        child: seen ? const FinanceShell(key: ValueKey('shell')) : const OnboardingPage(key: ValueKey('onboarding')),
+      ),
     );
   }
 }
@@ -2674,6 +2692,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   late final PageController _pageController = PageController();
   final _nameCtrl = TextEditingController();
   final _nameShakeKey = GlobalKey<ShakeFieldState>();
+  final _avatarShakeKey = GlobalKey<ShakeFieldState>();
   int _currentPage = 0;
   String? _nameError;
 
@@ -2692,8 +2711,17 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
 
   void _finish() {
     final name = _nameCtrl.text.trim();
+    final profile = ref.read(userProfileProvider);
+    final lang = ref.read(langProvider);
+
+    if (!profile.hasPhoto && !profile.hasVideo) {
+      _avatarShakeKey.currentState?.shake();
+      showGlassSnackBar(context, Strings.t(lang, 'profile_picture_required'), icon: Icons.warning_amber_rounded);
+      return;
+    }
+
     if (name.isEmpty) {
-      setState(() => _nameError = Strings.t(ref.read(langProvider), 'field_required'));
+      setState(() => _nameError = Strings.t(lang, 'field_required'));
       _nameShakeKey.currentState?.shake();
       Future.delayed(const Duration(milliseconds: 3000), () {
         if (mounted) setState(() => _nameError = null);
@@ -2721,7 +2749,25 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('MY FINANCE', style: TextStyle(fontFamily: 'Playfair Display', color: colors.primary, fontWeight: FontWeight.w900, letterSpacing: 2, fontSize: 16)),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: isDark ? colors.primary.withOpacity(0.15) : colors.primary.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: colors.primary.withOpacity(0.2)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(SolarIconsBold.wallet, size: 16, color: colors.primary),
+                        const SizedBox(width: 8),
+                        Text(
+                          'MY FINANCE',
+                          style: TextStyle(fontFamily: 'Playfair Display', color: colors.primary, fontWeight: FontWeight.w900, letterSpacing: 1.5, fontSize: 14),
+                        ),
+                      ],
+                    ),
+                  ),
                   AnimatedOpacity(
                     opacity: _currentPage < 3 ? 1.0 : 0.0,
                     duration: const Duration(milliseconds: 300),
@@ -2850,10 +2896,12 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
             animate: true,
             stagger: true,
             child: Center(
-              child: GestureDetector(
-                onTap: () => showProfilePhotoOptions(context, ref),
-                child: Stack(
-                  alignment: Alignment.bottomRight,
+              child: ShakeField(
+                key: _avatarShakeKey,
+                child: GestureDetector(
+                  onTap: () => showProfilePhotoOptions(context, ref),
+                  child: Stack(
+                    alignment: Alignment.bottomRight,
                   children: [
                     ProfileAvatar(
                       photoPath: profile.photoPath,
@@ -2868,16 +2916,17 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
                       initial: initial,
                       radius: 64,
                     ),
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: colors.secondary,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: context.cardColor, width: 3),
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: colors.secondary,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: context.cardColor, width: 3),
+                        ),
+                        child: const Icon(Icons.camera_alt_rounded, size: 20, color: Colors.black),
                       ),
-                      child: const Icon(Icons.camera_alt_rounded, size: 20, color: Colors.black),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
