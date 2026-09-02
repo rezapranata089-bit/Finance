@@ -4035,7 +4035,7 @@ class _HeaderSnapScrollPhysics extends ScrollPhysics {
     required this.isLocked,
     required this.hasMedia,
     required this.allowPreviewEntry,
-    this.maxBottomOverscroll = 18.0,
+    this.maxBottomOverscroll = 40.0,
     this.maxTopRubberOffset = 70.0,
     super.parent,
   });
@@ -4634,6 +4634,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 hasMedia: () => ref.read(userProfileProvider).hasPhoto || ref.read(userProfileProvider).hasVideo,
                 allowPreviewEntry: () => _gestureAllowsPreviewEntry,
                 maxTopRubberOffset: _rubberMaxRawOffset,
+                maxBottomOverscroll: 40.0,
                 parent: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
               ),
               slivers: [
