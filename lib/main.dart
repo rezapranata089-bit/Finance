@@ -667,6 +667,15 @@ class _ProfileVideoAvatar extends StatefulWidget {
   final double offsetY;
   final Widget fallback;
   final String? thumbnailBytesBase64;
+  // Dipakai HANYA untuk widget sementara yang dirender oleh Hero
+  // flightShuttleBuilder selama animasi transisi (~380ms). Widget ini TIDAK
+  // boleh ikut serta dalam ref-counting ProfileVideoManager maupun mengubah
+  // status play/pause controller yang dipakai bersama header & preview,
+  // karena VisibilityDetector-nya bisa sempat melaporkan visibleFraction
+  // rendah saat posisinya berpindah/di-clip di tengah animasi flight —
+  // itulah yang sebelumnya membuat video controller utama ikut ter-pause
+  // dan tidak melanjutkan setelah keluar dari preview full.
+  final bool isTransient;
   const _ProfileVideoAvatar({
     required this.videoPath,
     this.version = 0,
@@ -676,6 +685,36 @@ class _ProfileVideoAvatar extends StatefulWidget {
     required this.offsetY,
     required this.fallback,
     this.thumbnailBytesBase64,
+    this.isTransient = false,
+  });
+class _ProfileVideoAvatar extends StatefulWidget {
+  final String videoPath;
+  final int version;
+  final double diameter;
+  final double scale;
+  final double offsetX;
+  final double offsetY;
+  final Widget fallback;
+  final String? thumbnailBytesBase64;
+  // Dipakai HANYA untuk widget sementara yang dirender oleh Hero
+  // flightShuttleBuilder selama animasi transisi (~380ms). Widget ini TIDAK
+  // boleh ikut serta dalam ref-counting ProfileVideoManager maupun mengubah
+  // status play/pause controller yang dipakai bersama header & preview,
+  // karena VisibilityDetector-nya bisa sempat melaporkan visibleFraction
+  // rendah saat posisinya berpindah/di-clip di tengah animasi flight —
+  // itulah yang sebelumnya membuat video controller utama ikut ter-pause
+  // dan tidak melanjutkan setelah keluar dari preview full.
+  final bool isTransient;
+  const _ProfileVideoAvatar({
+    required this.videoPath,
+    this.version = 0,
+    required this.diameter,
+    required this.scale,
+    required this.offsetX,
+    required this.offsetY,
+    required this.fallback,
+    this.thumbnailBytesBase64,
+    this.isTransient = false,
   });
 
   @override
@@ -697,6 +736,7 @@ class _ProfileVideoAvatarState extends State<_ProfileVideoAvatar> {
   @override
   void didUpdateWidget(covariant _ProfileVideoAvatar oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.isTransient) return;
     // Nama berkas video profil selalu sama (profile_video.mp4), jadi
     // perbandingan path saja tidak cukup mendeteksi video baru yang baru
     // menimpa berkas lama. videoVersion dipakai sebagai penanda eksplisit
@@ -711,6 +751,23 @@ class _ProfileVideoAvatarState extends State<_ProfileVideoAvatar> {
   }
 
   Future<void> _setup() async {
+    if (widget.isTransient) {
+      // Hanya "mengintip" controller yang sudah aktif tanpa ikut
+      // acquire/release, supaya tidak mengganggu ref-count controller asli
+      // yang sedang dipakai header/preview.
+      final c = ProfileVideoManager.controller;
+      final matches = c != null &&
+          ProfileVideoManager.currentPath == widget.videoPath &&
+          ProfileVideoManager.currentVersion == widget.version &&
+          c.value.isInitialized;
+      if (!mounted) return;
+      if (matches) {
+        setState(() => _controller = c);
+      } else {
+        setState(() => _failed = true);
+      }
+      return;
+    }
     final c = await ProfileVideoManager.acquire(widget.videoPath, version: widget.version);
     if (!mounted) {
       ProfileVideoManager.release();
@@ -724,6 +781,11 @@ class _ProfileVideoAvatarState extends State<_ProfileVideoAvatar> {
   }
 
   void _handleVisibility(VisibilityInfo info) {
+    // Widget transient (Hero flightShuttleBuilder) tidak boleh pernah
+    // memanggil play()/pause() pada controller bersama: perubahan
+    // visibleFraction selama animasi flight bukan sinyal yang valid untuk
+    // menentukan status pemutaran video header/preview yang sebenarnya.
+    if (widget.isTransient) return;
     final controller = _controller;
     if (controller == null || !controller.value.isInitialized) return;
     final visible = info.visibleFraction > 0.04;
@@ -738,7 +800,9 @@ class _ProfileVideoAvatarState extends State<_ProfileVideoAvatar> {
 
   @override
   void dispose() {
-    ProfileVideoManager.release();
+    if (!widget.isTransient) {
+      ProfileVideoManager.release();
+    }
     super.dispose();
   }
 
@@ -4323,7 +4387,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                           flightShuttleBuilder: (flightContext, animation, flightDirection, fromHeroContext, toHeroContext) {
                             return ClipRRect(
                               borderRadius: BorderRadius.zero,
-                              child: _ProfileHeaderMediaContent(profile: profile, initial: initial),
+                              child: _ProfileHeaderMediaContent(profile: profile, initial: initial, isTransient: true),
                             );
                           },
                           child: SizedBox.expand(
@@ -4709,7 +4773,8 @@ class _HeaderIconButton extends StatelessWidget {
 class _ProfileHeaderMediaContent extends StatelessWidget {
   final UserProfile profile;
   final String initial;
-  const _ProfileHeaderMediaContent({required this.profile, required this.initial});
+  final bool isTransient;
+  const _ProfileHeaderMediaContent({required this.profile, required this.initial, this.isTransient = false});
 
   Widget _fallback(BuildContext context, double refSize) {
     final primary = Theme.of(context).colorScheme.primary;
@@ -4750,6 +4815,7 @@ class _ProfileHeaderMediaContent extends StatelessWidget {
               offsetY: profile.videoCropOffsetY,
               fallback: SizedBox.expand(child: _photoContent(context, refSize)),
               thumbnailBytesBase64: profile.videoThumbnailBytesBase64,
+              isTransient: isTransient,
             ),
           ),
         );
