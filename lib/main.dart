@@ -26,6 +26,7 @@ import 'package:get_thumbnail_video/index.dart';
 import 'package:get_thumbnail_video/video_thumbnail.dart';
 
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
+import 'package:flex_color_scheme/flex_color_scheme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -1264,13 +1265,29 @@ class AppThemePalette {
   const AppThemePalette(this.name, this.primary, this.secondary, this.tertiary);
 }
 
-const appPalettes = [
+const _customPalettes = [
   AppThemePalette('Lavender Glow', Color(0xFF7655D8), Color(0xFFD6F6A6), Color(0xFFF4EDFF)),
   AppThemePalette('Emerald City', Color(0xFF24A148), Color(0xFFD6F6A6), Color(0xFFE7F7EA)),
   AppThemePalette('Rose Petal', Color(0xFFE05270), Color(0xFFFFD8E4), Color(0xFFFBE8ED)),
   AppThemePalette('Ocean Breeze', Color(0xFF2196F3), Color(0xFFFFC107), Color(0xFFE3F2FD)),
   AppThemePalette('Sunset Vibes', Color(0xFFFF9800), Color(0xFF4CAF50), Color(0xFFFFF3E0)),
 ];
+
+// Menambahkan seluruh skema warna bawaan dari package flex_color_scheme agar
+// pilihan warna tema jauh lebih banyak (50+ skema siap pakai) dibanding hanya
+// 5 palet custom di atas. Setiap skema sudah dirancang harmonis oleh
+// flex_color_scheme (primary/secondary/tertiary saling cocok) sehingga aman
+// dipakai langsung sebagai AppThemePalette tanpa perlu diracik manual satu per satu.
+final List<AppThemePalette> _flexPalettes = FlexColor.schemesList
+    .map((scheme) => AppThemePalette(
+          scheme.name,
+          scheme.light.primary,
+          scheme.light.secondary,
+          scheme.light.tertiary ?? scheme.light.secondary,
+        ))
+    .toList();
+
+final List<AppThemePalette> appPalettes = [..._customPalettes, ..._flexPalettes];
 
 final tabProvider = StateProvider<int>((ref) => 0);
 final selectedCardProvider = StateProvider<int>((ref) => -1);

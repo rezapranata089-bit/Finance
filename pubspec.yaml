@@ -11,6 +11,7 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.8
   solar_icons: ^0.1.0
+  flex_color_scheme: ^8.4.0
   flutter_riverpod: ^2.6.1
   sqflite: ^2.4.1
   path: ^1.9.0
