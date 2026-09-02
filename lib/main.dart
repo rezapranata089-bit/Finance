@@ -2721,7 +2721,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('MY FINANCE', style: TextStyle(color: colors.primary, fontWeight: FontWeight.w900, letterSpacing: 2)),
+                  Text('MY FINANCE', style: TextStyle(fontFamily: 'Playfair Display', color: colors.primary, fontWeight: FontWeight.w900, letterSpacing: 2, fontSize: 16)),
                   AnimatedOpacity(
                     opacity: _currentPage < 3 ? 1.0 : 0.0,
                     duration: const Duration(milliseconds: 300),
@@ -2833,29 +2833,52 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   }
 
   Widget _buildUsernameSlide(ColorScheme colors, AppLang lang, bool isDark) {
-    return Padding(
+    final profile = ref.watch(userProfileProvider);
+    final initial = _nameCtrl.text.trim().isNotEmpty ? _nameCtrl.text.trim().substring(0, 1).toUpperCase() : '?';
+
+    return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 28),
+      physics: const BouncingScrollPhysics(),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const SizedBox(height: 20),
           StaggeredReveal(
             key: const ValueKey('slide_img_3'),
             index: 0,
             animate: true,
             stagger: true,
-            child: Container(
-              height: 220, width: double.infinity,
-              decoration: BoxDecoration(
-                color: isDark ? colors.primary.withOpacity(0.16) : colors.tertiary,
-                borderRadius: BorderRadius.circular(40),
-              ),
-              child: Stack(
-                children: [
-                  Positioned(top: 30, right: 30, child: _orb(colors.primary.withOpacity(0.4), 60)),
-                  Positioned(bottom: 20, left: 40, child: _orb(colors.primary, 100)),
-                  const Center(child: Icon(SolarIconsBold.user, size: 80, color: Colors.white)),
-                ],
+            child: Center(
+              child: GestureDetector(
+                onTap: () => showProfilePhotoOptions(context, ref),
+                child: Stack(
+                  alignment: Alignment.bottomRight,
+                  children: [
+                    ProfileAvatar(
+                      photoPath: profile.photoPath,
+                      photoBytesBase64: profile.photoBytesBase64,
+                      photoVersion: profile.photoVersion,
+                      videoPath: profile.videoPath,
+                      videoVersion: profile.videoVersion,
+                      videoCropScale: profile.videoCropScale,
+                      videoCropOffsetX: profile.videoCropOffsetX,
+                      videoCropOffsetY: profile.videoCropOffsetY,
+                      videoThumbnailBytesBase64: profile.videoThumbnailBytesBase64,
+                      initial: initial,
+                      radius: 64,
+                    ),
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: colors.secondary,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: context.cardColor, width: 3),
+                      ),
+                      child: const Icon(Icons.camera_alt_rounded, size: 20, color: Colors.black),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -2885,6 +2908,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
               key: _nameShakeKey,
               child: TextField(
                 controller: _nameCtrl,
+                onChanged: (val) => setState(() {}),
                 decoration: InputDecoration(
                   labelText: Strings.t(lang, 'your_name'),
                   errorText: _nameError,
@@ -2895,6 +2919,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
               ),
             ),
           ),
+          const SizedBox(height: 40),
         ],
       ),
     );
