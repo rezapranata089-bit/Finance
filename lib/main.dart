@@ -5638,50 +5638,88 @@ class ThemeSelectionPage extends ConsumerWidget {
                   Text(Strings.t(lang, 'theme_color'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: context.textFaint, letterSpacing: 1.2)),
                   const SizedBox(height: 12),
                   Container(
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: cardBg,
                       borderRadius: BorderRadius.circular(24),
                       border: Border.all(color: isDark ? Colors.white12 : Colors.grey.shade200),
                     ),
-                    child: Column(
-                      children: appPalettes.asMap().entries.map((entry) {
-                        final index = entry.key;
-                        final palette = entry.value;
+                    child: GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: appPalettes.length,
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 5,
+                        mainAxisSpacing: 18,
+                        crossAxisSpacing: 10,
+                        childAspectRatio: 0.68,
+                      ),
+                      itemBuilder: (context, index) {
+                        final palette = appPalettes[index];
                         final isSelected = currentTheme.name == palette.name;
-                        
-                        return Column(
-                          children: [
-                            ListTile(
-                              onTap: () {
-                                ref.read(themeProvider.notifier).state = palette;
-                                ref.read(prefsProvider).setString('app_theme_palette', palette.name);
-                              },
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-                              leading: Container(
-                                width: 44, height: 44,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  border: Border.all(color: isDark ? Colors.white24 : Colors.black12, width: 0.5),
-                                  gradient: SweepGradient(
-                                    colors: [
-                                      palette.primary, palette.primary,
-                                      palette.secondary, palette.secondary,
-                                      palette.tertiary, palette.tertiary
-                                    ],
-                                    stops: const [0.0, 0.33, 0.33, 0.66, 0.66, 1.0],
+                        return GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTap: () {
+                            ref.read(themeProvider.notifier).state = palette;
+                            ref.read(prefsProvider).setString('app_theme_palette', palette.name);
+                          },
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              AspectRatio(
+                                aspectRatio: 1,
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 200),
+                                  curve: Curves.easeOut,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    gradient: SweepGradient(
+                                      colors: [
+                                        palette.primary, palette.primary,
+                                        palette.secondary, palette.secondary,
+                                        palette.tertiary, palette.tertiary
+                                      ],
+                                      stops: const [0.0, 0.33, 0.33, 0.66, 0.66, 1.0],
+                                    ),
+                                    border: Border.all(
+                                      color: isSelected ? palette.primary : (isDark ? Colors.white24 : Colors.black12),
+                                      width: isSelected ? 2.6 : 0.5,
+                                    ),
+                                    boxShadow: isSelected
+                                        ? [BoxShadow(color: palette.primary.withOpacity(0.35), blurRadius: 10, spreadRadius: 1)]
+                                        : null,
                                   ),
+                                  child: isSelected
+                                      ? Center(
+                                          child: Container(
+                                            width: 20, height: 20,
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color: (isDark ? Colors.black : Colors.white).withOpacity(0.78),
+                                            ),
+                                            child: Icon(SolarIconsBold.checkCircle, color: palette.primary, size: 16),
+                                          ),
+                                        )
+                                      : null,
                                 ),
                               ),
-                              title: Text(palette.name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16)),
-                              trailing: isSelected 
-                                  ? Icon(SolarIconsBold.checkCircle, color: palette.primary, size: 28)
-                                  : Icon(SolarIconsOutline.roundAltArrowRight, color: context.iconMuted, size: 24),
-                            ),
-                            if (index != appPalettes.length - 1)
-                              Divider(height: 1, indent: 80, endIndent: 20, color: isDark ? Colors.white12 : Colors.grey.shade100),
-                          ],
+                              const SizedBox(height: 6),
+                              Text(
+                                palette.name,
+                                textAlign: TextAlign.center,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 9.5,
+                                  height: 1.15,
+                                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                                  color: isSelected ? palette.primary : context.textMuted,
+                                ),
+                              ),
+                            ],
+                          ),
                         );
-                      }).toList(),
+                      },
                     ),
                   ),
                 ],
