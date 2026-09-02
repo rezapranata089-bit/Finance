@@ -7,7 +7,6 @@ import 'dart:ui';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:visibility_detector/visibility_detector.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/physics.dart';
@@ -267,52 +266,6 @@ class ProfilePhotoPick {
 }
 
 const _galleryChooserChannel = MethodChannel('com.example.my_finance/gallery_picker');
-
-Future<ProfilePhotoPick?> pickAndCompressProfilePhoto(ImageSource source) async {
-  if (!kIsWeb && source == ImageSource.gallery && Platform.isAndroid) {
-    final String? pickedPath = await _galleryChooserChannel.invokeMethod<String>('pickImageWithChooser');
-    if (pickedPath == null) return null;
-
-    final dir = await getApplicationDocumentsDirectory();
-    final destPath = '${dir.path}/profile_photo.jpg';
-    final destFile = File(destPath);
-    if (await destFile.exists()) {
-      try {
-        await destFile.delete();
-      } catch (_) {}
-    }
-    await File(pickedPath).copy(destPath);
-    try {
-      await File(pickedPath).delete();
-    } catch (_) {}
-    return ProfilePhotoPick(path: destPath);
-  }
-
-  final picker = ImagePicker();
-  final XFile? picked = await picker.pickImage(
-    source: source,
-    maxWidth: 800,
-    maxHeight: 800,
-    imageQuality: 75,
-  );
-  if (picked == null) return null;
-
-  if (kIsWeb) {
-    final bytes = await picked.readAsBytes();
-    return ProfilePhotoPick(bytes: bytes);
-  }
-
-  final dir = await getApplicationDocumentsDirectory();
-  final destPath = '${dir.path}/profile_photo.jpg';
-  final destFile = File(destPath);
-  if (await destFile.exists()) {
-    try {
-      await destFile.delete();
-    } catch (_) {}
-  }
-  await File(picked.path).copy(destPath);
-  return ProfilePhotoPick(path: destPath);
-}
 
 Future<Uint8List?> _pickRawImageBytes(ImageSource source) async {
   if (!kIsWeb && source == ImageSource.gallery && Platform.isAndroid) {
@@ -1774,7 +1727,6 @@ class CustomCategoriesNotifier extends StateNotifier<List<String>> {
 }
 
 const incomeCategoryKeys = ['cat_income', 'cat_freelance', 'cat_bonus'];
-const expenseCategoryKeys = ['cat_food', 'cat_shopping', 'cat_transport', 'cat_bills', 'cat_other'];
 const allBuiltinCategoryKeys = ['cat_income', 'cat_freelance', 'cat_bonus', 'cat_food', 'cat_shopping', 'cat_transport', 'cat_bills', 'cat_other'];
 
 String? builtinCategoryKeyFor(String enLabel) {
