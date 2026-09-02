@@ -4220,7 +4220,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   // _HeaderSnapScrollPhysics.createBallisticSimulation).
   static const double _rubberMaxRawOffset = 70.0;
   static const double _mediaRubberMaxExtraScale = 0.06;
-  static const double _sheetRubberMaxOffsetPx = 16.0;
+  static const double _sheetRubberMaxOffsetPx = 8.0;
 
   @override
   void didChangeDependencies() {
@@ -4335,6 +4335,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     double previewProgress = 0.0;
     double mediaRubberProgress = 0.0;
     double sheetRubberProgress = 0.0;
+    double sheetScrollPinCorrection = 0.0;
 
     if (_scrollOffset > _maxExpandScroll) {
       t = 0.0;
@@ -4356,6 +4357,13 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       final double rawRubberProgress = (-_scrollOffset / _rubberMaxRawOffset).clamp(0.0, 1.0);
       mediaRubberProgress = rawRubberProgress;
       sheetRubberProgress = rawRubberProgress;
+      // Batalkan pergeseran visual alami CustomScrollView akibat scroll
+      // offset negatif (overscroll rubber) dengan menambahkan koreksi
+      // sebesar offset itu sendiri. Tanpa ini, sheet ikut turun mengikuti
+      // scroll offset (hingga 70px) DI ATAS pergeseran rubber eksplisit
+      // (sheetRubberOffsetPx), sehingga sheet bergerak jauh lebih turun
+      // dibanding bulge media (~11px) dan membuka celah/lepas dari overlap.
+      sheetScrollPinCorrection = _scrollOffset;
     }
 
     final double screenHeight = MediaQuery.sizeOf(context).height;
@@ -4654,7 +4662,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           // vertikal elastis (sheetRubberOffsetPx), TIDAK mengubah urutan
           // layer — Sheet tetap selalu di depan Media.
           Transform.translate(
-            offset: Offset(0, sheetRubberOffsetPx),
+            offset: Offset(0, sheetScrollPinCorrection + sheetRubberOffsetPx),
             child: Opacity(
             opacity: sheetOpacity,
             child: NotificationListener<ScrollNotification>(
