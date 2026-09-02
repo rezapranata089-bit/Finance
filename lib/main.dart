@@ -4074,6 +4074,7 @@ class _HeaderSnapScrollPhysics extends ScrollPhysics {
   final bool Function() hasMedia;
   final bool Function() allowPreviewEntry;
   final double maxBottomOverscroll;
+  final double maxTopRubberOffset;
 
   const _HeaderSnapScrollPhysics({
     required this.boundary,
@@ -4081,6 +4082,7 @@ class _HeaderSnapScrollPhysics extends ScrollPhysics {
     required this.hasMedia,
     required this.allowPreviewEntry,
     this.maxBottomOverscroll = 18.0,
+    this.maxTopRubberOffset = 70.0,
     super.parent,
   });
 
@@ -4092,6 +4094,7 @@ class _HeaderSnapScrollPhysics extends ScrollPhysics {
       hasMedia: hasMedia,
       allowPreviewEntry: allowPreviewEntry,
       maxBottomOverscroll: maxBottomOverscroll,
+      maxTopRubberOffset: maxTopRubberOffset,
       parent: buildParent(ancestor),
     );
   }
@@ -4102,13 +4105,20 @@ class _HeaderSnapScrollPhysics extends ScrollPhysics {
       return value - boundary;
     }
 
-    // Cegah 1 gesture (drag) yang sama melanjutkan dari posisi header yang
-    // sudah full-expand (offset 0) untuk terus menembus ke area preview
-    // (offset negatif). Hanya gesture baru yang MULAI persis di/lewat batas
-    // 0 (menandakan jari sudah dilepas lalu disentuh ulang) yang boleh
-    // masuk ke area preview; lihat allowPreviewEntry & _handleScrollNotification.
-    if (value < 0.0 && !allowPreviewEntry()) {
-      return value;
+    // FASE 2 (EXPANDED + RUBBER): gesture PERTAMA yang diteruskan melewati
+    // batas full-expand (offset 0) TIDAK boleh menembus ke FASE 3 (full
+    // preview) — lihat allowPreviewEntry & _handleScrollNotification. Alih-
+    // alih di-freeze keras di 0, beri sedikit ruang overscroll elastis
+    // (rubber) hingga maxTopRubberOffset; resistance-nya sendiri diberikan
+    // lewat applyPhysicsToUserOffset di bawah, mirip pola overscroll bawah.
+    if (!allowPreviewEntry()) {
+      final double minPos = -maxTopRubberOffset;
+      if (value < minPos && position.pixels >= minPos) {
+        return value - minPos;
+      }
+      if (minPos > position.pixels && position.pixels > value) {
+        return value - position.pixels;
+      }
     }
     
     final maxPos = position.maxScrollExtent + maxBottomOverscroll;
@@ -4130,14 +4140,24 @@ class _HeaderSnapScrollPhysics extends ScrollPhysics {
       final friction = 1.0 - (fraction * fraction);
       return super.applyPhysicsToUserOffset(position, offset) * friction;
     }
+    // FASE 2 rubber: resistance overscroll atas, semakin dalam ditarik
+    // semakin besar hambatannya (mendekati maxTopRubberOffset).
+    if (position.pixels < 0.0 && !allowPreviewEntry()) {
+      final overscroll = -position.pixels;
+      final fraction = (overscroll / maxTopRubberOffset).clamp(0.0, 1.0);
+      final friction = 1.0 - (fraction * fraction);
+      return super.applyPhysicsToUserOffset(position, offset) * friction;
+    }
     return super.applyPhysicsToUserOffset(position, offset);
   }
 
   @override
   Simulation? createBallisticSimulation(ScrollMetrics position, double velocity) {
-    // 1. Pull down to preview snap
+    // 1. Pull down to preview snap (HANYA untuk gesture yang diizinkan masuk
+    // FASE 3 / full preview; selain itu selalu kembali ke EXPANDED (0.0) —
+    // termasuk saat melepas jari di tengah rubber effect FASE 2).
     if (position.pixels < 0.0) {
-      if (hasMedia() && (position.pixels <= -50.0 || (velocity < -500.0 && position.pixels < -15.0))) {
+      if (allowPreviewEntry() && hasMedia() && (position.pixels <= -50.0 || (velocity < -500.0 && position.pixels < -15.0))) {
         return ScrollSpringSimulation(
           spring,
           position.pixels,
@@ -4193,6 +4213,15 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   bool _gestureAllowsPreviewEntry = true;
   bool _previewPushed = false;
 
+  // FASE 2 — EXPANDED + RUBBER EFFECT: state & batasan terpisah dari
+  // mediaExpandProgress/previewProgress. Rubber tidak pernah mengubah
+  // expanded state maupun membuka FULL PREVIEW; hanya feedback fisik
+  // sementara yang kembali ke 0 saat gesture dilepas (lihat
+  // _HeaderSnapScrollPhysics.createBallisticSimulation).
+  static const double _rubberMaxRawOffset = 70.0;
+  static const double _mediaRubberMaxExtraScale = 0.06;
+  static const double _sheetRubberMaxOffsetPx = 16.0;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
@@ -4216,14 +4245,17 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           _scrollOffset = newOffset;
         });
         
-        final progress = newOffset < 0 ? (-newOffset / 100.0).clamp(0.0, 1.0) : 0.0;
+        // previewProgress (scrim & opacity bottom nav) HANYA berlaku untuk
+        // FASE 3 (gesture kedua yang diizinkan masuk preview). Offset
+        // negatif dari FASE 2 (rubber) tidak boleh ikut memicu ini.
+        final progress = (newOffset < 0 && _gestureAllowsPreviewEntry) ? (-newOffset / 100.0).clamp(0.0, 1.0) : 0.0;
         Future.microtask(() {
           if (mounted) {
             ref.read(profilePreviewProgressProvider.notifier).state = progress;
           }
         });
 
-        if (_scrollOffset <= -98.0 && !_previewPushed) {
+        if (_scrollOffset <= -98.0 && !_previewPushed && _gestureAllowsPreviewEntry) {
           final profile = ref.read(userProfileProvider);
           if (profile.hasPhoto || profile.hasVideo) {
             _previewPushed = true;
@@ -4301,6 +4333,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     double t = 1.0;
     double parallaxOffset = 0.0;
     double previewProgress = 0.0;
+    double mediaRubberProgress = 0.0;
+    double sheetRubberProgress = 0.0;
 
     if (_scrollOffset > _maxExpandScroll) {
       t = 0.0;
@@ -4308,10 +4342,20 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     } else if (_scrollOffset >= 0) {
       t = 1.0 - (_scrollOffset / _maxExpandScroll);
       parallaxOffset = 0.0;
-    } else {
+    } else if (_gestureAllowsPreviewEntry) {
+      // FASE 3 — FULL PREVIEW (hanya dari gesture kedua)
       t = 1.0;
       parallaxOffset = 0.0; 
       previewProgress = (-_scrollOffset / 100.0).clamp(0.0, 1.0);
+    } else {
+      // FASE 2 — EXPANDED + RUBBER EFFECT (gesture pertama diteruskan).
+      // mediaExpandProgress (t) TETAP 1.0, rubber disimpan terpisah dan
+      // tidak pernah membuka FULL PREVIEW.
+      t = 1.0;
+      parallaxOffset = 0.0;
+      final double rawRubberProgress = (-_scrollOffset / _rubberMaxRawOffset).clamp(0.0, 1.0);
+      mediaRubberProgress = rawRubberProgress;
+      sheetRubberProgress = rawRubberProgress;
     }
 
     final double screenHeight = MediaQuery.sizeOf(context).height;
@@ -4345,6 +4389,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final double chevronOpacity = (((t - 0.5) / 0.5).clamp(0.0, 1.0)) * (1.0 - previewProgress);
     final int scrimAlpha = (0x99 * t * (1.0 - previewProgress)).round();
     final double sheetOpacity = 1.0 - previewProgress;
+    // FASE 2 rubber: scale media & offset sheet berasal dari
+    // mediaRubberProgress / sheetRubberProgress (lihat blok if/else di
+    // atas), bukan dari t atau previewProgress.
+    final double mediaRubberScale = 1.0 + mediaRubberProgress * _mediaRubberMaxExtraScale;
+    final double sheetRubberOffsetPx = sheetRubberProgress * _sheetRubberMaxOffsetPx;
 
     final isDark = context.isDark;
     final primary = Theme.of(context).colorScheme.primary;
@@ -4369,23 +4418,30 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     left: avatarLeft,
                     width: avatarWidth,
                     height: avatarHeight,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(avatarRadius),
-                      child: GestureDetector(
-                        onTap: () {
-                          if (!hasMedia) return;
-                          Navigator.push(context, MediaPreviewRoute(builder: (_) => const ProfileMediaViewerPage()));
-                        },
-                        child: Hero(
-                          tag: 'profile-header-media',
-                          flightShuttleBuilder: (flightContext, animation, flightDirection, fromHeroContext, toHeroContext) {
-                            return ClipRRect(
-                              borderRadius: BorderRadius.zero,
-                              child: _ProfileHeaderMediaContent(profile: profile, initial: initial, isTransient: true),
-                            );
+                    // FASE 2 rubber: Transform.scale memberi efek "bulge"
+                    // elastis sementara (mediaRubberScale) TANPA mengubah
+                    // avatarWidth/avatarHeight (mediaExpandProgress tetap 1.0).
+                    child: Transform.scale(
+                      scale: mediaRubberScale,
+                      alignment: Alignment.center,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(avatarRadius),
+                        child: GestureDetector(
+                          onTap: () {
+                            if (!hasMedia) return;
+                            Navigator.push(context, MediaPreviewRoute(builder: (_) => const ProfileMediaViewerPage()));
                           },
-                          child: SizedBox.expand(
-                            child: _ProfileHeaderMediaContent(profile: profile, initial: initial),
+                          child: Hero(
+                            tag: 'profile-header-media',
+                            flightShuttleBuilder: (flightContext, animation, flightDirection, fromHeroContext, toHeroContext) {
+                              return ClipRRect(
+                                borderRadius: BorderRadius.zero,
+                                child: _ProfileHeaderMediaContent(profile: profile, initial: initial, isTransient: true),
+                              );
+                            },
+                            child: SizedBox.expand(
+                              child: _ProfileHeaderMediaContent(profile: profile, initial: initial),
+                            ),
                           ),
                         ),
                       ),
@@ -4593,7 +4649,13 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           // ---- LAYER 2: Sheet Surface (Scroll View) (Paling Atas) ----
           // Container dengan warna solid sehingga akan memblok/menutupi 
           // Layer 1 secara natural saat terscroll ke atas
-          Opacity(
+          //
+          // FASE 2 rubber: Transform.translate memberi sedikit pergeseran
+          // vertikal elastis (sheetRubberOffsetPx), TIDAK mengubah urutan
+          // layer — Sheet tetap selalu di depan Media.
+          Transform.translate(
+            offset: Offset(0, sheetRubberOffsetPx),
+            child: Opacity(
             opacity: sheetOpacity,
             child: NotificationListener<ScrollNotification>(
               onNotification: _handleScrollNotification,
@@ -4604,6 +4666,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 isLocked: () => _gestureCrossingLocked,
                 hasMedia: () => ref.read(userProfileProvider).hasPhoto || ref.read(userProfileProvider).hasVideo,
                 allowPreviewEntry: () => _gestureAllowsPreviewEntry,
+                maxTopRubberOffset: _rubberMaxRawOffset,
                 parent: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
               ),
               slivers: [
@@ -4667,6 +4730,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 ),
               ],
             ),
+          ),
           ),
           ),
 
