@@ -4330,7 +4330,6 @@ class _HeaderSnapScrollPhysics extends ScrollPhysics {
   final bool Function() isLocked;
   final bool Function() hasMedia;
   final bool Function() allowPreviewEntry;
-  final double maxBottomOverscroll;
   final double maxTopRubberOffset;
 
   const _HeaderSnapScrollPhysics({
@@ -4338,7 +4337,6 @@ class _HeaderSnapScrollPhysics extends ScrollPhysics {
     required this.isLocked,
     required this.hasMedia,
     required this.allowPreviewEntry,
-    this.maxBottomOverscroll = 40.0,
     this.maxTopRubberOffset = 70.0,
     super.parent,
   });
@@ -4350,7 +4348,6 @@ class _HeaderSnapScrollPhysics extends ScrollPhysics {
       isLocked: isLocked,
       hasMedia: hasMedia,
       allowPreviewEntry: allowPreviewEntry,
-      maxBottomOverscroll: maxBottomOverscroll,
       maxTopRubberOffset: maxTopRubberOffset,
       parent: buildParent(ancestor),
     );
@@ -4378,12 +4375,14 @@ class _HeaderSnapScrollPhysics extends ScrollPhysics {
       }
     }
     
-    final maxPos = position.maxScrollExtent + maxBottomOverscroll;
-    if (maxPos < value && position.pixels <= maxPos) {
+    // Batas bawah DIKUNCI KERAS (tanpa efek rubber/pantul sama sekali) —
+    // berbeda dari batas atas Fase 2 yang sengaja tetap elastis.
+    final maxPos = position.maxScrollExtent;
+    if (maxPos <= position.pixels && position.pixels < value) {
       return value - maxPos;
     }
-    if (maxPos < position.pixels && position.pixels < value) {
-      return value - position.pixels;
+    if (position.pixels < maxPos && maxPos < value) {
+      return value - maxPos;
     }
     
     return super.applyBoundaryConditions(position, value);
@@ -4391,14 +4390,10 @@ class _HeaderSnapScrollPhysics extends ScrollPhysics {
 
   @override
   double applyPhysicsToUserOffset(ScrollMetrics position, double offset) {
-    if (offset < 0.0 && position.pixels > position.maxScrollExtent) {
-      final overscroll = position.pixels - position.maxScrollExtent;
-      final fraction = (overscroll / maxBottomOverscroll).clamp(0.0, 1.0);
-      final friction = 1.0 - (fraction * fraction);
-      return super.applyPhysicsToUserOffset(position, offset) * friction;
-    }
     // FASE 2 rubber: resistance overscroll atas, semakin dalam ditarik
-    // semakin besar hambatannya (mendekati maxTopRubberOffset).
+    // semakin besar hambatannya (mendekati maxTopRubberOffset). Batas
+    // bawah tidak lagi punya efek rubber sama sekali (lihat
+    // applyBoundaryConditions yang mengunci keras di maxScrollExtent).
     if (position.pixels < 0.0 && !allowPreviewEntry()) {
       final overscroll = -position.pixels;
       final fraction = (overscroll / maxTopRubberOffset).clamp(0.0, 1.0);
@@ -4943,8 +4938,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 hasMedia: () => ref.read(userProfileProvider).hasPhoto || ref.read(userProfileProvider).hasVideo,
                 allowPreviewEntry: () => _gestureAllowsPreviewEntry,
                 maxTopRubberOffset: _rubberMaxRawOffset,
-                maxBottomOverscroll: 40.0,
-                parent: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
+                parent: const ClampingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
               ),
               slivers: [
                 SliverToBoxAdapter(
