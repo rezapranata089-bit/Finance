@@ -592,6 +592,7 @@ class ProfileAvatar extends StatelessWidget {
           height: diameter,
           child: _ProfileVideoAvatar(
             videoPath: videoPath!,
+            version: videoVersion,
             diameter: diameter,
             scale: videoCropScale,
             offsetX: videoCropOffsetX,
@@ -609,11 +610,12 @@ class ProfileAvatar extends StatelessWidget {
 class ProfileVideoManager {
   static VideoPlayerController? controller;
   static String? currentPath;
+  static int? currentVersion;
   static int refCount = 0;
   static bool isPreviewActive = false;
 
-  static Future<VideoPlayerController?> acquire(String path) async {
-    if (currentPath == path && controller != null) {
+  static Future<VideoPlayerController?> acquire(String path, {int version = 0}) async {
+    if (currentPath == path && currentVersion == version && controller != null) {
       refCount++;
       return controller;
     }
@@ -634,6 +636,7 @@ class ProfileVideoManager {
       newController.play();
       controller = newController;
       currentPath = path;
+      currentVersion = version;
       refCount = 1;
       return controller;
     } catch (_) {
@@ -649,6 +652,7 @@ class ProfileVideoManager {
         controller?.dispose();
         controller = null;
         currentPath = null;
+        currentVersion = null;
       }
     }
   }
@@ -656,6 +660,7 @@ class ProfileVideoManager {
 
 class _ProfileVideoAvatar extends StatefulWidget {
   final String videoPath;
+  final int version;
   final double diameter;
   final double scale;
   final double offsetX;
@@ -664,6 +669,7 @@ class _ProfileVideoAvatar extends StatefulWidget {
   final String? thumbnailBytesBase64;
   const _ProfileVideoAvatar({
     required this.videoPath,
+    this.version = 0,
     required this.diameter,
     required this.scale,
     required this.offsetX,
@@ -688,8 +694,24 @@ class _ProfileVideoAvatarState extends State<_ProfileVideoAvatar> {
     _setup();
   }
 
+  @override
+  void didUpdateWidget(covariant _ProfileVideoAvatar oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Nama berkas video profil selalu sama (profile_video.mp4), jadi
+    // perbandingan path saja tidak cukup mendeteksi video baru yang baru
+    // menimpa berkas lama. videoVersion dipakai sebagai penanda eksplisit
+    // agar controller lama dilepas & video baru langsung dimuat tanpa perlu
+    // pindah tab untuk memicu rebuild.
+    if (oldWidget.videoPath != widget.videoPath || oldWidget.version != widget.version) {
+      ProfileVideoManager.release();
+      _controller = null;
+      _failed = false;
+      _setup();
+    }
+  }
+
   Future<void> _setup() async {
-    final c = await ProfileVideoManager.acquire(widget.videoPath);
+    final c = await ProfileVideoManager.acquire(widget.videoPath, version: widget.version);
     if (!mounted) {
       ProfileVideoManager.release();
       return;
@@ -4162,6 +4184,13 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               if (mounted && _scrollController.hasClients) {
                 _scrollController.jumpTo(0.0);
               }
+              // Jaga-jaga: pastikan video header kembali melanjutkan
+              // pemutaran (bukan freeze/pause) setelah preview fullscreen
+              // ditutup, tanpa harus pindah tab dulu.
+              final headerController = ProfileVideoManager.controller;
+              if (headerController != null && headerController.value.isInitialized && !headerController.value.isPlaying) {
+                headerController.play();
+              }
             });
           }
         }
@@ -4714,6 +4743,7 @@ class _ProfileHeaderMediaContent extends StatelessWidget {
           child: SizedBox.expand(
             child: _ProfileVideoAvatar(
               videoPath: profile.videoPath!,
+              version: profile.videoVersion,
               diameter: refSize,
               scale: profile.videoCropScale,
               offsetX: profile.videoCropOffsetX,
@@ -4748,12 +4778,12 @@ class _ProfileMediaViewerPageState extends ConsumerState<ProfileMediaViewerPage>
     ProfileVideoManager.isPreviewActive = true;
     final profile = ref.read(userProfileProvider);
     if (!kIsWeb && profile.videoPath != null) {
-      _setupVideo(profile.videoPath!);
+      _setupVideo(profile.videoPath!, profile.videoVersion);
     }
   }
 
-  Future<void> _setupVideo(String path) async {
-    final c = await ProfileVideoManager.acquire(path);
+  Future<void> _setupVideo(String path, int version) async {
+    final c = await ProfileVideoManager.acquire(path, version: version);
     if (!mounted) {
       ProfileVideoManager.release();
       return;
@@ -4775,7 +4805,17 @@ class _ProfileMediaViewerPageState extends ConsumerState<ProfileMediaViewerPage>
   @override
   void dispose() {
     ProfileVideoManager.isPreviewActive = false;
-    _controller?.setVolume(0);
+    final previewController = _controller;
+    if (previewController != null && previewController.value.isInitialized) {
+      previewController.setVolume(0);
+      // Preview sempat menaikkan volume & memutar ulang controller; pastikan
+      // playback tetap berjalan (tidak ter-pause) ketika kembali ke
+      // avatar/header kecil, supaya video tidak "membeku" dan tidak perlu
+      // pindah tab untuk melanjutkan.
+      if (!previewController.value.isPlaying) {
+        previewController.play();
+      }
+    }
     ProfileVideoManager.release();
     super.dispose();
   }
