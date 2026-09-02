@@ -4072,12 +4072,14 @@ class _HeaderSnapScrollPhysics extends ScrollPhysics {
   final double boundary;
   final bool Function() isLocked;
   final bool Function() hasMedia;
+  final bool Function() allowPreviewEntry;
   final double maxBottomOverscroll;
 
   const _HeaderSnapScrollPhysics({
     required this.boundary,
     required this.isLocked,
     required this.hasMedia,
+    required this.allowPreviewEntry,
     this.maxBottomOverscroll = 18.0,
     super.parent,
   });
@@ -4088,6 +4090,7 @@ class _HeaderSnapScrollPhysics extends ScrollPhysics {
       boundary: boundary,
       isLocked: isLocked,
       hasMedia: hasMedia,
+      allowPreviewEntry: allowPreviewEntry,
       maxBottomOverscroll: maxBottomOverscroll,
       parent: buildParent(ancestor),
     );
@@ -4097,6 +4100,15 @@ class _HeaderSnapScrollPhysics extends ScrollPhysics {
   double applyBoundaryConditions(ScrollMetrics position, double value) {
     if (isLocked() && value > boundary && position.pixels <= boundary + 0.01) {
       return value - boundary;
+    }
+
+    // Cegah 1 gesture (drag) yang sama melanjutkan dari posisi header yang
+    // sudah full-expand (offset 0) untuk terus menembus ke area preview
+    // (offset negatif). Hanya gesture baru yang MULAI persis di/lewat batas
+    // 0 (menandakan jari sudah dilepas lalu disentuh ulang) yang boleh
+    // masuk ke area preview; lihat allowPreviewEntry & _handleScrollNotification.
+    if (value < 0.0 && !allowPreviewEntry()) {
+      return value;
     }
     
     final maxPos = position.maxScrollExtent + maxBottomOverscroll;
@@ -4178,6 +4190,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   double _scrollOffset = 0.0;
   double _maxExpandScroll = 0.0;
   bool _gestureCrossingLocked = false;
+  bool _gestureAllowsPreviewEntry = true;
   bool _previewPushed = false;
 
   @override
@@ -4258,8 +4271,18 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
   bool _handleScrollNotification(ScrollNotification notification) {
     if (notification is ScrollStartNotification) {
-      final startedBelowDefault = _scrollController.offset < _maxExpandScroll - 0.5;
-      _gestureCrossingLocked = notification.dragDetails != null && startedBelowDefault;
+      final currentOffset = _scrollController.hasClients ? _scrollController.offset : _maxExpandScroll;
+      final startedBelowDefault = currentOffset < _maxExpandScroll - 0.5;
+      final isRealDrag = notification.dragDetails != null;
+      _gestureCrossingLocked = isRealDrag && startedBelowDefault;
+      // Gesture (drag) baru hanya diizinkan masuk ke area preview (offset
+      // negatif) jika dimulai saat header SUDAH berada di/lewat batas full
+      // expand (offset <= 0). Jika dimulai dari posisi masih positif
+      // (compact/setengah expand), gesture ini dikunci di batas 0 dan tidak
+      // bisa menembus ke preview sampai jari dilepas & discroll ulang.
+      if (isRealDrag) {
+        _gestureAllowsPreviewEntry = currentOffset <= 0.5;
+      }
     } else if (notification is ScrollEndNotification) {
       _gestureCrossingLocked = false;
     }
@@ -4580,6 +4603,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 boundary: _maxExpandScroll,
                 isLocked: () => _gestureCrossingLocked,
                 hasMedia: () => ref.read(userProfileProvider).hasPhoto || ref.read(userProfileProvider).hasVideo,
+                allowPreviewEntry: () => _gestureAllowsPreviewEntry,
                 parent: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
               ),
               slivers: [
