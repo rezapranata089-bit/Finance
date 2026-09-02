@@ -4355,9 +4355,18 @@ class _HeaderSnapScrollPhysics extends ScrollPhysics {
 
   @override
   double applyBoundaryConditions(ScrollMetrics position, double value) {
-    if (isLocked() && value > boundary && position.pixels <= boundary + 0.01) {
-      return value - boundary;
-    }
+    // Catatan: clamp "gesture crossing lock" yang sebelumnya ada di sini
+    // (menahan pixels tepat di `boundary` selama drag yang dimulai dari
+    // area expanded) sengaja dihapus. Flag isLocked() (_gestureCrossingLocked)
+    // di-reset ke false oleh ScrollEndNotification SEBELUM ballistic/spring
+    // simulation sempat berjalan, sehingga clamp ini tidak pernah benar-benar
+    // melindungi animasi snap dari overshoot — efek nyatanya hanya mengunci
+    // drag jari yang MASIH berlangsung begitu offset menyentuh `boundary`,
+    // membuat scroll ke konten sheet di bawahnya terasa tertahan padahal
+    // masih ada ruang, sampai jari dilepas dan gesture baru dimulai.
+    // Menghapus clamp ini membuat drag tunggal yang meng-collapse header lalu
+    // lanjut men-scroll konten sheet terasa menyatu/mulus tanpa perlu
+    // melepas jari terlebih dahulu.
 
     // FASE 2 (EXPANDED + RUBBER): gesture PERTAMA yang diteruskan melewati
     // batas full-expand (offset 0) TIDAK boleh menembus ke FASE 3 (full
