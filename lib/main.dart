@@ -4330,16 +4330,12 @@ class _HeaderSnapScrollPhysics extends ScrollPhysics {
   final bool Function() isLocked;
   final bool Function() hasMedia;
   final bool Function() allowPreviewEntry;
-  final double maxBottomOverscroll;
-  final double maxTopRubberOffset;
 
   const _HeaderSnapScrollPhysics({
     required this.boundary,
     required this.isLocked,
     required this.hasMedia,
     required this.allowPreviewEntry,
-    this.maxBottomOverscroll = 40.0,
-    this.maxTopRubberOffset = 70.0,
     super.parent,
   });
 
@@ -4350,8 +4346,6 @@ class _HeaderSnapScrollPhysics extends ScrollPhysics {
       isLocked: isLocked,
       hasMedia: hasMedia,
       allowPreviewEntry: allowPreviewEntry,
-      maxBottomOverscroll: maxBottomOverscroll,
-      maxTopRubberOffset: maxTopRubberOffset,
       parent: buildParent(ancestor),
     );
   }
@@ -4362,50 +4356,28 @@ class _HeaderSnapScrollPhysics extends ScrollPhysics {
       return value - boundary;
     }
 
-    // FASE 2 (EXPANDED + RUBBER): gesture PERTAMA yang diteruskan melewati
-    // batas full-expand (offset 0) TIDAK boleh menembus ke FASE 3 (full
-    // preview) — lihat allowPreviewEntry & _handleScrollNotification. Alih-
-    // alih di-freeze keras di 0, beri sedikit ruang overscroll elastis
-    // (rubber) hingga maxTopRubberOffset; resistance-nya sendiri diberikan
-    // lewat applyPhysicsToUserOffset di bawah, mirip pola overscroll bawah.
+    // Efek rubber/pantul di batas atas (offset 0) sudah DIHAPUS. Batas
+    // tersebut kini dikunci keras seperti ClampingScrollPhysics selama
+    // gesture BELUM diizinkan masuk FASE 3 (full preview); saat diizinkan,
+    // drag ke arah negatif tetap dibiarkan bebas untuk memicu preview.
     if (!allowPreviewEntry()) {
-      final double minPos = -maxTopRubberOffset;
-      if (value < minPos && position.pixels >= minPos) {
-        return value - minPos;
-      }
-      if (minPos > position.pixels && position.pixels > value) {
+      if (value < position.pixels && position.pixels <= 0.0) {
         return value - position.pixels;
+      }
+      if (value < 0.0 && 0.0 < position.pixels) {
+        return value - 0.0;
       }
     }
     
-    final maxPos = position.maxScrollExtent + maxBottomOverscroll;
-    if (maxPos < value && position.pixels <= maxPos) {
+    final maxPos = position.maxScrollExtent;
+    if (maxPos <= position.pixels && position.pixels < value) {
       return value - maxPos;
     }
-    if (maxPos < position.pixels && position.pixels < value) {
-      return value - position.pixels;
+    if (position.pixels < maxPos && maxPos < value) {
+      return value - maxPos;
     }
     
     return super.applyBoundaryConditions(position, value);
-  }
-
-  @override
-  double applyPhysicsToUserOffset(ScrollMetrics position, double offset) {
-    if (offset < 0.0 && position.pixels > position.maxScrollExtent) {
-      final overscroll = position.pixels - position.maxScrollExtent;
-      final fraction = (overscroll / maxBottomOverscroll).clamp(0.0, 1.0);
-      final friction = 1.0 - (fraction * fraction);
-      return super.applyPhysicsToUserOffset(position, offset) * friction;
-    }
-    // FASE 2 rubber: resistance overscroll atas, semakin dalam ditarik
-    // semakin besar hambatannya (mendekati maxTopRubberOffset).
-    if (position.pixels < 0.0 && !allowPreviewEntry()) {
-      final overscroll = -position.pixels;
-      final fraction = (overscroll / maxTopRubberOffset).clamp(0.0, 1.0);
-      final friction = 1.0 - (fraction * fraction);
-      return super.applyPhysicsToUserOffset(position, offset) * friction;
-    }
-    return super.applyPhysicsToUserOffset(position, offset);
   }
 
   @override
@@ -4470,12 +4442,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   bool _gestureAllowsPreviewEntry = true;
   bool _previewPushed = false;
 
-  // FASE 2 — EXPANDED + RUBBER EFFECT: state & batasan terpisah dari
-  // mediaExpandProgress/previewProgress. Rubber tidak pernah mengubah
-  // expanded state maupun membuka FULL PREVIEW; hanya feedback fisik
-  // sementara yang kembali ke 0 saat gesture dilepas (lihat
-  // _HeaderSnapScrollPhysics.createBallisticSimulation).
-  static const double _rubberMaxRawOffset = 95.0;
+  // Efek rubber (FASE 2) sudah dihapus. mediaRubberScale/sheetRubberScale
+  // di bawah tetap dipertahankan sebagai no-op (selalu bernilai 1.0) demi
+  // meminimalkan perubahan struktur widget tree.
   static const double _mediaRubberMaxExtraScale = 0.22;
 
   @override
@@ -4614,20 +4583,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       t = 1.0;
       parallaxOffset = 0.0; 
       previewProgress = (-_scrollOffset / 100.0).clamp(0.0, 1.0);
-    } else {
-      // FASE 2 — EXPANDED + RUBBER EFFECT (gesture pertama diteruskan).
-      // mediaExpandProgress (t) TETAP 1.0, rubber disimpan terpisah dan
-      // tidak pernah membuka FULL PREVIEW.
-      t = 1.0;
-      parallaxOffset = 0.0;
-      final double rawRubberProgress = (-_scrollOffset / _rubberMaxRawOffset).clamp(0.0, 1.0);
-      mediaRubberProgress = rawRubberProgress;
-      // Pangkas spacer sebesar overscroll (-_scrollOffset, positif) supaya
-      // posisi konten sheet (yang dimulai tepat setelah spacer) tetap di
-      // viewport-y yang sama persis seperti saat scrollOffset 0 — sheet
-      // jadi terpaku, tidak ikut turun & tidak lepas dari overlap media.
-      sheetSpacerCompensation = -_scrollOffset;
     }
+    // Efek rubber (FASE 2) sudah dihapus — batas atas kini dikunci keras
+    // oleh _HeaderSnapScrollPhysics, jadi _scrollOffset tidak akan pernah
+    // negatif kecuali _gestureAllowsPreviewEntry aktif (ditangani di atas).
 
     final double screenHeight = MediaQuery.sizeOf(context).height;
     
@@ -4942,8 +4901,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 isLocked: () => _gestureCrossingLocked,
                 hasMedia: () => ref.read(userProfileProvider).hasPhoto || ref.read(userProfileProvider).hasVideo,
                 allowPreviewEntry: () => _gestureAllowsPreviewEntry,
-                maxTopRubberOffset: _rubberMaxRawOffset,
-                maxBottomOverscroll: 40.0,
                 parent: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
               ),
               slivers: [
