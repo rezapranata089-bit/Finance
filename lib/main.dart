@@ -4665,14 +4665,25 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           // FASE 2 rubber: Transform.translate memberi sedikit pergeseran
           // vertikal elastis (sheetRubberOffsetPx), TIDAK mengubah urutan
           // layer — Sheet tetap selalu di depan Media.
+          // Backdrop tambahan yang meluas ke bawah bottom nav agar tidak ada
+          // celah kosong saat sheet dikoreksi naik (rubber), TANPA mengubah
+          // ukuran box CustomScrollView asli — itu penyebab tab Profile
+          // ter-auto-scroll sendiri sebelumnya (viewport CustomScrollView
+          // jadi lebih tinggi dari layar, mengubah maxScrollExtent).
           Positioned(
             top: 0,
             left: 0,
             right: 0,
-            // Extra height di bawah supaya translate ke atas saat rubber
-            // tidak membuka celah kosong dekat bottom nav.
             bottom: -_sheetBottomOverflowBuffer,
             child: Transform.translate(
+              offset: Offset(0, sheetScrollPinCorrection + sheetRubberOffsetPx),
+              child: Opacity(
+                opacity: sheetOpacity,
+                child: IgnorePointer(child: Container(color: context.cardColor)),
+              ),
+            ),
+          ),
+          Transform.translate(
             offset: Offset(0, sheetScrollPinCorrection + sheetRubberOffsetPx),
             child: Opacity(
             opacity: sheetOpacity,
@@ -4749,7 +4760,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 ),
               ],
             ),
-          ),
           ),
           ),
           ),
