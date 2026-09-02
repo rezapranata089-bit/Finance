@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.provider.MediaStore
 import androidx.annotation.NonNull
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -17,131 +18,170 @@ class MainActivity : FlutterActivity() {
     private val pickMediaRequestCode = 9002
     private var pendingResult: MethodChannel.Result? = null
 
+    // Menampung satu aplikasi galeri kandidat beserta Intent siap-pakai untuk
+    // membukanya. Disimpan sebagai Intent lengkap (bukan hanya ResolveInfo)
+    // karena kandidat bisa datang dari dua jenis intent berbeda
+    // (ACTION_GET_CONTENT atau ACTION_PICK) tergantung bagaimana aplikasi
+    // tersebut mendaftar di sistem.
+    private data class GalleryCandidate(
+        val packageName: String,
+        val className: String,
+        val launchIntent: Intent
+    )
+
+    private val photoPickerMarkers = listOf("photopicker", "media.module")
+
+    private fun isPhotoPicker(pkg: String, cls: String): Boolean =
+        photoPickerMarkers.any { marker -> pkg.contains(marker, ignoreCase = true) || cls.contains(marker, ignoreCase = true) }
+
+    // Mengumpulkan kandidat aplikasi galeri "asli" (bukan Photo Picker bawaan
+    // Android) dengan mencoba DUA mekanisme intent sekaligus:
+    //
+    // 1. ACTION_GET_CONTENT + CATEGORY_OPENABLE — didukung oleh galeri
+    //    stok/AOSP dan sebagian besar aplikasi galeri modern.
+    // 2. ACTION_PICK dengan MediaStore content URI — mekanisme lama yang
+    //    justru lebih universal didukung oleh galeri bawaan pabrikan (mis.
+    //    Gallery bawaan Infinix/Tecno/itel berbasis XOS), yang seringkali
+    //    TIDAK mendaftarkan diri untuk ACTION_GET_CONTENT sama sekali. Tanpa
+    //    probe kedua ini, di perangkat seperti itu daftar kandidat bisa
+    //    kosong dan aplikasi jatuh ke Photo Picker sistem alih-alih galeri
+    //    bawaan HP — inilah penyebab galeri yang terbuka bukan galeri asli.
+    //
+    // Kedua mekanisme di-dedupe berdasarkan package+class supaya aplikasi
+    // yang sama tidak muncul dua kali di chooser.
+    private fun resolveGalleryCandidates(imageOnly: Boolean): List<GalleryCandidate> {
+        val candidates = LinkedHashMap<String, GalleryCandidate>()
+
+        fun addFrom(probeIntent: Intent, launchIntentBuilder: (String, String) -> Intent) {
+            val resolved = packageManager.queryIntentActivities(probeIntent, PackageManager.MATCH_DEFAULT_ONLY)
+            for (info in resolved) {
+                val pkg = info.activityInfo.packageName
+                val cls = info.activityInfo.name
+                if (isPhotoPicker(pkg, cls)) continue
+                val key = "$pkg/$cls"
+                if (candidates.containsKey(key)) continue
+                candidates[key] = GalleryCandidate(pkg, cls, launchIntentBuilder(pkg, cls))
+            }
+        }
+
+        if (imageOnly) {
+            addFrom(
+                Intent(Intent.ACTION_GET_CONTENT).apply {
+                    type = "image/*"
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                }
+            ) { pkg, cls ->
+                Intent(Intent.ACTION_GET_CONTENT).apply {
+                    type = "image/*"
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                    setClassName(pkg, cls)
+                }
+            }
+            addFrom(
+                Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+            ) { pkg, cls ->
+                Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI).apply {
+                    setClassName(pkg, cls)
+                }
+            }
+        } else {
+            // queryIntentActivities ignores EXTRA_MIME_TYPES and only looks
+            // at the intent's literal "type" field, so probe image/* and
+            // video/* separately via GET_CONTENT, then also probe
+            // ACTION_PICK for both MediaStore URIs to catch OEM galleries
+            // that skip GET_CONTENT entirely.
+            addFrom(
+                Intent(Intent.ACTION_GET_CONTENT).apply {
+                    type = "image/*"
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                }
+            ) { pkg, cls ->
+                Intent(Intent.ACTION_GET_CONTENT).apply {
+                    type = "*/*"
+                    putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("image/*", "video/*"))
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                    setClassName(pkg, cls)
+                }
+            }
+            addFrom(
+                Intent(Intent.ACTION_GET_CONTENT).apply {
+                    type = "video/*"
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                }
+            ) { pkg, cls ->
+                Intent(Intent.ACTION_GET_CONTENT).apply {
+                    type = "*/*"
+                    putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("image/*", "video/*"))
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                    setClassName(pkg, cls)
+                }
+            }
+            addFrom(
+                Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+            ) { pkg, cls ->
+                Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI).apply {
+                    setClassName(pkg, cls)
+                }
+            }
+            addFrom(
+                Intent(Intent.ACTION_PICK, MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
+            ) { pkg, cls ->
+                Intent(Intent.ACTION_PICK, MediaStore.Video.Media.EXTERNAL_CONTENT_URI).apply {
+                    setClassName(pkg, cls)
+                }
+            }
+        }
+
+        return candidates.values.toList()
+    }
+
+    // Membuka kandidat langsung jika hanya ada satu, menampilkan chooser
+    // custom jika lebih dari satu (supaya Photo Picker sistem tidak pernah
+    // ikut muncul), atau fallback ke intent sistem default jika benar-benar
+    // tidak ada galeri "asli" yang terdeteksi sama sekali.
+    private fun launchGalleryChooser(candidates: List<GalleryCandidate>, requestCode: Int, chooserTitle: String) {
+        when {
+            candidates.size == 1 -> {
+                startActivityForResult(candidates.first().launchIntent, requestCode)
+            }
+            candidates.size > 1 -> {
+                val intents = candidates.map { it.launchIntent }
+                val chooser = Intent.createChooser(intents.first(), chooserTitle).apply {
+                    putExtra(Intent.EXTRA_INITIAL_INTENTS, intents.drop(1).toTypedArray())
+                }
+                startActivityForResult(chooser, requestCode)
+            }
+            else -> {
+                // Tidak ada galeri "asli" yang terdeteksi sama sekali (mis.
+                // Pixel / near-stock Android tanpa galeri terpisah).
+                // Fallback ke GET_CONTENT sistem default, yang akan membuka
+                // Photo Picker atau Google Photos.
+                val fallbackIntent = if (requestCode == pickImageRequestCode) {
+                    Intent(Intent.ACTION_GET_CONTENT).apply {
+                        type = "image/*"
+                        addCategory(Intent.CATEGORY_OPENABLE)
+                    }
+                } else {
+                    Intent(Intent.ACTION_GET_CONTENT).apply {
+                        type = "*/*"
+                        putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("image/*", "video/*"))
+                        addCategory(Intent.CATEGORY_OPENABLE)
+                    }
+                }
+                startActivityForResult(fallbackIntent, requestCode)
+            }
+        }
+    }
+
     override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, channelName).setMethodCallHandler { call, result ->
             if (call.method == "pickImageWithChooser") {
                 pendingResult = result
-
-                val baseIntent = Intent(Intent.ACTION_GET_CONTENT).apply {
-                    type = "image/*"
-                    addCategory(Intent.CATEGORY_OPENABLE)
-                }
-
-                // Ask the system for every app that can handle this intent,
-                // instead of maintaining a hardcoded per-brand package list.
-                // This adapts automatically to any device/OEM without needing
-                // future updates when new phone brands appear.
-                val resolvedActivities = packageManager.queryIntentActivities(baseIntent, PackageManager.MATCH_DEFAULT_ONLY)
-
-                // The Android Photo Picker (styled like Google Photos, active
-                // on Android 11+/13+) always shows up under a component whose
-                // package or class name contains one of these markers,
-                // regardless of device brand. Filter it out dynamically.
-                val photoPickerMarkers = listOf("photopicker", "media.module")
-                fun isPhotoPicker(pkg: String, cls: String): Boolean =
-                    photoPickerMarkers.any { marker -> pkg.contains(marker, ignoreCase = true) || cls.contains(marker, ignoreCase = true) }
-
-                val realGalleryApps = resolvedActivities.filter { info ->
-                    !isPhotoPicker(info.activityInfo.packageName, info.activityInfo.name)
-                }
-
-                when {
-                    realGalleryApps.size == 1 -> {
-                        // Exactly one real gallery/file app found: open it
-                        // directly, with no dialog at all.
-                        val info = realGalleryApps.first().activityInfo
-                        val directIntent = Intent(baseIntent).apply {
-                            setClassName(info.packageName, info.name)
-                        }
-                        startActivityForResult(directIntent, pickImageRequestCode)
-                    }
-                    realGalleryApps.size > 1 -> {
-                        // Multiple real candidates: show a chooser built only
-                        // from those, so the Photo Picker never appears as
-                        // an option even if it's technically installed.
-                        val targetedIntents = realGalleryApps.map { info ->
-                            Intent(baseIntent).apply {
-                                setClassName(info.activityInfo.packageName, info.activityInfo.name)
-                            }
-                        }
-                        val chooser = Intent.createChooser(targetedIntents.first(), "Pilih Foto Profil").apply {
-                            putExtra(Intent.EXTRA_INITIAL_INTENTS, targetedIntents.drop(1).toTypedArray())
-                        }
-                        startActivityForResult(chooser, pickImageRequestCode)
-                    }
-                    else -> {
-                        // No non-Photo-Picker app found (e.g. Pixel / near-
-                        // stock Android with no separate gallery app). Fall
-                        // back to whatever the system offers, which will be
-                        // the Photo Picker or Google Photos itself.
-                        startActivityForResult(baseIntent, pickImageRequestCode)
-                    }
-                }
+                launchGalleryChooser(resolveGalleryCandidates(imageOnly = true), pickImageRequestCode, "Pilih Foto Profil")
             } else if (call.method == "pickMediaWithChooser") {
                 pendingResult = result
-
-                // Same native "real gallery app" chooser as pickImageWithChooser,
-                // but accepts both images and videos so a single "Choose from
-                // gallery" option lets the user pick either media type.
-                val baseIntent = Intent(Intent.ACTION_GET_CONTENT).apply {
-                    type = "*/*"
-                    putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("image/*", "video/*"))
-                    addCategory(Intent.CATEGORY_OPENABLE)
-                }
-
-                // queryIntentActivities ignores EXTRA_MIME_TYPES and only looks at
-                // the intent's literal "type" field. Resolving with type "*/*"
-                // would match ANY app that can receive arbitrary content (file
-                // managers, sound pickers, contact pickers, etc), which is why
-                // apps like "Sound picker" or "My Files" showed up before.
-                // Resolve for image/* and video/* separately instead, then
-                // merge, so only apps that truly handle photos or videos appear.
-                val imageProbe = Intent(Intent.ACTION_GET_CONTENT).apply {
-                    type = "image/*"
-                    addCategory(Intent.CATEGORY_OPENABLE)
-                }
-                val videoProbe = Intent(Intent.ACTION_GET_CONTENT).apply {
-                    type = "video/*"
-                    addCategory(Intent.CATEGORY_OPENABLE)
-                }
-
-                val resolvedActivities = (
-                    packageManager.queryIntentActivities(imageProbe, PackageManager.MATCH_DEFAULT_ONLY) +
-                    packageManager.queryIntentActivities(videoProbe, PackageManager.MATCH_DEFAULT_ONLY)
-                ).distinctBy { "${it.activityInfo.packageName}/${it.activityInfo.name}" }
-
-                val photoPickerMarkers = listOf("photopicker", "media.module")
-                fun isPhotoPicker(pkg: String, cls: String): Boolean =
-                    photoPickerMarkers.any { marker -> pkg.contains(marker, ignoreCase = true) || cls.contains(marker, ignoreCase = true) }
-
-                val realGalleryApps = resolvedActivities.filter { info ->
-                    !isPhotoPicker(info.activityInfo.packageName, info.activityInfo.name)
-                }
-
-                when {
-                    realGalleryApps.size == 1 -> {
-                        val info = realGalleryApps.first().activityInfo
-                        val directIntent = Intent(baseIntent).apply {
-                            setClassName(info.packageName, info.name)
-                        }
-                        startActivityForResult(directIntent, pickMediaRequestCode)
-                    }
-                    realGalleryApps.size > 1 -> {
-                        val targetedIntents = realGalleryApps.map { info ->
-                            Intent(baseIntent).apply {
-                                setClassName(info.activityInfo.packageName, info.activityInfo.name)
-                            }
-                        }
-                        val chooser = Intent.createChooser(targetedIntents.first(), "Pilih Foto atau Video Profil").apply {
-                            putExtra(Intent.EXTRA_INITIAL_INTENTS, targetedIntents.drop(1).toTypedArray())
-                        }
-                        startActivityForResult(chooser, pickMediaRequestCode)
-                    }
-                    else -> {
-                        startActivityForResult(baseIntent, pickMediaRequestCode)
-                    }
-                }
+                launchGalleryChooser(resolveGalleryCandidates(imageOnly = false), pickMediaRequestCode, "Pilih Foto atau Video Profil")
             } else {
                 result.notImplemented()
             }

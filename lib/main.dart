@@ -834,6 +834,16 @@ class _VideoTrimPageState extends State<_VideoTrimPage> {
   double _endValue = 0.0;
   bool _isPlaying = false;
   bool _saving = false;
+  // TrimViewer melaporkan rentang trim awal secara ASINKRON setelah selesai
+  // menganalisis video (generate thumbnail dsb). Sebelum laporan pertama itu
+  // masuk, _startValue/_endValue masih 0.0/0.0. Di HP yang lebih lambat
+  // (mis. Infinix), jeda ini cukup lama sehingga pengguna sempat menekan
+  // "Lanjut" SEBELUM rentang valid tersedia — memanggil trimmer native
+  // dengan startValue==endValue==0 (durasi nol) inilah yang menyebabkan
+  // aplikasi force close (crash native, bukan exception Dart biasa yang
+  // bisa ditangkap try-catch). _trimmerReady mencegah kondisi ini dengan
+  // menonaktifkan tombol "Lanjut" sampai rentang valid pertama diterima.
+  bool _trimmerReady = false;
 
   @override
   void initState() {
@@ -842,16 +852,45 @@ class _VideoTrimPageState extends State<_VideoTrimPage> {
   }
 
   Future<void> _save() async {
+    // Jaga-jaga ganda: selain tombol yang dinonaktifkan di UI, validasi ini
+    // memastikan _save() tidak pernah memanggil native trimmer dengan
+    // rentang durasi yang belum siap/tidak valid (endValue <= startValue),
+    // yang sebelumnya bisa membuat aplikasi force close di sebagian HP.
+    if (!_trimmerReady || _endValue <= _startValue) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Video masih diproses, coba lagi sebentar lagi.')),
+      );
+      return;
+    }
     setState(() => _saving = true);
-    await _trimmer.saveTrimmedVideo(
-      startValue: _startValue,
-      endValue: _endValue,
-      onSave: (outputPath) {
-        if (!mounted) return;
-        setState(() => _saving = false);
-        Navigator.pop(context, outputPath);
-      },
-    );
+    try {
+      await _trimmer.saveTrimmedVideo(
+        startValue: _startValue,
+        endValue: _endValue,
+        onSave: (outputPath) {
+          if (!mounted) return;
+          setState(() => _saving = false);
+          if (outputPath == null || outputPath.isEmpty) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Gagal memotong video, coba pilih video lain.')),
+            );
+            return;
+          }
+          Navigator.pop(context, outputPath);
+        },
+      );
+    } catch (_) {
+      // Menangkap exception Dart-level (mis. dari plugin) supaya tidak
+      // membiarkan halaman ini macet di kondisi loading tanpa umpan balik
+      // ke pengguna. Ini tidak menutup kemungkinan crash native murni,
+      // tapi mencegah kegagalan yang sebenarnya bisa ditangani lewat jalur
+      // normal Dart agar tidak ikut membuat pengalaman terasa "hang".
+      if (!mounted) return;
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Gagal memotong video, coba lagi.')),
+      );
+    }
   }
 
   @override
@@ -865,10 +904,16 @@ class _VideoTrimPageState extends State<_VideoTrimPage> {
         title: const Text('Potong Durasi Video', style: TextStyle(color: Colors.white, fontSize: 16)),
         actions: [
           TextButton(
-            onPressed: _saving ? null : _save,
+            onPressed: (_saving || !_trimmerReady) ? null : _save,
             child: _saving
                 ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                : const Text('Lanjut', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                : Text(
+                    'Lanjut',
+                    style: TextStyle(
+                      color: _trimmerReady ? Colors.white : Colors.white38,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
           ),
         ],
       ),
@@ -896,7 +941,16 @@ class _VideoTrimPageState extends State<_VideoTrimPage> {
                 viewerWidth: MediaQuery.sizeOf(context).width - 40,
                 maxVideoLength: const Duration(seconds: 15),
                 onChangeStart: (value) => _startValue = value,
-                onChangeEnd: (value) => _endValue = value,
+                onChangeEnd: (value) {
+                  _endValue = value;
+                  // Laporan pertama dari TrimViewer menandakan analisis
+                  // video (thumbnail dsb) sudah selesai dan rentang trim
+                  // valid — baru dari sinilah aman memanggil native
+                  // trimmer. setState di sini mengaktifkan tombol "Lanjut".
+                  if (!_trimmerReady && mounted) {
+                    setState(() => _trimmerReady = true);
+                  }
+                },
                 onChangePlaybackState: (value) => setState(() => _isPlaying = value),
               ),
             ),
