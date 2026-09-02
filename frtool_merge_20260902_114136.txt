@@ -1,3 +1,3015 @@
+### PROJECT STRUCTURE
+my_finance
+├── .dart_tool
+│   ├── dartpad
+│   │   └── web_plugin_registrant.dart
+│   ├── hooks_runner
+│   │   ├── objective_c
+│   │   │   └── 337ce265dc
+│   │   │       ├── .lock
+│   │   │       ├── dependencies.dependencies_hash_file.json
+│   │   │       ├── hook.dependencies_hash_file.json
+│   │   │       ├── hook.dill
+│   │   │       ├── hook.dill.d
+│   │   │       ├── input.json
+│   │   │       ├── output.json
+│   │   │       ├── stderr.txt
+│   │   │       └── stdout.txt
+│   │   └── shared
+│   │       └── objective_c
+│   │           └── .lock
+│   ├── package_config.json
+│   ├── package_graph.json
+│   └── version
+├── .github
+│   └── workflows
+│       └── build-apk.yml
+├── android
+│   ├── app
+│   │   ├── src
+│   │   │   ├── debug
+│   │   │   │   └── AndroidManifest.xml
+│   │   │   ├── main
+│   │   │   │   ├── java
+│   │   │   │   │   └── io
+│   │   │   │   │       └── flutter
+│   │   │   │   │           └── plugins
+│   │   │   │   │               └── GeneratedPluginRegistrant.java
+│   │   │   │   ├── kotlin
+│   │   │   │   │   └── com
+│   │   │   │   │       └── example
+│   │   │   │   │           └── my_finance
+│   │   │   │   │               └── MainActivity.kt
+│   │   │   │   ├── res
+│   │   │   │   │   ├── drawable
+│   │   │   │   │   │   └── launch_background.xml
+│   │   │   │   │   ├── drawable-v21
+│   │   │   │   │   │   └── launch_background.xml
+│   │   │   │   │   ├── mipmap-hdpi
+│   │   │   │   │   │   └── ic_launcher.png
+│   │   │   │   │   ├── mipmap-mdpi
+│   │   │   │   │   │   └── ic_launcher.png
+│   │   │   │   │   ├── mipmap-xhdpi
+│   │   │   │   │   │   └── ic_launcher.png
+│   │   │   │   │   ├── mipmap-xxhdpi
+│   │   │   │   │   │   └── ic_launcher.png
+│   │   │   │   │   ├── mipmap-xxxhdpi
+│   │   │   │   │   │   └── ic_launcher.png
+│   │   │   │   │   ├── values
+│   │   │   │   │   │   └── styles.xml
+│   │   │   │   │   └── values-night
+│   │   │   │   │       └── styles.xml
+│   │   │   │   └── AndroidManifest.xml
+│   │   │   └── profile
+│   │   │       └── AndroidManifest.xml
+│   │   ├── build.gradle.kts
+│   │   └── proguard-rules.pro
+│   ├── gradle
+│   │   └── wrapper
+│   │       ├── gradle-wrapper.jar
+│   │       └── gradle-wrapper.properties
+│   ├── .gitignore
+│   ├── build.gradle.kts
+│   ├── gradle.properties
+│   ├── gradlew
+│   ├── gradlew.bat
+│   ├── local.properties
+│   ├── my_finance_android.iml
+│   └── settings.gradle.kts
+├── assets
+│   ├── fonts
+│   │   ├── dm_serif_display_regular.ttf
+│   │   ├── playfairdisplay_regular.ttf
+│   │   ├── satoshi_black.otf
+│   │   ├── satoshi_black_italic.otf
+│   │   ├── satoshi_bold.otf
+│   │   ├── satoshi_bold_italic.otf
+│   │   ├── satoshi_italic.otf
+│   │   ├── satoshi_light.otf
+│   │   ├── satoshi_light_italic.otf
+│   │   ├── satoshi_medium.otf
+│   │   ├── satoshi_medium_italic.otf
+│   │   └── satoshi_regular.otf
+│   ├── icon
+│   │   └── icon.png
+│   └── lottie
+│       └── ai.json
+├── ios
+│   ├── Flutter
+│   │   ├── ephemeral
+│   │   │   ├── Packages
+│   │   │   │   └── FlutterGeneratedPluginSwiftPackage
+│   │   │   │       ├── Sources
+│   │   │   │       │   └── FlutterGeneratedPluginSwiftPackage
+│   │   │   │       │       └── FlutterGeneratedPluginSwiftPackage.swift
+│   │   │   │       └── Package.swift
+│   │   │   ├── .swift_pm.lock
+│   │   │   ├── flutter_lldb_helper.py
+│   │   │   ├── flutter_lldbinit
+│   │   │   └── flutter_native_integration.env
+│   │   ├── AppFrameworkInfo.plist
+│   │   ├── Debug.xcconfig
+│   │   ├── flutter_export_environment.sh
+│   │   ├── Generated.xcconfig
+│   │   └── Release.xcconfig
+│   ├── Runner
+│   │   ├── Assets.xcassets
+│   │   │   ├── AppIcon.appiconset
+│   │   │   │   ├── Contents.json
+│   │   │   │   ├── Icon-App-1024x1024@1x.png
+│   │   │   │   ├── Icon-App-20x20@1x.png
+│   │   │   │   ├── Icon-App-20x20@2x.png
+│   │   │   │   ├── Icon-App-20x20@3x.png
+│   │   │   │   ├── Icon-App-29x29@1x.png
+│   │   │   │   ├── Icon-App-29x29@2x.png
+│   │   │   │   ├── Icon-App-29x29@3x.png
+│   │   │   │   ├── Icon-App-40x40@1x.png
+│   │   │   │   ├── Icon-App-40x40@2x.png
+│   │   │   │   ├── Icon-App-40x40@3x.png
+│   │   │   │   ├── Icon-App-60x60@2x.png
+│   │   │   │   ├── Icon-App-60x60@3x.png
+│   │   │   │   ├── Icon-App-76x76@1x.png
+│   │   │   │   ├── Icon-App-76x76@2x.png
+│   │   │   │   └── Icon-App-83.5x83.5@2x.png
+│   │   │   └── LaunchImage.imageset
+│   │   │       ├── Contents.json
+│   │   │       ├── LaunchImage.png
+│   │   │       ├── LaunchImage@2x.png
+│   │   │       ├── LaunchImage@3x.png
+│   │   │       └── README.md
+│   │   ├── Base.lproj
+│   │   │   ├── LaunchScreen.storyboard
+│   │   │   └── Main.storyboard
+│   │   ├── AppDelegate.swift
+│   │   ├── GeneratedPluginRegistrant.h
+│   │   ├── GeneratedPluginRegistrant.m
+│   │   ├── Info.plist
+│   │   ├── Runner-Bridging-Header.h
+│   │   └── SceneDelegate.swift
+│   ├── Runner.xcodeproj
+│   │   ├── project.xcworkspace
+│   │   │   ├── xcshareddata
+│   │   │   │   ├── IDEWorkspaceChecks.plist
+│   │   │   │   └── WorkspaceSettings.xcsettings
+│   │   │   └── contents.xcworkspacedata
+│   │   ├── xcshareddata
+│   │   │   └── xcschemes
+│   │   │       └── Runner.xcscheme
+│   │   └── project.pbxproj
+│   ├── Runner.xcworkspace
+│   │   ├── xcshareddata
+│   │   │   ├── IDEWorkspaceChecks.plist
+│   │   │   └── WorkspaceSettings.xcsettings
+│   │   └── contents.xcworkspacedata
+│   ├── RunnerTests
+│   │   └── RunnerTests.swift
+│   └── .gitignore
+├── lib
+│   └── main.dart
+├── linux
+│   ├── flutter
+│   │   ├── CMakeLists.txt
+│   │   ├── generated_plugin_registrant.cc
+│   │   ├── generated_plugin_registrant.h
+│   │   └── generated_plugins.cmake
+│   ├── runner
+│   │   ├── CMakeLists.txt
+│   │   ├── main.cc
+│   │   ├── my_application.cc
+│   │   └── my_application.h
+│   ├── .gitignore
+│   └── CMakeLists.txt
+├── macos
+│   ├── Flutter
+│   │   ├── ephemeral
+│   │   │   ├── Packages
+│   │   │   │   └── FlutterGeneratedPluginSwiftPackage
+│   │   │   │       ├── Sources
+│   │   │   │       │   └── FlutterGeneratedPluginSwiftPackage
+│   │   │   │       │       └── FlutterGeneratedPluginSwiftPackage.swift
+│   │   │   │       └── Package.swift
+│   │   │   ├── .swift_pm.lock
+│   │   │   ├── Flutter-Generated.xcconfig
+│   │   │   ├── flutter_export_environment.sh
+│   │   │   └── flutter_native_integration.env
+│   │   ├── Flutter-Debug.xcconfig
+│   │   ├── Flutter-Release.xcconfig
+│   │   └── GeneratedPluginRegistrant.swift
+│   ├── Runner
+│   │   ├── Assets.xcassets
+│   │   │   └── AppIcon.appiconset
+│   │   │       ├── app_icon_1024.png
+│   │   │       ├── app_icon_128.png
+│   │   │       ├── app_icon_16.png
+│   │   │       ├── app_icon_256.png
+│   │   │       ├── app_icon_32.png
+│   │   │       ├── app_icon_512.png
+│   │   │       ├── app_icon_64.png
+│   │   │       └── Contents.json
+│   │   ├── Base.lproj
+│   │   │   └── MainMenu.xib
+│   │   ├── Configs
+│   │   │   ├── AppInfo.xcconfig
+│   │   │   ├── Debug.xcconfig
+│   │   │   ├── Release.xcconfig
+│   │   │   └── Warnings.xcconfig
+│   │   ├── AppDelegate.swift
+│   │   ├── DebugProfile.entitlements
+│   │   ├── Info.plist
+│   │   ├── MainFlutterWindow.swift
+│   │   └── Release.entitlements
+│   ├── Runner.xcodeproj
+│   │   ├── project.xcworkspace
+│   │   │   └── xcshareddata
+│   │   │       └── IDEWorkspaceChecks.plist
+│   │   ├── xcshareddata
+│   │   │   └── xcschemes
+│   │   │       └── Runner.xcscheme
+│   │   └── project.pbxproj
+│   ├── Runner.xcworkspace
+│   │   ├── xcshareddata
+│   │   │   └── IDEWorkspaceChecks.plist
+│   │   └── contents.xcworkspacedata
+│   ├── RunnerTests
+│   │   └── RunnerTests.swift
+│   └── .gitignore
+├── packages
+│   └── telegram_image_cropper
+│       ├── lib
+│       │   ├── src
+│       │   │   ├── crop_image_service
+│       │   │   │   ├── crop_image_service.dart
+│       │   │   │   ├── native_worker.dart
+│       │   │   │   └── web_worker.dart
+│       │   │   └── circle_cutout_painter.dart
+│       │   └── telegram_image_cropper.dart
+│       └── pubspec.yaml
+├── test
+│   └── widget_test.dart
+├── web
+│   ├── icons
+│   │   ├── Icon-192.png
+│   │   ├── Icon-512.png
+│   │   ├── Icon-maskable-192.png
+│   │   └── Icon-maskable-512.png
+│   ├── favicon.png
+│   ├── index.html
+│   └── manifest.json
+├── windows
+│   ├── flutter
+│   │   ├── CMakeLists.txt
+│   │   ├── generated_plugin_registrant.cc
+│   │   ├── generated_plugin_registrant.h
+│   │   └── generated_plugins.cmake
+│   ├── runner
+│   │   ├── resources
+│   │   │   └── app_icon.ico
+│   │   ├── CMakeLists.txt
+│   │   ├── flutter_window.cpp
+│   │   ├── flutter_window.h
+│   │   ├── main.cpp
+│   │   ├── resource.h
+│   │   ├── runner.exe.manifest
+│   │   ├── Runner.rc
+│   │   ├── utils.cpp
+│   │   ├── utils.h
+│   │   ├── win32_window.cpp
+│   │   └── win32_window.h
+│   ├── .gitignore
+│   └── CMakeLists.txt
+├── .flutter-plugins-dependencies
+├── .frignore
+├── .gitignore
+├── .metadata
+├── analysis_options.yaml
+├── flutter_01.log
+├── flutter_01.png
+├── frtool_merge_20260901_002433.txt
+├── frtool_merge_20260901_191615.txt
+├── my_finance.iml
+├── pubspec.lock
+├── pubspec.yaml
+└── README.md
+
+### FILE: .dart_tool/dartpad/web_plugin_registrant.dart
+// Flutter web plugin registrant file.
+//
+// Generated file. Do not edit.
+//
+
+// @dart = 2.13
+// ignore_for_file: type=lint
+
+import 'package:get_thumbnail_video/video_thumbnail_web.dart';
+import 'package:image_picker_for_web/image_picker_for_web.dart';
+import 'package:shared_preferences_web/shared_preferences_web.dart';
+import 'package:video_player_web/video_player_web.dart';
+import 'package:flutter_web_plugins/flutter_web_plugins.dart';
+
+void registerPlugins([final Registrar? pluginRegistrar]) {
+  final Registrar registrar = pluginRegistrar ?? webPluginRegistrar;
+  VideoThumbnailWeb.registerWith(registrar);
+  ImagePickerPlugin.registerWith(registrar);
+  SharedPreferencesPlugin.registerWith(registrar);
+  VideoPlayerPlugin.registerWith(registrar);
+  registrar.registerMessageHandler();
+}
+
+
+### FILE: .dart_tool/hooks_runner/objective_c/337ce265dc/dependencies.dependencies_hash_file.json
+{"file_system":[],"environment":[{"key":"HOME","hash":-6211564349089875576},{"key":"ANDROID_HOME","hash":-2390372335733785672},{"key":"PATH","hash":-696189872651785758}]}
+
+### FILE: .dart_tool/hooks_runner/objective_c/337ce265dc/hook.dependencies_hash_file.json
+{"file_system":[{"path":"/root/my_finance/.dart_tool/package_config.json","hash":4283329553360369986},{"path":"/root/flutter/bin/cache/dart-sdk/version","hash":-1192285531289336089}],"environment":[]}
+
+### FILE: .dart_tool/hooks_runner/objective_c/337ce265dc/input.json
+{
+  "assets": {},
+  "config": {
+    "build_asset_types": [],
+    "linking_enabled": false
+  },
+  "out_dir_shared": "/root/my_finance/.dart_tool/hooks_runner/shared/objective_c/build/",
+  "out_file": "/root/my_finance/.dart_tool/hooks_runner/objective_c/337ce265dc/output.json",
+  "package_name": "objective_c",
+  "package_root": "/root/.pub-cache/hosted/pub.dev/objective_c-9.5.0/",
+  "user_defines": {}
+}
+
+### FILE: .dart_tool/hooks_runner/objective_c/337ce265dc/output.json
+{
+  "assets_for_linking": {},
+  "status": "success",
+  "timestamp": "2026-09-01 03:28:06.000"
+}
+
+### FILE: .dart_tool/package_config.json
+{
+  "configVersion": 2,
+  "packages": [
+    {
+      "name": "archive",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/archive-4.2.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
+      "name": "args",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/args-2.7.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
+    },
+    {
+      "name": "async",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/async-2.13.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "boolean_selector",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/boolean_selector-2.1.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.1"
+    },
+    {
+      "name": "characters",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/characters-1.4.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "clock",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/clock-1.1.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "code_assets",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/code_assets-1.2.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.10"
+    },
+    {
+      "name": "collection",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/collection-1.19.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "cross_file",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/cross_file-0.3.5+4",
+      "packageUri": "lib/",
+      "languageVersion": "3.10"
+    },
+    {
+      "name": "crypto",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/crypto-3.0.7",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "csslib",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/csslib-1.0.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.1"
+    },
+    {
+      "name": "cupertino_icons",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/cupertino_icons-1.0.9",
+      "packageUri": "lib/",
+      "languageVersion": "3.9"
+    },
+    {
+      "name": "equatable",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/equatable-2.1.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
+      "name": "fake_async",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/fake_async-1.3.3",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
+    },
+    {
+      "name": "ffi",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/ffi-2.2.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.7"
+    },
+    {
+      "name": "file",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/file-7.0.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
+      "name": "file_selector_linux",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/file_selector_linux-0.9.4",
+      "packageUri": "lib/",
+      "languageVersion": "3.8"
+    },
+    {
+      "name": "file_selector_macos",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/file_selector_macos-0.9.5",
+      "packageUri": "lib/",
+      "languageVersion": "3.9"
+    },
+    {
+      "name": "file_selector_platform_interface",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/file_selector_platform_interface-2.7.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.7"
+    },
+    {
+      "name": "file_selector_windows",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/file_selector_windows-0.9.3+5",
+      "packageUri": "lib/",
+      "languageVersion": "3.8"
+    },
+    {
+      "name": "fl_chart",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/fl_chart-0.69.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
+      "name": "flutter",
+      "rootUri": "file:///root/flutter/packages/flutter",
+      "packageUri": "lib/",
+      "languageVersion": "3.11"
+    },
+    {
+      "name": "flutter_lints",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/flutter_lints-5.0.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "flutter_native_video_trimmer",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/flutter_native_video_trimmer-1.1.9",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
+      "name": "flutter_plugin_android_lifecycle",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/flutter_plugin_android_lifecycle-2.0.35",
+      "packageUri": "lib/",
+      "languageVersion": "3.10"
+    },
+    {
+      "name": "flutter_riverpod",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/flutter_riverpod-2.6.1",
+      "packageUri": "lib/",
+      "languageVersion": "2.17"
+    },
+    {
+      "name": "flutter_staggered_animations",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/flutter_staggered_animations-1.1.1",
+      "packageUri": "lib/",
+      "languageVersion": "2.17"
+    },
+    {
+      "name": "flutter_test",
+      "rootUri": "file:///root/flutter/packages/flutter_test",
+      "packageUri": "lib/",
+      "languageVersion": "3.11"
+    },
+    {
+      "name": "flutter_web_plugins",
+      "rootUri": "file:///root/flutter/packages/flutter_web_plugins",
+      "packageUri": "lib/",
+      "languageVersion": "3.11"
+    },
+    {
+      "name": "get_thumbnail_video",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/get_thumbnail_video-0.7.3",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "hooks",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/hooks-2.0.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.10"
+    },
+    {
+      "name": "html",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/html-0.15.7",
+      "packageUri": "lib/",
+      "languageVersion": "3.6"
+    },
+    {
+      "name": "http",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/http-1.6.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "http_parser",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/http_parser-4.1.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "image",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/image-4.9.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
+      "name": "image_picker",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/image_picker-1.2.3",
+      "packageUri": "lib/",
+      "languageVersion": "3.10"
+    },
+    {
+      "name": "image_picker_android",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/image_picker_android-0.8.13+19",
+      "packageUri": "lib/",
+      "languageVersion": "3.12"
+    },
+    {
+      "name": "image_picker_for_web",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/image_picker_for_web-3.1.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.8"
+    },
+    {
+      "name": "image_picker_ios",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/image_picker_ios-0.8.13+6",
+      "packageUri": "lib/",
+      "languageVersion": "3.10"
+    },
+    {
+      "name": "image_picker_linux",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/image_picker_linux-0.2.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.6"
+    },
+    {
+      "name": "image_picker_macos",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/image_picker_macos-0.2.2+1",
+      "packageUri": "lib/",
+      "languageVersion": "3.9"
+    },
+    {
+      "name": "image_picker_platform_interface",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/image_picker_platform_interface-2.11.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.7"
+    },
+    {
+      "name": "image_picker_windows",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/image_picker_windows-0.2.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.6"
+    },
+    {
+      "name": "intl",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/intl-0.20.3",
+      "packageUri": "lib/",
+      "languageVersion": "3.9"
+    },
+    {
+      "name": "jni",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/jni-1.0.3",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
+    },
+    {
+      "name": "jni_flutter",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/jni_flutter-1.0.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
+    },
+    {
+      "name": "jni_util",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/jni_util-1.0.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
+    },
+    {
+      "name": "leak_tracker",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/leak_tracker-11.0.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
+      "name": "leak_tracker_flutter_testing",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/leak_tracker_flutter_testing-3.0.10",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
+      "name": "leak_tracker_testing",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/leak_tracker_testing-3.0.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
+      "name": "lints",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/lints-5.1.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.6"
+    },
+    {
+      "name": "liquid_glass_widgets",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/liquid_glass_widgets-1.2.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "logging",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/logging-1.3.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "lottie",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/lottie-3.5.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.12"
+    },
+    {
+      "name": "matcher",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/matcher-0.12.20",
+      "packageUri": "lib/",
+      "languageVersion": "3.10"
+    },
+    {
+      "name": "material_color_utilities",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/material_color_utilities-0.13.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "meta",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/meta-1.18.3",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "mime",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/mime-2.0.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
+      "name": "number_flow_flutter",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/number_flow_flutter-0.1.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.9"
+    },
+    {
+      "name": "objective_c",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/objective_c-9.5.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.10"
+    },
+    {
+      "name": "package_config",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/package_config-3.0.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.11"
+    },
+    {
+      "name": "path",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/path-1.9.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "path_provider",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/path_provider-2.1.6",
+      "packageUri": "lib/",
+      "languageVersion": "3.10"
+    },
+    {
+      "name": "path_provider_android",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/path_provider_android-2.3.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.9"
+    },
+    {
+      "name": "path_provider_foundation",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/path_provider_foundation-2.6.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.10"
+    },
+    {
+      "name": "path_provider_linux",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/path_provider_linux-2.2.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.10"
+    },
+    {
+      "name": "path_provider_platform_interface",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/path_provider_platform_interface-2.1.3",
+      "packageUri": "lib/",
+      "languageVersion": "3.10"
+    },
+    {
+      "name": "path_provider_windows",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/path_provider_windows-2.3.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
+      "name": "platform",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/platform-3.1.6",
+      "packageUri": "lib/",
+      "languageVersion": "3.2"
+    },
+    {
+      "name": "plugin_platform_interface",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/plugin_platform_interface-2.1.8",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
+      "name": "posix",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/posix-6.5.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
+      "name": "pub_semver",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/pub_semver-2.2.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "record_use",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/record_use-0.6.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.10"
+    },
+    {
+      "name": "riverpod",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/riverpod-2.6.1",
+      "packageUri": "lib/",
+      "languageVersion": "2.17"
+    },
+    {
+      "name": "shared_preferences",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/shared_preferences-2.5.5",
+      "packageUri": "lib/",
+      "languageVersion": "3.9"
+    },
+    {
+      "name": "shared_preferences_android",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/shared_preferences_android-2.4.27",
+      "packageUri": "lib/",
+      "languageVersion": "3.12"
+    },
+    {
+      "name": "shared_preferences_foundation",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/shared_preferences_foundation-2.5.6",
+      "packageUri": "lib/",
+      "languageVersion": "3.9"
+    },
+    {
+      "name": "shared_preferences_linux",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/shared_preferences_linux-2.4.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
+    },
+    {
+      "name": "shared_preferences_platform_interface",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/shared_preferences_platform_interface-2.4.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.9"
+    },
+    {
+      "name": "shared_preferences_web",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/shared_preferences_web-2.4.3",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "shared_preferences_windows",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/shared_preferences_windows-2.4.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
+    },
+    {
+      "name": "sky_engine",
+      "rootUri": "file:///root/flutter/bin/cache/pkg/sky_engine",
+      "packageUri": "lib/",
+      "languageVersion": "3.11"
+    },
+    {
+      "name": "solar_icons",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/solar_icons-0.1.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
+      "name": "source_span",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/source_span-1.10.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.1"
+    },
+    {
+      "name": "sqflite",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/sqflite-2.4.3",
+      "packageUri": "lib/",
+      "languageVersion": "3.12"
+    },
+    {
+      "name": "sqflite_android",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/sqflite_android-2.4.3",
+      "packageUri": "lib/",
+      "languageVersion": "3.12"
+    },
+    {
+      "name": "sqflite_common",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/sqflite_common-2.5.11",
+      "packageUri": "lib/",
+      "languageVersion": "3.12"
+    },
+    {
+      "name": "sqflite_darwin",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/sqflite_darwin-2.4.3+1",
+      "packageUri": "lib/",
+      "languageVersion": "3.12"
+    },
+    {
+      "name": "sqflite_platform_interface",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/sqflite_platform_interface-2.4.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.12"
+    },
+    {
+      "name": "stack_trace",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/stack_trace-1.12.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "state_notifier",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/state_notifier-1.0.0",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
+      "name": "stream_channel",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/stream_channel-2.1.4",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
+    },
+    {
+      "name": "string_scanner",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/string_scanner-1.4.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.1"
+    },
+    {
+      "name": "synchronized",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/synchronized-3.4.1+2",
+      "packageUri": "lib/",
+      "languageVersion": "3.12"
+    },
+    {
+      "name": "telegram_image_cropper",
+      "rootUri": "../packages/telegram_image_cropper",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
+      "name": "term_glyph",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/term_glyph-1.2.2",
+      "packageUri": "lib/",
+      "languageVersion": "3.1"
+    },
+    {
+      "name": "test_api",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/test_api-0.7.12",
+      "packageUri": "lib/",
+      "languageVersion": "3.10"
+    },
+    {
+      "name": "transparent_image",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/transparent_image-2.0.1",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
+      "name": "typed_data",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/typed_data-1.4.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "vector_math",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/vector_math-2.4.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.10"
+    },
+    {
+      "name": "video_player",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/video_player-2.14.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.12"
+    },
+    {
+      "name": "video_player_android",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/video_player_android-2.12.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.12"
+    },
+    {
+      "name": "video_player_avfoundation",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/video_player_avfoundation-2.11.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.10"
+    },
+    {
+      "name": "video_player_platform_interface",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/video_player_platform_interface-6.9.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.10"
+    },
+    {
+      "name": "video_player_web",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/video_player_web-2.4.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.6"
+    },
+    {
+      "name": "video_trimmer",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/video_trimmer-5.0.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.0"
+    },
+    {
+      "name": "visibility_detector",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/visibility_detector-0.4.0+2",
+      "packageUri": "lib/",
+      "languageVersion": "2.12"
+    },
+    {
+      "name": "vm_service",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/vm_service-15.3.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.5"
+    },
+    {
+      "name": "web",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/web-1.1.1",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "xdg_directories",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/xdg_directories-1.1.0",
+      "packageUri": "lib/",
+      "languageVersion": "3.3"
+    },
+    {
+      "name": "yaml",
+      "rootUri": "file:///root/.pub-cache/hosted/pub.dev/yaml-3.1.3",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    },
+    {
+      "name": "my_finance",
+      "rootUri": "../",
+      "packageUri": "lib/",
+      "languageVersion": "3.4"
+    }
+  ],
+  "generator": "pub",
+  "generatorVersion": "3.13.1",
+  "flutterRoot": "file:///root/flutter",
+  "flutterVersion": "3.47.1",
+  "pubCache": "file:///root/.pub-cache"
+}
+
+
+### FILE: .dart_tool/package_graph.json
+{
+  "roots": [
+    "my_finance"
+  ],
+  "packages": [
+    {
+      "name": "my_finance",
+      "version": "1.0.0+1",
+      "dependencies": [
+        "cupertino_icons",
+        "fl_chart",
+        "flutter",
+        "flutter_riverpod",
+        "flutter_staggered_animations",
+        "get_thumbnail_video",
+        "image_picker",
+        "intl",
+        "liquid_glass_widgets",
+        "lottie",
+        "number_flow_flutter",
+        "path",
+        "path_provider",
+        "shared_preferences",
+        "solar_icons",
+        "sqflite",
+        "telegram_image_cropper",
+        "video_player",
+        "video_trimmer",
+        "visibility_detector"
+      ],
+      "devDependencies": [
+        "flutter_lints",
+        "flutter_test"
+      ]
+    },
+    {
+      "name": "flutter_lints",
+      "version": "5.0.0",
+      "dependencies": [
+        "lints"
+      ]
+    },
+    {
+      "name": "flutter_test",
+      "version": "0.0.0",
+      "dependencies": [
+        "clock",
+        "collection",
+        "fake_async",
+        "flutter",
+        "leak_tracker_flutter_testing",
+        "matcher",
+        "meta",
+        "path",
+        "stack_trace",
+        "stream_channel",
+        "test_api",
+        "vector_math"
+      ]
+    },
+    {
+      "name": "get_thumbnail_video",
+      "version": "0.7.3",
+      "dependencies": [
+        "cross_file",
+        "flutter",
+        "flutter_web_plugins",
+        "plugin_platform_interface",
+        "web"
+      ]
+    },
+    {
+      "name": "video_trimmer",
+      "version": "5.0.0",
+      "dependencies": [
+        "flutter",
+        "flutter_native_video_trimmer",
+        "get_thumbnail_video",
+        "image",
+        "intl",
+        "path",
+        "path_provider",
+        "transparent_image",
+        "video_player"
+      ]
+    },
+    {
+      "name": "video_player",
+      "version": "2.14.0",
+      "dependencies": [
+        "collection",
+        "flutter",
+        "html",
+        "video_player_android",
+        "video_player_avfoundation",
+        "video_player_platform_interface",
+        "video_player_web"
+      ]
+    },
+    {
+      "name": "telegram_image_cropper",
+      "version": "1.0.2",
+      "dependencies": [
+        "flutter",
+        "image",
+        "vector_math",
+        "web"
+      ]
+    },
+    {
+      "name": "liquid_glass_widgets",
+      "version": "1.2.0",
+      "dependencies": [
+        "flutter"
+      ]
+    },
+    {
+      "name": "visibility_detector",
+      "version": "0.4.0+2",
+      "dependencies": [
+        "flutter"
+      ]
+    },
+    {
+      "name": "flutter_staggered_animations",
+      "version": "1.1.1",
+      "dependencies": [
+        "flutter"
+      ]
+    },
+    {
+      "name": "number_flow_flutter",
+      "version": "0.1.0",
+      "dependencies": [
+        "flutter",
+        "intl"
+      ]
+    },
+    {
+      "name": "lottie",
+      "version": "3.5.1",
+      "dependencies": [
+        "archive",
+        "flutter",
+        "http",
+        "path",
+        "vector_math"
+      ]
+    },
+    {
+      "name": "path_provider",
+      "version": "2.1.6",
+      "dependencies": [
+        "flutter",
+        "path_provider_android",
+        "path_provider_foundation",
+        "path_provider_linux",
+        "path_provider_platform_interface",
+        "path_provider_windows"
+      ]
+    },
+    {
+      "name": "image_picker",
+      "version": "1.2.3",
+      "dependencies": [
+        "flutter",
+        "image_picker_android",
+        "image_picker_for_web",
+        "image_picker_ios",
+        "image_picker_linux",
+        "image_picker_macos",
+        "image_picker_platform_interface",
+        "image_picker_windows"
+      ]
+    },
+    {
+      "name": "shared_preferences",
+      "version": "2.5.5",
+      "dependencies": [
+        "flutter",
+        "shared_preferences_android",
+        "shared_preferences_foundation",
+        "shared_preferences_linux",
+        "shared_preferences_platform_interface",
+        "shared_preferences_web",
+        "shared_preferences_windows"
+      ]
+    },
+    {
+      "name": "intl",
+      "version": "0.20.3",
+      "dependencies": [
+        "clock",
+        "meta",
+        "path"
+      ]
+    },
+    {
+      "name": "fl_chart",
+      "version": "0.69.2",
+      "dependencies": [
+        "equatable",
+        "flutter"
+      ]
+    },
+    {
+      "name": "path",
+      "version": "1.9.1",
+      "dependencies": []
+    },
+    {
+      "name": "sqflite",
+      "version": "2.4.3",
+      "dependencies": [
+        "flutter",
+        "path",
+        "sqflite_android",
+        "sqflite_common",
+        "sqflite_darwin",
+        "sqflite_platform_interface"
+      ]
+    },
+    {
+      "name": "flutter_riverpod",
+      "version": "2.6.1",
+      "dependencies": [
+        "collection",
+        "flutter",
+        "meta",
+        "riverpod",
+        "state_notifier"
+      ]
+    },
+    {
+      "name": "solar_icons",
+      "version": "0.1.0",
+      "dependencies": [
+        "flutter"
+      ]
+    },
+    {
+      "name": "cupertino_icons",
+      "version": "1.0.9",
+      "dependencies": []
+    },
+    {
+      "name": "flutter",
+      "version": "0.0.0",
+      "dependencies": [
+        "characters",
+        "collection",
+        "material_color_utilities",
+        "meta",
+        "sky_engine",
+        "vector_math"
+      ]
+    },
+    {
+      "name": "lints",
+      "version": "5.1.1",
+      "dependencies": []
+    },
+    {
+      "name": "stream_channel",
+      "version": "2.1.4",
+      "dependencies": [
+        "async"
+      ]
+    },
+    {
+      "name": "meta",
+      "version": "1.18.3",
+      "dependencies": []
+    },
+    {
+      "name": "collection",
+      "version": "1.19.1",
+      "dependencies": []
+    },
+    {
+      "name": "leak_tracker_flutter_testing",
+      "version": "3.0.10",
+      "dependencies": [
+        "flutter",
+        "leak_tracker",
+        "leak_tracker_testing",
+        "matcher",
+        "meta"
+      ]
+    },
+    {
+      "name": "vector_math",
+      "version": "2.4.0",
+      "dependencies": []
+    },
+    {
+      "name": "stack_trace",
+      "version": "1.12.1",
+      "dependencies": [
+        "path"
+      ]
+    },
+    {
+      "name": "clock",
+      "version": "1.1.2",
+      "dependencies": []
+    },
+    {
+      "name": "fake_async",
+      "version": "1.3.3",
+      "dependencies": [
+        "clock",
+        "collection"
+      ]
+    },
+    {
+      "name": "matcher",
+      "version": "0.12.20",
+      "dependencies": [
+        "async",
+        "meta",
+        "stack_trace",
+        "term_glyph",
+        "test_api"
+      ]
+    },
+    {
+      "name": "test_api",
+      "version": "0.7.12",
+      "dependencies": [
+        "async",
+        "boolean_selector",
+        "collection",
+        "meta",
+        "source_span",
+        "stack_trace",
+        "stream_channel",
+        "string_scanner",
+        "term_glyph"
+      ]
+    },
+    {
+      "name": "cross_file",
+      "version": "0.3.5+4",
+      "dependencies": [
+        "meta",
+        "web"
+      ]
+    },
+    {
+      "name": "plugin_platform_interface",
+      "version": "2.1.8",
+      "dependencies": [
+        "meta"
+      ]
+    },
+    {
+      "name": "web",
+      "version": "1.1.1",
+      "dependencies": []
+    },
+    {
+      "name": "flutter_web_plugins",
+      "version": "0.0.0",
+      "dependencies": [
+        "flutter"
+      ]
+    },
+    {
+      "name": "image",
+      "version": "4.9.2",
+      "dependencies": [
+        "archive"
+      ]
+    },
+    {
+      "name": "transparent_image",
+      "version": "2.0.1",
+      "dependencies": []
+    },
+    {
+      "name": "flutter_native_video_trimmer",
+      "version": "1.1.9",
+      "dependencies": [
+        "flutter",
+        "plugin_platform_interface"
+      ]
+    },
+    {
+      "name": "video_player_web",
+      "version": "2.4.0",
+      "dependencies": [
+        "flutter",
+        "flutter_web_plugins",
+        "video_player_platform_interface",
+        "web"
+      ]
+    },
+    {
+      "name": "video_player_platform_interface",
+      "version": "6.9.0",
+      "dependencies": [
+        "flutter",
+        "plugin_platform_interface"
+      ]
+    },
+    {
+      "name": "video_player_avfoundation",
+      "version": "2.11.1",
+      "dependencies": [
+        "flutter",
+        "meta",
+        "video_player_platform_interface"
+      ]
+    },
+    {
+      "name": "video_player_android",
+      "version": "2.12.1",
+      "dependencies": [
+        "flutter",
+        "meta",
+        "video_player_platform_interface"
+      ]
+    },
+    {
+      "name": "html",
+      "version": "0.15.7",
+      "dependencies": [
+        "csslib",
+        "source_span"
+      ]
+    },
+    {
+      "name": "http",
+      "version": "1.6.0",
+      "dependencies": [
+        "async",
+        "http_parser",
+        "meta",
+        "web"
+      ]
+    },
+    {
+      "name": "archive",
+      "version": "4.2.0",
+      "dependencies": [
+        "path",
+        "posix"
+      ]
+    },
+    {
+      "name": "path_provider_windows",
+      "version": "2.3.0",
+      "dependencies": [
+        "ffi",
+        "flutter",
+        "path",
+        "path_provider_platform_interface"
+      ]
+    },
+    {
+      "name": "path_provider_platform_interface",
+      "version": "2.1.3",
+      "dependencies": [
+        "flutter",
+        "platform",
+        "plugin_platform_interface"
+      ]
+    },
+    {
+      "name": "path_provider_linux",
+      "version": "2.2.2",
+      "dependencies": [
+        "ffi",
+        "flutter",
+        "path",
+        "path_provider_platform_interface",
+        "xdg_directories"
+      ]
+    },
+    {
+      "name": "path_provider_foundation",
+      "version": "2.6.0",
+      "dependencies": [
+        "ffi",
+        "flutter",
+        "objective_c",
+        "path_provider_platform_interface"
+      ]
+    },
+    {
+      "name": "path_provider_android",
+      "version": "2.3.1",
+      "dependencies": [
+        "flutter",
+        "jni",
+        "jni_flutter",
+        "path_provider_platform_interface"
+      ]
+    },
+    {
+      "name": "image_picker_windows",
+      "version": "0.2.2",
+      "dependencies": [
+        "file_selector_platform_interface",
+        "file_selector_windows",
+        "flutter",
+        "image_picker_platform_interface"
+      ]
+    },
+    {
+      "name": "image_picker_platform_interface",
+      "version": "2.11.1",
+      "dependencies": [
+        "cross_file",
+        "flutter",
+        "http",
+        "plugin_platform_interface"
+      ]
+    },
+    {
+      "name": "image_picker_macos",
+      "version": "0.2.2+1",
+      "dependencies": [
+        "file_selector_macos",
+        "file_selector_platform_interface",
+        "flutter",
+        "image_picker_platform_interface"
+      ]
+    },
+    {
+      "name": "image_picker_linux",
+      "version": "0.2.2",
+      "dependencies": [
+        "file_selector_linux",
+        "file_selector_platform_interface",
+        "flutter",
+        "image_picker_platform_interface"
+      ]
+    },
+    {
+      "name": "image_picker_ios",
+      "version": "0.8.13+6",
+      "dependencies": [
+        "flutter",
+        "image_picker_platform_interface"
+      ]
+    },
+    {
+      "name": "image_picker_for_web",
+      "version": "3.1.1",
+      "dependencies": [
+        "flutter",
+        "flutter_web_plugins",
+        "image_picker_platform_interface",
+        "mime",
+        "web"
+      ]
+    },
+    {
+      "name": "image_picker_android",
+      "version": "0.8.13+19",
+      "dependencies": [
+        "flutter",
+        "flutter_plugin_android_lifecycle",
+        "image_picker_platform_interface",
+        "meta"
+      ]
+    },
+    {
+      "name": "shared_preferences_windows",
+      "version": "2.4.1",
+      "dependencies": [
+        "file",
+        "flutter",
+        "path",
+        "path_provider_platform_interface",
+        "path_provider_windows",
+        "shared_preferences_platform_interface"
+      ]
+    },
+    {
+      "name": "shared_preferences_web",
+      "version": "2.4.3",
+      "dependencies": [
+        "flutter",
+        "flutter_web_plugins",
+        "shared_preferences_platform_interface",
+        "web"
+      ]
+    },
+    {
+      "name": "shared_preferences_platform_interface",
+      "version": "2.4.2",
+      "dependencies": [
+        "flutter",
+        "plugin_platform_interface"
+      ]
+    },
+    {
+      "name": "shared_preferences_linux",
+      "version": "2.4.1",
+      "dependencies": [
+        "file",
+        "flutter",
+        "path",
+        "path_provider_linux",
+        "path_provider_platform_interface",
+        "shared_preferences_platform_interface"
+      ]
+    },
+    {
+      "name": "shared_preferences_foundation",
+      "version": "2.5.6",
+      "dependencies": [
+        "flutter",
+        "shared_preferences_platform_interface"
+      ]
+    },
+    {
+      "name": "shared_preferences_android",
+      "version": "2.4.27",
+      "dependencies": [
+        "flutter",
+        "meta",
+        "shared_preferences_platform_interface"
+      ]
+    },
+    {
+      "name": "equatable",
+      "version": "2.1.0",
+      "dependencies": [
+        "collection",
+        "meta"
+      ]
+    },
+    {
+      "name": "sqflite_common",
+      "version": "2.5.11",
+      "dependencies": [
+        "meta",
+        "path",
+        "synchronized"
+      ]
+    },
+    {
+      "name": "sqflite_platform_interface",
+      "version": "2.4.1",
+      "dependencies": [
+        "flutter",
+        "meta",
+        "platform",
+        "plugin_platform_interface",
+        "sqflite_common"
+      ]
+    },
+    {
+      "name": "sqflite_darwin",
+      "version": "2.4.3+1",
+      "dependencies": [
+        "flutter",
+        "meta",
+        "path",
+        "sqflite_common",
+        "sqflite_platform_interface"
+      ]
+    },
+    {
+      "name": "sqflite_android",
+      "version": "2.4.3",
+      "dependencies": [
+        "flutter",
+        "path",
+        "sqflite_common",
+        "sqflite_platform_interface"
+      ]
+    },
+    {
+      "name": "state_notifier",
+      "version": "1.0.0",
+      "dependencies": [
+        "meta"
+      ]
+    },
+    {
+      "name": "riverpod",
+      "version": "2.6.1",
+      "dependencies": [
+        "collection",
+        "meta",
+        "stack_trace",
+        "state_notifier"
+      ]
+    },
+    {
+      "name": "sky_engine",
+      "version": "0.0.0",
+      "dependencies": []
+    },
+    {
+      "name": "material_color_utilities",
+      "version": "0.13.0",
+      "dependencies": [
+        "collection"
+      ]
+    },
+    {
+      "name": "characters",
+      "version": "1.4.1",
+      "dependencies": []
+    },
+    {
+      "name": "async",
+      "version": "2.13.1",
+      "dependencies": [
+        "collection",
+        "meta"
+      ]
+    },
+    {
+      "name": "leak_tracker_testing",
+      "version": "3.0.2",
+      "dependencies": [
+        "leak_tracker",
+        "matcher",
+        "meta"
+      ]
+    },
+    {
+      "name": "leak_tracker",
+      "version": "11.0.2",
+      "dependencies": [
+        "clock",
+        "collection",
+        "meta",
+        "path",
+        "vm_service"
+      ]
+    },
+    {
+      "name": "term_glyph",
+      "version": "1.2.2",
+      "dependencies": []
+    },
+    {
+      "name": "string_scanner",
+      "version": "1.4.1",
+      "dependencies": [
+        "source_span"
+      ]
+    },
+    {
+      "name": "source_span",
+      "version": "1.10.2",
+      "dependencies": [
+        "collection",
+        "path",
+        "term_glyph"
+      ]
+    },
+    {
+      "name": "boolean_selector",
+      "version": "2.1.2",
+      "dependencies": [
+        "source_span",
+        "string_scanner"
+      ]
+    },
+    {
+      "name": "csslib",
+      "version": "1.0.2",
+      "dependencies": [
+        "source_span"
+      ]
+    },
+    {
+      "name": "http_parser",
+      "version": "4.1.2",
+      "dependencies": [
+        "collection",
+        "source_span",
+        "string_scanner",
+        "typed_data"
+      ]
+    },
+    {
+      "name": "posix",
+      "version": "6.5.2",
+      "dependencies": [
+        "ffi",
+        "meta",
+        "path"
+      ]
+    },
+    {
+      "name": "ffi",
+      "version": "2.2.0",
+      "dependencies": []
+    },
+    {
+      "name": "platform",
+      "version": "3.1.6",
+      "dependencies": []
+    },
+    {
+      "name": "xdg_directories",
+      "version": "1.1.0",
+      "dependencies": [
+        "meta",
+        "path"
+      ]
+    },
+    {
+      "name": "objective_c",
+      "version": "9.5.0",
+      "dependencies": [
+        "code_assets",
+        "collection",
+        "ffi",
+        "hooks",
+        "logging",
+        "meta",
+        "pub_semver"
+      ]
+    },
+    {
+      "name": "jni_flutter",
+      "version": "1.0.2",
+      "dependencies": [
+        "flutter",
+        "jni"
+      ]
+    },
+    {
+      "name": "jni",
+      "version": "1.0.3",
+      "dependencies": [
+        "args",
+        "collection",
+        "ffi",
+        "jni_util",
+        "meta",
+        "package_config",
+        "path",
+        "plugin_platform_interface"
+      ]
+    },
+    {
+      "name": "file_selector_windows",
+      "version": "0.9.3+5",
+      "dependencies": [
+        "cross_file",
+        "file_selector_platform_interface",
+        "flutter"
+      ]
+    },
+    {
+      "name": "file_selector_platform_interface",
+      "version": "2.7.0",
+      "dependencies": [
+        "cross_file",
+        "flutter",
+        "http",
+        "plugin_platform_interface"
+      ]
+    },
+    {
+      "name": "file_selector_macos",
+      "version": "0.9.5",
+      "dependencies": [
+        "cross_file",
+        "file_selector_platform_interface",
+        "flutter"
+      ]
+    },
+    {
+      "name": "file_selector_linux",
+      "version": "0.9.4",
+      "dependencies": [
+        "cross_file",
+        "file_selector_platform_interface",
+        "flutter"
+      ]
+    },
+    {
+      "name": "mime",
+      "version": "2.0.0",
+      "dependencies": []
+    },
+    {
+      "name": "flutter_plugin_android_lifecycle",
+      "version": "2.0.35",
+      "dependencies": [
+        "flutter"
+      ]
+    },
+    {
+      "name": "file",
+      "version": "7.0.1",
+      "dependencies": [
+        "meta",
+        "path"
+      ]
+    },
+    {
+      "name": "synchronized",
+      "version": "3.4.1+2",
+      "dependencies": []
+    },
+    {
+      "name": "vm_service",
+      "version": "15.3.0",
+      "dependencies": []
+    },
+    {
+      "name": "typed_data",
+      "version": "1.4.0",
+      "dependencies": [
+        "collection"
+      ]
+    },
+    {
+      "name": "pub_semver",
+      "version": "2.2.0",
+      "dependencies": [
+        "collection"
+      ]
+    },
+    {
+      "name": "logging",
+      "version": "1.3.0",
+      "dependencies": []
+    },
+    {
+      "name": "hooks",
+      "version": "2.0.2",
+      "dependencies": [
+        "collection",
+        "crypto",
+        "logging",
+        "meta",
+        "pub_semver",
+        "record_use",
+        "yaml"
+      ]
+    },
+    {
+      "name": "code_assets",
+      "version": "1.2.1",
+      "dependencies": [
+        "collection",
+        "hooks"
+      ]
+    },
+    {
+      "name": "package_config",
+      "version": "3.0.0",
+      "dependencies": [
+        "meta"
+      ]
+    },
+    {
+      "name": "jni_util",
+      "version": "1.0.0",
+      "dependencies": [
+        "path"
+      ]
+    },
+    {
+      "name": "args",
+      "version": "2.7.0",
+      "dependencies": []
+    },
+    {
+      "name": "yaml",
+      "version": "3.1.3",
+      "dependencies": [
+        "collection",
+        "source_span",
+        "string_scanner"
+      ]
+    },
+    {
+      "name": "record_use",
+      "version": "0.6.0",
+      "dependencies": [
+        "collection",
+        "meta",
+        "pub_semver"
+      ]
+    },
+    {
+      "name": "crypto",
+      "version": "3.0.7",
+      "dependencies": [
+        "typed_data"
+      ]
+    }
+  ],
+  "configVersion": 1
+}
+
+### FILE: .github/workflows/build-apk.yml
+name: Build APK
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.1'
+          channel: 'stable'
+          cache: true
+
+      - name: Cache pub packages
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.pub-cache
+          key: pub-${{ runner.os }}-${{ hashFiles('pubspec.lock') }}
+          restore-keys: |
+            pub-${{ runner.os }}-
+
+      - name: Cache Gradle
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.gradle/notifications
+          key: gradle-${{ runner.os }}-${{ hashFiles('android/gradle/wrapper/gradle-wrapper.properties', 'android/build.gradle.kts', 'android/app/build.gradle.kts', 'android/settings.gradle.kts', 'android/gradle.properties') }}
+          restore-keys: |
+            gradle-${{ runner.os }}-
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Decode keystore
+        run: echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > android/app/release-key.jks
+
+      - name: Build APK
+        run: flutter build apk --release --target-platform android-arm64 --split-per-abi
+        env:
+          KEYSTORE_PATH: release-key.jks
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: my-finance-apk
+          path: build/app/outputs/flutter-apk/*.apk
+
+### FILE: analysis_options.yaml
+# This file configures the analyzer, which statically analyzes Dart code to
+# check for errors, warnings, and lints.
+#
+# The issues identified by the analyzer are surfaced in the UI of Dart-enabled
+# IDEs (https://dart.dev/tools#ides-and-editors). The analyzer can also be
+# invoked from the command line by running `flutter analyze`.
+
+# The following line activates a set of recommended lints for Flutter apps,
+# packages, and plugins designed to encourage good coding practices.
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
+    - windows/**
+    - macos/**
+    - linux/**
+
+linter:
+  # The lint rules applied to this project can be customized in the
+  # section below to disable rules from the `package:flutter_lints/flutter.yaml`
+  # included above or to enable additional rules. A list of all available lints
+  # and their documentation is published at https://dart.dev/lints.
+  #
+  # Instead of disabling a lint rule for the entire project in the
+  # section below, it can also be suppressed for a single line of code
+  # or a specific dart file by using the `// ignore: name_of_lint` and
+  # `// ignore_for_file: name_of_lint` syntax on the line or in the file
+  # producing the lint.
+  rules:
+    # avoid_print: false  # Uncomment to disable the `avoid_print` rule
+    # prefer_single_quotes: true  # Uncomment to enable the `prefer_single_quotes` rule
+
+# Additional information about this file can be found at
+# https://dart.dev/guides/language/analysis-options
+
+
+### FILE: android/app/build.gradle.kts
+plugins {
+    id("com.android.application")
+    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
+    id("dev.flutter.flutter-gradle-plugin")
+}
+
+android {
+    namespace = "com.example.my_finance"
+    compileSdk = flutter.compileSdkVersion
+    ndkVersion = flutter.ndkVersion
+
+    signingConfigs {
+        create("release") {
+            storeFile = System.getenv("KEYSTORE_PATH")?.let { file(it) }
+            storePassword = System.getenv("KEYSTORE_PASSWORD")
+            keyAlias = System.getenv("KEY_ALIAS")
+            keyPassword = System.getenv("KEY_PASSWORD")
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    defaultConfig {
+        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
+        applicationId = "com.example.my_finance"
+        // You can update the following values to match your application needs.
+        // For more information, see: https://flutter.dev/to/review-gradle-config.
+        minSdk = flutter.minSdkVersion
+        targetSdk = flutter.targetSdkVersion
+        // Uses the version code from pubspec.yaml. When using split APKs, 1000 * ABI_VERSION
+        // is added automatically by Flutter. (https://developer.android.com/studio/build/configure-apk-splits#configure-APK-versions)
+        // You can force using the value of versionCode by specifying the `-P force-version-code-ignoring-abi=true`
+        // flag during build.
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
+    }
+
+    buildTypes {
+        release {
+            signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+        }
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget = org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17
+    }
+}
+
+flutter {
+    source = "../.."
+}
+
+
+### FILE: android/app/proguard-rules.pro
+# Flutter wrapper
+-keep class io.flutter.app.** { *; }
+-keep class io.flutter.plugin.** { *; }
+-keep class io.flutter.util.** { *; }
+-keep class io.flutter.view.** { *; }
+-keep class io.flutter.** { *; }
+-keep class io.flutter.plugins.** { *; }
+-keep class io.flutter.embedding.** { *; }
+
+# sqflite
+-keep class com.tekartik.sqflite.** { *; }
+
+# image_picker
+-keep class io.flutter.plugins.imagepicker.** { *; }
+
+# shared_preferences
+-keep class io.flutter.plugins.sharedpreferences.** { *; }
+
+# Keep annotations & generic signatures (aman untuk plugin yang pakai reflection)
+-keepattributes Signature
+-keepattributes *Annotation*
+-keepattributes Exceptions
+-keepattributes InnerClasses
+
+# Jangan warning untuk class Android yang di-strip dev tools
+-dontwarn io.flutter.embedding.**
+
+### FILE: android/app/src/debug/AndroidManifest.xml
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- The INTERNET permission is required for development. Specifically,
+         the Flutter tool needs it to communicate with the running application
+         to allow setting breakpoints, to provide hot reload, etc.
+    -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+</manifest>
+
+
+### FILE: android/app/src/main/AndroidManifest.xml
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <application
+        android:label="my_finance"
+        android:name="${applicationName}"
+        android:icon="@mipmap/ic_launcher">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:taskAffinity=""
+            android:theme="@style/LaunchTheme"
+            android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+            android:hardwareAccelerated="true"
+            android:windowSoftInputMode="adjustResize">
+            <!-- Specifies an Android theme to apply to this Activity as soon as
+                 the Android process has started. This theme is visible to the user
+                 while the Flutter UI initializes. After that, this theme continues
+                 to determine the Window background behind the Flutter UI. -->
+            <meta-data
+              android:name="io.flutter.embedding.android.NormalTheme"
+              android:resource="@style/NormalTheme"
+              />
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+        <!-- Don't delete the meta-data below.
+             This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
+        <meta-data
+            android:name="flutterEmbedding"
+            android:value="2" />
+    </application>
+    <!-- Required to query activities that can process text, see:
+         https://developer.android.com/training/package-visibility and
+         https://developer.android.com/reference/android/content/Intent#ACTION_PROCESS_TEXT.
+
+         In particular, this is used by the Flutter engine in io.flutter.plugin.text.ProcessTextPlugin. -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.PROCESS_TEXT"/>
+            <data android:mimeType="text/plain"/>
+        </intent>
+    </queries>
+</manifest>
+
+
+### FILE: android/app/src/main/java/io/flutter/plugins/GeneratedPluginRegistrant.java
+package io.flutter.plugins;
+
+import androidx.annotation.Keep;
+import androidx.annotation.NonNull;
+import io.flutter.Log;
+
+import io.flutter.embedding.engine.FlutterEngine;
+
+/**
+ * Generated file. Do not edit.
+ * This file is generated by the Flutter tool based on the
+ * plugins that support the Android platform.
+ */
+@Keep
+public final class GeneratedPluginRegistrant {
+  private static final String TAG = "GeneratedPluginRegistrant";
+  public static void registerWith(@NonNull FlutterEngine flutterEngine) {
+    try {
+      flutterEngine.getPlugins().add(new com.example.video_trimmer.VideoTrimmerPlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin flutter_native_video_trimmer, com.example.video_trimmer.VideoTrimmerPlugin", e);
+    }
+    try {
+      flutterEngine.getPlugins().add(new io.flutter.plugins.flutter_plugin_android_lifecycle.FlutterAndroidLifecyclePlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin flutter_plugin_android_lifecycle, io.flutter.plugins.flutter_plugin_android_lifecycle.FlutterAndroidLifecyclePlugin", e);
+    }
+    try {
+      flutterEngine.getPlugins().add(new com.rocksti.get_thumbnail_video.VideoThumbnailPlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin get_thumbnail_video, com.rocksti.get_thumbnail_video.VideoThumbnailPlugin", e);
+    }
+    try {
+      flutterEngine.getPlugins().add(new io.flutter.plugins.imagepicker.ImagePickerPlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin image_picker_android, io.flutter.plugins.imagepicker.ImagePickerPlugin", e);
+    }
+    try {
+      flutterEngine.getPlugins().add(new com.github.dart_lang.jni.JniPlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin jni, com.github.dart_lang.jni.JniPlugin", e);
+    }
+    try {
+      flutterEngine.getPlugins().add(new com.github.dart_lang.jni_flutter.JniFlutterPlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin jni_flutter, com.github.dart_lang.jni_flutter.JniFlutterPlugin", e);
+    }
+    try {
+      flutterEngine.getPlugins().add(new io.flutter.plugins.sharedpreferences.SharedPreferencesPlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin shared_preferences_android, io.flutter.plugins.sharedpreferences.SharedPreferencesPlugin", e);
+    }
+    try {
+      flutterEngine.getPlugins().add(new com.tekartik.sqflite.SqflitePlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin sqflite_android, com.tekartik.sqflite.SqflitePlugin", e);
+    }
+    try {
+      flutterEngine.getPlugins().add(new io.flutter.plugins.videoplayer.VideoPlayerPlugin());
+    } catch (Exception e) {
+      Log.e(TAG, "Error registering plugin video_player_android, io.flutter.plugins.videoplayer.VideoPlayerPlugin", e);
+    }
+  }
+}
+
+
+### FILE: android/app/src/main/kotlin/com/example/my_finance/MainActivity.kt
+package com.example.my_finance
+
+import android.app.Activity
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import androidx.annotation.NonNull
+import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.MethodChannel
+import java.io.File
+import java.io.FileOutputStream
+
+class MainActivity : FlutterActivity() {
+    private val channelName = "com.example.my_finance/gallery_picker"
+    private val pickImageRequestCode = 9001
+    private val pickMediaRequestCode = 9002
+    private var pendingResult: MethodChannel.Result? = null
+
+    override fun configureFlutterEngine(@NonNull flutterEngine: FlutterEngine) {
+        super.configureFlutterEngine(flutterEngine)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, channelName).setMethodCallHandler { call, result ->
+            if (call.method == "pickImageWithChooser") {
+                pendingResult = result
+
+                val baseIntent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                    type = "image/*"
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                }
+
+                // Ask the system for every app that can handle this intent,
+                // instead of maintaining a hardcoded per-brand package list.
+                // This adapts automatically to any device/OEM without needing
+                // future updates when new phone brands appear.
+                val resolvedActivities = packageManager.queryIntentActivities(baseIntent, PackageManager.MATCH_DEFAULT_ONLY)
+
+                // The Android Photo Picker (styled like Google Photos, active
+                // on Android 11+/13+) always shows up under a component whose
+                // package or class name contains one of these markers,
+                // regardless of device brand. Filter it out dynamically.
+                val photoPickerMarkers = listOf("photopicker", "media.module")
+                fun isPhotoPicker(pkg: String, cls: String): Boolean =
+                    photoPickerMarkers.any { marker -> pkg.contains(marker, ignoreCase = true) || cls.contains(marker, ignoreCase = true) }
+
+                val realGalleryApps = resolvedActivities.filter { info ->
+                    !isPhotoPicker(info.activityInfo.packageName, info.activityInfo.name)
+                }
+
+                when {
+                    realGalleryApps.size == 1 -> {
+                        // Exactly one real gallery/file app found: open it
+                        // directly, with no dialog at all.
+                        val info = realGalleryApps.first().activityInfo
+                        val directIntent = Intent(baseIntent).apply {
+                            setClassName(info.packageName, info.name)
+                        }
+                        startActivityForResult(directIntent, pickImageRequestCode)
+                    }
+                    realGalleryApps.size > 1 -> {
+                        // Multiple real candidates: show a chooser built only
+                        // from those, so the Photo Picker never appears as
+                        // an option even if it's technically installed.
+                        val targetedIntents = realGalleryApps.map { info ->
+                            Intent(baseIntent).apply {
+                                setClassName(info.activityInfo.packageName, info.activityInfo.name)
+                            }
+                        }
+                        val chooser = Intent.createChooser(targetedIntents.first(), "Pilih Foto Profil").apply {
+                            putExtra(Intent.EXTRA_INITIAL_INTENTS, targetedIntents.drop(1).toTypedArray())
+                        }
+                        startActivityForResult(chooser, pickImageRequestCode)
+                    }
+                    else -> {
+                        // No non-Photo-Picker app found (e.g. Pixel / near-
+                        // stock Android with no separate gallery app). Fall
+                        // back to whatever the system offers, which will be
+                        // the Photo Picker or Google Photos itself.
+                        startActivityForResult(baseIntent, pickImageRequestCode)
+                    }
+                }
+            } else if (call.method == "pickMediaWithChooser") {
+                pendingResult = result
+
+                // Same native "real gallery app" chooser as pickImageWithChooser,
+                // but accepts both images and videos so a single "Choose from
+                // gallery" option lets the user pick either media type.
+                val baseIntent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                    type = "*/*"
+                    putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("image/*", "video/*"))
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                }
+
+                // queryIntentActivities ignores EXTRA_MIME_TYPES and only looks at
+                // the intent's literal "type" field. Resolving with type "*/*"
+                // would match ANY app that can receive arbitrary content (file
+                // managers, sound pickers, contact pickers, etc), which is why
+                // apps like "Sound picker" or "My Files" showed up before.
+                // Resolve for image/* and video/* separately instead, then
+                // merge, so only apps that truly handle photos or videos appear.
+                val imageProbe = Intent(Intent.ACTION_GET_CONTENT).apply {
+                    type = "image/*"
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                }
+                val videoProbe = Intent(Intent.ACTION_GET_CONTENT).apply {
+                    type = "video/*"
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                }
+
+                val resolvedActivities = (
+                    packageManager.queryIntentActivities(imageProbe, PackageManager.MATCH_DEFAULT_ONLY) +
+                    packageManager.queryIntentActivities(videoProbe, PackageManager.MATCH_DEFAULT_ONLY)
+                ).distinctBy { "${it.activityInfo.packageName}/${it.activityInfo.name}" }
+
+                val photoPickerMarkers = listOf("photopicker", "media.module")
+                fun isPhotoPicker(pkg: String, cls: String): Boolean =
+                    photoPickerMarkers.any { marker -> pkg.contains(marker, ignoreCase = true) || cls.contains(marker, ignoreCase = true) }
+
+                val realGalleryApps = resolvedActivities.filter { info ->
+                    !isPhotoPicker(info.activityInfo.packageName, info.activityInfo.name)
+                }
+
+                when {
+                    realGalleryApps.size == 1 -> {
+                        val info = realGalleryApps.first().activityInfo
+                        val directIntent = Intent(baseIntent).apply {
+                            setClassName(info.packageName, info.name)
+                        }
+                        startActivityForResult(directIntent, pickMediaRequestCode)
+                    }
+                    realGalleryApps.size > 1 -> {
+                        val targetedIntents = realGalleryApps.map { info ->
+                            Intent(baseIntent).apply {
+                                setClassName(info.activityInfo.packageName, info.activityInfo.name)
+                            }
+                        }
+                        val chooser = Intent.createChooser(targetedIntents.first(), "Pilih Foto atau Video Profil").apply {
+                            putExtra(Intent.EXTRA_INITIAL_INTENTS, targetedIntents.drop(1).toTypedArray())
+                        }
+                        startActivityForResult(chooser, pickMediaRequestCode)
+                    }
+                    else -> {
+                        startActivityForResult(baseIntent, pickMediaRequestCode)
+                    }
+                }
+            } else {
+                result.notImplemented()
+            }
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (requestCode == pickImageRequestCode) {
+            val result = pendingResult
+            pendingResult = null
+            if (resultCode != Activity.RESULT_OK || data?.data == null) {
+                result?.success(null)
+                return
+            }
+            val uri: Uri = data.data!!
+            try {
+                val inputStream = contentResolver.openInputStream(uri)
+                if (inputStream == null) {
+                    result?.error("READ_FAILED", "Tidak bisa membaca gambar yang dipilih", null)
+                    return
+                }
+                val outputFile = File(cacheDir, "picked_profile_${System.currentTimeMillis()}.jpg")
+                FileOutputStream(outputFile).use { output ->
+                    inputStream.copyTo(output)
+                }
+                inputStream.close()
+                result?.success(outputFile.absolutePath)
+            } catch (e: Exception) {
+                result?.error("COPY_FAILED", e.message, null)
+            }
+        } else if (requestCode == pickMediaRequestCode) {
+            val result = pendingResult
+            pendingResult = null
+            if (resultCode != Activity.RESULT_OK || data?.data == null) {
+                result?.success(null)
+                return
+            }
+            val uri: Uri = data.data!!
+            try {
+                // Determine whether the picked file is an image or a video so
+                // the Dart side can route it to the right (crop vs trim+crop) flow.
+                val mimeType = contentResolver.getType(uri) ?: ""
+                val isVideo = mimeType.startsWith("video/")
+                val extension = if (isVideo) "mp4" else "jpg"
+                val inputStream = contentResolver.openInputStream(uri)
+                if (inputStream == null) {
+                    result?.error("READ_FAILED", "Tidak bisa membaca berkas yang dipilih", null)
+                    return
+                }
+                val outputFile = File(cacheDir, "picked_profile_media_${System.currentTimeMillis()}.$extension")
+                FileOutputStream(outputFile).use { output ->
+                    inputStream.copyTo(output)
+                }
+                inputStream.close()
+                result?.success(outputFile.absolutePath)
+            } catch (e: Exception) {
+                result?.error("COPY_FAILED", e.message, null)
+            }
+        } else {
+            super.onActivityResult(requestCode, resultCode, data)
+        }
+    }
+}
+
+
+### FILE: android/app/src/main/res/drawable-v21/launch_background.xml
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Modify this file to customize your launch splash screen -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="?android:colorBackground" />
+
+    <!-- You can insert your own image assets here -->
+    <!-- <item>
+        <bitmap
+            android:gravity="center"
+            android:src="@mipmap/launch_image" />
+    </item> -->
+</layer-list>
+
+
+### FILE: android/app/src/main/res/drawable/launch_background.xml
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Modify this file to customize your launch splash screen -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@android:color/white" />
+
+    <!-- You can insert your own image assets here -->
+    <!-- <item>
+        <bitmap
+            android:gravity="center"
+            android:src="@mipmap/launch_image" />
+    </item> -->
+</layer-list>
+
+
+### FILE: android/app/src/main/res/values-night/styles.xml
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Theme applied to the Android Window while the process is starting when the OS's Dark Mode setting is on -->
+    <style name="LaunchTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <!-- Show a splash screen on the activity. Automatically removed when
+             the Flutter engine draws its first frame -->
+        <item name="android:windowBackground">@drawable/launch_background</item>
+    </style>
+    <!-- Theme applied to the Android Window as soon as the process has started.
+         This theme determines the color of the Android Window while your
+         Flutter UI initializes, as well as behind your Flutter UI while its
+         running.
+
+         This Theme is only used starting with V2 of Flutter's Android embedding. -->
+    <style name="NormalTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <item name="android:windowBackground">?android:colorBackground</item>
+    </style>
+</resources>
+
+
+### FILE: android/app/src/main/res/values/styles.xml
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Theme applied to the Android Window while the process is starting when the OS's Dark Mode setting is off -->
+    <style name="LaunchTheme" parent="@android:style/Theme.Light.NoTitleBar">
+        <!-- Show a splash screen on the activity. Automatically removed when
+             the Flutter engine draws its first frame -->
+        <item name="android:windowBackground">@drawable/launch_background</item>
+    </style>
+    <!-- Theme applied to the Android Window as soon as the process has started.
+         This theme determines the color of the Android Window while your
+         Flutter UI initializes, as well as behind your Flutter UI while its
+         running.
+
+         This Theme is only used starting with V2 of Flutter's Android embedding. -->
+    <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
+        <item name="android:windowBackground">?android:colorBackground</item>
+    </style>
+</resources>
+
+
+### FILE: android/app/src/profile/AndroidManifest.xml
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- The INTERNET permission is required for development. Specifically,
+         the Flutter tool needs it to communicate with the running application
+         to allow setting breakpoints, to provide hot reload, etc.
+    -->
+    <uses-permission android:name="android.permission.INTERNET"/>
+</manifest>
+
+
+### FILE: android/build.gradle.kts
+allprojects {
+    repositories {
+        google()
+        mavenCentral()
+    }
+}
+
+val newBuildDir: Directory =
+    rootProject.layout.buildDirectory
+        .dir("../../build")
+        .get()
+rootProject.layout.buildDirectory.value(newBuildDir)
+
+subprojects {
+    val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
+    project.layout.buildDirectory.value(newSubprojectBuildDir)
+}
+subprojects {
+    project.evaluationDependsOn(":app")
+}
+
+tasks.register<Delete>("clean") {
+    delete(rootProject.layout.buildDirectory)
+}
+
+
+### FILE: android/gradle.properties
+org.gradle.jvmargs=-Xmx4G -XX:MaxMetaspaceSize=2G -XX:ReservedCodeCacheSize=512m -XX:+HeapDumpOnOutOfMemoryError -XX:+UseParallelGC
+# Menurunkan Xmx dari 8G ke 4G karena runner GitHub Actions standar hanya
+# punya ~7GB RAM total; heap 8G bisa memicu swapping yang justru
+# memperlambat build. Tambahan flag di bawah mempercepat build lokal & CI
+# dengan mengaktifkan paralelisme dan build cache Gradle.
+org.gradle.parallel=true
+org.gradle.caching=true
+org.gradle.configureondemand=true
+android.useAndroidX=true
+# This newDsl flag was added by the Flutter template
+android.newDsl=false
+# This builtInKotlin flag was added by the Flutter template
+android.builtInKotlin=false
+
+
+### FILE: android/gradle/wrapper/gradle-wrapper.properties
+distributionBase=GRADLE_USER_HOME
+distributionPath=wrapper/dists
+zipStoreBase=GRADLE_USER_HOME
+zipStorePath=wrapper/dists
+distributionUrl=https\://services.gradle.org/distributions/gradle-9.3.1-all.zip
+
+
+### FILE: android/local.properties
+sdk.dir=/root/android-sdk
+flutter.sdk=/root/flutter
+
+### FILE: android/settings.gradle.kts
+pluginManagement {
+    val flutterSdkPath =
+        run {
+            val properties = java.util.Properties()
+            file("local.properties").inputStream().use { properties.load(it) }
+            val flutterSdkPath = properties.getProperty("flutter.sdk")
+            require(flutterSdkPath != null) { "flutter.sdk not set in local.properties" }
+            flutterSdkPath
+        }
+
+    includeBuild("$flutterSdkPath/packages/flutter_tools/gradle")
+
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+plugins {
+    id("dev.flutter.flutter-plugin-loader") version "1.0.0"
+    id("com.android.application") version "9.1.0" apply false
+    id("org.jetbrains.kotlin.android") version "2.4.0" apply false
+}
+
+include(":app")
+
+
+### FILE: ios/Flutter/AppFrameworkInfo.plist
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleDevelopmentRegion</key>
+  <string>en</string>
+  <key>CFBundleExecutable</key>
+  <string>App</string>
+  <key>CFBundleIdentifier</key>
+  <string>io.flutter.flutter.app</string>
+  <key>CFBundleInfoDictionaryVersion</key>
+  <string>6.0</string>
+  <key>CFBundleName</key>
+  <string>App</string>
+  <key>CFBundlePackageType</key>
+  <string>FMWK</string>
+  <key>CFBundleShortVersionString</key>
+  <string>1.0</string>
+  <key>CFBundleSignature</key>
+  <string>????</string>
+  <key>CFBundleVersion</key>
+  <string>1.0</string>
+</dict>
+</plist>
+
+
+### FILE: ios/Runner.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDEDidComputeMac32BitWarning</key>
+	<true/>
+</dict>
+</plist>
+
+
+### FILE: ios/Runner.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDEDidComputeMac32BitWarning</key>
+	<true/>
+</dict>
+</plist>
+
+
+### FILE: ios/Runner/Assets.xcassets/AppIcon.appiconset/Contents.json
+{
+  "images" : [
+    {
+      "size" : "20x20",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-20x20@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "20x20",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-20x20@3x.png",
+      "scale" : "3x"
+    },
+    {
+      "size" : "29x29",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-29x29@1x.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "29x29",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-29x29@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "29x29",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-29x29@3x.png",
+      "scale" : "3x"
+    },
+    {
+      "size" : "40x40",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-40x40@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "40x40",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-40x40@3x.png",
+      "scale" : "3x"
+    },
+    {
+      "size" : "60x60",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-60x60@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "60x60",
+      "idiom" : "iphone",
+      "filename" : "Icon-App-60x60@3x.png",
+      "scale" : "3x"
+    },
+    {
+      "size" : "20x20",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-20x20@1x.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "20x20",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-20x20@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "29x29",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-29x29@1x.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "29x29",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-29x29@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "40x40",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-40x40@1x.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "40x40",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-40x40@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "76x76",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-76x76@1x.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "76x76",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-76x76@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "83.5x83.5",
+      "idiom" : "ipad",
+      "filename" : "Icon-App-83.5x83.5@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "1024x1024",
+      "idiom" : "ios-marketing",
+      "filename" : "Icon-App-1024x1024@1x.png",
+      "scale" : "1x"
+    }
+  ],
+  "info" : {
+    "version" : 1,
+    "author" : "xcode"
+  }
+}
+
+
+### FILE: ios/Runner/Assets.xcassets/LaunchImage.imageset/Contents.json
+{
+  "images" : [
+    {
+      "idiom" : "universal",
+      "filename" : "LaunchImage.png",
+      "scale" : "1x"
+    },
+    {
+      "idiom" : "universal",
+      "filename" : "LaunchImage@2x.png",
+      "scale" : "2x"
+    },
+    {
+      "idiom" : "universal",
+      "filename" : "LaunchImage@3x.png",
+      "scale" : "3x"
+    }
+  ],
+  "info" : {
+    "version" : 1,
+    "author" : "xcode"
+  }
+}
+
+
+### FILE: ios/Runner/Info.plist
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CADisableMinimumFrameDurationOnPhone</key>
+	<true/>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>My Finance</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>my_finance</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(FLUTTER_BUILD_NAME)</string>
+	<key>CFBundleSignature</key>
+	<string>????</string>
+	<key>CFBundleVersion</key>
+	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict>
+			<key>UIWindowSceneSessionRoleApplication</key>
+			<array>
+				<dict>
+					<key>UISceneClassName</key>
+					<string>UIWindowScene</string>
+					<key>UISceneConfigurationName</key>
+					<string>flutter</string>
+					<key>UISceneDelegateClassName</key>
+					<string>$(PRODUCT_MODULE_NAME).SceneDelegate</string>
+					<key>UISceneStoryboardFile</key>
+					<string>Main</string>
+				</dict>
+			</array>
+		</dict>
+	</dict>
+	<key>UIApplicationSupportsIndirectInputEvents</key>
+	<true/>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Aplikasi membutuhkan akses galeri untuk mengubah foto profil.</string>
+	<key>NSCameraUsageDescription</key>
+	<string>Aplikasi membutuhkan akses kamera untuk mengambil foto profil.</string>
+	<key>UILaunchStoryboardName</key>
+	<string>LaunchScreen</string>
+	<key>UIMainStoryboardFile</key>
+	<string>Main</string>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+	<key>UISupportedInterfaceOrientations~ipad</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
+		<string>UIInterfaceOrientationLandscapeLeft</string>
+		<string>UIInterfaceOrientationLandscapeRight</string>
+	</array>
+</dict>
+</plist>
+
+
+### FILE: lib/main.dart
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
@@ -818,22 +3830,20 @@ class _ProfileVideoAvatarState extends State<_ProfileVideoAvatar> {
       widget.scale,
       1.0 + 2.0 * (widget.offsetX.abs() + widget.offsetY.abs()),
     );
-    return RepaintBoundary(
-      child: VisibilityDetector(
-        key: _visibilityKey,
-        onVisibilityChanged: _handleVisibility,
-        child: ClipRect(
-          child: Transform.translate(
-            offset: Offset(widget.offsetX * widget.diameter, widget.offsetY * widget.diameter),
-            child: Transform.scale(
-              scale: safeScale,
-              child: FittedBox(
-                fit: BoxFit.cover,
-                child: SizedBox(
-                  width: controller.value.size.width,
-                  height: controller.value.size.height,
-                  child: VideoPlayer(controller),
-                ),
+    return VisibilityDetector(
+      key: _visibilityKey,
+      onVisibilityChanged: _handleVisibility,
+      child: ClipRect(
+        child: Transform.translate(
+          offset: Offset(widget.offsetX * widget.diameter, widget.offsetY * widget.diameter),
+          child: Transform.scale(
+            scale: safeScale,
+            child: FittedBox(
+              fit: BoxFit.cover,
+              child: SizedBox(
+                width: controller.value.size.width,
+                height: controller.value.size.height,
+                child: VideoPlayer(controller),
               ),
             ),
           ),
@@ -4220,8 +7230,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   // expanded state maupun membuka FULL PREVIEW; hanya feedback fisik
   // sementara yang kembali ke 0 saat gesture dilepas (lihat
   // _HeaderSnapScrollPhysics.createBallisticSimulation).
-  static const double _rubberMaxRawOffset = 95.0;
-  static const double _mediaRubberMaxExtraScale = 0.22;
+  static const double _rubberMaxRawOffset = 70.0;
+  static const double _mediaRubberMaxExtraScale = 0.10;
 
   @override
   void didChangeDependencies() {
@@ -4437,7 +7447,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     // avatarWidth/avatarHeight (mediaExpandProgress tetap 1.0).
                     child: Transform.scale(
                       scale: mediaRubberScale,
-                      alignment: Alignment.topCenter,
+                      alignment: Alignment.center,
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(avatarRadius),
                         child: GestureDetector(
@@ -7231,3 +10241,772 @@ class _StaggeredRevealState extends State<StaggeredReveal> with SingleTickerProv
 String rupiah(double value) => AppFormatters.rupiah(value);
 
 bool _isSameDay(DateTime a, DateTime b) => a.year == b.year && a.month == b.month && a.day == b.day;
+
+
+### FILE: macos/Runner.xcodeproj/project.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDEDidComputeMac32BitWarning</key>
+	<true/>
+</dict>
+</plist>
+
+
+### FILE: macos/Runner.xcworkspace/xcshareddata/IDEWorkspaceChecks.plist
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>IDEDidComputeMac32BitWarning</key>
+	<true/>
+</dict>
+</plist>
+
+
+### FILE: macos/Runner/Assets.xcassets/AppIcon.appiconset/Contents.json
+{
+  "images" : [
+    {
+      "size" : "16x16",
+      "idiom" : "mac",
+      "filename" : "app_icon_16.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "16x16",
+      "idiom" : "mac",
+      "filename" : "app_icon_32.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "32x32",
+      "idiom" : "mac",
+      "filename" : "app_icon_32.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "32x32",
+      "idiom" : "mac",
+      "filename" : "app_icon_64.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "128x128",
+      "idiom" : "mac",
+      "filename" : "app_icon_128.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "128x128",
+      "idiom" : "mac",
+      "filename" : "app_icon_256.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "256x256",
+      "idiom" : "mac",
+      "filename" : "app_icon_256.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "256x256",
+      "idiom" : "mac",
+      "filename" : "app_icon_512.png",
+      "scale" : "2x"
+    },
+    {
+      "size" : "512x512",
+      "idiom" : "mac",
+      "filename" : "app_icon_512.png",
+      "scale" : "1x"
+    },
+    {
+      "size" : "512x512",
+      "idiom" : "mac",
+      "filename" : "app_icon_1024.png",
+      "scale" : "2x"
+    }
+  ],
+  "info" : {
+    "version" : 1,
+    "author" : "xcode"
+  }
+}
+
+
+### FILE: macos/Runner/Info.plist
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIconFile</key>
+	<string></string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(FLUTTER_BUILD_NAME)</string>
+	<key>CFBundleVersion</key>
+	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>$(MACOSX_DEPLOYMENT_TARGET)</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>$(PRODUCT_COPYRIGHT)</string>
+	<key>NSMainNibFile</key>
+	<string>MainMenu</string>
+	<key>NSPrincipalClass</key>
+	<string>NSApplication</string>
+</dict>
+</plist>
+
+
+### FILE: packages/telegram_image_cropper/lib/src/circle_cutout_painter.dart
+import 'dart:ui' as ui;
+
+import 'package:flutter/cupertino.dart';
+
+class CircleCutoutPainter extends CustomPainter {
+  final int cropSize;
+  final Color overlayColor;
+
+  const CircleCutoutPainter({
+    required this.cropSize,
+    required this.overlayColor,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final ui.Path path = Path()
+      ..addRect(Rect.fromLTWH(0, 0, size.width, size.height));
+
+    final ui.Offset center = Offset(size.width / 2, size.height / 2);
+    path.addOval(Rect.fromCircle(
+      center: center,
+      radius: cropSize / 2,
+    ));
+
+    path.fillType = PathFillType.evenOdd;
+
+    final ui.Paint paint = Paint()
+      ..color = overlayColor
+      ..style = PaintingStyle.fill;
+
+    canvas.drawPath(path, paint);
+  }
+
+  @override
+  bool shouldRepaint(CircleCutoutPainter oldDelegate) {
+    return oldDelegate.cropSize != cropSize ||
+        oldDelegate.overlayColor != overlayColor;
+  }
+}
+
+### FILE: packages/telegram_image_cropper/lib/src/crop_image_service/crop_image_service.dart
+import 'dart:async';
+import 'dart:ui' as ui;
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:vector_math/vector_math_64.dart' show Vector3;
+
+import '../crop_image_service/native_worker.dart' if (dart.library.js_interop) 'web_worker.dart';
+
+class CropImageService {
+  /// Crops the source image and returns the raw cropped bytes (JPEG),
+  /// or null if there was no image data to crop.
+  static Future<Uint8List?> cropImage({
+    required Matrix4 transformation,
+    required RenderBox renderBox,
+    required int cropSize,
+    required int imageWidth,
+    required int imageHeight,
+    required ByteData? imageByteData,
+  }) async {
+    // Get the current scale and translation from the InteractiveViewer
+    // final Matrix4 transformation = _controller.value;
+
+    // Get the inverse of the transformation matrix
+    final Matrix4 matrix4 = transformation.clone()..invert();
+
+    // Define the fixed crop area (centered)
+    final ui.Size size = renderBox.size;
+    final double scaleFactor =
+        _getScaleFactor(renderBox: renderBox, imageWidth: imageWidth);
+
+    final ui.Rect cropRect = Rect.fromCenter(
+      center: Offset(size.width / 2, size.height / 2),
+      width: cropSize.toDouble(),
+      height: cropSize.toDouble(),
+    );
+
+    // Apply the inverse matrix to the crop rect to get the portion of the image that is visible
+    final Vector3 topLeft = matrix4
+        .transform3(Vector3(cropRect.topLeft.dx, cropRect.topLeft.dy, 0));
+    final Vector3 bottomRight = matrix4.transform3(
+        Vector3(cropRect.bottomRight.dx, cropRect.bottomRight.dy, 0));
+
+    // Crop the image using the transformed rectangle
+    final Rect transformedRect = Rect.fromPoints(
+      Offset(topLeft.x * scaleFactor, topLeft.y * scaleFactor),
+      // Convert Vector3 to Offset
+      Offset(bottomRight.x * scaleFactor, bottomRight.y * scaleFactor),
+    );
+
+    // Ensure the crop coordinates are within image bounds
+    final int cropLeft = transformedRect.left.clamp(0, imageWidth).toInt();
+    final int cropTop = transformedRect.top.clamp(0, imageHeight).toInt();
+    final int cropWidth =
+        transformedRect.width.clamp(0, imageWidth - cropLeft).toInt();
+    final int cropHeight =
+        transformedRect.height.clamp(0, imageHeight - cropTop).toInt();
+
+    if (imageByteData != null) {
+      final Uint8List imageBytes = imageByteData.buffer.asUint8List();
+
+      final Uint8List croppedImageBytes = await cropImagePlatformSpecific(
+        imageBytes: imageBytes,
+        imageWidth: imageWidth,
+        imageHeight: imageHeight,
+        cropLeft: cropLeft,
+        cropTop: cropTop,
+        cropWidth: cropWidth,
+        cropHeight: cropHeight,
+      );
+
+      // Return the raw cropped bytes so callers can save them and/or
+      // build their own display widget from them.
+      return croppedImageBytes;
+    }
+
+    return null;
+  }
+
+  static double _getScaleFactor({
+    required RenderBox renderBox,
+    required int imageWidth,
+  }) {
+    final ui.Size size = renderBox.size;
+
+    return imageWidth / size.width;
+  }
+}
+
+### FILE: packages/telegram_image_cropper/lib/src/crop_image_service/native_worker.dart
+import 'package:flutter/foundation.dart';
+import 'package:image/image.dart' as img;
+
+Future<Uint8List> cropImagePlatformSpecific({
+  required Uint8List imageBytes,
+  required int imageWidth,
+  required int imageHeight,
+  required int cropLeft,
+  required int cropTop,
+  required int cropWidth,
+  required int cropHeight,
+}) async {
+  return compute(
+    _cropImageInIsolate,
+    <String, dynamic>{
+      'imageBytes': imageBytes,
+      'imageWidth': imageWidth,
+      'imageHeight': imageHeight,
+      'cropLeft': cropLeft,
+      'cropTop': cropTop,
+      'cropWidth': cropWidth,
+      'cropHeight': cropHeight,
+    },
+  );
+}
+
+Uint8List _cropImageInIsolate(Map<String, dynamic> params) {
+  final Uint8List imageBytes = params['imageBytes'] as Uint8List;
+  final int imageWidth = params['imageWidth'] as int;
+  final int imageHeight = params['imageHeight'] as int;
+  final int cropLeft = params['cropLeft'] as int;
+  final int cropTop = params['cropTop'] as int;
+  final int cropWidth = params['cropWidth'] as int;
+  final int cropHeight = params['cropHeight'] as int;
+
+  final img.Image original = img.Image.fromBytes(
+    width: imageWidth,
+    height: imageHeight,
+    bytes: imageBytes.buffer,
+    numChannels: 4,
+  );
+
+  final img.Image cropped = img.copyCrop(
+    original,
+    x: cropLeft,
+    y: cropTop,
+    width: cropWidth,
+    height: cropHeight,
+  );
+
+  return Uint8List.fromList(img.encodeJpg(cropped, quality: 90));
+}
+
+### FILE: packages/telegram_image_cropper/lib/src/crop_image_service/web_worker.dart
+import 'dart:async';
+import 'dart:typed_data';
+import 'dart:js_interop';
+import 'package:web/web.dart' as web;
+
+Future<Uint8List> cropImagePlatformSpecific({
+  required Uint8List imageBytes,
+  required int imageWidth,
+  required int imageHeight,
+  required int cropLeft,
+  required int cropTop,
+  required int cropWidth,
+  required int cropHeight,
+}) async {
+  // 1. Create ImageData from raw bytes (RGBA)
+  final Uint8ClampedList clampedBytes = imageBytes.buffer.asUint8ClampedList();
+  final web.ImageData imageData =
+      web.ImageData(clampedBytes.toJS, imageWidth, imageHeight as JSAny);
+
+  // 2. Create temporary Canvas to draw the source image
+  final web.HTMLCanvasElement sourceCanvas = web.HTMLCanvasElement()
+    ..width = imageWidth
+    ..height = imageHeight;
+  sourceCanvas.context2D.putImageData(imageData, 0, 0);
+
+  // 3. Create destination Canvas for the cropped image
+  final web.HTMLCanvasElement destCanvas = web.HTMLCanvasElement()
+    ..width = cropWidth
+    ..height = cropHeight;
+
+  // 4. Draw the required area
+  destCanvas.context2D.drawImage(
+    sourceCanvas,
+    cropLeft.toDouble(),
+    cropTop.toDouble(),
+    cropWidth.toDouble(),
+    cropHeight.toDouble(),
+    0,
+    0,
+    cropWidth.toDouble(),
+    cropHeight.toDouble(),
+  );
+
+  // 5. Convert Canvas to Blob (JPEG)
+  final Completer<web.Blob?> completer = Completer<web.Blob?>();
+  destCanvas.toBlob(
+    (web.Blob? b) {
+      completer.complete(b);
+    }.toJS,
+    'image/jpeg',
+    0.9.toJS,
+  );
+
+  final web.Blob? croppedBlob = await completer.future;
+  if (croppedBlob == null) {
+    throw Exception('Failed to create Blob');
+  }
+
+  // 6. Read Blob as ArrayBuffer
+  final JSArrayBuffer jsArrayBuffer = await croppedBlob.arrayBuffer().toDart;
+
+  // 7. Convert JSArrayBuffer -> Uint8List
+  return jsArrayBuffer.toDart.asUint8List();
+}
+
+### FILE: packages/telegram_image_cropper/lib/telegram_image_cropper.dart
+import 'dart:async';
+import 'dart:typed_data';
+import 'dart:ui' as ui;
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'src/circle_cutout_painter.dart';
+import 'src/crop_image_service/crop_image_service.dart';
+
+/// A widget that provides an interactive image cropping experience.
+///
+/// It allows users to zoom and pan an image behind a fixed circular mask,
+/// similar to the photo cropping experience in apps like Telegram.
+class TelegramImageCropper extends StatefulWidget {
+  /// The path to the image asset that needs to be cropped.
+  ///
+  /// Provide either [imagePath] (for a bundled Flutter asset) or
+  /// [imageBytes] (for an in-memory image, e.g. a photo picked from the
+  /// gallery/camera). At least one of the two must be provided.
+  final String? imagePath;
+
+  /// Raw bytes of the image that needs to be cropped.
+  ///
+  /// Use this instead of [imagePath] when the source image is not a
+  /// bundled asset (for example a file picked from the gallery/camera).
+  /// Works uniformly on native and web, since it doesn't rely on
+  /// filesystem access.
+  final Uint8List? imageBytes;
+
+  /// The diameter of the circular crop area in logical pixels.
+  ///
+  /// Defaults to 200. If the image is smaller than this size, the crop size
+  /// will be adjusted to fit the image dimensions.
+  final int cropSize;
+
+  /// The style to be applied to the 'Crop Image' button.
+  final ButtonStyle? cropButtonStyle;
+
+  /// The text widget to be displayed inside the 'Crop Image' button.
+  ///
+  /// Defaults to `Text('Crop Image')` if null.
+  final Text? cropButtonText;
+
+  /// An optional widget to display as the result of the cropping process.
+  ///
+  /// Only used when [showResultDialog] is true. If provided, this widget
+  /// will be shown in a dialog after the user presses the crop button. If
+  /// null, a default `AlertDialog` with the cropped image will be shown.
+  final Widget? croppedImageResultWidget;
+
+  /// Called with the raw cropped JPEG bytes right after cropping finishes,
+  /// before the result dialog (if any) is shown. Use this to save the
+  /// result or pop the cropper screen with the bytes as a result.
+  final void Function(Uint8List croppedBytes)? onCropped;
+
+  /// Whether to automatically show a result dialog after cropping.
+  ///
+  /// Defaults to true to preserve the original demo behavior. Set this to
+  /// false when the cropper is pushed as its own screen and should just
+  /// return the result via [onCropped] without an extra confirmation popup.
+  final bool showResultDialog;
+
+  const TelegramImageCropper({
+    this.imagePath,
+    this.imageBytes,
+    this.cropSize = 200,
+    this.cropButtonStyle,
+    this.cropButtonText,
+    this.croppedImageResultWidget,
+    this.onCropped,
+    this.showResultDialog = true,
+    super.key,
+  }) : assert(
+          imagePath != null || imageBytes != null,
+          'Provide either imagePath or imageBytes',
+        );
+
+  @override
+  _TelegramImageCropperState createState() => _TelegramImageCropperState();
+}
+
+class _TelegramImageCropperState extends State<TelegramImageCropper> {
+  late ui.Image _image;
+  bool _imageLoaded = false;
+  final GlobalKey _key = GlobalKey();
+  final TransformationController _controller = TransformationController();
+  EdgeInsets _boundaryMargin = EdgeInsets.zero;
+
+  // Default crop area dimensions
+  int _cropSize = 200;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadImage();
+  }
+
+  void _getBoundaryMargin() {
+    final RenderBox? renderBox =
+        _key.currentContext?.findRenderObject() as RenderBox?;
+
+    if (renderBox != null) {
+      final ui.Size size = renderBox.size;
+
+      final double vertical =
+          ((size.height - _cropSize) / 2) / _controller.value.row0[0];
+      final double horizontal =
+          ((size.width - _cropSize) / 2) / _controller.value.row0[0];
+
+      setState(() {
+        _boundaryMargin =
+            EdgeInsets.symmetric(vertical: vertical, horizontal: horizontal);
+      });
+    }
+  }
+
+  Future<void> _loadImage() async {
+    final Uint8List list;
+    if (widget.imageBytes != null) {
+      // In-memory source (e.g. picked from gallery/camera).
+      list = widget.imageBytes!;
+    } else {
+      // Load an image from assets
+      final ByteData data = await rootBundle.load(widget.imagePath!);
+      list = Uint8List.view(data.buffer);
+    }
+    final ui.Image image = await _loadImageFromBytes(list);
+
+    setState(() {
+      _image = image;
+      _imageLoaded = true;
+      _cropSize = _image.width < widget.cropSize
+          ? _image.width
+          : _image.height < widget.cropSize
+              ? _image.height
+              : widget.cropSize;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _getBoundaryMargin();
+    });
+  }
+
+  Future<ui.Image> _loadImageFromBytes(Uint8List list) async {
+    final Completer<ui.Image> completer = Completer<ui.Image>();
+    ui.decodeImageFromList(list, (ui.Image img) {
+      return completer.complete(img);
+    });
+    return completer.future;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: <Widget>[
+        Expanded(
+          child: Center(
+            child: _imageLoaded
+                ? Stack(
+                    children: <Widget>[
+                      Center(
+                        child: InteractiveViewer(
+                          minScale: 0.5,
+                          maxScale: 3.0,
+                          transformationController: _controller,
+                          clipBehavior: Clip.none,
+                          boundaryMargin: _boundaryMargin,
+                          onInteractionEnd: (ScaleEndDetails details) {
+                            _getBoundaryMargin();
+                          },
+                          child: RawImage(
+                            key: _key,
+                            image: _image,
+                          ),
+                        ),
+                      ),
+                      // Static crop area in the center
+                      IgnorePointer(
+                        child: Center(
+                          child: SizedBox(
+                            width: MediaQuery.of(context).size.width,
+                            height: MediaQuery.of(context).size.height,
+                            child: CustomPaint(
+                              painter: CircleCutoutPainter(
+                                cropSize: _cropSize,
+                                overlayColor:
+                                    Colors.black.withValues(alpha: 0.6),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 36),
+                        child: Align(
+                          alignment: Alignment.bottomCenter,
+                          child: ElevatedButton(
+                            style: widget.cropButtonStyle,
+                            onPressed:
+                                _imageLoaded ? () => _cropImage(context) : null,
+                            child: widget.cropButtonText ??
+                                const Text('Crop Image'),
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                : const CircularProgressIndicator(),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Future<void> _cropImage(BuildContext context) async {
+    final Uint8List? croppedBytes = await CropImageService.cropImage(
+      transformation: _controller.value,
+      renderBox: _key.currentContext!.findRenderObject()! as RenderBox,
+      cropSize: _cropSize,
+      imageWidth: _image.width,
+      imageHeight: _image.height,
+      imageByteData: await _image.toByteData(),
+    );
+
+    if (croppedBytes == null) return;
+
+    widget.onCropped?.call(croppedBytes);
+
+    if (!widget.showResultDialog || !context.mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (_) =>
+          widget.croppedImageResultWidget ??
+          AlertDialog(
+            content: Image.memory(croppedBytes),
+            contentPadding: EdgeInsets.zero,
+          ),
+    );
+  }
+}
+
+### FILE: packages/telegram_image_cropper/pubspec.yaml
+name: telegram_image_cropper
+description: "Vendored & patched copy of telegram_image_cropper: accepts in-memory image bytes and returns cropped result via callback."
+version: 1.0.2
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+  flutter: ">=3.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  image: ^4.9.1
+  web: ^1.1.1
+  vector_math: ^2.1.4
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+### FILE: pubspec.yaml
+name: my_finance
+description: Aplikasi catatan keuangan personal offline-first.
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  solar_icons: ^0.1.0
+  flutter_riverpod: ^2.6.1
+  sqflite: ^2.4.1
+  path: ^1.9.0
+  fl_chart: ^0.69.2
+  intl: ^0.20.2
+  shared_preferences: ^2.3.2
+  image_picker: ^1.1.2
+  path_provider: ^2.1.6
+  lottie: ^3.1.2
+  number_flow_flutter: ^0.1.0
+  flutter_staggered_animations: ^1.1.1
+  visibility_detector: ^0.4.0+2
+  liquid_glass_widgets: ^1.2.0
+  telegram_image_cropper:
+    path: packages/telegram_image_cropper
+  video_player: ^2.9.5
+  video_trimmer: ^5.0.0
+  get_thumbnail_video: ^0.7.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/lottie/ai.json
+  fonts:
+    - family: Satoshi
+      fonts:
+        - asset: assets/fonts/satoshi_light.otf
+          weight: 300
+        - asset: assets/fonts/satoshi_regular.otf
+          weight: 400
+        - asset: assets/fonts/satoshi_medium.otf
+          weight: 500
+        - asset: assets/fonts/satoshi_medium.otf
+          weight: 600
+        - asset: assets/fonts/satoshi_bold.otf
+          weight: 700
+        - asset: assets/fonts/satoshi_bold.otf
+          weight: 800
+        - asset: assets/fonts/satoshi_black.otf
+          weight: 900
+    - family: DM Serif Display
+      fonts:
+        - asset: assets/fonts/dm_serif_display_regular.ttf
+    - family: Playfair Display
+      fonts:
+        - asset: assets/fonts/playfairdisplay_regular.ttf
+
+
+### FILE: test/widget_test.dart
+import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:my_finance/main.dart';
+
+void main() {
+  testWidgets('My Finance opens dashboard', (tester) async {
+    SharedPreferences.setMockInitialValues({'onboarding_done': true});
+    final prefs = await SharedPreferences.getInstance();
+    await tester.pumpWidget(ProviderScope(
+      overrides: [prefsProvider.overrideWithValue(prefs)],
+      child: const MyFinanceApp(),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Selamat pagi, Raka'), findsOneWidget);
+    expect(find.text('TOTAL SALDO'), findsOneWidget);
+    expect(find.text('Aksi cepat'), findsOneWidget);
+  });
+}
+
+### FILE: web/manifest.json
+{
+    "name": "my_finance",
+    "short_name": "my_finance",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#0175C2",
+    "theme_color": "#0175C2",
+    "description": "A new Flutter project.",
+    "orientation": "portrait-primary",
+    "prefer_related_applications": false,
+    "icons": [
+        {
+            "src": "icons/Icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-maskable-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "icons/Icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ]
+}
