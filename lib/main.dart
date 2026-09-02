@@ -4536,11 +4536,17 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     double parallaxOffset = 0.0;
     double previewProgress = 0.0;
     double mediaRubberProgress = 0.0;
-    // Seberapa besar spacer awal sheet (360px) perlu dipangkas agar posisi
-    // konten sheet tetap terpaku di viewport yang sama walau scroll offset
-    // sedang negatif (overscroll rubber Fase 2). Ini menghindari perlunya
-    // Transform.translate pada seluruh box CustomScrollView, yang tadinya
-    // memotong box itu sendiri dan membuka celah di dekat bottom nav.
+    // Seberapa besar konten sheet perlu digeser ke ATAS lewat
+    // Transform.translate (BUKAN lagi memangkas tinggi spacer) agar posisi
+    // sheet tetap terpaku di viewport yang sama walau scroll offset sedang
+    // negatif (overscroll rubber Fase 2).
+    // PENTING: nilai ini TIDAK PERNAH dipakai untuk mengubah ukuran/tinggi
+    // widget apa pun di dalam CustomScrollView. Mengubah ukuran LAYOUT
+    // berdasarkan _scrollOffset (cara lama) memicu
+    // BallisticScrollActivity.applyNewDimensions() yang me-restart simulasi
+    // ballistic setiap frame selama animasi snap — inilah penyebab bug
+    // scroll "jalan sendiri" (naik-turun tanpa disentuh) di tab profile.
+    // Transform hanya mengubah posisi gambar (paint), jadi aman dari bug ini.
     double sheetSpacerCompensation = 0.0;
 
     if (_scrollOffset > _maxExpandScroll) {
@@ -4888,17 +4894,25 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
               ),
               slivers: [
                 SliverToBoxAdapter(
-                  // Spacer normalnya 360px. Saat overscroll rubber Fase 2
-                  // (scrollOffset negatif), tingginya dipangkas sebesar
-                  // sheetSpacerCompensation agar posisi konten sheet di
-                  // bawahnya tetap terpaku di viewport-y yang sama — sheet
-                  // jadi tidak pernah ikut turun/lepas dari overlap media,
-                  // tanpa perlu mentransformasikan box scroll itu sendiri
-                  // (yang sebelumnya memotong sheet di dekat navbar).
-                  child: SizedBox(height: 360.0 - sheetSpacerCompensation), 
+                  // Spacer SELALU konstan 360px, tidak pernah bergantung pada
+                  // _scrollOffset lagi. Kompensasi posisi sheet saat rubber
+                  // overscroll sekarang dilakukan lewat Transform.translate
+                  // pada konten sliver berikutnya (lihat di bawah) — ini
+                  // memperbaiki bug scroll auto naik-turun yang disebabkan
+                  // oleh perubahan tinggi layout berbasis scroll offset.
+                  child: const SizedBox(height: 360.0),
                 ),
                 SliverToBoxAdapter(
-                  child: Stack(
+                  child: Transform.translate(
+                    // Menggeser konten ke atas sebesar overscroll Fase 2
+                    // (sheetSpacerCompensation), meniru efek "terpaku" yang
+                    // dulu dicapai dengan memangkas tinggi spacer. Transform
+                    // HANYA mengubah posisi gambar (paint) dan TIDAK PERNAH
+                    // mengubah ukuran layout sliver ini, sehingga tidak akan
+                    // memicu applyNewDimensions()/reset ballistic setiap
+                    // frame — sumber bug scroll "jalan sendiri" sebelumnya.
+                    offset: Offset(0, -sheetSpacerCompensation),
+                    child: Stack(
                     clipBehavior: Clip.none,
                     children: [
                       // Layer Background: memanjang jauh ke bawah untuk selalu menutupi area kosong
@@ -4945,6 +4959,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         ),
                       ),
                     ],
+                  ),
                   ),
                 ),
               ],
