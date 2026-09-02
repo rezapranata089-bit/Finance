@@ -4220,11 +4220,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   // _HeaderSnapScrollPhysics.createBallisticSimulation).
   static const double _rubberMaxRawOffset = 70.0;
   static const double _mediaRubberMaxExtraScale = 0.10;
-  static const double _sheetRubberMaxOffsetPx = 8.0;
-  // Buffer tinggi ekstra di bawah sheet agar saat sheet digeser ke atas
-  // (koreksi rubber di Fase 2) tidak ada celah kosong yang muncul di dekat
-  // bottom nav — buffer ini tetap ter-clip oleh Stack saat posisi normal.
-  static const double _sheetBottomOverflowBuffer = 100.0;
 
   @override
   void didChangeDependencies() {
@@ -4338,8 +4333,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     double parallaxOffset = 0.0;
     double previewProgress = 0.0;
     double mediaRubberProgress = 0.0;
-    double sheetRubberProgress = 0.0;
-    double sheetScrollPinCorrection = 0.0;
+    // Seberapa besar spacer awal sheet (360px) perlu dipangkas agar posisi
+    // konten sheet tetap terpaku di viewport yang sama walau scroll offset
+    // sedang negatif (overscroll rubber Fase 2). Ini menghindari perlunya
+    // Transform.translate pada seluruh box CustomScrollView, yang tadinya
+    // memotong box itu sendiri dan membuka celah di dekat bottom nav.
+    double sheetSpacerCompensation = 0.0;
 
     if (_scrollOffset > _maxExpandScroll) {
       t = 0.0;
@@ -4360,14 +4359,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
       parallaxOffset = 0.0;
       final double rawRubberProgress = (-_scrollOffset / _rubberMaxRawOffset).clamp(0.0, 1.0);
       mediaRubberProgress = rawRubberProgress;
-      sheetRubberProgress = rawRubberProgress;
-      // Batalkan pergeseran visual alami CustomScrollView akibat scroll
-      // offset negatif (overscroll rubber) dengan menambahkan koreksi
-      // sebesar offset itu sendiri. Tanpa ini, sheet ikut turun mengikuti
-      // scroll offset (hingga 70px) DI ATAS pergeseran rubber eksplisit
-      // (sheetRubberOffsetPx), sehingga sheet bergerak jauh lebih turun
-      // dibanding bulge media (~11px) dan membuka celah/lepas dari overlap.
-      sheetScrollPinCorrection = _scrollOffset;
+      // Pangkas spacer sebesar overscroll (-_scrollOffset, positif) supaya
+      // posisi konten sheet (yang dimulai tepat setelah spacer) tetap di
+      // viewport-y yang sama persis seperti saat scrollOffset 0 — sheet
+      // jadi terpaku, tidak ikut turun & tidak lepas dari overlap media.
+      sheetSpacerCompensation = -_scrollOffset;
     }
 
     final double screenHeight = MediaQuery.sizeOf(context).height;
@@ -4405,7 +4401,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     // mediaRubberProgress / sheetRubberProgress (lihat blok if/else di
     // atas), bukan dari t atau previewProgress.
     final double mediaRubberScale = 1.0 + mediaRubberProgress * _mediaRubberMaxExtraScale;
-    final double sheetRubberOffsetPx = sheetRubberProgress * _sheetRubberMaxOffsetPx;
+    // Efek rubber pada sheet: regangan skala kecil (bukan translate) yang
+    // di-anchor dari sisi atas, jadi sheet tetap menempel/overlap dengan
+    // media persis di titik yang sama, hanya meregang tipis ke bawah —
+    // tidak pernah membuka celah di box-nya sendiri seperti translate.
+    final double sheetRubberScale = 1.0 + mediaRubberProgress * 0.03;
 
     final isDark = context.isDark;
     final primary = Theme.of(context).colorScheme.primary;
@@ -4662,29 +4662,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           // Container dengan warna solid sehingga akan memblok/menutupi 
           // Layer 1 secara natural saat terscroll ke atas
           //
-          // FASE 2 rubber: Transform.translate memberi sedikit pergeseran
-          // vertikal elastis (sheetRubberOffsetPx), TIDAK mengubah urutan
-          // layer — Sheet tetap selalu di depan Media.
-          // Backdrop tambahan yang meluas ke bawah bottom nav agar tidak ada
-          // celah kosong saat sheet dikoreksi naik (rubber), TANPA mengubah
-          // ukuran box CustomScrollView asli — itu penyebab tab Profile
-          // ter-auto-scroll sendiri sebelumnya (viewport CustomScrollView
-          // jadi lebih tinggi dari layar, mengubah maxScrollExtent).
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: -_sheetBottomOverflowBuffer,
-            child: Transform.translate(
-              offset: Offset(0, sheetScrollPinCorrection + sheetRubberOffsetPx),
-              child: Opacity(
-                opacity: sheetOpacity,
-                child: IgnorePointer(child: Container(color: context.cardColor)),
-              ),
-            ),
-          ),
-          Transform.translate(
-            offset: Offset(0, sheetScrollPinCorrection + sheetRubberOffsetPx),
+          // FASE 2 rubber: Transform.scale (anchor atas) memberi efek
+          // regangan elastis tipis pada sheet (sheetRubberScale), TIDAK
+          // mengubah urutan layer — Sheet tetap selalu di depan Media.
+          Transform.scale(
+            alignment: Alignment.topCenter,
+            scale: sheetRubberScale,
             child: Opacity(
             opacity: sheetOpacity,
             child: NotificationListener<ScrollNotification>(
@@ -4700,13 +4683,15 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 parent: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
               ),
               slivers: [
-                const SliverToBoxAdapter(
-                  // Spacer ini selalu mengambil 360px. 
-                  // Karena initialOffset sudah dinaikkan sebesar _maxExpandScroll,
-                  // Sheet langsung terlihat tepat di bawah compact header.
-                  // Ketika digeser turun (offset 0), spacer menampilkan sheet pada 360px,
-                  // menyisakan 20px overlap yang menutupi media height (380px)
-                  child: SizedBox(height: 360.0), 
+                SliverToBoxAdapter(
+                  // Spacer normalnya 360px. Saat overscroll rubber Fase 2
+                  // (scrollOffset negatif), tingginya dipangkas sebesar
+                  // sheetSpacerCompensation agar posisi konten sheet di
+                  // bawahnya tetap terpaku di viewport-y yang sama — sheet
+                  // jadi tidak pernah ikut turun/lepas dari overlap media,
+                  // tanpa perlu mentransformasikan box scroll itu sendiri
+                  // (yang sebelumnya memotong sheet di dekat navbar).
+                  child: SizedBox(height: 360.0 - sheetSpacerCompensation), 
                 ),
                 SliverToBoxAdapter(
                   child: Stack(
