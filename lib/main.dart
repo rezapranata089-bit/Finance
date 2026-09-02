@@ -687,35 +687,6 @@ class _ProfileVideoAvatar extends StatefulWidget {
     this.thumbnailBytesBase64,
     this.isTransient = false,
   });
-class _ProfileVideoAvatar extends StatefulWidget {
-  final String videoPath;
-  final int version;
-  final double diameter;
-  final double scale;
-  final double offsetX;
-  final double offsetY;
-  final Widget fallback;
-  final String? thumbnailBytesBase64;
-  // Dipakai HANYA untuk widget sementara yang dirender oleh Hero
-  // flightShuttleBuilder selama animasi transisi (~380ms). Widget ini TIDAK
-  // boleh ikut serta dalam ref-counting ProfileVideoManager maupun mengubah
-  // status play/pause controller yang dipakai bersama header & preview,
-  // karena VisibilityDetector-nya bisa sempat melaporkan visibleFraction
-  // rendah saat posisinya berpindah/di-clip di tengah animasi flight —
-  // itulah yang sebelumnya membuat video controller utama ikut ter-pause
-  // dan tidak melanjutkan setelah keluar dari preview full.
-  final bool isTransient;
-  const _ProfileVideoAvatar({
-    required this.videoPath,
-    this.version = 0,
-    required this.diameter,
-    required this.scale,
-    required this.offsetX,
-    required this.offsetY,
-    required this.fallback,
-    this.thumbnailBytesBase64,
-    this.isTransient = false,
-  });
 
   @override
   State<_ProfileVideoAvatar> createState() => _ProfileVideoAvatarState();
