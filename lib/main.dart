@@ -932,6 +932,7 @@ class _VideoTrimPageState extends State<_VideoTrimPage> {
   VideoPlayerController? _controller;
   bool _saving = false;
   bool _failed = false;
+  double _progress = 0.0;
   double _startMs = 0;
   double _endMs = 15000;
   double _durationMs = 15000;
@@ -997,19 +998,43 @@ class _VideoTrimPageState extends State<_VideoTrimPage> {
   Future<void> _save() async {
     final controller = _controller;
     if (controller == null || _endMs <= _startMs) return;
-    setState(() => _saving = true);
+    setState(() {
+      _saving = true;
+      _progress = 0.0;
+    });
     controller.pause();
     final startSec = _startMs / 1000;
     final durationSec = (_endMs - _startMs) / 1000;
     final dir = await getTemporaryDirectory();
     final outputPath = '${dir.path}/trimmed_${DateTime.now().microsecondsSinceEpoch}.mp4';
+    // Resolusi diturunkan ke 640px (dari 1280px) dan crf dinaikkan ke 26 karena
+    // hasil video ini hanya dipakai sebagai avatar/preview lingkaran kecil —
+    // beban encode software (libx264, tanpa hardware encoder karena riwayat
+    // crash di beberapa chipset OEM) berkurang signifikan tanpa penurunan
+    // kualitas yang terlihat pada ukuran tampil sekecil itu. -threads 0
+    // memakai seluruh core CPU yang tersedia untuk mempercepat encode.
     final command = '-y -i "${widget.sourcePath}" -ss $startSec -t $durationSec '
-        '-vf "scale=\'min(1280,iw)\':-2" -c:v libx264 -preset ultrafast -crf 23 '
-        '-pix_fmt yuv420p -c:a aac -b:a 128k -movflags +faststart "$outputPath"';
+        '-vf "scale=\'min(640,iw)\':-2" -c:v libx264 -preset ultrafast -crf 26 '
+        '-threads 0 -pix_fmt yuv420p -c:a aac -b:a 96k -movflags +faststart "$outputPath"';
     await _appendDartCrashLog('[Checkpoint ${DateTime.now()}] FFmpegTrim: START start=$startSec dur=$durationSec');
+    final completer = Completer<void>();
+    ReturnCode? returnCode;
     try {
-      final session = await FFmpegKit.execute(command);
-      final returnCode = await session.getReturnCode();
+      await FFmpegKit.executeAsync(
+        command,
+        (session) async {
+          returnCode = await session.getReturnCode();
+          if (!completer.isCompleted) completer.complete();
+        },
+        null,
+        (statistics) {
+          if (!mounted || durationSec <= 0) return;
+          final processedMs = statistics.getTime();
+          final progress = (processedMs / (durationSec * 1000)).clamp(0.0, 1.0);
+          setState(() => _progress = progress);
+        },
+      );
+      await completer.future;
       await _appendDartCrashLog('[Checkpoint ${DateTime.now()}] FFmpegTrim: DONE rc=$returnCode');
       if (!mounted) return;
       setState(() => _saving = false);
@@ -1039,29 +1064,100 @@ class _VideoTrimPageState extends State<_VideoTrimPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      appBar: AppBar(
+    return PopScope(
+      canPop: !_saving,
+      child: Scaffold(
         backgroundColor: Colors.black,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.white),
-        title: const Text('Potong Durasi Video', style: TextStyle(color: Colors.white, fontSize: 16)),
-        actions: [
-          TextButton(
-            onPressed: (_saving || _controller == null) ? null : _save,
-            child: _saving
-                ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                : Text(
-                    'Lanjut',
-                    style: TextStyle(
-                      color: _controller != null ? Colors.white : Colors.white38,
-                      fontWeight: FontWeight.bold,
+        appBar: AppBar(
+          backgroundColor: Colors.black,
+          elevation: 0,
+          iconTheme: const IconThemeData(color: Colors.white),
+          title: const Text('Potong Durasi Video', style: TextStyle(color: Colors.white, fontSize: 16)),
+          actions: [
+            TextButton(
+              onPressed: (_saving || _controller == null) ? null : _save,
+              child: _saving
+                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : Text(
+                      'Lanjut',
+                      style: TextStyle(
+                        color: _controller != null ? Colors.white : Colors.white38,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
+            ),
+          ],
+        ),
+        body: SafeArea(
+          child: Stack(
+            children: [
+              _buildBody(context),
+              if (_saving) _buildProcessingOverlay(context),
+            ],
           ),
-        ],
+        ),
       ),
-      body: SafeArea(child: _buildBody(context)),
+    );
+  }
+
+  Widget _buildProcessingOverlay(BuildContext context) {
+    final percentLabel = (_progress * 100).clamp(0, 100).toStringAsFixed(0);
+    return Positioned.fill(
+      child: Container(
+        color: Colors.black.withOpacity(0.6),
+        alignment: Alignment.center,
+        child: GlassContainer(
+          shape: const LiquidRoundedRectangle(borderRadius: 28),
+          useOwnLayer: true,
+          quality: GlassQuality.standard,
+          settings: const LiquidGlassSettings(
+            blur: 14,
+            thickness: 18,
+            glassColor: Color.fromRGBO(255, 255, 255, 0.10),
+            whitenStrength: 0.0,
+            lightIntensity: 0.5,
+            ambientStrength: 0.3,
+            saturation: 1.2,
+            refractiveIndex: 1.1,
+            chromaticAberration: 0.0,
+            fresnelStrength: 0.0,
+            glowIntensity: 0.0,
+            shadowElevation: 2,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(32, 30, 32, 26),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SizedBox(
+                  width: 58,
+                  height: 58,
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      CircularProgressIndicator(
+                        value: _progress > 0 ? _progress : null,
+                        strokeWidth: 4,
+                        color: Colors.white,
+                        backgroundColor: Colors.white24,
+                      ),
+                      Text('$percentLabel%', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 18),
+                const Text('Memotong video...', style: TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w700)),
+                const SizedBox(height: 6),
+                Text(
+                  'Mohon tunggu, jangan tutup halaman ini',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 12),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
