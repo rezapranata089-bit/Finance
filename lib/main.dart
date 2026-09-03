@@ -2212,11 +2212,13 @@ class _VisibilityAwareLottieState extends State<VisibilityAwareLottie> with Sing
 
   @override
   void dispose() {
+    VisibilityDetectorController.instance.forget(_visibilityKey);
     _controller.dispose();
     super.dispose();
   }
 
   void _handleVisibility(VisibilityInfo info) {
+    if (!mounted) return;
     final visible = info.visibleFraction > 0.04;
     if (visible == _isVisible) return;
     _isVisible = visible;
