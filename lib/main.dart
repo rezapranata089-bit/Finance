@@ -3715,85 +3715,96 @@ class _HomePageState extends ConsumerState<HomePage> {
             ]),
           ),
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(Strings.t(lang, 'top_merchants'), style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: context.textPrimary)),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Builder(builder: (context) {
-                  final promos = [
-                    (Strings.t(lang, 'discount_title'), Strings.t(lang, 'discount_subtitle'), SolarIconsBold.bag2),
-                    (Strings.t(lang, 'cashback_title'), Strings.t(lang, 'cashback_subtitle'), SolarIconsBold.wallet),
-                  ];
-                  final cardWidth = MediaQuery.sizeOf(context).width * 0.78;
-                  return ClipRect(
-                    child: SizedBox(
-                      height: 74,
-                      child: ListView.separated(
-                        scrollDirection: Axis.horizontal,
-                        clipBehavior: Clip.none,
-                        itemCount: promos.length,
-                        separatorBuilder: (_, __) => const SizedBox(width: 12),
-                        itemBuilder: (context, i) {
-                          final promo = promos[i];
-                          final isAiCard = i == 0;
-                          return Container(
-                            width: cardWidth,
-                            padding: EdgeInsets.symmetric(horizontal: 16, vertical: i == 0 ? 2 : 12),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.centerLeft,
-                                end: Alignment.centerRight,
-                                colors: [
-                                  Color.alphaBlend(primary.withOpacity(isDark ? 0.38 : 0.22), context.cardColor),
-                                  context.cardColor,
-                                ],
-                              ),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: context.borderColor),
-                            ),
-                            child: Row(
+                Text(Strings.t(lang, 'top_merchants'), style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: context.textPrimary)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          Builder(builder: (context) {
+            final promos = [
+              (Strings.t(lang, 'discount_title'), Strings.t(lang, 'discount_subtitle'), SolarIconsBold.bag2),
+              (Strings.t(lang, 'cashback_title'), Strings.t(lang, 'cashback_subtitle'), SolarIconsBold.wallet),
+            ];
+            final cardWidth = MediaQuery.sizeOf(context).width * 0.78;
+            // Pola SAMA PERSIS dengan chip filter kartu di tab Card:
+            // SingleChildScrollView TIDAK dibungkus Padding lebar-penuh dari
+            // luar, sehingga viewport clip-nya adalah lebar layar sepenuhnya
+            // (default clipBehavior = Clip.hardEdge). Inset 20px hanya lewat
+            // parameter `padding` milik SingleChildScrollView sendiri (cuma
+            // menggeser posisi konten, tidak mempersempit viewport), sehingga
+            // card yang di-scroll terpotong tepat di pinggiran layar HP —
+            // sama seperti chip filter — bukan di batas padding 20px.
+            return SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Row(
+                children: List.generate(promos.length * 2 - 1, (idx) {
+                  if (idx.isOdd) return const SizedBox(width: 12);
+                  final i = idx ~/ 2;
+                  final promo = promos[i];
+                  final isAiCard = i == 0;
+                  return SizedBox(
+                    height: 74,
+                    width: cardWidth,
+                    child: Container(
+                      padding: EdgeInsets.symmetric(horizontal: 16, vertical: i == 0 ? 2 : 12),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                          colors: [
+                            Color.alphaBlend(primary.withOpacity(isDark ? 0.38 : 0.22), context.cardColor),
+                            context.cardColor,
+                          ],
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: context.borderColor),
+                      ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Expanded(
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(promo.$1, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: context.textPrimary)),
-                                      const SizedBox(height: 4),
-                                      Text(promo.$2, style: TextStyle(color: context.textMuted, fontSize: 12)),
-                                    ],
-                                  ),
-                                ),
-                                if (isAiCard)
-                                  const RepaintBoundary(
-                                    child: SizedBox(
-                                      width: 70,
-                                      height: 70,
-                                      child: VisibilityAwareLottie(asset: 'assets/lottie/ai.json'),
-                                    ),
-                                  )
-                                else
-                                  Container(
-                                    padding: const EdgeInsets.all(8),
-                                    decoration: BoxDecoration(color: isDark ? primary.withOpacity(0.18) : tertiary, shape: BoxShape.circle),
-                                    child: Icon(promo.$3, color: primary, size: 24),
-                                  ),
+                                Text(promo.$1, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: context.textPrimary)),
+                                const SizedBox(height: 4),
+                                Text(promo.$2, style: TextStyle(color: context.textMuted, fontSize: 12)),
                               ],
                             ),
-                          );
-                        },
+                          ),
+                          if (isAiCard)
+                            const RepaintBoundary(
+                              child: SizedBox(
+                                width: 70,
+                                height: 70,
+                                child: VisibilityAwareLottie(asset: 'assets/lottie/ai.json'),
+                              ),
+                            )
+                          else
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(color: isDark ? primary.withOpacity(0.18) : tertiary, shape: BoxShape.circle),
+                              child: Icon(promo.$3, color: primary, size: 24),
+                            ),
+                        ],
                       ),
                     ),
                   );
                 }),
-                const SizedBox(height: 32),
+              ),
+            );
+          }),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 32, 20, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
