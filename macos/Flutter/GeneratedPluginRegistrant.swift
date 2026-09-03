@@ -5,7 +5,7 @@
 import FlutterMacOS
 import Foundation
 
-import ffmpeg_kit_flutter_new
+import ffmpeg_kit_flutter_new_min_gpl
 import file_selector_macos
 import shared_preferences_foundation
 import sqflite_darwin

@@ -3,7 +3,7 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
-  ffmpeg_kit_flutter_new
+  ffmpeg_kit_flutter_new_min_gpl
   file_selector_linux
 )
 

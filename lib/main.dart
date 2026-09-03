@@ -76,6 +76,34 @@ Future<void> _clearCrashLogs() async {
   } catch (_) {}
 }
 
+// Mengambil frame pertama dari video profil (setelah trim) sebagai
+// thumbnail JPEG lewat FFmpeg, lalu di-encode base64 agar bisa langsung
+// ditampilkan instan (lihat _ProfileVideoAvatarState) selagi
+// VideoPlayerController baru melakukan inisialisasi. Tanpa ini, layar
+// akan sempat menampilkan avatar inisial kosong setiap kali membuka tab
+// profile sebelum video benar-benar siap diputar.
+Future<String?> _extractVideoThumbnailBase64(String videoPath) async {
+  if (kIsWeb) return null;
+  try {
+    final dir = await getTemporaryDirectory();
+    final outputPath = '${dir.path}/video_thumb_${DateTime.now().microsecondsSinceEpoch}.jpg';
+    final command = '-y -i "$videoPath" -vframes 1 -q:v 3 '
+        '-vf "scale=\'min(720,iw)\':-2" "$outputPath"';
+    final session = await FFmpegKit.execute(command);
+    final returnCode = await session.getReturnCode();
+    if (!ReturnCode.isSuccess(returnCode)) return null;
+    final file = File(outputPath);
+    if (!await file.exists()) return null;
+    final bytes = await file.readAsBytes();
+    try {
+      await file.delete();
+    } catch (_) {}
+    return base64Encode(bytes);
+  } catch (_) {
+    return null;
+  }
+}
+
 void main() {
   runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
@@ -1263,12 +1291,14 @@ Future<void> pickAndSetProfileVideo(BuildContext context, WidgetRef ref, ImageSo
     await File(trimmedPath).delete();
   } catch (_) {}
 
+  final thumbnailBase64 = await _extractVideoThumbnailBase64(destPath);
+
   ref.read(userProfileProvider.notifier).updateVideo(
         path: destPath,
         scale: cropResult.scale,
         offsetX: cropResult.offsetX,
         offsetY: cropResult.offsetY,
-        thumbnailBytesBase64: null,
+        thumbnailBytesBase64: thumbnailBase64,
       );
 }
 
@@ -1343,12 +1373,14 @@ Future<void> pickAndSetProfileMediaFromGallery(BuildContext context, WidgetRef r
       await File(trimmedPath).delete();
     } catch (_) {}
 
+    final thumbnailBase64 = await _extractVideoThumbnailBase64(destPath);
+
     ref.read(userProfileProvider.notifier).updateVideo(
           path: destPath,
           scale: cropResult.scale,
           offsetX: cropResult.offsetX,
           offsetY: cropResult.offsetY,
-          thumbnailBytesBase64: null,
+          thumbnailBytesBase64: thumbnailBase64,
         );
   } else {
     Uint8List? rawBytes = pick.bytes;
