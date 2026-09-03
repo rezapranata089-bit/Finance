@@ -22,8 +22,7 @@ import 'package:solar_icons/solar_icons.dart';
 import 'package:telegram_image_cropper/telegram_image_cropper.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_trimmer/video_trimmer.dart';
-import 'package:get_thumbnail_video/index.dart';
-import 'package:get_thumbnail_video/video_thumbnail.dart';
+
 
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
@@ -986,9 +985,20 @@ class _VideoCropPageState extends State<_VideoCropPage> {
 
   Future<void> _setup() async {
     final controller = VideoPlayerController.file(File(widget.videoPath));
-    await controller.initialize();
-    await controller.setLooping(true);
-    await controller.setVolume(0);
+    try {
+      await controller.initialize();
+      await controller.setLooping(true);
+      await controller.setVolume(0);
+    } catch (_) {
+      controller.dispose();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Video tidak didukung di perangkat ini, coba video lain.')),
+        );
+        Navigator.pop(context);
+      }
+      return;
+    }
     if (!mounted) {
       controller.dispose();
       return;
@@ -1121,32 +1131,13 @@ Future<void> pickAndSetProfileVideo(BuildContext context, WidgetRef ref, ImageSo
     await File(trimmedPath).delete();
   } catch (_) {}
 
-  final thumbnailBase64 = await _generateVideoThumbnailBase64(destPath);
   ref.read(userProfileProvider.notifier).updateVideo(
         path: destPath,
         scale: cropResult.scale,
         offsetX: cropResult.offsetX,
         offsetY: cropResult.offsetY,
-        thumbnailBytesBase64: thumbnailBase64,
+        thumbnailBytesBase64: null,
       );
-}
-
-// Captures a still image of the video's first frame so it can be shown
-// instantly as the avatar while the real VideoPlayerController is still
-// initializing, instead of flashing the plain initial-letter placeholder.
-Future<String?> _generateVideoThumbnailBase64(String videoPath) async {
-  try {
-    final bytes = await VideoThumbnail.thumbnailData(
-      video: videoPath,
-      imageFormat: ImageFormat.JPEG,
-      maxWidth: 256,
-      quality: 70,
-    );
-    if (bytes == null) return null;
-    return base64Encode(bytes);
-  } catch (_) {
-    return null;
-  }
 }
 
 class _GalleryMediaPick {
@@ -1220,13 +1211,12 @@ Future<void> pickAndSetProfileMediaFromGallery(BuildContext context, WidgetRef r
       await File(trimmedPath).delete();
     } catch (_) {}
 
-    final thumbnailBase64 = await _generateVideoThumbnailBase64(destPath);
     ref.read(userProfileProvider.notifier).updateVideo(
           path: destPath,
           scale: cropResult.scale,
           offsetX: cropResult.offsetX,
           offsetY: cropResult.offsetY,
-          thumbnailBytesBase64: thumbnailBase64,
+          thumbnailBytesBase64: null,
         );
   } else {
     Uint8List? rawBytes = pick.bytes;
