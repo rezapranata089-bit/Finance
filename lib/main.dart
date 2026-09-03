@@ -21,9 +21,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:solar_icons/solar_icons.dart';
 import 'package:telegram_image_cropper/telegram_image_cropper.dart';
-import 'package:video_compress/video_compress.dart';
+import 'package:ffmpeg_kit_flutter_new/ffmpeg_kit.dart';
+import 'package:ffmpeg_kit_flutter_new/return_code.dart';
 import 'package:video_player/video_player.dart';
-import 'package:video_trimmer/video_trimmer.dart';
 
 
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
@@ -893,72 +893,120 @@ class _VideoTrimPage extends StatefulWidget {
   State<_VideoTrimPage> createState() => _VideoTrimPageState();
 }
 
+// Trim video pakai FFmpeg (software encode via libx264), bukan native
+// hardware encoder (MediaCodec/Media3) seperti sebelumnya. Hardware encoder
+// di sebagian chipset (mis. MediaTek Helio G88 di Infinix Hot 11 NFC)
+// terbukti crash native tanpa exception apapun yang bisa ditangkap Dart,
+// berapa pun resolusi/durasi videonya (sudah diuji sampai 576p tetap
+// crash). Software encode tidak bergantung ke hardware encoder OEM sama
+// sekali, sedikit lebih lambat tapi jauh lebih portable lintas device.
 class _VideoTrimPageState extends State<_VideoTrimPage> {
-  final Trimmer _trimmer = Trimmer();
-  double _startValue = 0.0;
-  double _endValue = 0.0;
-  bool _isPlaying = false;
+  VideoPlayerController? _controller;
   bool _saving = false;
-  // TrimViewer melaporkan rentang trim awal secara ASINKRON setelah selesai
-  // menganalisis video (generate thumbnail dsb). Sebelum laporan pertama itu
-  // masuk, _startValue/_endValue masih 0.0/0.0. Di HP yang lebih lambat
-  // (mis. Infinix), jeda ini cukup lama sehingga pengguna sempat menekan
-  // "Lanjut" SEBELUM rentang valid tersedia — memanggil trimmer native
-  // dengan startValue==endValue==0 (durasi nol) inilah yang menyebabkan
-  // aplikasi force close (crash native, bukan exception Dart biasa yang
-  // bisa ditangkap try-catch). _trimmerReady mencegah kondisi ini dengan
-  // menonaktifkan tombol "Lanjut" sampai rentang valid pertama diterima.
-  bool _trimmerReady = false;
+  bool _failed = false;
+  double _startMs = 0;
+  double _endMs = 15000;
+  double _durationMs = 15000;
+  static const double _maxTrimMs = 15000;
 
   @override
   void initState() {
     super.initState();
-    _appendDartCrashLog('[Checkpoint ${DateTime.now()}] VideoTrim: loadVideo START path=${widget.sourcePath}');
-    _trimmer.loadVideo(videoFile: File(widget.sourcePath));
+    _setup();
+  }
+
+  Future<void> _setup() async {
+    final controller = VideoPlayerController.file(File(widget.sourcePath));
+    try {
+      await controller.initialize();
+    } catch (_) {
+      controller.dispose();
+      if (mounted) setState(() => _failed = true);
+      return;
+    }
+    if (!mounted) {
+      controller.dispose();
+      return;
+    }
+    final totalMs = controller.value.duration.inMilliseconds.toDouble();
+    final clampedEnd = totalMs < _maxTrimMs ? totalMs : _maxTrimMs;
+    setState(() {
+      _controller = controller;
+      _durationMs = totalMs <= 0 ? _maxTrimMs : totalMs;
+      _startMs = 0;
+      _endMs = clampedEnd <= 0 ? _maxTrimMs : clampedEnd;
+    });
+    controller.setLooping(true);
+    controller.play();
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  void _onRangeChanged(RangeValues values) {
+    var start = values.start;
+    var end = values.end;
+    if (end - start > _maxTrimMs) {
+      // Jaga rentang trim maksimal 15 detik: kalau geser salah satu ujung
+      // sampai melebihi batas, geser ujung yang sama arah supaya rentang
+      // tetap <= 15 detik alih-alih menolak gesture begitu saja.
+      if (start != _startMs) {
+        end = start + _maxTrimMs;
+      } else {
+        start = end - _maxTrimMs;
+      }
+    }
+    setState(() {
+      _startMs = start;
+      _endMs = end;
+    });
+    _controller?.seekTo(Duration(milliseconds: _startMs.round()));
   }
 
   Future<void> _save() async {
-    // Jaga-jaga ganda: selain tombol yang dinonaktifkan di UI, validasi ini
-    // memastikan _save() tidak pernah memanggil native trimmer dengan
-    // rentang durasi yang belum siap/tidak valid (endValue <= startValue),
-    // yang sebelumnya bisa membuat aplikasi force close di sebagian HP.
-    if (!_trimmerReady || _endValue <= _startValue) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Video masih diproses, coba lagi sebentar lagi.')),
-      );
-      return;
-    }
+    final controller = _controller;
+    if (controller == null || _endMs <= _startMs) return;
     setState(() => _saving = true);
-    _appendDartCrashLog('[Checkpoint ${DateTime.now()}] VideoTrim: saveTrimmedVideo START start=$_startValue end=$_endValue');
+    controller.pause();
+    final startSec = _startMs / 1000;
+    final durationSec = (_endMs - _startMs) / 1000;
+    final dir = await getTemporaryDirectory();
+    final outputPath = '${dir.path}/trimmed_${DateTime.now().microsecondsSinceEpoch}.mp4';
+    final command = '-y -i "${widget.sourcePath}" -ss $startSec -t $durationSec '
+        '-vf "scale=\'min(1280,iw)\':-2" -c:v libx264 -preset ultrafast -crf 23 '
+        '-pix_fmt yuv420p -c:a aac -b:a 128k -movflags +faststart "$outputPath"';
+    await _appendDartCrashLog('[Checkpoint ${DateTime.now()}] FFmpegTrim: START start=$startSec dur=$durationSec');
     try {
-      await _trimmer.saveTrimmedVideo(
-        startValue: _startValue,
-        endValue: _endValue,
-        onSave: (outputPath) {
-          _appendDartCrashLog('[Checkpoint ${DateTime.now()}] VideoTrim: saveTrimmedVideo onSave FIRED outputPath=$outputPath');
-          if (!mounted) return;
-          setState(() => _saving = false);
-          if (outputPath == null || outputPath.isEmpty) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Gagal memotong video, coba pilih video lain.')),
-            );
-            return;
-          }
-          Navigator.pop(context, outputPath);
-        },
-      );
-    } catch (_) {
-      // Menangkap exception Dart-level (mis. dari plugin) supaya tidak
-      // membiarkan halaman ini macet di kondisi loading tanpa umpan balik
-      // ke pengguna. Ini tidak menutup kemungkinan crash native murni,
-      // tapi mencegah kegagalan yang sebenarnya bisa ditangani lewat jalur
-      // normal Dart agar tidak ikut membuat pengalaman terasa "hang".
+      final session = await FFmpegKit.execute(command);
+      final returnCode = await session.getReturnCode();
+      await _appendDartCrashLog('[Checkpoint ${DateTime.now()}] FFmpegTrim: DONE rc=$returnCode');
+      if (!mounted) return;
+      setState(() => _saving = false);
+      if (ReturnCode.isSuccess(returnCode)) {
+        Navigator.pop(context, outputPath);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Gagal memotong video, coba lagi.')),
+        );
+      }
+    } catch (e) {
+      await _appendDartCrashLog('[Checkpoint ${DateTime.now()}] FFmpegTrim: EXCEPTION $e');
       if (!mounted) return;
       setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Gagal memotong video, coba lagi.')),
       );
     }
+  }
+
+  String _fmt(double ms) {
+    final d = Duration(milliseconds: ms.round());
+    final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
+    final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
+    return '$m:$s';
   }
 
   @override
@@ -972,62 +1020,74 @@ class _VideoTrimPageState extends State<_VideoTrimPage> {
         title: const Text('Potong Durasi Video', style: TextStyle(color: Colors.white, fontSize: 16)),
         actions: [
           TextButton(
-            onPressed: (_saving || !_trimmerReady) ? null : _save,
+            onPressed: (_saving || _controller == null) ? null : _save,
             child: _saving
                 ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                 : Text(
                     'Lanjut',
                     style: TextStyle(
-                      color: _trimmerReady ? Colors.white : Colors.white38,
+                      color: _controller != null ? Colors.white : Colors.white38,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
           ),
         ],
       ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(child: VideoViewer(trimmer: _trimmer)),
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 20),
-              child: IconButton(
-                iconSize: 56,
-                color: Colors.white,
-                icon: Icon(_isPlaying ? Icons.pause_circle_filled : Icons.play_circle_fill),
-                onPressed: () async {
-                  final playing = await _trimmer.videoPlaybackControl(startValue: _startValue, endValue: _endValue);
-                  if (mounted) setState(() => _isPlaying = playing);
-                },
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-              child: TrimViewer(
-                trimmer: _trimmer,
-                viewerHeight: 50.0,
-                viewerWidth: MediaQuery.sizeOf(context).width - 40,
-                maxVideoLength: const Duration(seconds: 15),
-                onChangeStart: (value) => _startValue = value,
-                onChangeEnd: (value) {
-                  _endValue = value;
-                  // Laporan pertama dari TrimViewer menandakan analisis
-                  // video (thumbnail dsb) sudah selesai dan rentang trim
-                  // valid — baru dari sinilah aman memanggil native
-                  // trimmer. setState di sini mengaktifkan tombol "Lanjut".
-                  if (!_trimmerReady && mounted) {
-                    _appendDartCrashLog('[Checkpoint ${DateTime.now()}] VideoTrim: loadVideo READY (analisis selesai)');
-                    setState(() => _trimmerReady = true);
-                  }
-                },
-                onChangePlaybackState: (value) => setState(() => _isPlaying = value),
-              ),
-            ),
-          ],
-        ),
-      ),
+      body: SafeArea(child: _buildBody(context)),
     );
   }
+
+  Widget _buildBody(BuildContext context) {
+    if (_failed) {
+      return const Center(child: Text('Video tidak didukung di perangkat ini, coba video lain.', style: TextStyle(color: Colors.white)));
+    }
+    final controller = _controller;
+    if (controller == null) {
+      return const Center(child: CircularProgressIndicator(color: Colors.white));
+    }
+    return Column(
+      children: [
+        Expanded(
+          child: Center(
+            child: AspectRatio(
+              aspectRatio: controller.value.aspectRatio,
+              child: VideoPlayer(controller),
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 4),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(_fmt(_startMs), style: const TextStyle(color: Colors.white70, fontSize: 12)),
+              Text('${((_endMs - _startMs) / 1000).toStringAsFixed(1)}s', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+              Text(_fmt(_endMs), style: const TextStyle(color: Colors.white70, fontSize: 12)),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          child: SliderTheme(
+            data: SliderTheme.of(context).copyWith(
+              activeTrackColor: Colors.white,
+              inactiveTrackColor: Colors.white24,
+              thumbColor: Colors.white,
+              rangeThumbShape: const RoundRangeSliderThumbShape(enabledThumbRadius: 8),
+            ),
+            child: RangeSlider(
+              values: RangeValues(_startMs, _endMs),
+              min: 0,
+              max: _durationMs <= 0 ? 1 : _durationMs,
+              onChanged: _onRangeChanged,
+            ),
+          ),
+        ),
+        const SizedBox(height: 20),
+      ],
+    );
+  }
+}
 }
 
 class _VideoCropPage extends StatefulWidget {
@@ -1174,52 +1234,14 @@ class _VideoCropPageState extends State<_VideoCropPage> {
   }
 }
 
-Future<String> _prepareVideoForTrim(String sourcePath) async {
-  // Video resolusi tinggi/HEVC berisiko bikin native encoder crash saat
-  // trim di sebagian chipset (mis. MediaTek Helio G88 di Infinix Hot 11
-  // NFC). Video yang sudah cukup kecil (<=720p) dibiarkan apa adanya biar
-  // kualitas HD tetap terjaga di device yang memang sanggup. Hanya video
-  // besar yang di-downscale sebagai langkah aman sebelum masuk trim native.
-  const safeMaxDimension = 1280;
-  try {
-    final info = await VideoCompress.getMediaInfo(sourcePath);
-    final width = info.width ?? 0;
-    final height = info.height ?? 0;
-    final maxDimension = width > height ? width : height;
-    await _appendDartCrashLog('[Checkpoint ${DateTime.now()}] PrepareVideo: source ${width}x$height');
-    if (maxDimension > 0 && maxDimension <= safeMaxDimension) {
-      return sourcePath;
-    }
-    final compressed = await VideoCompress.compressVideo(
-      sourcePath,
-      quality: VideoQuality.MediumQuality,
-      deleteOrigin: false,
-      includeAudio: true,
-    );
-    final compressedPath = compressed?.path;
-    if (compressedPath == null) {
-      await _appendDartCrashLog('[Checkpoint ${DateTime.now()}] PrepareVideo: compress null, fallback original');
-      return sourcePath;
-    }
-    await _appendDartCrashLog('[Checkpoint ${DateTime.now()}] PrepareVideo: compressed -> $compressedPath');
-    return compressedPath;
-  } catch (e) {
-    await _appendDartCrashLog('[Checkpoint ${DateTime.now()}] PrepareVideo: gagal ($e), fallback original');
-    return sourcePath;
-  }
-}
-
 Future<void> pickAndSetProfileVideo(BuildContext context, WidgetRef ref, ImageSource source) async {
   final picker = ImagePicker();
   final XFile? picked = await picker.pickVideo(source: source, maxDuration: const Duration(seconds: 60));
   if (picked == null || !context.mounted) return;
 
-  final preparedPath = await _prepareVideoForTrim(picked.path);
-  if (!context.mounted) return;
-
   final trimmedPath = await Navigator.push<String>(
     context,
-    GlassPageRoute(builder: (_) => _VideoTrimPage(sourcePath: preparedPath)),
+    GlassPageRoute(builder: (_) => _VideoTrimPage(sourcePath: picked.path)),
   );
   if (trimmedPath == null || !context.mounted) return;
 
@@ -1241,11 +1263,6 @@ Future<void> pickAndSetProfileVideo(BuildContext context, WidgetRef ref, ImageSo
   try {
     await File(trimmedPath).delete();
   } catch (_) {}
-  if (preparedPath != picked.path) {
-    try {
-      await File(preparedPath).delete();
-    } catch (_) {}
-  }
 
   ref.read(userProfileProvider.notifier).updateVideo(
         path: destPath,
@@ -1302,12 +1319,9 @@ Future<void> pickAndSetProfileMediaFromGallery(BuildContext context, WidgetRef r
     final sourcePath = pick.path;
     if (sourcePath == null) return;
 
-    final preparedPath = await _prepareVideoForTrim(sourcePath);
-    if (!context.mounted) return;
-
     final trimmedPath = await Navigator.push<String>(
       context,
-      GlassPageRoute(builder: (_) => _VideoTrimPage(sourcePath: preparedPath)),
+      GlassPageRoute(builder: (_) => _VideoTrimPage(sourcePath: sourcePath)),
     );
     if (trimmedPath == null || !context.mounted) return;
 
@@ -1329,11 +1343,6 @@ Future<void> pickAndSetProfileMediaFromGallery(BuildContext context, WidgetRef r
     try {
       await File(trimmedPath).delete();
     } catch (_) {}
-    if (preparedPath != sourcePath) {
-      try {
-        await File(preparedPath).delete();
-      } catch (_) {}
-    }
 
     ref.read(userProfileProvider.notifier).updateVideo(
           path: destPath,
