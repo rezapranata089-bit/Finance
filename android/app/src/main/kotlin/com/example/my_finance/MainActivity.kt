@@ -128,25 +128,6 @@ class MainActivity : FlutterActivity() {
                     setClassName(pkg, cls)
                 }
             }
-            // Probe tambahan yang lebih longgar (tanpa CATEGORY_OPENABLE,
-            // tanpa data URI eksplisit) untuk gallery OEM yang tidak
-            // mendaftar lewat dua probe di atas sama sekali.
-            addFrom(
-                Intent(Intent.ACTION_GET_CONTENT).apply { type = "image/*" }
-            ) { pkg, cls ->
-                Intent(Intent.ACTION_GET_CONTENT).apply {
-                    type = "image/*"
-                    setClassName(pkg, cls)
-                }
-            }
-            addFrom(
-                Intent(Intent.ACTION_PICK).apply { type = "image/*" }
-            ) { pkg, cls ->
-                Intent(Intent.ACTION_PICK).apply {
-                    type = "image/*"
-                    setClassName(pkg, cls)
-                }
-            }
         } else {
             // queryIntentActivities ignores EXTRA_MIME_TYPES and only looks
             // at the intent's literal "type" field, so probe image/* and
@@ -190,26 +171,6 @@ class MainActivity : FlutterActivity() {
                 Intent(Intent.ACTION_PICK, MediaStore.Video.Media.EXTERNAL_CONTENT_URI)
             ) { pkg, cls ->
                 Intent(Intent.ACTION_PICK, MediaStore.Video.Media.EXTERNAL_CONTENT_URI).apply {
-                    setClassName(pkg, cls)
-                }
-            }
-            // Probe tambahan yang lebih longgar, sama seperti pada cabang
-            // imageOnly di atas, untuk menangkap gallery OEM yang tidak
-            // mendaftar lewat probe GET_CONTENT/PICK standar.
-            addFrom(
-                Intent(Intent.ACTION_GET_CONTENT).apply { type = "*/*" }
-            ) { pkg, cls ->
-                Intent(Intent.ACTION_GET_CONTENT).apply {
-                    type = "*/*"
-                    putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("image/*", "video/*"))
-                    setClassName(pkg, cls)
-                }
-            }
-            addFrom(
-                Intent(Intent.ACTION_PICK).apply { type = "image/*" }
-            ) { pkg, cls ->
-                Intent(Intent.ACTION_PICK).apply {
-                    type = "image/*"
                     setClassName(pkg, cls)
                 }
             }
