@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
@@ -27,27 +28,82 @@ import 'package:video_trimmer/video_trimmer.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  VisibilityDetectorController.instance.updateInterval = const Duration(milliseconds: 100);
-  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
-  await initializeDateFormatting('id_ID', null);
-  await LiquidGlassWidgets.initialize();
-  final prefs = await SharedPreferences.getInstance();
-  if (!(prefs.getBool('fresh_data_reset_v2') ?? false)) {
-    await prefs.remove('finance_cards');
-    await prefs.remove('finance_transactions');
-    await prefs.remove('user_profile');
-    await prefs.remove('dummy_data_active');
-    await prefs.setBool('fresh_data_reset_v2', true);
+Future<String> _appDocsPath() async {
+  final dir = await getApplicationDocumentsDirectory();
+  return dir.path;
+}
+
+Future<void> _appendDartCrashLog(String content) async {
+  if (kIsWeb) return;
+  try {
+    final path = await _appDocsPath();
+    final file = File('$path/crash_log_dart.txt');
+    await file.writeAsString('$content\n', mode: FileMode.append, flush: true);
+  } catch (_) {}
+}
+
+Future<String> _readCombinedCrashLog() async {
+  if (kIsWeb) return '';
+  try {
+    final path = await _appDocsPath();
+    final buffer = StringBuffer();
+    final nativeFile = File('$path/crash_log_native.txt');
+    final dartFile = File('$path/crash_log_dart.txt');
+    if (await nativeFile.exists()) {
+      buffer.writeln('=== CRASH LOG NATIVE (Android) ===');
+      buffer.writeln(await nativeFile.readAsString());
+      buffer.writeln();
+    }
+    if (await dartFile.exists()) {
+      buffer.writeln('=== CRASH LOG DART/FLUTTER ===');
+      buffer.writeln(await dartFile.readAsString());
+    }
+    return buffer.toString();
+  } catch (_) {
+    return '';
   }
-  runApp(LiquidGlassWidgets.wrap(
-    brightnessResolver: Theme.maybeBrightnessOf,
-    child: ProviderScope(
-      overrides: [prefsProvider.overrideWithValue(prefs)],
-      child: const MyFinanceApp(),
-    ),
-  ));
+}
+
+Future<void> _clearCrashLogs() async {
+  if (kIsWeb) return;
+  try {
+    final path = await _appDocsPath();
+    final nativeFile = File('$path/crash_log_native.txt');
+    final dartFile = File('$path/crash_log_dart.txt');
+    if (await nativeFile.exists()) await nativeFile.delete();
+    if (await dartFile.exists()) await dartFile.delete();
+  } catch (_) {}
+}
+
+void main() {
+  runZonedGuarded(() async {
+    WidgetsFlutterBinding.ensureInitialized();
+    FlutterError.onError = (FlutterErrorDetails details) {
+      FlutterError.presentError(details);
+      _appendDartCrashLog('[Flutter ${DateTime.now()}]\n${details.exceptionAsString()}\n${details.stack}');
+    };
+    VisibilityDetectorController.instance.updateInterval = const Duration(milliseconds: 100);
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+    await initializeDateFormatting('id_ID', null);
+    await LiquidGlassWidgets.initialize();
+    final prefs = await SharedPreferences.getInstance();
+    if (!(prefs.getBool('fresh_data_reset_v2') ?? false)) {
+      await prefs.remove('finance_cards');
+      await prefs.remove('finance_transactions');
+      await prefs.remove('user_profile');
+      await prefs.remove('dummy_data_active');
+      await prefs.setBool('fresh_data_reset_v2', true);
+    }
+    runApp(LiquidGlassWidgets.wrap(
+      brightnessResolver: Theme.maybeBrightnessOf,
+      child: ProviderScope(
+        overrides: [prefsProvider.overrideWithValue(prefs)],
+        child: const MyFinanceApp(),
+      ),
+    ));
+  }, (error, stack) {
+    _appendDartCrashLog('[Zone ${DateTime.now()}]\n$error\n$stack');
+  });
 }
 
 final prefsProvider = Provider<SharedPreferences>((ref) => throw UnimplementedError());
@@ -2320,6 +2376,7 @@ class Strings {
     'language': {AppLang.en: 'Language', AppLang.id: 'Bahasa'},
     'notifications': {AppLang.en: 'Notifications', AppLang.id: 'Notifikasi'},
     'backup_data': {AppLang.en: 'Backup data', AppLang.id: 'Backup data'},
+    'debug_log': {AppLang.en: 'App Log', AppLang.id: 'Log Aplikasi'},
     'not_available': {AppLang.en: '{name} is not available yet', AppLang.id: '{name} belum tersedia'},
     'screen_mode': {AppLang.en: 'SCREEN MODE', AppLang.id: 'MODE LAYAR'},
     'light': {AppLang.en: 'Light', AppLang.id: 'Terang'},
@@ -5028,6 +5085,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                               ('language', Icons.language),
                               ('notifications', SolarIconsOutline.bell),
                               ('backup_data', SolarIconsOutline.cloudUpload),
+                              ('debug_log', Icons.bug_report_outlined),
                             ]),
                           ],
                         ),
@@ -5543,6 +5601,8 @@ class SettingList extends ConsumerWidget {
                       Navigator.push(context, GlassPageRoute(builder: (_) => const LoanManagementPage()));
                     } else if (item.$1 == 'category') {
                       Navigator.push(context, GlassPageRoute(builder: (_) => const CategorySettingsPage()));
+                    } else if (item.$1 == 'debug_log') {
+                      Navigator.push(context, GlassPageRoute(builder: (_) => const CrashLogPage()));
                     } else {
                       showGlassSnackBar(context, Strings.t(lang, 'not_available').replaceAll('{name}', label), icon: Icons.hourglass_empty_rounded);
                     }
@@ -6058,6 +6118,118 @@ class NotificationsPage extends ConsumerWidget {
 }
 
 
+
+class CrashLogPage extends StatefulWidget {
+  const CrashLogPage({super.key});
+  @override
+  State<CrashLogPage> createState() => _CrashLogPageState();
+}
+
+class _CrashLogPageState extends State<CrashLogPage> {
+  String _log = '';
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final content = await _readCombinedCrashLog();
+    if (!mounted) return;
+    setState(() {
+      _log = content;
+      _loading = false;
+    });
+  }
+
+  Future<void> _clear() async {
+    await _clearCrashLogs();
+    await _load();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = context.isDark;
+    final primary = Theme.of(context).colorScheme.primary;
+    final hasLog = _log.trim().isNotEmpty;
+    return Scaffold(
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: LiquidGlass(
+                      borderRadius: 999,
+                      tint: isDark ? Colors.black : null,
+                      intensity: isDark ? 1.6 : 1.0,
+                      borderColor: isDark ? context.borderColor : null,
+                      child: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Icon(SolarIconsOutline.arrowLeft, size: 20, color: context.textPrimary),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(child: Text('Log Aplikasi', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: context.textPrimary))),
+                  if (hasLog)
+                    GestureDetector(
+                      onTap: () {
+                        Clipboard.setData(ClipboardData(text: _log));
+                        showGlassSnackBar(context, 'Log disalin ke clipboard', icon: Icons.copy_rounded);
+                      },
+                      child: LiquidGlass(
+                        borderRadius: 999,
+                        tint: isDark ? Colors.black : null,
+                        intensity: isDark ? 1.6 : 1.0,
+                        borderColor: isDark ? context.borderColor : null,
+                        child: Padding(
+                          padding: const EdgeInsets.all(10),
+                          child: Icon(Icons.copy_rounded, size: 18, color: primary),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: _loading
+                  ? const Center(child: CircularProgressIndicator())
+                  : !hasLog
+                      ? Center(child: Text('Belum ada log error', style: TextStyle(color: context.textMuted)))
+                      : SingleChildScrollView(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: SelectableText(
+                            _log,
+                            style: TextStyle(fontFamily: 'monospace', fontSize: 11.5, height: 1.4, color: context.textPrimary),
+                          ),
+                        ),
+            ),
+            if (hasLog)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(foregroundColor: Colors.redAccent, side: const BorderSide(color: Colors.redAccent)),
+                    onPressed: _clear,
+                    icon: const Icon(Icons.delete_outline, size: 18),
+                    label: const Text('Hapus log'),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
 class BottomRoundedBorderPainter extends CustomPainter {
   final Color color;

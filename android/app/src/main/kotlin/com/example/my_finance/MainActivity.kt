@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Bundle
 import android.provider.MediaStore
 import androidx.annotation.NonNull
 import io.flutter.embedding.android.FlutterActivity
@@ -11,8 +12,38 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 import java.io.File
 import java.io.FileOutputStream
+import java.io.PrintWriter
+import java.io.StringWriter
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class MainActivity : FlutterActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        installCrashHandler()
+    }
+
+    // Menangkap uncaught exception Java/Kotlin (termasuk kegagalan native
+    // codec yang naik sebagai RuntimeException, mis. dari
+    // MediaMetadataRetriever/decoder OEM tertentu) sebelum proses berhenti,
+    // lalu menulisnya ke filesDir agar bisa dibaca ulang di halaman Log
+    // Aplikasi. Tidak menangkap crash native murni (segfault C/C++) karena
+    // itu di luar jangkauan JVM.
+    private fun installCrashHandler() {
+        val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+            try {
+                val sw = StringWriter()
+                throwable.printStackTrace(PrintWriter(sw))
+                val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date())
+                File(filesDir, "crash_log_native.txt").appendText("[$timestamp] Thread: ${thread.name}\n$sw\n")
+            } catch (_: Exception) {
+            }
+            defaultHandler?.uncaughtException(thread, throwable)
+        }
+    }
+
     private val channelName = "com.example.my_finance/gallery_picker"
     private val pickImageRequestCode = 9001
     private val pickMediaRequestCode = 9002
