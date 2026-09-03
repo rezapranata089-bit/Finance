@@ -36,3 +36,24 @@
 -dontwarn com.google.mlkit.vision.text.devanagari.**
 -dontwarn com.google.mlkit.vision.text.japanese.**
 -dontwarn com.google.mlkit.vision.text.korean.**
+
+# FIX: "Pindai Struk" crash di build release (R8/minify aktif) dengan error
+# "Attempt to invoke virtual method 'java.lang.Class
+# java.lang.Object.getClass()' on a null object reference" yang muncul
+# langsung saat TextRecognizer.processImage() dipanggil (lihat
+# receipt_scanner.dart -> scanOffline). Ini BUKAN bug di kode Dart, melainkan
+# R8 (isMinifyEnabled = true di app/build.gradle.kts) menghapus/mengubah
+# nama class internal google_mlkit_commons & google_mlkit_text_recognition
+# (termasuk dependency com.google.android.gms yang dipakai lewat reflection
+# untuk memuat model teks recognizer), sehingga saat runtime plugin
+# mengakses referensi null. Build DEBUG tidak kena bug ini karena minify
+# nonaktif di debug — itu sebabnya baru terlihat di APK release seperti
+# hasil build GitHub Actions.
+-keep class com.google.mlkit.** { *; }
+-keep interface com.google.mlkit.** { *; }
+-keep class com.google.android.gms.** { *; }
+-keep interface com.google.android.gms.** { *; }
+-keep class com.google.android.odml.** { *; }
+-dontwarn com.google.mlkit.**
+-dontwarn com.google.android.gms.**
+-dontwarn com.google.android.odml.**
