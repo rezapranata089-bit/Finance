@@ -211,9 +211,23 @@ class ReceiptParser {
   }
 
   static final List<RegExp> _dateRegexes = [
-    RegExp(r'(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})'),
-    RegExp(r'(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})'),
+    RegExp(r'(\d{1,2})\s*[\/\-\.]\s*(\d{1,2})\s*[\/\-\.]\s*(\d{2,4})'),
+    RegExp(r'(\d{4})\s*[\/\-\.]\s*(\d{1,2})\s*[\/\-\.]\s*(\d{1,2})'),
   ];
+
+  // Fallback untuk format tanggal dengan nama bulan (mis. "24 Agu 2026",
+  // "24-Agustus-2026") yang tidak tertangkap pola numerik di atas — ini
+  // penyebab paling umum tanggal sudah terbaca di rawText tapi field
+  // tanggal di form tetap kosong.
+  static const Map<String, int> _monthNames = {
+    'jan': 1, 'feb': 2, 'mar': 3, 'apr': 4, 'mei': 5, 'may': 5, 'jun': 6,
+    'jul': 7, 'agu': 8, 'ags': 8, 'aug': 8, 'sep': 9, 'okt': 10, 'oct': 10,
+    'nov': 11, 'des': 12, 'dec': 12,
+  };
+
+  static final RegExp _monthNameDateRegex = RegExp(
+    r'(\d{1,2})\s*[\/\-\.\s]\s*([A-Za-z]{3,9})\s*[\/\-\.\s]\s*(\d{2,4})',
+  );
 
   static DateTime? parseDate(String text) {
     for (final regex in _dateRegexes) {
@@ -230,6 +244,20 @@ class ReceiptParser {
         return DateTime(year, g2, g1);
       } catch (_) {
         continue;
+      }
+    }
+    final monthMatch = _monthNameDateRegex.firstMatch(text);
+    if (monthMatch != null) {
+      final day = int.tryParse(monthMatch.group(1)!);
+      final rawMonth = monthMatch.group(2)!.toLowerCase();
+      final monthKey = rawMonth.length >= 3 ? rawMonth.substring(0, 3) : rawMonth;
+      final month = _monthNames[monthKey];
+      final yearRaw = int.tryParse(monthMatch.group(3)!);
+      if (day != null && month != null && yearRaw != null) {
+        final year = yearRaw < 100 ? 2000 + yearRaw : yearRaw;
+        try {
+          return DateTime(year, month, day);
+        } catch (_) {}
       }
     }
     return null;
