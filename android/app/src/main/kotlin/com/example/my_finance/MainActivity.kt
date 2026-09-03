@@ -44,6 +44,19 @@ class MainActivity : FlutterActivity() {
         }
     }
 
+    // Menulis info debug pemilihan galeri (jumlah & nama paket kandidat yang
+    // ditemukan/tereksklusi) ke file crash log yang sama, supaya bisa
+    // diperiksa lewat halaman "Log Aplikasi" tanpa perlu USB debugging.
+    // Berguna untuk mendiagnosis kenapa galeri asli tidak terdeteksi di
+    // perangkat OEM tertentu (mis. Infinix/Tecno/itel berbasis XOS).
+    private fun logGalleryDebug(message: String) {
+        try {
+            val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date())
+            File(filesDir, "crash_log_native.txt").appendText("[$timestamp] GalleryPicker: $message\n")
+        } catch (_: Exception) {
+        }
+    }
+
     private val channelName = "com.example.my_finance/gallery_picker"
     private val pickImageRequestCode = 9001
     private val pickMediaRequestCode = 9002
@@ -115,6 +128,25 @@ class MainActivity : FlutterActivity() {
                     setClassName(pkg, cls)
                 }
             }
+            // Probe tambahan yang lebih longgar (tanpa CATEGORY_OPENABLE,
+            // tanpa data URI eksplisit) untuk gallery OEM yang tidak
+            // mendaftar lewat dua probe di atas sama sekali.
+            addFrom(
+                Intent(Intent.ACTION_GET_CONTENT).apply { type = "image/*" }
+            ) { pkg, cls ->
+                Intent(Intent.ACTION_GET_CONTENT).apply {
+                    type = "image/*"
+                    setClassName(pkg, cls)
+                }
+            }
+            addFrom(
+                Intent(Intent.ACTION_PICK).apply { type = "image/*" }
+            ) { pkg, cls ->
+                Intent(Intent.ACTION_PICK).apply {
+                    type = "image/*"
+                    setClassName(pkg, cls)
+                }
+            }
         } else {
             // queryIntentActivities ignores EXTRA_MIME_TYPES and only looks
             // at the intent's literal "type" field, so probe image/* and
@@ -161,9 +193,31 @@ class MainActivity : FlutterActivity() {
                     setClassName(pkg, cls)
                 }
             }
+            // Probe tambahan yang lebih longgar, sama seperti pada cabang
+            // imageOnly di atas, untuk menangkap gallery OEM yang tidak
+            // mendaftar lewat probe GET_CONTENT/PICK standar.
+            addFrom(
+                Intent(Intent.ACTION_GET_CONTENT).apply { type = "*/*" }
+            ) { pkg, cls ->
+                Intent(Intent.ACTION_GET_CONTENT).apply {
+                    type = "*/*"
+                    putExtra(Intent.EXTRA_MIME_TYPES, arrayOf("image/*", "video/*"))
+                    setClassName(pkg, cls)
+                }
+            }
+            addFrom(
+                Intent(Intent.ACTION_PICK).apply { type = "image/*" }
+            ) { pkg, cls ->
+                Intent(Intent.ACTION_PICK).apply {
+                    type = "image/*"
+                    setClassName(pkg, cls)
+                }
+            }
         }
 
-        return candidates.values.toList()
+        val result = candidates.values.toList()
+        logGalleryDebug("imageOnly=$imageOnly found=${result.size} pkgs=${result.joinToString { "${it.packageName}/${it.className}" }}")
+        return result
     }
 
     // Membuka kandidat langsung jika hanya ada satu, menampilkan chooser
@@ -187,6 +241,7 @@ class MainActivity : FlutterActivity() {
                 // Pixel / near-stock Android tanpa galeri terpisah).
                 // Fallback ke GET_CONTENT sistem default, yang akan membuka
                 // Photo Picker atau Google Photos.
+                logGalleryDebug("FALLBACK ke System Photo Picker (0 kandidat ditemukan) requestCode=$requestCode")
                 val fallbackIntent = if (requestCode == pickImageRequestCode) {
                     Intent(Intent.ACTION_GET_CONTENT).apply {
                         type = "image/*"
