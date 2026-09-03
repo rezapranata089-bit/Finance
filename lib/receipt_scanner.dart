@@ -288,14 +288,55 @@ class ReceiptParser {
     return _itemExclusionKeywords.any((w) => lower.contains(w));
   }
 
-  // Heuristik sederhana untuk hasil OCR offline (tanpa AI): baris yang
-  // diawali teks (nama barang) dan diakhiri satu angka nominal dianggap
-  // baris item belanja, selama tidak mengandung kata kunci baris
-  // total/pembayaran/dsb. Hasil ini best-effort — struk dengan tata letak
-  // tidak biasa (nama & harga di baris terpisah) mungkin tidak terbaca
-  // sempurna; AI online jauh lebih akurat untuk kasus ini.
+  // Baris bernomor urut (mis. "1. Indomie Goreng") dianggap AWAL blok
+  // item, karena pada banyak struk kasir offline nama barang dan baris
+  // qty/harga berada di baris TERPISAH (bukan satu baris seperti asumsi
+  // lama). Semua baris di antara satu nomor urut sampai nomor urut
+  // berikutnya (atau sampai baris kata kunci total/pembayaran) dipindai
+  // untuk mencari harga (nominal terbesar yang muncul) & qty, lalu
+  // digabung jadi satu item. Pendekatan lama (per-baris independen) gagal
+  // total menangkap nama barang begitu nama & harga terpisah baris: baris
+  // nama (tanpa nominal) dilewati, sementara baris qty/harga malah salah
+  // dianggap sebagai nama (mis. jadi "lusin x" alih-alih nama aslinya).
+  static final RegExp _itemBulletRegex = RegExp(r'^(\d{1,3})\s*[.\):]\s+(.+)$');
+
   static List<ReceiptLineItem> parseItems(String text) {
     final lines = text.split('\n').map((l) => l.trim()).where((l) => l.isNotEmpty).toList();
+    final bulletIndices = <int>[
+      for (var i = 0; i < lines.length; i++)
+        if (_itemBulletRegex.hasMatch(lines[i])) i,
+    ];
+    if (bulletIndices.isEmpty) return _parseItemsFlatFallback(lines);
+
+    final items = <ReceiptLineItem>[];
+    for (var b = 0; b < bulletIndices.length; b++) {
+      final startIdx = bulletIndices[b];
+      final endIdx = b + 1 < bulletIndices.length ? bulletIndices[b + 1] : lines.length;
+      final name = _itemBulletRegex.firstMatch(lines[startIdx])!.group(2)!.trim();
+      if (name.isEmpty) continue;
+      double? price;
+      double? qty;
+      for (var i = startIdx + 1; i < endIdx; i++) {
+        final line = lines[i];
+        if (_looksLikeItemExcluded(line)) break;
+        final amt = _extractAmount(line);
+        if (amt != null && amt > 0 && (price == null || amt > price)) price = amt;
+        if (qty == null) {
+          final qtyMatch = RegExp(r'(\d+(?:[.,]\d+)?)\s*[a-zA-Z]*\s*[xX]', caseSensitive: false).firstMatch(line);
+          if (qtyMatch != null) qty = double.tryParse(qtyMatch.group(1)!.replaceAll(',', '.'));
+        }
+      }
+      if (price == null || price <= 0) continue;
+      items.add(ReceiptLineItem(name: name, quantity: qty, price: price));
+    }
+    return items;
+  }
+
+  // Fallback untuk struk yang TIDAK memakai penomoran item (format lama:
+  // satu baris berisi nama sekaligus nominal sekaligus). Logika ini persis
+  // sama seperti parseItems versi sebelumnya, dipakai kalau tidak ada satu
+  // pun baris bernomor terdeteksi pada hasil OCR.
+  static List<ReceiptLineItem> _parseItemsFlatFallback(List<String> lines) {
     final items = <ReceiptLineItem>[];
     for (final line in lines) {
       if (_looksLikeItemExcluded(line)) continue;
