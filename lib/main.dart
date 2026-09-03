@@ -1007,35 +1007,39 @@ class _VideoTrimPageState extends State<_VideoTrimPage> {
     final durationSec = (_endMs - _startMs) / 1000;
     final dir = await getTemporaryDirectory();
     final outputPath = '${dir.path}/trimmed_${DateTime.now().microsecondsSinceEpoch}.mp4';
-    // Resolusi diturunkan ke 640px (dari 1280px) dan crf dinaikkan ke 26 karena
-    // hasil video ini hanya dipakai sebagai avatar/preview lingkaran kecil —
-    // beban encode software (libx264, tanpa hardware encoder karena riwayat
-    // crash di beberapa chipset OEM) berkurang signifikan tanpa penurunan
-    // kualitas yang terlihat pada ukuran tampil sekecil itu. -threads 0
-    // memakai seluruh core CPU yang tersedia untuk mempercepat encode.
-    final command = '-y -i "${widget.sourcePath}" -ss $startSec -t $durationSec '
+
+    // Percobaan 1: hardware encoder (h264_mediacodec) — memakai chip encode
+    // dedicated di SoC, jauh lebih cepat & hemat baterai dibanding software.
+    // Ini BERBEDA dari implementasi lama yang crash native (pemakaian
+    // MediaCodec API mentah tanpa FFmpeg): FFmpeg membungkus MediaCodec
+    // dengan penanganan error yang lebih baik, sehingga kegagalan biasanya
+    // dilaporkan lewat return code, bukan crash proses. CATATAN: kalau
+    // ternyata tetap terjadi crash native murni di device tertentu, itu
+    // tidak bisa ditangkap try-catch apa pun (proses mati sebelum sempat
+    // fallback) — tapi ini risiko yang jauh lebih kecil lewat jalur FFmpeg.
+    final hwCommand = '-y -i "${widget.sourcePath}" -ss $startSec -t $durationSec '
+        '-vf "scale=\'min(640,iw)\':-2" -c:v h264_mediacodec -b:v 2M '
+        '-pix_fmt yuv420p -c:a aac -b:a 96k -movflags +faststart "$outputPath"';
+
+    // Percobaan 2 (fallback): software encoder libx264 — lebih lambat tapi
+    // tidak bergantung sama sekali ke driver hardware OEM, jadi selalu
+    // portable lintas device kalau hardware encoder gagal/tidak didukung.
+    final swCommand = '-y -i "${widget.sourcePath}" -ss $startSec -t $durationSec '
         '-vf "scale=\'min(640,iw)\':-2" -c:v libx264 -preset ultrafast -crf 26 '
         '-threads 0 -pix_fmt yuv420p -c:a aac -b:a 96k -movflags +faststart "$outputPath"';
+
     await _appendDartCrashLog('[Checkpoint ${DateTime.now()}] FFmpegTrim: START start=$startSec dur=$durationSec');
-    final completer = Completer<void>();
     ReturnCode? returnCode;
     try {
-      await FFmpegKit.executeAsync(
-        command,
-        (session) async {
-          returnCode = await session.getReturnCode();
-          if (!completer.isCompleted) completer.complete();
-        },
-        null,
-        (statistics) {
-          if (!mounted || durationSec <= 0) return;
-          final processedMs = statistics.getTime();
-          final progress = (processedMs / (durationSec * 1000)).clamp(0.0, 1.0);
-          setState(() => _progress = progress);
-        },
-      );
-      await completer.future;
-      await _appendDartCrashLog('[Checkpoint ${DateTime.now()}] FFmpegTrim: DONE rc=$returnCode');
+      returnCode = await _runFfmpegTrim(hwCommand, durationSec);
+      await _appendDartCrashLog('[Checkpoint ${DateTime.now()}] FFmpegTrim: HW rc=$returnCode');
+
+      if (!ReturnCode.isSuccess(returnCode)) {
+        if (mounted) setState(() => _progress = 0.0);
+        returnCode = await _runFfmpegTrim(swCommand, durationSec);
+        await _appendDartCrashLog('[Checkpoint ${DateTime.now()}] FFmpegTrim: SW-fallback rc=$returnCode');
+      }
+
       if (!mounted) return;
       setState(() => _saving = false);
       if (ReturnCode.isSuccess(returnCode)) {
@@ -1053,6 +1057,25 @@ class _VideoTrimPageState extends State<_VideoTrimPage> {
         const SnackBar(content: Text('Gagal memotong video, coba lagi.')),
       );
     }
+  }
+
+  Future<ReturnCode?> _runFfmpegTrim(String command, double durationSec) async {
+    final completer = Completer<ReturnCode?>();
+    await FFmpegKit.executeAsync(
+      command,
+      (session) async {
+        final rc = await session.getReturnCode();
+        if (!completer.isCompleted) completer.complete(rc);
+      },
+      null,
+      (statistics) {
+        if (!mounted || durationSec <= 0) return;
+        final processedMs = statistics.getTime();
+        final progress = (processedMs / (durationSec * 1000)).clamp(0.0, 1.0);
+        setState(() => _progress = progress);
+      },
+    );
+    return completer.future;
   }
 
   String _fmt(double ms) {
