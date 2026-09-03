@@ -238,8 +238,19 @@ class ReceiptScannerService {
   }
 }
 
+Future<void> pickReceiptFromCameraAndPush(BuildContext context) async {
+  final picker = ImagePicker();
+  final XFile? picked = await picker.pickImage(source: ImageSource.camera, maxWidth: 2000, imageQuality: 92);
+  if (picked == null || !context.mounted) return;
+  Navigator.push(
+    context,
+    GlassPageRoute(builder: (_) => ReceiptScanPage(initialImageFile: File(picked.path))),
+  );
+}
+
 class ReceiptScanPage extends ConsumerStatefulWidget {
-  const ReceiptScanPage({super.key});
+  final File? initialImageFile;
+  const ReceiptScanPage({super.key, this.initialImageFile});
   @override
   ConsumerState<ReceiptScanPage> createState() => _ReceiptScanPageState();
 }
@@ -258,17 +269,16 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
   @override
   void initState() {
     super.initState();
-    // Langsung buka kamera begitu halaman ini dibuka (dipicu dari tombol
-    // scan di navbar), tanpa menampilkan sheet pilihan kamera/galeri
-    // terlebih dahulu. Sebagian besar aplikasi kamera bawaan (terutama
-    // kamera OEM non-AOSP) menampilkan thumbnail foto terakhir di pojok
-    // viewfinder yang bisa dibuka untuk memilih gambar dari galeri —
-    // jadi user tetap bisa "pakai gambar aja" tanpa harus balik ke sheet
-    // pilihan manual di app ini. Kalau kamera dibatalkan, halaman jatuh
-    // ke empty state dengan tombol fallback (kamera/galeri manual).
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _pickAndScan(ImageSource.camera);
-    });
+    final initialFile = widget.initialImageFile;
+    if (initialFile != null) {
+      // Kamera sudah dibuka & foto sudah diambil SEBELUM halaman ini
+      // di-push (lihat pickReceiptFromCameraAndPush di navbar), jadi di
+      // sini tinggal langsung jalankan proses scan terhadap file yang
+      // sudah ada, tanpa membuka kamera lagi.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _runScan(initialFile);
+      });
+    }
   }
 
   @override
@@ -278,11 +288,7 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
     super.dispose();
   }
 
-  Future<void> _pickAndScan(ImageSource source) async {
-    final picker = ImagePicker();
-    final XFile? picked = await picker.pickImage(source: source, maxWidth: 2000, imageQuality: 92);
-    if (picked == null) return;
-    final file = File(picked.path);
+  Future<void> _runScan(File file) async {
     setState(() {
       _imageFile = file;
       _result = null;
@@ -308,6 +314,13 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
           : '';
       _selectedDate = finalResult.date ?? DateTime.now();
     });
+  }
+
+  Future<void> _pickAndScan(ImageSource source) async {
+    final picker = ImagePicker();
+    final XFile? picked = await picker.pickImage(source: source, maxWidth: 2000, imageQuality: 92);
+    if (picked == null) return;
+    await _runScan(File(picked.path));
   }
 
   void _showSourceSheet() {

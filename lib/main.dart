@@ -3470,7 +3470,7 @@ class _FinanceShellState extends ConsumerState<FinanceShell> with SingleTickerPr
                     _navItem(context, 0, SolarIconsOutline.home, SolarIconsBold.home, Strings.t(lang, 'nav_home'), tab, ref),
                     _navItem(context, 1, SolarIconsOutline.chart, SolarIconsBold.chart, Strings.t(lang, 'nav_statistic'), tab, ref),
                     GestureDetector(
-                      onTap: () => Navigator.push(context, GlassPageRoute(builder: (_) => const ReceiptScanPage())),
+                      onTap: () => pickReceiptFromCameraAndPush(context),
                       child: Container(
                         width: 48, height: 48,
                         decoration: BoxDecoration(
