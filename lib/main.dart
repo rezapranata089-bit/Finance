@@ -3736,7 +3736,6 @@ class _HomePageState extends ConsumerState<HomePage> {
                     height: 74,
                     child: ListView.separated(
                       scrollDirection: Axis.horizontal,
-                      clipBehavior: Clip.none,
                       itemCount: promos.length,
                       separatorBuilder: (_, __) => const SizedBox(width: 12),
                       itemBuilder: (context, i) {
