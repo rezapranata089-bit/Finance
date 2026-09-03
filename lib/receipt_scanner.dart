@@ -1149,6 +1149,107 @@ class _ReceiptScanApiKeySettingsPageState extends ConsumerState<ReceiptScanApiKe
     showGlassSnackBar(context, keys.isEmpty ? 'Pengaturan disimpan (belum ada API key terisi)' : 'API key & model disimpan', icon: Icons.check_circle_outline);
   }
 
+  void _showApiKeyManager() {
+    final aiProvider = ref.read(aiProviderProvider);
+    final providerLabel = aiProvider == AIProvider.groq ? 'Groq' : 'Gemini';
+    final primary = Theme.of(context).colorScheme.primary;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: context.cardColor,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+      builder: (sheetContext) => StatefulBuilder(
+        builder: (context, setModalState) {
+          final activeControllers = _activeKeyControllers;
+          return Padding(
+            padding: EdgeInsets.fromLTRB(20, 22, 20, MediaQuery.viewInsetsOf(context).bottom + 24),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text('API Key $providerLabel', style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 24, color: context.textPrimary)),
+                      GestureDetector(
+                        onTap: () {
+                          setModalState(() => _obscure = !_obscure);
+                          this.setState(() {});
+                        },
+                        behavior: HitTestBehavior.opaque,
+                        child: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined, size: 20, color: context.iconMuted),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  Text('Tambahkan beberapa API key sebagai cadangan jika limit kuota tercapai.', style: TextStyle(fontSize: 12, color: context.textMuted, height: 1.3)),
+                  const SizedBox(height: 20),
+                  ...List.generate(activeControllers.length, (i) => Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Row(children: [
+                          Expanded(
+                            child: TextField(
+                              controller: activeControllers[i],
+                              obscureText: _obscure,
+                              decoration: InputDecoration(labelText: 'API key ${i + 1}', isDense: true),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.redAccent.withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: IconButton(
+                              onPressed: () {
+                                if (activeControllers.length <= 1) {
+                                  activeControllers[i].clear();
+                                } else {
+                                  activeControllers.removeAt(i).dispose();
+                                }
+                                setModalState(() {});
+                                this.setState(() {});
+                              },
+                              icon: const Icon(Icons.delete_outline, size: 18, color: Colors.redAccent),
+                              tooltip: 'Hapus API key ${i + 1}',
+                            ),
+                          ),
+                        ]),
+                      )),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: TextButton.icon(
+                      onPressed: () {
+                        activeControllers.add(TextEditingController());
+                        setModalState(() {});
+                        this.setState(() {});
+                      },
+                      icon: Icon(SolarIconsOutline.addCircle, size: 16, color: primary),
+                      label: Text('Tambah API key', style: TextStyle(color: primary, fontSize: 13, fontWeight: FontWeight.w600)),
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: () {
+                        Navigator.pop(sheetContext);
+                        _save();
+                      },
+                      child: const Text('Simpan API Key'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   Future<void> _testApiKey() async {
     final provider = ref.read(aiProviderProvider);
     final model = _activeSelectedModel;
@@ -1226,7 +1327,7 @@ class _ReceiptScanApiKeySettingsPageState extends ConsumerState<ReceiptScanApiKe
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                           Text('Gunakan AI Online', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: context.textPrimary)),
                           const SizedBox(height: 4),
-                          Text('AI online dicoba lebih dahulu untuk hasil pembacaan yang lebih akurat. Apabila tidak dapat diakses, sistem otomatis beralih ke pemindaian OCR offline.', style: TextStyle(fontSize: 12, color: context.textMuted, height: 1.3)),
+                          Text('AI online lebih akurat. Jika gagal, otomatis beralih ke offline.', style: TextStyle(fontSize: 12, color: context.textMuted, height: 1.3)),
                         ]),
                       ),
                       const SizedBox(width: 12),
@@ -1247,14 +1348,22 @@ class _ReceiptScanApiKeySettingsPageState extends ConsumerState<ReceiptScanApiKe
                   const SizedBox(height: 20),
                   const _SectionLabel('PROVIDER AI'),
                   const SizedBox(height: 10),
-                  LiquidGlass(
-                    borderRadius: 24,
-                    useBlur: true,
-                    blur: 14,
-                    intensity: isDark ? 1.5 : 1.0,
-                    borderColor: isDark ? context.borderColor : null,
-                    child: Padding(
-                      padding: const EdgeInsets.all(10),
+                  GlassContainer(
+                    shape: const LiquidRoundedRectangle(borderRadius: 20),
+                    useOwnLayer: false,
+                    quality: GlassQuality.premium,
+                    settings: LiquidGlassSettings(
+                      glassColor: isDark ? Colors.white.withOpacity(0.03) : Colors.white.withOpacity(0.6),
+                      blur: 16,
+                      thickness: 10,
+                      shadowElevation: 0,
+                    ),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(color: context.borderColor),
+                      ),
+                      padding: const EdgeInsets.all(6),
                       child: GlassSegmentedControl(
                         segments: [GlassSegment(label: 'Gemini'), GlassSegment(label: 'Groq')],
                         selectedIndex: aiProvider == AIProvider.groq ? 1 : 0,
@@ -1270,67 +1379,46 @@ class _ReceiptScanApiKeySettingsPageState extends ConsumerState<ReceiptScanApiKe
                   _SettingsSectionCard(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                       Row(children: [
-                        Expanded(
-                          child: Text('API Key', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: context.textPrimary)),
-                        ),
-                        GestureDetector(
-                          onTap: () => setState(() => _obscure = !_obscure),
-                          behavior: HitTestBehavior.opaque,
-                          child: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined, size: 18, color: context.iconMuted),
-                        ),
+                        Expanded(child: Text('API Keys', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: context.textPrimary))),
+                        Text('${_nonEmptyKeys(activeControllers).length} Terpasang', style: TextStyle(fontSize: 12, color: context.textMuted, fontWeight: FontWeight.w600)),
                       ]),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Tambahkan lebih dari satu API key agar pemindaian tetap berjalan otomatis dengan key berikutnya apabila salah satu key mencapai batas kuota.',
-                        style: TextStyle(fontSize: 11.5, color: context.textFaint, height: 1.4),
-                      ),
-                      const SizedBox(height: 14),
-                      ...List.generate(activeControllers.length, (i) => Padding(
-                            padding: const EdgeInsets.only(bottom: 10),
-                            child: Row(children: [
-                              Expanded(
-                                child: TextField(
-                                  key: ValueKey('key_field_${aiProvider.name}_$i'),
-                                  controller: activeControllers[i],
-                                  obscureText: _obscure,
-                                  decoration: InputDecoration(labelText: 'API key ${i + 1}', isDense: true),
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              IconButton(
-                                onPressed: () => _removeKeyField(i),
-                                icon: Icon(Icons.close_rounded, size: 18, color: context.iconMuted),
-                                tooltip: 'Hapus API key ${i + 1}',
-                              ),
-                            ]),
-                          )),
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: TextButton.icon(
-                          onPressed: _addKeyField,
-                          icon: Icon(SolarIconsOutline.addCircle, size: 16, color: primary),
-                          label: Text('Tambah API key', style: TextStyle(color: primary, fontSize: 12.5, fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: OutlinedButton.icon(
+                          onPressed: _showApiKeyManager,
+                          icon: const Icon(SolarIconsOutline.key, size: 16),
+                          label: const Text('Kelola API Key'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: primary,
+                            side: BorderSide(color: primary.withOpacity(0.5)),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Divider(color: context.borderColor),
+                      const SizedBox(height: 16),
+                      Divider(color: context.borderColor, height: 1),
+                      const SizedBox(height: 16),
+                      Row(children: [
+                        Expanded(child: Text('Model', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: context.textPrimary))),
+                      ]),
                       const SizedBox(height: 10),
                       Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Expanded(
                           child: models.isEmpty
                               ? Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
                                   decoration: BoxDecoration(
                                     color: isDark ? Colors.white.withOpacity(0.04) : const Color(0xFFF1EEF7),
-                                    borderRadius: BorderRadius.circular(16),
+                                    borderRadius: BorderRadius.circular(14),
                                   ),
-                                  child: Text('Daftar model belum dimuat', style: TextStyle(fontSize: 13, color: context.textFaint)),
+                                  child: Text('Belum ada model', style: TextStyle(fontSize: 13, color: context.textFaint)),
                                 )
                               : DropdownButtonFormField<String>(
                                   key: ValueKey('model_dropdown_${aiProvider.name}'),
                                   value: selectedModel,
                                   isExpanded: true,
-                                  decoration: const InputDecoration(labelText: 'Model'),
+                                  decoration: const InputDecoration(labelText: 'Model', isDense: true),
                                   items: models.map((m) => DropdownMenuItem(value: m, child: Text(m, overflow: TextOverflow.ellipsis))).toList(),
                                   onChanged: (v) => setState(() => _activeSelectedModel = v),
                                 ),
@@ -1344,7 +1432,7 @@ class _ReceiptScanApiKeySettingsPageState extends ConsumerState<ReceiptScanApiKe
                             alignment: Alignment.center,
                             decoration: BoxDecoration(
                               color: primary.withOpacity(isDark ? 0.18 : 0.1),
-                              borderRadius: BorderRadius.circular(16),
+                              borderRadius: BorderRadius.circular(14),
                             ),
                             child: _fetchingModels
                                 ? SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: primary))
@@ -1354,7 +1442,7 @@ class _ReceiptScanApiKeySettingsPageState extends ConsumerState<ReceiptScanApiKe
                       ]),
                       const SizedBox(height: 8),
                       Text(
-                        'Perbarui daftar model yang tersedia sesuai akses API key Anda saat ini di $providerLabel.',
+                        'Perbarui daftar model sesuai API key $providerLabel Anda.',
                         style: TextStyle(fontSize: 11.5, color: context.textFaint, height: 1.4),
                       ),
                       if (_modelsMessage != null) ...[
@@ -1363,12 +1451,13 @@ class _ReceiptScanApiKeySettingsPageState extends ConsumerState<ReceiptScanApiKe
                       ],
                     ]),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 14),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     child: Text(
-                      'Seluruh API key dan model tersimpan secara lokal di perangkat ini serta hanya dikirim langsung ke penyedia AI yang dipilih saat proses pemindaian berlangsung.',
+                      'API key dan model disimpan lokal dan hanya dikirim ke penyedia AI saat memindai.',
                       style: TextStyle(fontSize: 11.5, color: context.textFaint, height: 1.4),
+                      textAlign: TextAlign.center,
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -1385,7 +1474,7 @@ class _ReceiptScanApiKeySettingsPageState extends ConsumerState<ReceiptScanApiKe
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: FilledButton(onPressed: _save, child: const Text('Simpan')),
+                        child: FilledButton(onPressed: _save, child: const Text('Simpan Pengaturan')),
                       ),
                     ],
                   ),
