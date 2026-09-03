@@ -210,9 +210,13 @@ class ReceiptParser {
     return largest;
   }
 
+  // (?<!\d) dan (?!\d) mengunci batas angka: mencegah regex "mencuil"
+  // sebagian digit dari tengah angka yang lebih panjang (mis. tanpa ini,
+  // "2023-08-02" bisa salah kebaca sebagai "23-08-02" lalu disangka
+  // format DD-MM-YY → 23 Agustus 2002, alih-alih 2 Agustus 2023).
   static final List<RegExp> _dateRegexes = [
-    RegExp(r'(\d{1,2})\s*[\/\-\.]\s*(\d{1,2})\s*[\/\-\.]\s*(\d{2,4})'),
-    RegExp(r'(\d{4})\s*[\/\-\.]\s*(\d{1,2})\s*[\/\-\.]\s*(\d{1,2})'),
+    RegExp(r'(?<!\d)(\d{1,2})\s*[\/\-\.]\s*(\d{1,2})\s*[\/\-\.]\s*(\d{2,4})(?!\d)'),
+    RegExp(r'(?<!\d)(\d{4})\s*[\/\-\.]\s*(\d{1,2})\s*[\/\-\.]\s*(\d{1,2})(?!\d)'),
   ];
 
   // Fallback untuk format tanggal dengan nama bulan (mis. "24 Agu 2026",
@@ -226,7 +230,7 @@ class ReceiptParser {
   };
 
   static final RegExp _monthNameDateRegex = RegExp(
-    r'(\d{1,2})\s*[\/\-\.\s]\s*([A-Za-z]{3,9})\s*[\/\-\.\s]\s*(\d{2,4})',
+    r'(?<!\d)(\d{1,2})\s*[\/\-\.\s]\s*([A-Za-z]{3,9})\s*[\/\-\.\s]\s*(\d{2,4})(?!\d)',
   );
 
   static DateTime? parseDate(String text) {
