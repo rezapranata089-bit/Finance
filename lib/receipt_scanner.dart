@@ -46,6 +46,20 @@ class ReceiptParser {
     'total pembayaran', 'jumlah bayar', 'total', 'jumlah',
   ];
 
+  // Baris yang mengandung salah satu kata ini TIDAK PERNAH dianggap sebagai
+  // baris "Total", baik lewat keyword match maupun fallback nominal
+  // terbesar. Tanpa ini, baris "Tunai" (uang yang dibayarkan pelanggan,
+  // biasanya >= total) atau "Kembali" (kembalian) bisa salah terambil
+  // sebagai total kalau urutan baris hasil OCR tidak persis mengikuti
+  // urutan visual struk (umum terjadi pada foto struk yang miring/tidak
+  // rata).
+  static const _excludedFromTotalWords = ['tunai', 'kembali', 'cash', 'change'];
+
+  static bool _isExcludedTotalLine(String line) {
+    final lower = line.toLowerCase();
+    return _excludedFromTotalWords.any((w) => lower.contains(w));
+  }
+
   static final _amountRegex = RegExp(
     r'(?:rp\.?\s*)?([0-9]{1,3}(?:[.,][0-9]{3})+(?:[.,][0-9]{2})?|[0-9]{4,})',
     caseSensitive: false,
@@ -67,6 +81,24 @@ class ReceiptParser {
   static double? _normalizeNumber(String raw) {
     var cleaned = raw.replaceAll(RegExp(r'[^0-9.,]'), '');
     if (cleaned.isEmpty) return null;
+
+    // Struk Indonesia praktis tidak pernah punya desimal (Rupiah tidak
+    // punya pecahan), tapi banyak software kasir mencetak 3 digit "000" di
+    // belakang seakan-akan desimal (mis. "58.200,000"), dan OCR sering
+    // salah membaca koma sebagai titik sehingga jadi "58.200.000" yang
+    // tanpa penanganan khusus akan salah dikalikan 1000x (jadi 58 juta,
+    // bukan 58 ribu). Kalau grup TERAKHIR setelah separator persis "000"
+    // DAN masih ada separator lain sebelumnya (bukan angka kecil tunggal
+    // seperti "1.000"), buang grup akhir itu — sisanya murni pemisah
+    // ribuan, apa pun karakter separatornya (titik atau koma).
+    final trailingZeroMatch = RegExp(r'^(.*)[.,]000$').firstMatch(cleaned);
+    if (trailingZeroMatch != null) {
+      final head = trailingZeroMatch.group(1)!;
+      if (RegExp(r'[.,]').hasMatch(head)) {
+        return double.tryParse(head.replaceAll(RegExp(r'[.,]'), ''));
+      }
+    }
+
     final lastDot = cleaned.lastIndexOf('.');
     final lastComma = cleaned.lastIndexOf(',');
     if (lastDot != -1 && lastComma != -1) {
@@ -94,6 +126,7 @@ class ReceiptParser {
     final lines = text.split('\n').map((l) => l.trim()).where((l) => l.isNotEmpty).toList();
     for (final keyword in _totalKeywords) {
       for (final line in lines) {
+        if (_isExcludedTotalLine(line)) continue;
         if (line.toLowerCase().contains(keyword)) {
           final amount = _extractAmount(line);
           if (amount != null && amount > 0) return amount;
@@ -102,6 +135,7 @@ class ReceiptParser {
     }
     double? largest;
     for (final line in lines) {
+      if (_isExcludedTotalLine(line)) continue;
       final amount = _extractAmount(line);
       if (amount != null && (largest == null || amount > largest)) largest = amount;
     }
@@ -249,13 +283,19 @@ class ReceiptScannerService {
   }
 
   Future<ReceiptScanResult> scan(File imageFile, {required bool onlineEnabled, required String apiKey}) async {
-    final offlineResult = await scanOffline(imageFile);
-    if (offlineResult.confident) return offlineResult;
+    // AI online dicoba LEBIH DULU kalau tersedia (API key terisi & fitur
+    // diaktifkan) karena umumnya jauh lebih akurat membaca struk yang
+    // buram/miring dibanding OCR on-device. OCR offline hanya dipakai
+    // sebagai fallback: saat AI online gagal dipanggil (mis. tidak ada
+    // koneksi internet) atau hasilnya tidak yakin.
     if (onlineEnabled && apiKey.trim().isNotEmpty) {
       final onlineResult = await scanOnline(imageFile, apiKey);
-      if (onlineResult != null) return onlineResult;
+      if (onlineResult != null && onlineResult.confident) return onlineResult;
+      final offlineResult = await scanOffline(imageFile);
+      if (offlineResult.confident) return offlineResult;
+      return onlineResult ?? offlineResult;
     }
-    return offlineResult;
+    return scanOffline(imageFile);
   }
 }
 
@@ -345,20 +385,35 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
   }
 
   Future<void> _runScan(File file) async {
+    final apiKey = ref.read(geminiApiKeyProvider);
+    final onlineEnabled = ref.read(receiptOnlineFallbackEnabledProvider);
+    // Kalau AI online tersedia (aktif & API key terisi), itu yang dicoba
+    // duluan — biasanya jauh lebih akurat daripada OCR on-device. OCR
+    // offline jadi fallback kalau AI online gagal dipanggil (mis. tidak
+    // ada koneksi internet) atau hasilnya tidak yakin.
+    final tryOnlineFirst = onlineEnabled && apiKey.trim().isNotEmpty;
     setState(() {
       _imageFile = file;
       _result = null;
       _scanning = true;
-      _scanStage = 'Membaca teks struk (offline)...';
+      _scanStage = tryOnlineFirst ? 'Membaca struk dengan AI online...' : 'Membaca teks struk (offline)...';
     });
-    final apiKey = ref.read(geminiApiKeyProvider);
-    final onlineEnabled = ref.read(receiptOnlineFallbackEnabledProvider);
-    final offlineResult = await _service.scanOffline(file);
-    ReceiptScanResult finalResult = offlineResult;
-    if (!offlineResult.confident && onlineEnabled && apiKey.trim().isNotEmpty) {
-      if (mounted) setState(() => _scanStage = 'Nominal tidak terbaca jelas, mencoba AI online...');
+    ReceiptScanResult finalResult;
+    if (tryOnlineFirst) {
       final onlineResult = await _service.scanOnline(file, apiKey);
-      if (onlineResult != null) finalResult = onlineResult;
+      if (onlineResult != null && onlineResult.confident) {
+        finalResult = onlineResult;
+      } else {
+        if (mounted) {
+          setState(() => _scanStage = onlineResult == null
+              ? 'AI online tidak tersedia (cek koneksi internet), mencoba pemindaian offline...'
+              : 'Hasil AI online kurang yakin, mencoba pemindaian offline...');
+        }
+        final offlineResult = await _service.scanOffline(file);
+        finalResult = offlineResult.confident ? offlineResult : (onlineResult ?? offlineResult);
+      }
+    } else {
+      finalResult = await _service.scanOffline(file);
     }
     if (!mounted) return;
     setState(() {
