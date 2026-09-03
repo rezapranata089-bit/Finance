@@ -47,6 +47,7 @@ flutter:
     # manual. flutter_tesseract_ocr butuh file ini untuk bisa membaca teks;
     # tanpa file ini pemindaian offline akan gagal.
     - assets/tessdata/
+    - assets/tessdata_config.json
   fonts:
     - family: Satoshi
       fonts:
