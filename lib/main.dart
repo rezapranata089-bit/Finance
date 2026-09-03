@@ -21,6 +21,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:solar_icons/solar_icons.dart';
 import 'package:telegram_image_cropper/telegram_image_cropper.dart';
+import 'package:video_compress/video_compress.dart';
 import 'package:video_player/video_player.dart';
 import 'package:video_trimmer/video_trimmer.dart';
 
@@ -1173,14 +1174,52 @@ class _VideoCropPageState extends State<_VideoCropPage> {
   }
 }
 
+Future<String> _prepareVideoForTrim(String sourcePath) async {
+  // Video resolusi tinggi/HEVC berisiko bikin native encoder crash saat
+  // trim di sebagian chipset (mis. MediaTek Helio G88 di Infinix Hot 11
+  // NFC). Video yang sudah cukup kecil (<=720p) dibiarkan apa adanya biar
+  // kualitas HD tetap terjaga di device yang memang sanggup. Hanya video
+  // besar yang di-downscale sebagai langkah aman sebelum masuk trim native.
+  const safeMaxDimension = 1280;
+  try {
+    final info = await VideoCompress.getMediaInfo(sourcePath);
+    final width = info.width ?? 0;
+    final height = info.height ?? 0;
+    final maxDimension = width > height ? width : height;
+    await _appendDartCrashLog('[Checkpoint ${DateTime.now()}] PrepareVideo: source ${width}x$height');
+    if (maxDimension > 0 && maxDimension <= safeMaxDimension) {
+      return sourcePath;
+    }
+    final compressed = await VideoCompress.compressVideo(
+      sourcePath,
+      quality: VideoQuality.MediumQuality,
+      deleteOrigin: false,
+      includeAudio: true,
+    );
+    final compressedPath = compressed?.path;
+    if (compressedPath == null) {
+      await _appendDartCrashLog('[Checkpoint ${DateTime.now()}] PrepareVideo: compress null, fallback original');
+      return sourcePath;
+    }
+    await _appendDartCrashLog('[Checkpoint ${DateTime.now()}] PrepareVideo: compressed -> $compressedPath');
+    return compressedPath;
+  } catch (e) {
+    await _appendDartCrashLog('[Checkpoint ${DateTime.now()}] PrepareVideo: gagal ($e), fallback original');
+    return sourcePath;
+  }
+}
+
 Future<void> pickAndSetProfileVideo(BuildContext context, WidgetRef ref, ImageSource source) async {
   final picker = ImagePicker();
   final XFile? picked = await picker.pickVideo(source: source, maxDuration: const Duration(seconds: 60));
   if (picked == null || !context.mounted) return;
 
+  final preparedPath = await _prepareVideoForTrim(picked.path);
+  if (!context.mounted) return;
+
   final trimmedPath = await Navigator.push<String>(
     context,
-    GlassPageRoute(builder: (_) => _VideoTrimPage(sourcePath: picked.path)),
+    GlassPageRoute(builder: (_) => _VideoTrimPage(sourcePath: preparedPath)),
   );
   if (trimmedPath == null || !context.mounted) return;
 
@@ -1202,6 +1241,11 @@ Future<void> pickAndSetProfileVideo(BuildContext context, WidgetRef ref, ImageSo
   try {
     await File(trimmedPath).delete();
   } catch (_) {}
+  if (preparedPath != picked.path) {
+    try {
+      await File(preparedPath).delete();
+    } catch (_) {}
+  }
 
   ref.read(userProfileProvider.notifier).updateVideo(
         path: destPath,
@@ -1258,9 +1302,12 @@ Future<void> pickAndSetProfileMediaFromGallery(BuildContext context, WidgetRef r
     final sourcePath = pick.path;
     if (sourcePath == null) return;
 
+    final preparedPath = await _prepareVideoForTrim(sourcePath);
+    if (!context.mounted) return;
+
     final trimmedPath = await Navigator.push<String>(
       context,
-      GlassPageRoute(builder: (_) => _VideoTrimPage(sourcePath: sourcePath)),
+      GlassPageRoute(builder: (_) => _VideoTrimPage(sourcePath: preparedPath)),
     );
     if (trimmedPath == null || !context.mounted) return;
 
@@ -1282,6 +1329,11 @@ Future<void> pickAndSetProfileMediaFromGallery(BuildContext context, WidgetRef r
     try {
       await File(trimmedPath).delete();
     } catch (_) {}
+    if (preparedPath != sourcePath) {
+      try {
+        await File(preparedPath).delete();
+      } catch (_) {}
+    }
 
     ref.read(userProfileProvider.notifier).updateVideo(
           path: destPath,
