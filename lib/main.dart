@@ -3732,61 +3732,64 @@ class _HomePageState extends ConsumerState<HomePage> {
                     (Strings.t(lang, 'cashback_title'), Strings.t(lang, 'cashback_subtitle'), SolarIconsBold.wallet),
                   ];
                   final cardWidth = MediaQuery.sizeOf(context).width * 0.78;
-                  return SizedBox(
-                    height: 74,
-                    child: ListView.separated(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: promos.length,
-                      separatorBuilder: (_, __) => const SizedBox(width: 12),
-                      itemBuilder: (context, i) {
-                        final promo = promos[i];
-                        final isAiCard = i == 0;
-                        return Container(
-                          width: cardWidth,
-                          padding: EdgeInsets.symmetric(horizontal: 16, vertical: i == 0 ? 2 : 12),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.centerLeft,
-                              end: Alignment.centerRight,
-                              colors: [
-                                Color.alphaBlend(primary.withOpacity(isDark ? 0.38 : 0.22), context.cardColor),
-                                context.cardColor,
+                  return ClipRect(
+                    child: SizedBox(
+                      height: 74,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        clipBehavior: Clip.none,
+                        itemCount: promos.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 12),
+                        itemBuilder: (context, i) {
+                          final promo = promos[i];
+                          final isAiCard = i == 0;
+                          return Container(
+                            width: cardWidth,
+                            padding: EdgeInsets.symmetric(horizontal: 16, vertical: i == 0 ? 2 : 12),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                                colors: [
+                                  Color.alphaBlend(primary.withOpacity(isDark ? 0.38 : 0.22), context.cardColor),
+                                  context.cardColor,
+                                ],
+                              ),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(color: context.borderColor),
+                            ),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(promo.$1, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: context.textPrimary)),
+                                      const SizedBox(height: 4),
+                                      Text(promo.$2, style: TextStyle(color: context.textMuted, fontSize: 12)),
+                                    ],
+                                  ),
+                                ),
+                                if (isAiCard)
+                                  const RepaintBoundary(
+                                    child: SizedBox(
+                                      width: 70,
+                                      height: 70,
+                                      child: VisibilityAwareLottie(asset: 'assets/lottie/ai.json'),
+                                    ),
+                                  )
+                                else
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(color: isDark ? primary.withOpacity(0.18) : tertiary, shape: BoxShape.circle),
+                                    child: Icon(promo.$3, color: primary, size: 24),
+                                  ),
                               ],
                             ),
-                            borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: context.borderColor),
-                          ),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(promo.$1, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: context.textPrimary)),
-                                    const SizedBox(height: 4),
-                                    Text(promo.$2, style: TextStyle(color: context.textMuted, fontSize: 12)),
-                                  ],
-                                ),
-                              ),
-                              if (isAiCard)
-                                const RepaintBoundary(
-                                  child: SizedBox(
-                                    width: 70,
-                                    height: 70,
-                                    child: VisibilityAwareLottie(asset: 'assets/lottie/ai.json'),
-                                  ),
-                                )
-                              else
-                                Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(color: isDark ? primary.withOpacity(0.18) : tertiary, shape: BoxShape.circle),
-                                  child: Icon(promo.$3, color: primary, size: 24),
-                                ),
-                            ],
-                          ),
-                        );
-                      },
+                          );
+                        },
+                      ),
                     ),
                   );
                 }),
