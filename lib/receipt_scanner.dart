@@ -427,6 +427,97 @@ class ReceiptScannerService {
     }
   }
 
+  /// Mengambil daftar model yang BENAR-BENAR tersedia untuk API key yang
+  /// dipasang, langsung dari API provider terkait (bukan daftar hardcode
+  /// di kode aplikasi). Ini memastikan pilihan model di dropdown Pengaturan
+  /// AI Scan selalu akurat sesuai akses API key milik pengguna saat ini.
+  Future<({bool success, String message, List<String> models})> fetchAvailableModels(String apiKey, {required AIProvider provider}) async {
+    final trimmed = apiKey.trim();
+    if (trimmed.isEmpty) {
+      return (success: false, message: 'API key masih kosong.', models: <String>[]);
+    }
+    try {
+      if (provider == AIProvider.groq) {
+        return await _fetchGroqModels(trimmed);
+      }
+      return await _fetchGeminiModels(trimmed);
+    } on TimeoutException {
+      return (success: false, message: 'Waktu tunggu habis. Cek koneksi internet perangkat.', models: <String>[]);
+    } catch (e) {
+      return (success: false, message: 'Gagal mengambil daftar model: $e', models: <String>[]);
+    }
+  }
+
+  Future<({bool success, String message, List<String> models})> _fetchGeminiModels(String apiKey) async {
+    final response = await http
+        .get(Uri.parse('https://generativelanguage.googleapis.com/v1beta/models?key=$apiKey'))
+        .timeout(const Duration(seconds: 15));
+    if (response.statusCode != 200) {
+      String detail = response.body;
+      try {
+        final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+        detail = (decoded['error']?['message'] as String?) ?? response.body;
+      } catch (_) {}
+      return (success: false, message: 'Gagal (kode ${response.statusCode}): $detail', models: <String>[]);
+    }
+    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+    final rawModels = decoded['models'] as List? ?? [];
+    final names = <String>[];
+    for (final m in rawModels) {
+      final map = m as Map<String, dynamic>;
+      final methods = (map['supportedGenerationMethods'] as List?)?.cast<String>() ?? [];
+      if (!methods.contains('generateContent')) continue;
+      final fullName = map['name'] as String? ?? '';
+      final shortName = fullName.startsWith('models/') ? fullName.substring(7) : fullName;
+      if (shortName.isEmpty) continue;
+      // Model embedding/AQA tidak bisa membaca gambar struk, jadi disaring
+      // dari daftar pilihan karena tidak relevan untuk fitur ini.
+      final lower = shortName.toLowerCase();
+      if (lower.contains('embedding') || lower.contains('aqa')) continue;
+      names.add(shortName);
+    }
+    names.sort();
+    if (names.isEmpty) {
+      return (success: false, message: 'Tidak ada model yang cocok ditemukan untuk API key ini.', models: <String>[]);
+    }
+    return (success: true, message: 'Ditemukan ${names.length} model.', models: names);
+  }
+
+  Future<({bool success, String message, List<String> models})> _fetchGroqModels(String apiKey) async {
+    final response = await http.get(
+      Uri.parse('https://api.groq.com/openai/v1/models'),
+      headers: {'Authorization': 'Bearer $apiKey'},
+    ).timeout(const Duration(seconds: 15));
+    if (response.statusCode != 200) {
+      String detail = response.body;
+      try {
+        final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+        detail = (decoded['error']?['message'] as String?) ?? response.body;
+      } catch (_) {}
+      return (success: false, message: 'Gagal (kode ${response.statusCode}): $detail', models: <String>[]);
+    }
+    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+    final rawModels = (decoded['data'] as List? ?? [])
+        .map((m) => (m as Map<String, dynamic>)['id'] as String? ?? '')
+        .where((id) => id.isNotEmpty)
+        .toList();
+    // Groq tidak menandai kapabilitas vision di API daftar model, jadi
+    // model yang dikenal mendukung gambar (mengandung "vision", "llama-4",
+    // atau "llava") diprioritaskan tampil di atas; sisanya tetap
+    // ditampilkan di bawahnya kalau-kalau ada model vision baru.
+    bool looksVision(String id) {
+      final lower = id.toLowerCase();
+      return lower.contains('vision') || lower.contains('llama-4') || lower.contains('llava');
+    }
+    final visionModels = rawModels.where(looksVision).toList()..sort();
+    final otherModels = rawModels.where((id) => !looksVision(id)).toList()..sort();
+    final ordered = [...visionModels, ...otherModels];
+    if (ordered.isEmpty) {
+      return (success: false, message: 'Tidak ada model ditemukan untuk API key ini.', models: <String>[]);
+    }
+    return (success: true, message: 'Ditemukan ${ordered.length} model (model vision diutamakan di atas).', models: ordered);
+  }
+
   Future<ReceiptScanResult> scan(File imageFile, {required bool onlineEnabled, required AIProvider provider, required String apiKey, required String model}) async {
     // AI online dicoba LEBIH DULU kalau tersedia (API key & model terisi
     // serta fitur diaktifkan) karena umumnya jauh lebih akurat membaca
@@ -845,36 +936,56 @@ class ReceiptScanApiKeySettingsPage extends ConsumerStatefulWidget {
 
 class _ReceiptScanApiKeySettingsPageState extends ConsumerState<ReceiptScanApiKeySettingsPage> {
   late final TextEditingController _geminiKeyCtrl;
-  late final TextEditingController _geminiModelCtrl;
   late final TextEditingController _groqKeyCtrl;
-  late final TextEditingController _groqModelCtrl;
+  String? _geminiSelectedModel;
+  String? _groqSelectedModel;
+  List<String> _geminiModels = [];
+  List<String> _groqModels = [];
   bool _obscure = true;
+  bool _fetchingModels = false;
   bool _testing = false;
   bool? _testSuccess;
   String? _testMessage;
+  bool? _modelsSuccess;
+  String? _modelsMessage;
 
   @override
   void initState() {
     super.initState();
     _geminiKeyCtrl = TextEditingController(text: ref.read(geminiApiKeyProvider));
-    _geminiModelCtrl = TextEditingController(text: ref.read(geminiModelProvider));
     _groqKeyCtrl = TextEditingController(text: ref.read(groqApiKeyProvider));
-    _groqModelCtrl = TextEditingController(text: ref.read(groqModelProvider));
+    _geminiSelectedModel = _nullIfEmpty(ref.read(geminiModelProvider));
+    _groqSelectedModel = _nullIfEmpty(ref.read(groqModelProvider));
+    // Kalau API key sudah pernah disimpan sebelumnya, langsung coba muat
+    // daftar modelnya begitu halaman dibuka, supaya dropdown tidak kosong
+    // saat pengguna kembali ke halaman ini.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && _activeKeyCtrl.text.trim().isNotEmpty) _fetchModels();
+    });
   }
+
+  String? _nullIfEmpty(String v) => v.trim().isEmpty ? null : v.trim();
 
   @override
   void dispose() {
     _geminiKeyCtrl.dispose();
-    _geminiModelCtrl.dispose();
     _groqKeyCtrl.dispose();
-    _groqModelCtrl.dispose();
     super.dispose();
   }
 
   TextEditingController get _activeKeyCtrl =>
       ref.read(aiProviderProvider) == AIProvider.groq ? _groqKeyCtrl : _geminiKeyCtrl;
-  TextEditingController get _activeModelCtrl =>
-      ref.read(aiProviderProvider) == AIProvider.groq ? _groqModelCtrl : _geminiModelCtrl;
+  List<String> get _activeModels =>
+      ref.read(aiProviderProvider) == AIProvider.groq ? _groqModels : _geminiModels;
+  String? get _activeSelectedModel =>
+      ref.read(aiProviderProvider) == AIProvider.groq ? _groqSelectedModel : _geminiSelectedModel;
+  set _activeSelectedModel(String? value) {
+    if (ref.read(aiProviderProvider) == AIProvider.groq) {
+      _groqSelectedModel = value;
+    } else {
+      _geminiSelectedModel = value;
+    }
+  }
 
   void _selectProvider(AIProvider provider) {
     ref.read(aiProviderProvider.notifier).state = provider;
@@ -882,13 +993,44 @@ class _ReceiptScanApiKeySettingsPageState extends ConsumerState<ReceiptScanApiKe
     setState(() {
       _testSuccess = null;
       _testMessage = null;
+      _modelsSuccess = null;
+      _modelsMessage = null;
+    });
+  }
+
+  Future<void> _fetchModels() async {
+    final provider = ref.read(aiProviderProvider);
+    setState(() {
+      _fetchingModels = true;
+      _modelsSuccess = null;
+      _modelsMessage = null;
+    });
+    final result = await ReceiptScannerService().fetchAvailableModels(_activeKeyCtrl.text, provider: provider);
+    if (!mounted) return;
+    setState(() {
+      _fetchingModels = false;
+      _modelsSuccess = result.success;
+      _modelsMessage = result.message;
+      if (result.success) {
+        if (provider == AIProvider.groq) {
+          _groqModels = result.models;
+          if (_groqSelectedModel == null || !_groqModels.contains(_groqSelectedModel)) {
+            _groqSelectedModel = _groqModels.first;
+          }
+        } else {
+          _geminiModels = result.models;
+          if (_geminiSelectedModel == null || !_geminiModels.contains(_geminiSelectedModel)) {
+            _geminiSelectedModel = _geminiModels.first;
+          }
+        }
+      }
     });
   }
 
   void _save() {
     final provider = ref.read(aiProviderProvider);
     final keyValue = _activeKeyCtrl.text.trim();
-    final modelValue = _activeModelCtrl.text.trim();
+    final modelValue = _activeSelectedModel ?? '';
     if (provider == AIProvider.groq) {
       ref.read(prefsProvider).setString('groq_api_key', keyValue);
       ref.read(groqApiKeyProvider.notifier).state = keyValue;
@@ -905,6 +1047,11 @@ class _ReceiptScanApiKeySettingsPageState extends ConsumerState<ReceiptScanApiKe
 
   Future<void> _testApiKey() async {
     final provider = ref.read(aiProviderProvider);
+    final model = _activeSelectedModel;
+    if (model == null) {
+      showGlassSnackBar(context, 'Muat & pilih model terlebih dahulu', icon: Icons.warning_amber_rounded);
+      return;
+    }
     setState(() {
       _testing = true;
       _testSuccess = null;
@@ -913,7 +1060,7 @@ class _ReceiptScanApiKeySettingsPageState extends ConsumerState<ReceiptScanApiKe
     final result = await ReceiptScannerService().testApiKey(
       _activeKeyCtrl.text,
       provider: provider,
-      model: _activeModelCtrl.text,
+      model: model,
     );
     if (!mounted) return;
     setState(() {
@@ -928,6 +1075,10 @@ class _ReceiptScanApiKeySettingsPageState extends ConsumerState<ReceiptScanApiKe
     final isDark = context.isDark;
     final onlineEnabled = ref.watch(receiptOnlineFallbackEnabledProvider);
     final aiProvider = ref.watch(aiProviderProvider);
+    final primary = Theme.of(context).colorScheme.primary;
+    final providerLabel = aiProvider == AIProvider.groq ? 'Groq' : 'Gemini';
+    final models = _activeModels;
+    final selectedModel = _activeSelectedModel;
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -957,11 +1108,9 @@ class _ReceiptScanApiKeySettingsPageState extends ConsumerState<ReceiptScanApiKe
             ),
             Expanded(
               child: ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(22), border: Border.all(color: context.borderColor)),
+                  _SettingsSectionCard(
                     child: Row(children: [
                       Expanded(
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
@@ -973,7 +1122,7 @@ class _ReceiptScanApiKeySettingsPageState extends ConsumerState<ReceiptScanApiKe
                       const SizedBox(width: 12),
                       GlassSwitch(
                         value: onlineEnabled,
-                        activeColor: Theme.of(context).colorScheme.primary,
+                        activeColor: primary,
                         onChanged: (v) {
                           ref.read(receiptOnlineFallbackEnabledProvider.notifier).state = v;
                           ref.read(prefsProvider).setBool('receipt_online_fallback_enabled', v);
@@ -986,55 +1135,101 @@ class _ReceiptScanApiKeySettingsPageState extends ConsumerState<ReceiptScanApiKe
                     ]),
                   ),
                   const SizedBox(height: 20),
-                  Text('PROVIDER AI', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: context.textFaint, letterSpacing: 1.2)),
-                  const SizedBox(height: 12),
-                  Row(children: [
-                    Expanded(
-                      child: ChoiceChip(
-                        label: const Text('Gemini'),
-                        selected: aiProvider == AIProvider.gemini,
-                        onSelected: (_) => _selectProvider(AIProvider.gemini),
+                  const _SectionLabel('PROVIDER AI'),
+                  const SizedBox(height: 10),
+                  _SettingsSectionCard(
+                    padding: const EdgeInsets.all(10),
+                    child: Row(children: [
+                      Expanded(
+                        child: ChoiceChip(
+                          label: const Text('Gemini'),
+                          selected: aiProvider == AIProvider.gemini,
+                          onSelected: (_) => _selectProvider(AIProvider.gemini),
+                        ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: ChoiceChip(
-                        label: const Text('Groq'),
-                        selected: aiProvider == AIProvider.groq,
-                        onSelected: (_) => _selectProvider(AIProvider.groq),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ChoiceChip(
+                          label: const Text('Groq'),
+                          selected: aiProvider == AIProvider.groq,
+                          onSelected: (_) => _selectProvider(AIProvider.groq),
+                        ),
                       ),
-                    ),
-                  ]),
-                  const SizedBox(height: 20),
-                  Text('${aiProvider == AIProvider.groq ? 'GROQ' : 'GEMINI'} API KEY', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: context.textFaint, letterSpacing: 1.2)),
-                  const SizedBox(height: 12),
-                  TextField(
-                    key: ValueKey('key_field_${aiProvider.name}'),
-                    controller: _activeKeyCtrl,
-                    obscureText: _obscure,
-                    decoration: InputDecoration(
-                      labelText: 'API key',
-                      suffixIcon: IconButton(
-                        icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined, size: 20),
-                        onPressed: () => setState(() => _obscure = !_obscure),
-                      ),
-                    ),
+                    ]),
                   ),
-                  const SizedBox(height: 12),
-                  Text('NAMA MODEL', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: context.textFaint, letterSpacing: 1.2)),
-                  const SizedBox(height: 12),
-                  TextField(
-                    key: ValueKey('model_field_${aiProvider.name}'),
-                    controller: _activeModelCtrl,
-                    decoration: InputDecoration(
-                      labelText: 'Nama model',
-                      hintText: aiProvider == AIProvider.groq ? 'contoh: meta-llama/llama-4-scout-17b-16e-instruct' : 'contoh: gemini-flash-latest',
-                    ),
+                  const SizedBox(height: 20),
+                  _SectionLabel('$providerLabel API KEY & MODEL'),
+                  const SizedBox(height: 10),
+                  _SettingsSectionCard(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      TextField(
+                        key: ValueKey('key_field_${aiProvider.name}'),
+                        controller: _activeKeyCtrl,
+                        obscureText: _obscure,
+                        decoration: InputDecoration(
+                          labelText: 'API key',
+                          suffixIcon: IconButton(
+                            icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined, size: 20),
+                            onPressed: () => setState(() => _obscure = !_obscure),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        Expanded(
+                          child: models.isEmpty
+                              ? Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 18),
+                                  decoration: BoxDecoration(
+                                    color: isDark ? Colors.white.withOpacity(0.04) : const Color(0xFFF1EEF7),
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  child: Text('Belum ada model dimuat', style: TextStyle(fontSize: 13, color: context.textFaint)),
+                                )
+                              : DropdownButtonFormField<String>(
+                                  key: ValueKey('model_dropdown_${aiProvider.name}'),
+                                  value: selectedModel,
+                                  isExpanded: true,
+                                  decoration: const InputDecoration(labelText: 'Model'),
+                                  items: models.map((m) => DropdownMenuItem(value: m, child: Text(m, overflow: TextOverflow.ellipsis))).toList(),
+                                  onChanged: (v) => setState(() => _activeSelectedModel = v),
+                                ),
+                        ),
+                        const SizedBox(width: 10),
+                        GestureDetector(
+                          onTap: _fetchingModels ? null : _fetchModels,
+                          child: Container(
+                            width: 52,
+                            height: 52,
+                            alignment: Alignment.center,
+                            decoration: BoxDecoration(
+                              color: primary.withOpacity(isDark ? 0.18 : 0.1),
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: _fetchingModels
+                                ? SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: primary))
+                                : Icon(Icons.sync_rounded, color: primary, size: 20),
+                          ),
+                        ),
+                      ]),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Tekan tombol muat ulang untuk mengambil daftar model yang benar-benar tersedia untuk API key ini langsung dari $providerLabel.',
+                        style: TextStyle(fontSize: 11.5, color: context.textFaint, height: 1.4),
+                      ),
+                      if (_modelsMessage != null) ...[
+                        const SizedBox(height: 10),
+                        _InlineStatusMessage(success: _modelsSuccess == true, message: _modelsMessage!),
+                      ],
+                    ]),
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    'Key & model disimpan lokal di perangkat ini saja (SharedPreferences), tidak ditulis di dalam kode aplikasi. Isi nama model secara manual sesuai model yang tersedia di provider terkait.',
-                    style: TextStyle(fontSize: 11.5, color: context.textFaint, height: 1.4),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: Text(
+                      'Key & model disimpan lokal di perangkat ini saja (SharedPreferences), tidak ditulis di dalam kode aplikasi.',
+                      style: TextStyle(fontSize: 11.5, color: context.textFaint, height: 1.4),
+                    ),
                   ),
                   const SizedBox(height: 20),
                   Row(
@@ -1043,56 +1238,74 @@ class _ReceiptScanApiKeySettingsPageState extends ConsumerState<ReceiptScanApiKe
                         child: OutlinedButton.icon(
                           onPressed: _testing ? null : _testApiKey,
                           icon: _testing
-                              ? const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                )
+                              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
                               : const Icon(Icons.wifi_tethering_rounded, size: 18),
-                          label: const Text('Tes API Key'),
+                          label: const Text('Tes Koneksi'),
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: FilledButton(onPressed: _save, child: const Text('Simpan API Key')),
+                        child: FilledButton(onPressed: _save, child: const Text('Simpan')),
                       ),
                     ],
                   ),
                   if (_testMessage != null) ...[
                     const SizedBox(height: 14),
-                    Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: (_testSuccess == true ? const Color(0xFF24A148) : Colors.redAccent).withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(
-                          color: (_testSuccess == true ? const Color(0xFF24A148) : Colors.redAccent).withOpacity(0.3),
-                        ),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(
-                            _testSuccess == true ? Icons.check_circle_outline : Icons.error_outline,
-                            size: 18,
-                            color: _testSuccess == true ? const Color(0xFF24A148) : Colors.redAccent,
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Text(
-                              _testMessage!,
-                              style: TextStyle(fontSize: 12.5, height: 1.4, color: context.textPrimary),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
+                    _InlineStatusMessage(success: _testSuccess == true, message: _testMessage!),
                   ],
                 ],
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _SectionLabel extends StatelessWidget {
+  final String text;
+  const _SectionLabel(this.text);
+  @override
+  Widget build(BuildContext context) =>
+      Text(text, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: context.textFaint, letterSpacing: 1.2));
+}
+
+class _SettingsSectionCard extends StatelessWidget {
+  final Widget child;
+  final EdgeInsetsGeometry padding;
+  const _SettingsSectionCard({required this.child, this.padding = const EdgeInsets.all(16)});
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: padding,
+      decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(22), border: Border.all(color: context.borderColor)),
+      child: child,
+    );
+  }
+}
+
+class _InlineStatusMessage extends StatelessWidget {
+  final bool success;
+  final String message;
+  const _InlineStatusMessage({required this.success, required this.message});
+  @override
+  Widget build(BuildContext context) {
+    final color = success ? const Color(0xFF24A148) : Colors.redAccent;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(success ? Icons.check_circle_outline : Icons.error_outline, size: 18, color: color),
+          const SizedBox(width: 10),
+          Expanded(child: Text(message, style: TextStyle(fontSize: 12.5, height: 1.4, color: context.textPrimary))),
+        ],
       ),
     );
   }
