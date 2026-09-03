@@ -169,8 +169,18 @@ class ReceiptScannerService {
         confident: total != null && total > 0,
       );
     } catch (e) {
+      // PlatformException di titik ini umumnya BUKAN bug di kode Dart,
+      // melainkan recognizer ML Kit gagal diinisialisasi secara native di
+      // perangkat ini (sering terjadi di ROM Android custom/OEM dengan
+      // komponen Google Play Services yang dimodifikasi/terbatas). Stack
+      // trace Java mentah tidak berguna bagi pengguna awam, jadi tampilkan
+      // pesan yang lebih jelas & actionable (arahkan ke fallback AI online).
+      final isPlatformFailure = e is PlatformException;
+      final friendlyMessage = isPlatformFailure
+          ? 'Pemindaian offline tidak didukung di perangkat ini. Aktifkan "AI online" di Pengaturan > Pengaturan AI Scan agar tetap bisa memindai struk.'
+          : 'Gagal memindai teks (offline): $e';
       return ReceiptScanResult(
-        rawText: 'Gagal memindai teks (offline): $e',
+        rawText: friendlyMessage,
         source: ReceiptScanSource.offline,
         confident: false,
       );
@@ -535,6 +545,41 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
           ),
         ),
       ),
+      if (!result.confident) ...[
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Colors.orange.withOpacity(context.isDark ? 0.14 : 0.10),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.orange.withOpacity(0.3)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(children: [
+                const Icon(Icons.info_outline_rounded, size: 16, color: Colors.orange),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Nominal & nama toko tidak terbaca otomatis. Silakan isi manual di bawah, atau aktifkan AI online agar pembacaan lebih akurat.',
+                    style: TextStyle(fontSize: 12, color: context.textMuted, height: 1.4),
+                  ),
+                ),
+              ]),
+              const SizedBox(height: 10),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  onPressed: () => Navigator.push(context, GlassPageRoute(builder: (_) => const ReceiptScanApiKeySettingsPage())),
+                  icon: const Icon(Icons.smart_toy_outlined, size: 16),
+                  label: const Text('Buka Pengaturan AI Scan', style: TextStyle(fontSize: 12)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
       const SizedBox(height: 16),
       TextField(controller: _titleCtrl, decoration: const InputDecoration(labelText: 'Nama toko / judul transaksi')),
       const SizedBox(height: 12),
