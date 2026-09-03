@@ -238,13 +238,48 @@ class ReceiptScannerService {
   }
 }
 
-Future<void> pickReceiptFromCameraAndPush(BuildContext context) async {
+Future<void> _pickReceiptImage(BuildContext context, ImageSource source) async {
   final picker = ImagePicker();
-  final XFile? picked = await picker.pickImage(source: ImageSource.camera, maxWidth: 2000, imageQuality: 92);
+  final XFile? picked = await picker.pickImage(source: source, maxWidth: 2000, imageQuality: 92);
   if (picked == null || !context.mounted) return;
   Navigator.push(
     context,
     GlassPageRoute(builder: (_) => ReceiptScanPage(initialImageFile: File(picked.path))),
+  );
+}
+
+Future<void> pickReceiptFromCameraAndPush(BuildContext context) async {
+  showModalBottomSheet(
+    context: context,
+    backgroundColor: context.cardColor,
+    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+    builder: (sheetContext) => SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 22, 20, 24),
+        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Pindai Struk', style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 24, color: context.textPrimary)),
+          const SizedBox(height: 18),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: Icon(Icons.camera_alt_outlined, color: Theme.of(context).colorScheme.primary),
+            title: const Text('Ambil foto struk'),
+            onTap: () {
+              Navigator.pop(sheetContext);
+              _pickReceiptImage(context, ImageSource.camera);
+            },
+          ),
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: Icon(Icons.photo_library_outlined, color: Theme.of(context).colorScheme.primary),
+            title: const Text('Pilih dari galeri'),
+            onTap: () {
+              Navigator.pop(sheetContext);
+              _pickReceiptImage(context, ImageSource.gallery);
+            },
+          ),
+        ]),
+      ),
+    ),
   );
 }
 
