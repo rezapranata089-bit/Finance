@@ -24,3 +24,15 @@
 
 # Jangan warning untuk class Android yang di-strip dev tools
 -dontwarn io.flutter.embedding.**
+
+# google_mlkit_text_recognition: plugin ini mereferensikan class recognizer
+# untuk SEMUA script (Cina, Jepang, Korea, Devanagari) walau app ini cuma
+# memakai TextRecognitionScript.latin (lihat receipt_scanner.dart). Karena
+# dependency Gradle untuk script-script lain sengaja tidak ditambahkan
+# (tidak dibutuhkan), R8 gagal minify di build release karena tidak
+# menemukan class-class tersebut. -dontwarn di sini aman: class-class itu
+# memang tidak pernah dipanggil selama hanya script Latin yang dipakai.
+-dontwarn com.google.mlkit.vision.text.chinese.**
+-dontwarn com.google.mlkit.vision.text.devanagari.**
+-dontwarn com.google.mlkit.vision.text.japanese.**
+-dontwarn com.google.mlkit.vision.text.korean.**
