@@ -26,8 +26,12 @@ gradle.beforeProject {
             text = text.replace("jcenter()", "mavenCentral()")
             changed = true
         }
-        if (text.contains("classpath 'com.android.tools.build:gradle:") || text.contains("classpath \"com.android.tools.build:gradle:")) {
-            text = text.replace(Regex("classpath\\s+['\"]com\\.android\\.tools\\.build:gradle:[^'\"]+['\"]"), "")
+        if (text.contains("com.android.tools.build:gradle")) {
+            text = text.replace(Regex("classpath\\s+['\"]com\\.android\\.tools\\.build:gradle.*?['\"]"), "// removed agp")
+            changed = true
+        }
+        if (text.contains("org.jetbrains.kotlin:kotlin-gradle-plugin")) {
+            text = text.replace(Regex("classpath\\s+['\"]org\\.jetbrains\\.kotlin:kotlin-gradle-plugin.*?['\"]"), "// removed kotlin")
             changed = true
         }
         if (name == "flutter_tesseract_ocr") {
