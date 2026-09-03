@@ -30,6 +30,20 @@ class MainActivity : FlutterActivity() {
     // lalu menulisnya ke filesDir agar bisa dibaca ulang di halaman Log
     // Aplikasi. Tidak menangkap crash native murni (segfault C/C++) karena
     // itu di luar jangkauan JVM.
+    // PENTING: getApplicationDocumentsDirectory() di sisi Dart (path_provider)
+    // pada Android me-resolve ke subfolder "app_flutter" DI DALAM filesDir,
+    // bukan filesDir itu sendiri. Sebelumnya kode ini menulis langsung ke
+    // filesDir, sehingga file log native tidak pernah ketemu oleh
+    // _readCombinedCrashLog() di Dart (folder berbeda) — akibatnya section
+    // native (termasuk log GalleryPicker) tidak pernah tampil di halaman
+    // "Log Aplikasi". Helper ini memastikan kedua sisi menulis/membaca ke
+    // folder yang sama persis.
+    private fun nativeCrashLogFile(): File {
+        val dir = File(filesDir, "app_flutter")
+        if (!dir.exists()) dir.mkdirs()
+        return File(dir, "crash_log_native.txt")
+    }
+
     private fun installCrashHandler() {
         val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
         Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
@@ -37,7 +51,7 @@ class MainActivity : FlutterActivity() {
                 val sw = StringWriter()
                 throwable.printStackTrace(PrintWriter(sw))
                 val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date())
-                File(filesDir, "crash_log_native.txt").appendText("[$timestamp] Thread: ${thread.name}\n$sw\n")
+                nativeCrashLogFile().appendText("[$timestamp] Thread: ${thread.name}\n$sw\n")
             } catch (_: Exception) {
             }
             defaultHandler?.uncaughtException(thread, throwable)
@@ -52,7 +66,7 @@ class MainActivity : FlutterActivity() {
     private fun logGalleryDebug(message: String) {
         try {
             val timestamp = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date())
-            File(filesDir, "crash_log_native.txt").appendText("[$timestamp] GalleryPicker: $message\n")
+            nativeCrashLogFile().appendText("[$timestamp] GalleryPicker: $message\n")
         } catch (_: Exception) {
         }
     }
