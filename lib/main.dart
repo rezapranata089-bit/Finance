@@ -912,6 +912,7 @@ class _VideoTrimPageState extends State<_VideoTrimPage> {
   @override
   void initState() {
     super.initState();
+    _appendDartCrashLog('[Checkpoint ${DateTime.now()}] VideoTrim: loadVideo START path=${widget.sourcePath}');
     _trimmer.loadVideo(videoFile: File(widget.sourcePath));
   }
 
@@ -927,11 +928,13 @@ class _VideoTrimPageState extends State<_VideoTrimPage> {
       return;
     }
     setState(() => _saving = true);
+    _appendDartCrashLog('[Checkpoint ${DateTime.now()}] VideoTrim: saveTrimmedVideo START start=$_startValue end=$_endValue');
     try {
       await _trimmer.saveTrimmedVideo(
         startValue: _startValue,
         endValue: _endValue,
         onSave: (outputPath) {
+          _appendDartCrashLog('[Checkpoint ${DateTime.now()}] VideoTrim: saveTrimmedVideo onSave FIRED outputPath=$outputPath');
           if (!mounted) return;
           setState(() => _saving = false);
           if (outputPath == null || outputPath.isEmpty) {
@@ -1012,6 +1015,7 @@ class _VideoTrimPageState extends State<_VideoTrimPage> {
                   // valid — baru dari sinilah aman memanggil native
                   // trimmer. setState di sini mengaktifkan tombol "Lanjut".
                   if (!_trimmerReady && mounted) {
+                    _appendDartCrashLog('[Checkpoint ${DateTime.now()}] VideoTrim: loadVideo READY (analisis selesai)');
                     setState(() => _trimmerReady = true);
                   }
                 },
@@ -1044,6 +1048,7 @@ class _VideoCropPageState extends State<_VideoCropPage> {
   @override
   void initState() {
     super.initState();
+    _appendDartCrashLog('[Checkpoint ${DateTime.now()}] VideoCrop: page reached, path=${widget.videoPath}');
     _setup();
   }
 
