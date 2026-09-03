@@ -13,8 +13,27 @@ import 'package:solar_icons/solar_icons.dart';
 
 import 'main.dart';
 
+enum AIProvider { gemini, groq }
+
+final aiProviderProvider = StateProvider<AIProvider>((ref) {
+  final saved = ref.watch(prefsProvider).getString('ai_provider');
+  return saved == 'groq' ? AIProvider.groq : AIProvider.gemini;
+});
+
 final geminiApiKeyProvider = StateProvider<String>((ref) {
   return ref.watch(prefsProvider).getString('gemini_api_key') ?? '';
+});
+
+final geminiModelProvider = StateProvider<String>((ref) {
+  return ref.watch(prefsProvider).getString('gemini_model') ?? 'gemini-flash-latest';
+});
+
+final groqApiKeyProvider = StateProvider<String>((ref) {
+  return ref.watch(prefsProvider).getString('groq_api_key') ?? '';
+});
+
+final groqModelProvider = StateProvider<String>((ref) {
+  return ref.watch(prefsProvider).getString('groq_model') ?? 'meta-llama/llama-4-scout-17b-16e-instruct';
 });
 
 final receiptOnlineFallbackEnabledProvider = StateProvider<bool>((ref) {
@@ -224,99 +243,176 @@ class ReceiptScannerService {
     }
   }
 
-  Future<ReceiptScanResult?> scanOnline(File imageFile, String apiKey) async {
-    if (apiKey.trim().isEmpty) return null;
+  static const String _receiptPrompt =
+      'Kamu membaca foto struk belanja. Balas HANYA dengan JSON valid tanpa markdown, '
+      'format persis: {"merchant": string atau null, "date": "YYYY-MM-DD" atau null, "total": number atau null}. '
+      '"total" adalah jumlah akhir yang harus dibayar (grand total), dalam angka tanpa simbol mata uang.';
+
+  ReceiptScanResult _parseJsonScanResult(String rawJsonText) {
+    var cleaned = rawJsonText.trim();
+    cleaned = cleaned
+        .replaceAll(RegExp(r'^```json'), '')
+        .replaceAll(RegExp(r'^```'), '')
+        .replaceAll(RegExp(r'```$'), '')
+        .trim();
+    final parsed = jsonDecode(cleaned) as Map<String, dynamic>;
+    final merchant = parsed['merchant'] as String?;
+    final dateStr = parsed['date'] as String?;
+    final totalRaw = parsed['total'];
+    final total = totalRaw is num ? totalRaw.toDouble() : double.tryParse('$totalRaw');
+    final date = dateStr != null ? DateTime.tryParse(dateStr) : null;
+    return ReceiptScanResult(
+      merchant: merchant,
+      date: date,
+      total: total,
+      rawText: cleaned,
+      source: ReceiptScanSource.online,
+      confident: total != null && total > 0,
+    );
+  }
+
+  // AI online sekarang bisa dipilih manual antara Gemini atau Groq, dan
+  // nama model diisi manual oleh pengguna di Pengaturan AI Scan (bukan
+  // hardcode satu model tetap), supaya kalau suatu model dimatikan/
+  // deprecated oleh provider-nya, pengguna tinggal ganti nama model tanpa
+  // perlu update aplikasi.
+  Future<ReceiptScanResult?> scanOnline(File imageFile, {required AIProvider provider, required String apiKey, required String model}) async {
+    final trimmedKey = apiKey.trim();
+    final trimmedModel = model.trim();
+    if (trimmedKey.isEmpty || trimmedModel.isEmpty) return null;
     try {
-      final bytes = await imageFile.readAsBytes();
-      final base64Image = base64Encode(bytes);
-      // CATATAN: sebelumnya pakai "gemini-1.5-flash" yang sudah RESMI
-      // DIMATIKAN Google sejak 24 September 2025 (semua request ke model
-      // itu sekarang balas HTTP 404) — inilah sebab AI scan selalu gagal
-      // diam-diam. Pakai alias "gemini-flash-latest" (bukan versi
-      // bertanggal spesifik) supaya Google otomatis mengarahkannya ke model
-      // flash yang masih aktif, jadi tidak mati mendadak lagi seperti ini.
-      final uri = Uri.parse(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey.trim()}',
-      );
-      const prompt = 'Kamu membaca foto struk belanja. Balas HANYA dengan JSON valid tanpa markdown, '
-          'format persis: {"merchant": string atau null, "date": "YYYY-MM-DD" atau null, "total": number atau null}. '
-          '"total" adalah jumlah akhir yang harus dibayar (grand total), dalam angka tanpa simbol mata uang.';
-      final response = await http.post(
-        uri,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'contents': [
-            {
-              'parts': [
-                {'text': prompt},
-                {
-                  'inline_data': {'mime_type': 'image/jpeg', 'data': base64Image}
-                },
-              ],
-            }
-          ],
-          'generationConfig': {'temperature': 0.1},
-        }),
-      );
-      if (response.statusCode != 200) return null;
-      final decoded = jsonDecode(response.body) as Map<String, dynamic>;
-      final candidates = decoded['candidates'] as List?;
-      if (candidates == null || candidates.isEmpty) return null;
-      final parts = candidates.first['content']?['parts'] as List?;
-      if (parts == null || parts.isEmpty) return null;
-      var rawJsonText = (parts.first['text'] as String?)?.trim() ?? '';
-      rawJsonText = rawJsonText
-          .replaceAll(RegExp(r'^```json'), '')
-          .replaceAll(RegExp(r'^```'), '')
-          .replaceAll(RegExp(r'```$'), '')
-          .trim();
-      final parsed = jsonDecode(rawJsonText) as Map<String, dynamic>;
-      final merchant = parsed['merchant'] as String?;
-      final dateStr = parsed['date'] as String?;
-      final totalRaw = parsed['total'];
-      final total = totalRaw is num ? totalRaw.toDouble() : double.tryParse('$totalRaw');
-      final date = dateStr != null ? DateTime.tryParse(dateStr) : null;
-      return ReceiptScanResult(
-        merchant: merchant,
-        date: date,
-        total: total,
-        rawText: rawJsonText,
-        source: ReceiptScanSource.online,
-        confident: total != null && total > 0,
-      );
+      if (provider == AIProvider.groq) {
+        return await _scanOnlineGroq(imageFile, trimmedKey, trimmedModel);
+      }
+      return await _scanOnlineGemini(imageFile, trimmedKey, trimmedModel);
     } catch (_) {
       return null;
     }
+  }
+
+  Future<ReceiptScanResult?> _scanOnlineGemini(File imageFile, String apiKey, String model) async {
+    final bytes = await imageFile.readAsBytes();
+    final base64Image = base64Encode(bytes);
+    final uri = Uri.parse(
+      'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey',
+    );
+    final response = await http.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'contents': [
+          {
+            'parts': [
+              {'text': _receiptPrompt},
+              {
+                'inline_data': {'mime_type': 'image/jpeg', 'data': base64Image}
+              },
+            ],
+          }
+        ],
+        'generationConfig': {'temperature': 0.1},
+      }),
+    );
+    if (response.statusCode != 200) return null;
+    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+    final candidates = decoded['candidates'] as List?;
+    if (candidates == null || candidates.isEmpty) return null;
+    final parts = candidates.first['content']?['parts'] as List?;
+    if (parts == null || parts.isEmpty) return null;
+    final rawJsonText = (parts.first['text'] as String?)?.trim() ?? '';
+    if (rawJsonText.isEmpty) return null;
+    return _parseJsonScanResult(rawJsonText);
+  }
+
+  // Groq memakai endpoint chat completion bergaya OpenAI dengan gambar
+  // dikirim sebagai data URI base64 di dalam "image_url", berbeda dari
+  // format "inline_data" ala Gemini. Nama model harus salah satu model
+  // Groq yang mendukung vision, diisi manual oleh pengguna sendiri.
+  Future<ReceiptScanResult?> _scanOnlineGroq(File imageFile, String apiKey, String model) async {
+    final bytes = await imageFile.readAsBytes();
+    final base64Image = base64Encode(bytes);
+    final uri = Uri.parse('https://api.groq.com/openai/v1/chat/completions');
+    final response = await http.post(
+      uri,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $apiKey',
+      },
+      body: jsonEncode({
+        'model': model,
+        'temperature': 0.1,
+        'messages': [
+          {
+            'role': 'user',
+            'content': [
+              {'type': 'text', 'text': _receiptPrompt},
+              {
+                'type': 'image_url',
+                'image_url': {'url': 'data:image/jpeg;base64,$base64Image'},
+              },
+            ],
+          }
+        ],
+      }),
+    );
+    if (response.statusCode != 200) return null;
+    final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+    final choices = decoded['choices'] as List?;
+    if (choices == null || choices.isEmpty) return null;
+    final rawJsonText = (choices.first['message']?['content'] as String?)?.trim() ?? '';
+    if (rawJsonText.isEmpty) return null;
+    return _parseJsonScanResult(rawJsonText);
   }
 
   /// Melakukan panggilan ringan (teks saja, tanpa gambar) ke Gemini API
   /// untuk memverifikasi API key & konektivitas, dan mengembalikan pesan
   /// yang jelas (bukan diam-diam gagal) supaya pengguna tahu persis kenapa
   /// kalau gagal — mis. key salah, kuota habis, atau tidak ada internet.
-  Future<({bool success, String message})> testApiKey(String apiKey) async {
-    final trimmed = apiKey.trim();
-    if (trimmed.isEmpty) {
+  Future<({bool success, String message})> testApiKey(String apiKey, {required AIProvider provider, required String model}) async {
+    final trimmedKey = apiKey.trim();
+    final trimmedModel = model.trim();
+    if (trimmedKey.isEmpty) {
       return (success: false, message: 'API key masih kosong.');
     }
+    if (trimmedModel.isEmpty) {
+      return (success: false, message: 'Nama model masih kosong.');
+    }
     try {
-      final uri = Uri.parse(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=$trimmed',
-      );
-      final response = await http.post(
-        uri,
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'contents': [
-            {
-              'parts': [
-                {'text': 'Balas hanya dengan kata OK.'}
-              ],
-            }
-          ],
-        }),
-      ).timeout(const Duration(seconds: 15));
+      final http.Response response;
+      if (provider == AIProvider.groq) {
+        response = await http.post(
+          Uri.parse('https://api.groq.com/openai/v1/chat/completions'),
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer $trimmedKey',
+          },
+          body: jsonEncode({
+            'model': trimmedModel,
+            'messages': [
+              {'role': 'user', 'content': 'Balas hanya dengan kata OK.'}
+            ],
+          }),
+        ).timeout(const Duration(seconds: 15));
+      } else {
+        response = await http.post(
+          Uri.parse(
+            'https://generativelanguage.googleapis.com/v1beta/models/$trimmedModel:generateContent?key=$trimmedKey',
+          ),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'contents': [
+              {
+                'parts': [
+                  {'text': 'Balas hanya dengan kata OK.'}
+                ],
+              }
+            ],
+          }),
+        ).timeout(const Duration(seconds: 15));
+      }
       if (response.statusCode == 200) {
-        return (success: true, message: 'Berhasil! API key valid dan bisa terhubung ke Gemini.');
+        final providerName = provider == AIProvider.groq ? 'Groq' : 'Gemini';
+        return (success: true, message: 'Berhasil! API key & model valid, bisa terhubung ke $providerName.');
       }
       String detail = response.body;
       try {
@@ -331,14 +427,14 @@ class ReceiptScannerService {
     }
   }
 
-  Future<ReceiptScanResult> scan(File imageFile, {required bool onlineEnabled, required String apiKey}) async {
-    // AI online dicoba LEBIH DULU kalau tersedia (API key terisi & fitur
-    // diaktifkan) karena umumnya jauh lebih akurat membaca struk yang
-    // buram/miring dibanding OCR on-device. OCR offline hanya dipakai
-    // sebagai fallback: saat AI online gagal dipanggil (mis. tidak ada
-    // koneksi internet) atau hasilnya tidak yakin.
-    if (onlineEnabled && apiKey.trim().isNotEmpty) {
-      final onlineResult = await scanOnline(imageFile, apiKey);
+  Future<ReceiptScanResult> scan(File imageFile, {required bool onlineEnabled, required AIProvider provider, required String apiKey, required String model}) async {
+    // AI online dicoba LEBIH DULU kalau tersedia (API key & model terisi
+    // serta fitur diaktifkan) karena umumnya jauh lebih akurat membaca
+    // struk yang buram/miring dibanding OCR on-device. OCR offline hanya
+    // dipakai sebagai fallback: saat AI online gagal dipanggil (mis. tidak
+    // ada koneksi internet) atau hasilnya tidak yakin.
+    if (onlineEnabled && apiKey.trim().isNotEmpty && model.trim().isNotEmpty) {
+      final onlineResult = await scanOnline(imageFile, provider: provider, apiKey: apiKey, model: model);
       if (onlineResult != null && onlineResult.confident) return onlineResult;
       final offlineResult = await scanOffline(imageFile);
       if (offlineResult.confident) return offlineResult;
@@ -434,28 +530,31 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
   }
 
   Future<void> _runScan(File file) async {
-    final apiKey = ref.read(geminiApiKeyProvider);
+    final provider = ref.read(aiProviderProvider);
+    final apiKey = provider == AIProvider.groq ? ref.read(groqApiKeyProvider) : ref.read(geminiApiKeyProvider);
+    final model = provider == AIProvider.groq ? ref.read(groqModelProvider) : ref.read(geminiModelProvider);
     final onlineEnabled = ref.read(receiptOnlineFallbackEnabledProvider);
-    // Kalau AI online tersedia (aktif & API key terisi), itu yang dicoba
-    // duluan — biasanya jauh lebih akurat daripada OCR on-device. OCR
-    // offline jadi fallback kalau AI online gagal dipanggil (mis. tidak
-    // ada koneksi internet) atau hasilnya tidak yakin.
-    final tryOnlineFirst = onlineEnabled && apiKey.trim().isNotEmpty;
+    final providerLabel = provider == AIProvider.groq ? 'Groq' : 'Gemini';
+    // Kalau AI online tersedia (aktif, API key & model terisi), itu yang
+    // dicoba duluan — biasanya jauh lebih akurat daripada OCR on-device.
+    // OCR offline jadi fallback kalau AI online gagal dipanggil (mis.
+    // tidak ada koneksi internet) atau hasilnya tidak yakin.
+    final tryOnlineFirst = onlineEnabled && apiKey.trim().isNotEmpty && model.trim().isNotEmpty;
     setState(() {
       _imageFile = file;
       _result = null;
       _scanning = true;
-      _scanStage = tryOnlineFirst ? 'Membaca struk dengan AI online...' : 'Membaca teks struk (offline)...';
+      _scanStage = tryOnlineFirst ? 'Membaca struk dengan AI online ($providerLabel)...' : 'Membaca teks struk (offline)...';
     });
     ReceiptScanResult finalResult;
     if (tryOnlineFirst) {
-      final onlineResult = await _service.scanOnline(file, apiKey);
+      final onlineResult = await _service.scanOnline(file, provider: provider, apiKey: apiKey, model: model);
       if (onlineResult != null && onlineResult.confident) {
         finalResult = onlineResult;
       } else {
         if (mounted) {
           setState(() => _scanStage = onlineResult == null
-              ? 'AI online tidak tersedia (cek koneksi internet), mencoba pemindaian offline...'
+              ? 'AI online tidak tersedia (cek koneksi internet/model), mencoba pemindaian offline...'
               : 'Hasil AI online kurang yakin, mencoba pemindaian offline...');
         }
         final offlineResult = await _service.scanOffline(file);
@@ -745,7 +844,10 @@ class ReceiptScanApiKeySettingsPage extends ConsumerStatefulWidget {
 }
 
 class _ReceiptScanApiKeySettingsPageState extends ConsumerState<ReceiptScanApiKeySettingsPage> {
-  late final TextEditingController _keyCtrl;
+  late final TextEditingController _geminiKeyCtrl;
+  late final TextEditingController _geminiModelCtrl;
+  late final TextEditingController _groqKeyCtrl;
+  late final TextEditingController _groqModelCtrl;
   bool _obscure = true;
   bool _testing = false;
   bool? _testSuccess;
@@ -754,29 +856,65 @@ class _ReceiptScanApiKeySettingsPageState extends ConsumerState<ReceiptScanApiKe
   @override
   void initState() {
     super.initState();
-    _keyCtrl = TextEditingController(text: ref.read(geminiApiKeyProvider));
+    _geminiKeyCtrl = TextEditingController(text: ref.read(geminiApiKeyProvider));
+    _geminiModelCtrl = TextEditingController(text: ref.read(geminiModelProvider));
+    _groqKeyCtrl = TextEditingController(text: ref.read(groqApiKeyProvider));
+    _groqModelCtrl = TextEditingController(text: ref.read(groqModelProvider));
   }
 
   @override
   void dispose() {
-    _keyCtrl.dispose();
+    _geminiKeyCtrl.dispose();
+    _geminiModelCtrl.dispose();
+    _groqKeyCtrl.dispose();
+    _groqModelCtrl.dispose();
     super.dispose();
   }
 
+  TextEditingController get _activeKeyCtrl =>
+      ref.read(aiProviderProvider) == AIProvider.groq ? _groqKeyCtrl : _geminiKeyCtrl;
+  TextEditingController get _activeModelCtrl =>
+      ref.read(aiProviderProvider) == AIProvider.groq ? _groqModelCtrl : _geminiModelCtrl;
+
+  void _selectProvider(AIProvider provider) {
+    ref.read(aiProviderProvider.notifier).state = provider;
+    ref.read(prefsProvider).setString('ai_provider', provider == AIProvider.groq ? 'groq' : 'gemini');
+    setState(() {
+      _testSuccess = null;
+      _testMessage = null;
+    });
+  }
+
   void _save() {
-    final value = _keyCtrl.text.trim();
-    ref.read(prefsProvider).setString('gemini_api_key', value);
-    ref.read(geminiApiKeyProvider.notifier).state = value;
-    showGlassSnackBar(context, 'API key disimpan', icon: Icons.check_circle_outline);
+    final provider = ref.read(aiProviderProvider);
+    final keyValue = _activeKeyCtrl.text.trim();
+    final modelValue = _activeModelCtrl.text.trim();
+    if (provider == AIProvider.groq) {
+      ref.read(prefsProvider).setString('groq_api_key', keyValue);
+      ref.read(groqApiKeyProvider.notifier).state = keyValue;
+      ref.read(prefsProvider).setString('groq_model', modelValue);
+      ref.read(groqModelProvider.notifier).state = modelValue;
+    } else {
+      ref.read(prefsProvider).setString('gemini_api_key', keyValue);
+      ref.read(geminiApiKeyProvider.notifier).state = keyValue;
+      ref.read(prefsProvider).setString('gemini_model', modelValue);
+      ref.read(geminiModelProvider.notifier).state = modelValue;
+    }
+    showGlassSnackBar(context, 'API key & model disimpan', icon: Icons.check_circle_outline);
   }
 
   Future<void> _testApiKey() async {
+    final provider = ref.read(aiProviderProvider);
     setState(() {
       _testing = true;
       _testSuccess = null;
       _testMessage = null;
     });
-    final result = await ReceiptScannerService().testApiKey(_keyCtrl.text);
+    final result = await ReceiptScannerService().testApiKey(
+      _activeKeyCtrl.text,
+      provider: provider,
+      model: _activeModelCtrl.text,
+    );
     if (!mounted) return;
     setState(() {
       _testing = false;
@@ -789,6 +927,7 @@ class _ReceiptScanApiKeySettingsPageState extends ConsumerState<ReceiptScanApiKe
   Widget build(BuildContext context) {
     final isDark = context.isDark;
     final onlineEnabled = ref.watch(receiptOnlineFallbackEnabledProvider);
+    final aiProvider = ref.watch(aiProviderProvider);
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -847,10 +986,31 @@ class _ReceiptScanApiKeySettingsPageState extends ConsumerState<ReceiptScanApiKe
                     ]),
                   ),
                   const SizedBox(height: 20),
-                  Text('GEMINI API KEY', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: context.textFaint, letterSpacing: 1.2)),
+                  Text('PROVIDER AI', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: context.textFaint, letterSpacing: 1.2)),
+                  const SizedBox(height: 12),
+                  Row(children: [
+                    Expanded(
+                      child: ChoiceChip(
+                        label: const Text('Gemini'),
+                        selected: aiProvider == AIProvider.gemini,
+                        onSelected: (_) => _selectProvider(AIProvider.gemini),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ChoiceChip(
+                        label: const Text('Groq'),
+                        selected: aiProvider == AIProvider.groq,
+                        onSelected: (_) => _selectProvider(AIProvider.groq),
+                      ),
+                    ),
+                  ]),
+                  const SizedBox(height: 20),
+                  Text('${aiProvider == AIProvider.groq ? 'GROQ' : 'GEMINI'} API KEY', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: context.textFaint, letterSpacing: 1.2)),
                   const SizedBox(height: 12),
                   TextField(
-                    controller: _keyCtrl,
+                    key: ValueKey('key_field_${aiProvider.name}'),
+                    controller: _activeKeyCtrl,
                     obscureText: _obscure,
                     decoration: InputDecoration(
                       labelText: 'API key',
@@ -860,9 +1020,20 @@ class _ReceiptScanApiKeySettingsPageState extends ConsumerState<ReceiptScanApiKe
                       ),
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  Text('NAMA MODEL', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: context.textFaint, letterSpacing: 1.2)),
+                  const SizedBox(height: 12),
+                  TextField(
+                    key: ValueKey('model_field_${aiProvider.name}'),
+                    controller: _activeModelCtrl,
+                    decoration: InputDecoration(
+                      labelText: 'Nama model',
+                      hintText: aiProvider == AIProvider.groq ? 'contoh: meta-llama/llama-4-scout-17b-16e-instruct' : 'contoh: gemini-flash-latest',
+                    ),
+                  ),
                   const SizedBox(height: 8),
                   Text(
-                    'Key disimpan lokal di perangkat ini saja (SharedPreferences), tidak ditulis di dalam kode aplikasi.',
+                    'Key & model disimpan lokal di perangkat ini saja (SharedPreferences), tidak ditulis di dalam kode aplikasi. Isi nama model secara manual sesuai model yang tersedia di provider terkait.',
                     style: TextStyle(fontSize: 11.5, color: context.textFaint, height: 1.4),
                   ),
                   const SizedBox(height: 20),
