@@ -150,6 +150,13 @@ class ReceiptScannerService {
       final inputImage = InputImage.fromFilePath(imageFile.path);
       final recognized = await recognizer.processImage(inputImage);
       final text = recognized.text;
+      if (text.trim().isEmpty) {
+        return const ReceiptScanResult(
+          rawText: 'Tidak ada teks yang terdeteksi pada gambar. Coba foto ulang dengan pencahayaan lebih terang & fokus lebih tajam.',
+          source: ReceiptScanSource.offline,
+          confident: false,
+        );
+      }
       final total = ReceiptParser.parseTotal(text);
       final date = ReceiptParser.parseDate(text);
       final merchant = ReceiptParser.parseMerchant(text);
@@ -161,8 +168,12 @@ class ReceiptScannerService {
         source: ReceiptScanSource.offline,
         confident: total != null && total > 0,
       );
-    } catch (_) {
-      return const ReceiptScanResult(rawText: '', source: ReceiptScanSource.offline, confident: false);
+    } catch (e) {
+      return ReceiptScanResult(
+        rawText: 'Gagal memindai teks (offline): $e',
+        source: ReceiptScanSource.offline,
+        confident: false,
+      );
     } finally {
       recognizer.close();
     }
