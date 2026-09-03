@@ -20,16 +20,48 @@ final aiProviderProvider = StateProvider<AIProvider>((ref) {
   return saved == 'groq' ? AIProvider.groq : AIProvider.gemini;
 });
 
-final geminiApiKeyProvider = StateProvider<String>((ref) {
-  return ref.watch(prefsProvider).getString('gemini_api_key') ?? '';
+class ApiKeyListNotifier extends StateNotifier<List<String>> {
+  final SharedPreferences prefs;
+  final String storageKey;
+  final String legacyKey;
+
+  ApiKeyListNotifier(this.prefs, this.storageKey, this.legacyKey) : super(_load(prefs, storageKey, legacyKey));
+
+  static List<String> _load(SharedPreferences prefs, String storageKey, String legacyKey) {
+    final raw = prefs.getString(storageKey);
+    if (raw != null && raw.isNotEmpty) {
+      try {
+        return (jsonDecode(raw) as List)
+            .map((e) => e.toString().trim())
+            .where((e) => e.isNotEmpty)
+            .toList();
+      } catch (_) {}
+    }
+    // Migrasi dari format lama (satu API key tunggal) supaya pengguna yang
+    // sudah pernah mengisi key sebelumnya tidak kehilangan pengaturannya.
+    final legacy = prefs.getString(legacyKey);
+    if (legacy != null && legacy.trim().isNotEmpty) {
+      return [legacy.trim()];
+    }
+    return [];
+  }
+
+  void setAll(List<String> keys) {
+    state = keys.map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+    prefs.setString(storageKey, jsonEncode(state));
+  }
+}
+
+final geminiApiKeysProvider = StateNotifierProvider<ApiKeyListNotifier, List<String>>((ref) {
+  return ApiKeyListNotifier(ref.watch(prefsProvider), 'gemini_api_keys', 'gemini_api_key');
 });
 
 final geminiModelProvider = StateProvider<String>((ref) {
   return ref.watch(prefsProvider).getString('gemini_model') ?? 'gemini-flash-latest';
 });
 
-final groqApiKeyProvider = StateProvider<String>((ref) {
-  return ref.watch(prefsProvider).getString('groq_api_key') ?? '';
+final groqApiKeysProvider = StateNotifierProvider<ApiKeyListNotifier, List<String>>((ref) {
+  return ApiKeyListNotifier(ref.watch(prefsProvider), 'groq_api_keys', 'groq_api_key');
 });
 
 final groqModelProvider = StateProvider<String>((ref) {
@@ -276,18 +308,24 @@ class ReceiptScannerService {
   // hardcode satu model tetap), supaya kalau suatu model dimatikan/
   // deprecated oleh provider-nya, pengguna tinggal ganti nama model tanpa
   // perlu update aplikasi.
-  Future<ReceiptScanResult?> scanOnline(File imageFile, {required AIProvider provider, required String apiKey, required String model}) async {
-    final trimmedKey = apiKey.trim();
+  Future<ReceiptScanResult?> scanOnline(File imageFile, {required AIProvider provider, required List<String> apiKeys, required String model}) async {
     final trimmedModel = model.trim();
-    if (trimmedKey.isEmpty || trimmedModel.isEmpty) return null;
-    try {
-      if (provider == AIProvider.groq) {
-        return await _scanOnlineGroq(imageFile, trimmedKey, trimmedModel);
+    final keys = apiKeys.map((k) => k.trim()).where((k) => k.isNotEmpty).toList();
+    if (keys.isEmpty || trimmedModel.isEmpty) return null;
+    ReceiptScanResult? lastResult;
+    for (final key in keys) {
+      try {
+        final result = provider == AIProvider.groq
+            ? await _scanOnlineGroq(imageFile, key, trimmedModel)
+            : await _scanOnlineGemini(imageFile, key, trimmedModel);
+        if (result != null && result.confident) return result;
+        lastResult ??= result;
+      } catch (_) {
+        // Key ini gagal dipanggil (mis. kena limit kuota atau tidak
+        // valid) — lanjut coba API key berikutnya dalam daftar.
       }
-      return await _scanOnlineGemini(imageFile, trimmedKey, trimmedModel);
-    } catch (_) {
-      return null;
     }
+    return lastResult;
   }
 
   Future<ReceiptScanResult?> _scanOnlineGemini(File imageFile, String apiKey, String model) async {
@@ -427,6 +465,26 @@ class ReceiptScannerService {
     }
   }
 
+  /// Menguji sederet API key secara berurutan dan berhenti pada key
+  /// pertama yang berhasil — mencerminkan strategi fallback otomatis yang
+  /// sama seperti saat pemindaian struk berlangsung.
+  Future<({bool success, String message})> testApiKeys(List<String> apiKeys, {required AIProvider provider, required String model}) async {
+    final keys = apiKeys.map((k) => k.trim()).where((k) => k.isNotEmpty).toList();
+    if (keys.isEmpty) {
+      return (success: false, message: 'Belum ada API key yang diisi.');
+    }
+    String lastMessage = '';
+    for (var i = 0; i < keys.length; i++) {
+      final result = await testApiKey(keys[i], provider: provider, model: model);
+      if (result.success) {
+        final label = keys.length > 1 ? ' (API key ke-${i + 1} dari ${keys.length})' : '';
+        return (success: true, message: '${result.message}$label');
+      }
+      lastMessage = 'API key ke-${i + 1}: ${result.message}';
+    }
+    return (success: false, message: 'Semua API key gagal diverifikasi. $lastMessage');
+  }
+
   /// Mengambil daftar model yang BENAR-BENAR tersedia untuk API key yang
   /// dipasang, langsung dari API provider terkait (bukan daftar hardcode
   /// di kode aplikasi). Ini memastikan pilihan model di dropdown Pengaturan
@@ -518,14 +576,16 @@ class ReceiptScannerService {
     return (success: true, message: 'Ditemukan ${ordered.length} model (model vision diutamakan di atas).', models: ordered);
   }
 
-  Future<ReceiptScanResult> scan(File imageFile, {required bool onlineEnabled, required AIProvider provider, required String apiKey, required String model}) async {
-    // AI online dicoba LEBIH DULU kalau tersedia (API key & model terisi
-    // serta fitur diaktifkan) karena umumnya jauh lebih akurat membaca
-    // struk yang buram/miring dibanding OCR on-device. OCR offline hanya
-    // dipakai sebagai fallback: saat AI online gagal dipanggil (mis. tidak
-    // ada koneksi internet) atau hasilnya tidak yakin.
-    if (onlineEnabled && apiKey.trim().isNotEmpty && model.trim().isNotEmpty) {
-      final onlineResult = await scanOnline(imageFile, provider: provider, apiKey: apiKey, model: model);
+  Future<ReceiptScanResult> scan(File imageFile, {required bool onlineEnabled, required AIProvider provider, required List<String> apiKeys, required String model}) async {
+    // AI online dicoba LEBIH DULU kalau tersedia (minimal satu API key &
+    // model terisi serta fitur diaktifkan) karena umumnya jauh lebih
+    // akurat membaca struk yang buram/miring dibanding OCR on-device. OCR
+    // offline hanya dipakai sebagai fallback: saat semua API key online
+    // gagal dipanggil (mis. tidak ada koneksi internet) atau hasilnya
+    // tidak yakin.
+    final hasKeys = apiKeys.any((k) => k.trim().isNotEmpty);
+    if (onlineEnabled && hasKeys && model.trim().isNotEmpty) {
+      final onlineResult = await scanOnline(imageFile, provider: provider, apiKeys: apiKeys, model: model);
       if (onlineResult != null && onlineResult.confident) return onlineResult;
       final offlineResult = await scanOffline(imageFile);
       if (offlineResult.confident) return offlineResult;
@@ -536,12 +596,11 @@ class ReceiptScannerService {
 }
 
 Future<void> _pickReceiptImage(BuildContext context, ImageSource source) async {
-  final picker = ImagePicker();
-  final XFile? picked = await picker.pickImage(source: source, maxWidth: 2000, imageQuality: 92);
-  if (picked == null || !context.mounted) return;
+  final file = await pickImageFileWithNativeChooser(source);
+  if (file == null || !context.mounted) return;
   Navigator.push(
     context,
-    GlassPageRoute(builder: (_) => ReceiptScanPage(initialImageFile: File(picked.path))),
+    GlassPageRoute(builder: (_) => ReceiptScanPage(initialImageFile: file)),
   );
 }
 
@@ -622,15 +681,17 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
 
   Future<void> _runScan(File file) async {
     final provider = ref.read(aiProviderProvider);
-    final apiKey = provider == AIProvider.groq ? ref.read(groqApiKeyProvider) : ref.read(geminiApiKeyProvider);
+    final apiKeys = provider == AIProvider.groq ? ref.read(groqApiKeysProvider) : ref.read(geminiApiKeysProvider);
     final model = provider == AIProvider.groq ? ref.read(groqModelProvider) : ref.read(geminiModelProvider);
     final onlineEnabled = ref.read(receiptOnlineFallbackEnabledProvider);
     final providerLabel = provider == AIProvider.groq ? 'Groq' : 'Gemini';
-    // Kalau AI online tersedia (aktif, API key & model terisi), itu yang
-    // dicoba duluan — biasanya jauh lebih akurat daripada OCR on-device.
-    // OCR offline jadi fallback kalau AI online gagal dipanggil (mis.
-    // tidak ada koneksi internet) atau hasilnya tidak yakin.
-    final tryOnlineFirst = onlineEnabled && apiKey.trim().isNotEmpty && model.trim().isNotEmpty;
+    final hasKeys = apiKeys.any((k) => k.trim().isNotEmpty);
+    // Kalau AI online tersedia (aktif, minimal satu API key & model
+    // terisi), itu yang dicoba duluan — biasanya jauh lebih akurat
+    // daripada OCR on-device. OCR offline jadi fallback kalau semua API
+    // key online gagal dipanggil (mis. tidak ada koneksi internet) atau
+    // hasilnya tidak yakin.
+    final tryOnlineFirst = onlineEnabled && hasKeys && model.trim().isNotEmpty;
     setState(() {
       _imageFile = file;
       _result = null;
@@ -639,7 +700,7 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
     });
     ReceiptScanResult finalResult;
     if (tryOnlineFirst) {
-      final onlineResult = await _service.scanOnline(file, provider: provider, apiKey: apiKey, model: model);
+      final onlineResult = await _service.scanOnline(file, provider: provider, apiKeys: apiKeys, model: model);
       if (onlineResult != null && onlineResult.confident) {
         finalResult = onlineResult;
       } else {
@@ -667,10 +728,9 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
   }
 
   Future<void> _pickAndScan(ImageSource source) async {
-    final picker = ImagePicker();
-    final XFile? picked = await picker.pickImage(source: source, maxWidth: 2000, imageQuality: 92);
-    if (picked == null) return;
-    await _runScan(File(picked.path));
+    final file = await pickImageFileWithNativeChooser(source);
+    if (file == null) return;
+    await _runScan(file);
   }
 
   void _showSourceSheet() {
@@ -935,8 +995,8 @@ class ReceiptScanApiKeySettingsPage extends ConsumerStatefulWidget {
 }
 
 class _ReceiptScanApiKeySettingsPageState extends ConsumerState<ReceiptScanApiKeySettingsPage> {
-  late final TextEditingController _geminiKeyCtrl;
-  late final TextEditingController _groqKeyCtrl;
+  late List<TextEditingController> _geminiKeyControllers;
+  late List<TextEditingController> _groqKeyControllers;
   String? _geminiSelectedModel;
   String? _groqSelectedModel;
   List<String> _geminiModels = [];
@@ -952,29 +1012,49 @@ class _ReceiptScanApiKeySettingsPageState extends ConsumerState<ReceiptScanApiKe
   @override
   void initState() {
     super.initState();
-    _geminiKeyCtrl = TextEditingController(text: ref.read(geminiApiKeyProvider));
-    _groqKeyCtrl = TextEditingController(text: ref.read(groqApiKeyProvider));
+    _geminiKeyControllers = _buildControllers(ref.read(geminiApiKeysProvider));
+    _groqKeyControllers = _buildControllers(ref.read(groqApiKeysProvider));
     _geminiSelectedModel = _nullIfEmpty(ref.read(geminiModelProvider));
     _groqSelectedModel = _nullIfEmpty(ref.read(groqModelProvider));
     // Kalau API key sudah pernah disimpan sebelumnya, langsung coba muat
     // daftar modelnya begitu halaman dibuka, supaya dropdown tidak kosong
     // saat pengguna kembali ke halaman ini.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && _activeKeyCtrl.text.trim().isNotEmpty) _fetchModels();
+      if (mounted && _firstNonEmptyKey(_activeKeyControllers) != null) _fetchModels();
     });
+  }
+
+  List<TextEditingController> _buildControllers(List<String> keys) {
+    if (keys.isEmpty) return [TextEditingController()];
+    return keys.map((k) => TextEditingController(text: k)).toList();
   }
 
   String? _nullIfEmpty(String v) => v.trim().isEmpty ? null : v.trim();
 
+  String? _firstNonEmptyKey(List<TextEditingController> controllers) {
+    for (final c in controllers) {
+      final v = c.text.trim();
+      if (v.isNotEmpty) return v;
+    }
+    return null;
+  }
+
+  List<String> _nonEmptyKeys(List<TextEditingController> controllers) =>
+      controllers.map((c) => c.text.trim()).where((v) => v.isNotEmpty).toList();
+
   @override
   void dispose() {
-    _geminiKeyCtrl.dispose();
-    _groqKeyCtrl.dispose();
+    for (final c in _geminiKeyControllers) {
+      c.dispose();
+    }
+    for (final c in _groqKeyControllers) {
+      c.dispose();
+    }
     super.dispose();
   }
 
-  TextEditingController get _activeKeyCtrl =>
-      ref.read(aiProviderProvider) == AIProvider.groq ? _groqKeyCtrl : _geminiKeyCtrl;
+  List<TextEditingController> get _activeKeyControllers =>
+      ref.read(aiProviderProvider) == AIProvider.groq ? _groqKeyControllers : _geminiKeyControllers;
   List<String> get _activeModels =>
       ref.read(aiProviderProvider) == AIProvider.groq ? _groqModels : _geminiModels;
   String? get _activeSelectedModel =>
@@ -985,6 +1065,23 @@ class _ReceiptScanApiKeySettingsPageState extends ConsumerState<ReceiptScanApiKe
     } else {
       _geminiSelectedModel = value;
     }
+  }
+
+  void _addKeyField() {
+    setState(() => _activeKeyControllers.add(TextEditingController()));
+  }
+
+  void _removeKeyField(int index) {
+    final controllers = _activeKeyControllers;
+    if (index < 0 || index >= controllers.length) return;
+    if (controllers.length <= 1) {
+      // Selalu sisakan minimal satu kolom input agar pengguna tetap bisa
+      // mengisi API key baru tanpa perlu menambah field terlebih dahulu.
+      controllers[index].clear();
+      setState(() {});
+      return;
+    }
+    setState(() => controllers.removeAt(index).dispose());
   }
 
   void _selectProvider(AIProvider provider) {
@@ -1000,12 +1097,20 @@ class _ReceiptScanApiKeySettingsPageState extends ConsumerState<ReceiptScanApiKe
 
   Future<void> _fetchModels() async {
     final provider = ref.read(aiProviderProvider);
+    final key = _firstNonEmptyKey(_activeKeyControllers);
+    if (key == null) {
+      setState(() {
+        _modelsSuccess = false;
+        _modelsMessage = 'Masukkan minimal satu API key terlebih dahulu.';
+      });
+      return;
+    }
     setState(() {
       _fetchingModels = true;
       _modelsSuccess = null;
       _modelsMessage = null;
     });
-    final result = await ReceiptScannerService().fetchAvailableModels(_activeKeyCtrl.text, provider: provider);
+    final result = await ReceiptScannerService().fetchAvailableModels(key, provider: provider);
     if (!mounted) return;
     setState(() {
       _fetchingModels = false;
@@ -1029,25 +1134,28 @@ class _ReceiptScanApiKeySettingsPageState extends ConsumerState<ReceiptScanApiKe
 
   void _save() {
     final provider = ref.read(aiProviderProvider);
-    final keyValue = _activeKeyCtrl.text.trim();
+    final keys = _nonEmptyKeys(_activeKeyControllers);
     final modelValue = _activeSelectedModel ?? '';
     if (provider == AIProvider.groq) {
-      ref.read(prefsProvider).setString('groq_api_key', keyValue);
-      ref.read(groqApiKeyProvider.notifier).state = keyValue;
+      ref.read(groqApiKeysProvider.notifier).setAll(keys);
       ref.read(prefsProvider).setString('groq_model', modelValue);
       ref.read(groqModelProvider.notifier).state = modelValue;
     } else {
-      ref.read(prefsProvider).setString('gemini_api_key', keyValue);
-      ref.read(geminiApiKeyProvider.notifier).state = keyValue;
+      ref.read(geminiApiKeysProvider.notifier).setAll(keys);
       ref.read(prefsProvider).setString('gemini_model', modelValue);
       ref.read(geminiModelProvider.notifier).state = modelValue;
     }
-    showGlassSnackBar(context, 'API key & model disimpan', icon: Icons.check_circle_outline);
+    showGlassSnackBar(context, keys.isEmpty ? 'Pengaturan disimpan (belum ada API key terisi)' : 'API key & model disimpan', icon: Icons.check_circle_outline);
   }
 
   Future<void> _testApiKey() async {
     final provider = ref.read(aiProviderProvider);
     final model = _activeSelectedModel;
+    final keys = _nonEmptyKeys(_activeKeyControllers);
+    if (keys.isEmpty) {
+      showGlassSnackBar(context, 'Masukkan minimal satu API key terlebih dahulu', icon: Icons.warning_amber_rounded);
+      return;
+    }
     if (model == null) {
       showGlassSnackBar(context, 'Muat & pilih model terlebih dahulu', icon: Icons.warning_amber_rounded);
       return;
@@ -1057,8 +1165,8 @@ class _ReceiptScanApiKeySettingsPageState extends ConsumerState<ReceiptScanApiKe
       _testSuccess = null;
       _testMessage = null;
     });
-    final result = await ReceiptScannerService().testApiKey(
-      _activeKeyCtrl.text,
+    final result = await ReceiptScannerService().testApiKeys(
+      keys,
       provider: provider,
       model: model,
     );
@@ -1079,6 +1187,7 @@ class _ReceiptScanApiKeySettingsPageState extends ConsumerState<ReceiptScanApiKe
     final providerLabel = aiProvider == AIProvider.groq ? 'Groq' : 'Gemini';
     final models = _activeModels;
     final selectedModel = _activeSelectedModel;
+    final activeControllers = _activeKeyControllers;
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -1114,9 +1223,9 @@ class _ReceiptScanApiKeySettingsPageState extends ConsumerState<ReceiptScanApiKe
                     child: Row(children: [
                       Expanded(
                         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                          Text('Gunakan AI online sebagai fallback', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: context.textPrimary)),
+                          Text('Gunakan AI Online', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: context.textPrimary)),
                           const SizedBox(height: 4),
-                          Text('Dipakai hanya kalau pemindaian offline gagal baca nominal', style: TextStyle(fontSize: 12, color: context.textMuted, height: 1.3)),
+                          Text('AI online dicoba lebih dahulu untuk hasil pembacaan yang lebih akurat. Apabila tidak dapat diakses, sistem otomatis beralih ke pemindaian OCR offline.', style: TextStyle(fontSize: 12, color: context.textMuted, height: 1.3)),
                         ]),
                       ),
                       const SizedBox(width: 12),
@@ -1137,44 +1246,74 @@ class _ReceiptScanApiKeySettingsPageState extends ConsumerState<ReceiptScanApiKe
                   const SizedBox(height: 20),
                   const _SectionLabel('PROVIDER AI'),
                   const SizedBox(height: 10),
-                  _SettingsSectionCard(
-                    padding: const EdgeInsets.all(10),
-                    child: Row(children: [
-                      Expanded(
-                        child: ChoiceChip(
-                          label: const Text('Gemini'),
-                          selected: aiProvider == AIProvider.gemini,
-                          onSelected: (_) => _selectProvider(AIProvider.gemini),
-                        ),
+                  LiquidGlass(
+                    borderRadius: 24,
+                    useBlur: true,
+                    blur: 14,
+                    intensity: isDark ? 1.5 : 1.0,
+                    borderColor: isDark ? context.borderColor : null,
+                    child: Padding(
+                      padding: const EdgeInsets.all(10),
+                      child: GlassSegmentedControl(
+                        segments: [GlassSegment(label: 'Gemini'), GlassSegment(label: 'Groq')],
+                        selectedIndex: aiProvider == AIProvider.groq ? 1 : 0,
+                        indicatorColor: primary.withOpacity(isDark ? 0.25 : 0.15),
+                        onSegmentSelected: (index) => _selectProvider(index == 1 ? AIProvider.groq : AIProvider.gemini),
+                        quality: GlassQuality.premium,
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: ChoiceChip(
-                          label: const Text('Groq'),
-                          selected: aiProvider == AIProvider.groq,
-                          onSelected: (_) => _selectProvider(AIProvider.groq),
-                        ),
-                      ),
-                    ]),
+                    ),
                   ),
                   const SizedBox(height: 20),
                   _SectionLabel('$providerLabel API KEY & MODEL'),
                   const SizedBox(height: 10),
                   _SettingsSectionCard(
                     child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      TextField(
-                        key: ValueKey('key_field_${aiProvider.name}'),
-                        controller: _activeKeyCtrl,
-                        obscureText: _obscure,
-                        decoration: InputDecoration(
-                          labelText: 'API key',
-                          suffixIcon: IconButton(
-                            icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined, size: 20),
-                            onPressed: () => setState(() => _obscure = !_obscure),
-                          ),
+                      Row(children: [
+                        Expanded(
+                          child: Text('API Key', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: context.textPrimary)),
                         ),
+                        GestureDetector(
+                          onTap: () => setState(() => _obscure = !_obscure),
+                          behavior: HitTestBehavior.opaque,
+                          child: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined, size: 18, color: context.iconMuted),
+                        ),
+                      ]),
+                      const SizedBox(height: 6),
+                      Text(
+                        'Tambahkan lebih dari satu API key agar pemindaian tetap berjalan otomatis dengan key berikutnya apabila salah satu key mencapai batas kuota.',
+                        style: TextStyle(fontSize: 11.5, color: context.textFaint, height: 1.4),
                       ),
                       const SizedBox(height: 14),
+                      ...List.generate(activeControllers.length, (i) => Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: Row(children: [
+                              Expanded(
+                                child: TextField(
+                                  key: ValueKey('key_field_${aiProvider.name}_$i'),
+                                  controller: activeControllers[i],
+                                  obscureText: _obscure,
+                                  decoration: InputDecoration(labelText: 'API key ${i + 1}', isDense: true),
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              IconButton(
+                                onPressed: () => _removeKeyField(i),
+                                icon: Icon(Icons.close_rounded, size: 18, color: context.iconMuted),
+                                tooltip: 'Hapus API key ${i + 1}',
+                              ),
+                            ]),
+                          )),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: TextButton.icon(
+                          onPressed: _addKeyField,
+                          icon: Icon(SolarIconsOutline.addCircle, size: 16, color: primary),
+                          label: Text('Tambah API key', style: TextStyle(color: primary, fontSize: 12.5, fontWeight: FontWeight.w600)),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Divider(color: context.borderColor),
+                      const SizedBox(height: 10),
                       Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Expanded(
                           child: models.isEmpty
@@ -1184,7 +1323,7 @@ class _ReceiptScanApiKeySettingsPageState extends ConsumerState<ReceiptScanApiKe
                                     color: isDark ? Colors.white.withOpacity(0.04) : const Color(0xFFF1EEF7),
                                     borderRadius: BorderRadius.circular(16),
                                   ),
-                                  child: Text('Belum ada model dimuat', style: TextStyle(fontSize: 13, color: context.textFaint)),
+                                  child: Text('Daftar model belum dimuat', style: TextStyle(fontSize: 13, color: context.textFaint)),
                                 )
                               : DropdownButtonFormField<String>(
                                   key: ValueKey('model_dropdown_${aiProvider.name}'),
@@ -1214,7 +1353,7 @@ class _ReceiptScanApiKeySettingsPageState extends ConsumerState<ReceiptScanApiKe
                       ]),
                       const SizedBox(height: 8),
                       Text(
-                        'Tekan tombol muat ulang untuk mengambil daftar model yang benar-benar tersedia untuk API key ini langsung dari $providerLabel.',
+                        'Perbarui daftar model yang tersedia sesuai akses API key Anda saat ini di $providerLabel.',
                         style: TextStyle(fontSize: 11.5, color: context.textFaint, height: 1.4),
                       ),
                       if (_modelsMessage != null) ...[
@@ -1227,7 +1366,7 @@ class _ReceiptScanApiKeySettingsPageState extends ConsumerState<ReceiptScanApiKe
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 4),
                     child: Text(
-                      'Key & model disimpan lokal di perangkat ini saja (SharedPreferences), tidak ditulis di dalam kode aplikasi.',
+                      'Seluruh API key dan model tersimpan secara lokal di perangkat ini serta hanya dikirim langsung ke penyedia AI yang dipilih saat proses pemindaian berlangsung.',
                       style: TextStyle(fontSize: 11.5, color: context.textFaint, height: 1.4),
                     ),
                   ),

@@ -403,6 +403,27 @@ Future<Uint8List?> _pickRawImageBytes(ImageSource source) async {
   return await picked.readAsBytes();
 }
 
+// Dipakai oleh alur lain (mis. Pindai Struk) yang butuh hasil pilih media
+// berupa File, bukan hanya raw bytes, dan tetap ingin memakai chooser
+// galeri asli di Android (sama seperti alur pilih foto profil) alih-alih
+// Photo Picker sistem bawaan.
+Future<File?> pickImageFileWithNativeChooser(ImageSource source, {double maxWidth = 2000, int imageQuality = 92}) async {
+  if (!kIsWeb && source == ImageSource.gallery && Platform.isAndroid) {
+    final String? pickedPath = await _galleryChooserChannel.invokeMethod<String>('pickImageWithChooser');
+    if (pickedPath == null) return null;
+    return File(pickedPath);
+  }
+
+  final picker = ImagePicker();
+  final XFile? picked = await picker.pickImage(
+    source: source,
+    maxWidth: maxWidth,
+    imageQuality: imageQuality,
+  );
+  if (picked == null) return null;
+  return File(picked.path);
+}
+
 class _CropperPage extends StatelessWidget {
   final Uint8List imageBytes;
   const _CropperPage({required this.imageBytes});
