@@ -29,6 +29,8 @@ import 'package:video_player/video_player.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 
+import 'receipt_scanner.dart';
+
 Future<String> _appDocsPath() async {
   final dir = await getApplicationDocumentsDirectory();
   return dir.path;
@@ -2662,6 +2664,8 @@ class Strings {
     'notifications': {AppLang.en: 'Notifications', AppLang.id: 'Notifikasi'},
     'backup_data': {AppLang.en: 'Backup data', AppLang.id: 'Backup data'},
     'debug_log': {AppLang.en: 'App Log', AppLang.id: 'Log Aplikasi'},
+    'scan_receipt': {AppLang.en: 'Scan Receipt', AppLang.id: 'Pindai Struk'},
+    'ai_settings': {AppLang.en: 'AI Scan Settings', AppLang.id: 'Pengaturan AI Scan'},
     'not_available': {AppLang.en: '{name} is not available yet', AppLang.id: '{name} belum tersedia'},
     'screen_mode': {AppLang.en: 'SCREEN MODE', AppLang.id: 'MODE LAYAR'},
     'light': {AppLang.en: 'Light', AppLang.id: 'Terang'},
@@ -3466,7 +3470,7 @@ class _FinanceShellState extends ConsumerState<FinanceShell> with SingleTickerPr
                     _navItem(context, 0, SolarIconsOutline.home, SolarIconsBold.home, Strings.t(lang, 'nav_home'), tab, ref),
                     _navItem(context, 1, SolarIconsOutline.chart, SolarIconsBold.chart, Strings.t(lang, 'nav_statistic'), tab, ref),
                     GestureDetector(
-                      onTap: () {},
+                      onTap: () => Navigator.push(context, GlassPageRoute(builder: (_) => const ReceiptScanPage())),
                       child: Container(
                         width: 48, height: 48,
                         decoration: BoxDecoration(
@@ -5383,6 +5387,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                               ('language', Icons.language),
                               ('notifications', SolarIconsOutline.bell),
                               ('backup_data', SolarIconsOutline.cloudUpload),
+                              ('ai_settings', Icons.smart_toy_outlined),
                               ('debug_log', Icons.bug_report_outlined),
                             ]),
                           ],
@@ -5899,6 +5904,8 @@ class SettingList extends ConsumerWidget {
                       Navigator.push(context, GlassPageRoute(builder: (_) => const LoanManagementPage()));
                     } else if (item.$1 == 'category') {
                       Navigator.push(context, GlassPageRoute(builder: (_) => const CategorySettingsPage()));
+                    } else if (item.$1 == 'ai_settings') {
+                      Navigator.push(context, GlassPageRoute(builder: (_) => const ReceiptScanApiKeySettingsPage()));
                     } else if (item.$1 == 'debug_log') {
                       Navigator.push(context, GlassPageRoute(builder: (_) => const CrashLogPage()));
                     } else {

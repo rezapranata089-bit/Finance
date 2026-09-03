@@ -29,6 +29,8 @@ dependencies:
     path: packages/telegram_image_cropper
   video_player: ^2.9.5
   ffmpeg_kit_flutter_new_min_gpl: ^2.6.2
+  google_mlkit_text_recognition: ^0.13.0
+  http: ^1.6.0
 
 dev_dependencies:
   flutter_test:
