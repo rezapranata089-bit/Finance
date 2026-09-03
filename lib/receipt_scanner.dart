@@ -2,12 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:cunning_document_scanner/cunning_document_scanner.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
+import 'package:flutter_tesseract_ocr/flutter_tesseract_ocr.dart';
 import 'package:http/http.dart' as http;
-import 'package:image_picker/image_picker.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:solar_icons/solar_icons.dart';
@@ -75,6 +75,19 @@ final receiptOnlineFallbackEnabledProvider = StateProvider<bool>((ref) {
 
 enum ReceiptScanSource { offline, online }
 
+class ReceiptLineItem {
+  final String name;
+  final double? quantity;
+  final double? price;
+  const ReceiptLineItem({required this.name, this.quantity, this.price});
+
+  factory ReceiptLineItem.fromJson(Map<String, dynamic> json) => ReceiptLineItem(
+        name: (json['name'] as String? ?? '').trim(),
+        quantity: (json['qty'] as num?)?.toDouble() ?? (json['quantity'] as num?)?.toDouble(),
+        price: (json['price'] as num?)?.toDouble() ?? (json['subtotal'] as num?)?.toDouble(),
+      );
+}
+
 class ReceiptScanResult {
   final String? merchant;
   final DateTime? date;
@@ -82,6 +95,7 @@ class ReceiptScanResult {
   final String rawText;
   final ReceiptScanSource source;
   final bool confident;
+  final List<ReceiptLineItem> items;
 
   const ReceiptScanResult({
     this.merchant,
@@ -90,6 +104,7 @@ class ReceiptScanResult {
     required this.rawText,
     required this.source,
     required this.confident,
+    this.items = const [],
   });
 }
 
@@ -228,15 +243,56 @@ class ReceiptParser {
     }
     return lines.isNotEmpty ? lines.first : null;
   }
+
+  static const _itemExclusionKeywords = [
+    'total', 'subtotal', 'sub total', 'tunai', 'kembali', 'cash', 'change',
+    'bayar', 'diskon', 'discount', 'pajak', 'ppn', 'tax', 'service',
+    'points', 'poin', 'kasir', 'cashier', 'no. transaksi', 'struk', 'invoice',
+    'npwp', 'telp', 'terima kasih', 'jumlah',
+  ];
+
+  static bool _looksLikeItemExcluded(String line) {
+    final lower = line.toLowerCase();
+    return _itemExclusionKeywords.any((w) => lower.contains(w));
+  }
+
+  // Heuristik sederhana untuk hasil OCR offline (tanpa AI): baris yang
+  // diawali teks (nama barang) dan diakhiri satu angka nominal dianggap
+  // baris item belanja, selama tidak mengandung kata kunci baris
+  // total/pembayaran/dsb. Hasil ini best-effort — struk dengan tata letak
+  // tidak biasa (nama & harga di baris terpisah) mungkin tidak terbaca
+  // sempurna; AI online jauh lebih akurat untuk kasus ini.
+  static List<ReceiptLineItem> parseItems(String text) {
+    final lines = text.split('\n').map((l) => l.trim()).where((l) => l.isNotEmpty).toList();
+    final items = <ReceiptLineItem>[];
+    for (final line in lines) {
+      if (_looksLikeItemExcluded(line)) continue;
+      final amount = _extractAmount(line);
+      if (amount == null || amount <= 0) continue;
+      var namePart = line.replaceAll(_amountRegex, '').replaceAll(RegExp(r'rp\.?', caseSensitive: false), '').trim();
+      namePart = namePart.replaceAll(RegExp(r'[xX]\s*\d+$'), '').trim();
+      namePart = namePart.replaceAll(RegExp(r'^[\d\.\s]+'), '').trim();
+      final letters = namePart.replaceAll(RegExp(r'[^a-zA-Z]'), '');
+      if (namePart.isEmpty || letters.length < 3) continue;
+      final qtyMatch = RegExp(r'(\d+)\s*[xX]\b').firstMatch(line);
+      final qty = qtyMatch != null ? double.tryParse(qtyMatch.group(1)!) : null;
+      items.add(ReceiptLineItem(name: namePart, quantity: qty, price: amount));
+    }
+    return items;
+  }
 }
 
 class ReceiptScannerService {
   Future<ReceiptScanResult> scanOffline(File imageFile) async {
-    final recognizer = TextRecognizer(script: TextRecognitionScript.latin);
     try {
-      final inputImage = InputImage.fromFilePath(imageFile.path);
-      final recognized = await recognizer.processImage(inputImage);
-      final text = recognized.text;
+      final text = await FlutterTesseractOcr.extractText(
+        imageFile.path,
+        language: 'ind+eng',
+        args: {
+          'psm': '6',
+          'preserve_interword_spaces': '1',
+        },
+      );
       if (text.trim().isEmpty) {
         return const ReceiptScanResult(
           rawText: 'Tidak ada teks yang terdeteksi pada gambar. Coba foto ulang dengan pencahayaan lebih terang & fokus lebih tajam.',
@@ -247,6 +303,7 @@ class ReceiptScannerService {
       final total = ReceiptParser.parseTotal(text);
       final date = ReceiptParser.parseDate(text);
       final merchant = ReceiptParser.parseMerchant(text);
+      final items = ReceiptParser.parseItems(text);
       return ReceiptScanResult(
         merchant: merchant,
         date: date,
@@ -254,14 +311,15 @@ class ReceiptScannerService {
         rawText: text,
         source: ReceiptScanSource.offline,
         confident: total != null && total > 0,
+        items: items,
       );
     } catch (e) {
       // PlatformException di titik ini umumnya BUKAN bug di kode Dart,
-      // melainkan recognizer ML Kit gagal diinisialisasi secara native di
-      // perangkat ini (sering terjadi di ROM Android custom/OEM dengan
-      // komponen Google Play Services yang dimodifikasi/terbatas). Stack
-      // trace Java mentah tidak berguna bagi pengguna awam, jadi tampilkan
-      // pesan yang lebih jelas & actionable (arahkan ke fallback AI online).
+      // melainkan Tesseract gagal diinisialisasi secara native di
+      // perangkat ini (mis. tessdata belum berhasil disalin ke storage
+      // aplikasi). Stack trace Java mentah tidak berguna bagi pengguna
+      // awam, jadi tampilkan pesan yang lebih jelas & actionable (arahkan
+      // ke fallback AI online).
       final isPlatformFailure = e is PlatformException;
       final friendlyMessage = isPlatformFailure
           ? 'Pemindaian offline tidak didukung di perangkat ini. Aktifkan "AI online" di Pengaturan > Pengaturan AI Scan agar tetap bisa memindai struk.'
@@ -271,15 +329,16 @@ class ReceiptScannerService {
         source: ReceiptScanSource.offline,
         confident: false,
       );
-    } finally {
-      recognizer.close();
     }
   }
 
   static const String _receiptPrompt =
       'Kamu membaca foto struk belanja. Balas HANYA dengan JSON valid tanpa markdown, '
-      'format persis: {"merchant": string atau null, "date": "YYYY-MM-DD" atau null, "total": number atau null}. '
-      '"total" adalah jumlah akhir yang harus dibayar (grand total), dalam angka tanpa simbol mata uang.';
+      'format persis: {"merchant": string atau null, "date": "YYYY-MM-DD" atau null, "total": number atau null, '
+      '"items": [{"name": string, "qty": number atau null, "price": number atau null}]}. '
+      '"total" adalah jumlah akhir yang harus dibayar (grand total), dalam angka tanpa simbol mata uang. '
+      '"items" adalah daftar SEMUA barang/produk yang dibeli beserta jumlah (qty) dan harga/subtotal (price) '
+      'masing-masing jika terlihat pada struk; jika struk tidak memuat rincian barang, balas items sebagai array kosong.';
 
   ReceiptScanResult _parseJsonScanResult(String rawJsonText) {
     var cleaned = rawJsonText.trim();
@@ -294,6 +353,12 @@ class ReceiptScannerService {
     final totalRaw = parsed['total'];
     final total = totalRaw is num ? totalRaw.toDouble() : double.tryParse('$totalRaw');
     final date = dateStr != null ? DateTime.tryParse(dateStr) : null;
+    final itemsRaw = parsed['items'] as List? ?? const [];
+    final items = itemsRaw
+        .whereType<Map>()
+        .map((e) => ReceiptLineItem.fromJson(e.cast<String, dynamic>()))
+        .where((e) => e.name.isNotEmpty)
+        .toList();
     return ReceiptScanResult(
       merchant: merchant,
       date: date,
@@ -301,6 +366,7 @@ class ReceiptScannerService {
       rawText: cleaned,
       source: ReceiptScanSource.online,
       confident: total != null && total > 0,
+      items: items,
     );
   }
 
@@ -596,48 +662,22 @@ class ReceiptScannerService {
   }
 }
 
-Future<void> _pickReceiptImage(BuildContext context, ImageSource source) async {
-  final file = await pickImageFileWithNativeChooser(source);
-  if (file == null || !context.mounted) return;
+// Membuka cunning_document_scanner: pengguna memindai/mengambil struk lewat
+// UI scanner bawaan (kamera ATAU impor dari galeri, keduanya sudah
+// terintegrasi di dalam satu alur package ini), lalu package otomatis
+// mendeteksi tepi, meluruskan (perspective correction), dan meng-crop
+// hasilnya sebelum dikembalikan sebagai path gambar siap-OCR.
+Future<void> _pickReceiptImage(BuildContext context) async {
+  final paths = await CunningDocumentScanner.getPictures(noOfPages: 1, isGalleryImportAllowed: true);
+  if (paths == null || paths.isEmpty || !context.mounted) return;
   Navigator.push(
     context,
-    GlassPageRoute(builder: (_) => ReceiptScanPage(initialImageFile: file)),
+    GlassPageRoute(builder: (_) => ReceiptScanPage(initialImageFile: File(paths.first))),
   );
 }
 
 Future<void> pickReceiptFromCameraAndPush(BuildContext context) async {
-  showModalBottomSheet(
-    context: context,
-    backgroundColor: context.cardColor,
-    shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
-    builder: (sheetContext) => SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 22, 20, 24),
-        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('Pindai Struk', style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 24, color: context.textPrimary)),
-          const SizedBox(height: 18),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: Icon(Icons.camera_alt_outlined, color: Theme.of(context).colorScheme.primary),
-            title: const Text('Ambil foto struk'),
-            onTap: () {
-              Navigator.pop(sheetContext);
-              _pickReceiptImage(context, ImageSource.camera);
-            },
-          ),
-          ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: Icon(Icons.photo_library_outlined, color: Theme.of(context).colorScheme.primary),
-            title: const Text('Pilih dari galeri'),
-            onTap: () {
-              Navigator.pop(sheetContext);
-              _pickReceiptImage(context, ImageSource.gallery);
-            },
-          ),
-        ]),
-      ),
-    ),
-  );
+  await _pickReceiptImage(context);
 }
 
 class ReceiptScanPage extends ConsumerStatefulWidget {
@@ -728,45 +768,38 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
     });
   }
 
-  Future<void> _pickAndScan(ImageSource source) async {
-    final file = await pickImageFileWithNativeChooser(source);
-    if (file == null) return;
-    await _runScan(file);
+  Future<void> _pickAndScan() async {
+    final paths = await CunningDocumentScanner.getPictures(noOfPages: 1, isGalleryImportAllowed: true);
+    if (paths == null || paths.isEmpty) return;
+    await _runScan(File(paths.first));
   }
 
-  void _showSourceSheet() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: context.cardColor,
-      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
-      builder: (sheetContext) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 22, 20, 24),
-          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('Pindai Struk', style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 24, color: context.textPrimary)),
-            const SizedBox(height: 18),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Icon(Icons.camera_alt_outlined, color: Theme.of(context).colorScheme.primary),
-              title: const Text('Ambil foto struk'),
-              onTap: () {
-                Navigator.pop(sheetContext);
-                _pickAndScan(ImageSource.camera);
-              },
-            ),
-            ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: Icon(Icons.photo_library_outlined, color: Theme.of(context).colorScheme.primary),
-              title: const Text('Pilih dari galeri'),
-              onTap: () {
-                Navigator.pop(sheetContext);
-                _pickAndScan(ImageSource.gallery);
-              },
-            ),
-          ]),
-        ),
-      ),
-    );
+  // Sebelumnya menampilkan bottom sheet berisi 2 opsi (kamera/galeri).
+  // cunning_document_scanner sudah menyatukan keduanya dalam satu alur UI
+  // scanner-nya sendiri (isGalleryImportAllowed: true), jadi tinggal
+  // langsung memanggilnya.
+  void _showSourceSheet() => _pickAndScan();
+
+  // Menggabungkan label sumber pemindaian dengan daftar belanja (jika ada)
+  // menjadi satu teks catatan, supaya rincian item ikut tersimpan di
+  // riwayat transaksi, bukan hanya nominal totalnya saja.
+  String _buildReceiptNote() {
+    final result = _result;
+    final sourceLabel = result?.source == ReceiptScanSource.online ? 'AI online' : 'offline';
+    final buffer = StringBuffer('Hasil pindai struk ($sourceLabel)');
+    final items = result?.items ?? const [];
+    if (items.isNotEmpty) {
+      buffer.writeln();
+      buffer.writeln('Daftar belanja:');
+      for (final item in items) {
+        final qtyLabel = item.quantity != null && item.quantity! > 1
+            ? '${item.quantity!.toStringAsFixed(item.quantity! == item.quantity!.roundToDouble() ? 0 : 1)}x '
+            : '';
+        final priceLabel = item.price != null ? ' - ${rupiah(item.price!)}' : '';
+        buffer.writeln('• $qtyLabel${item.name}$priceLabel');
+      }
+    }
+    return buffer.toString().trim();
   }
 
   void _save() {
@@ -778,13 +811,12 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
     final cards = ref.read(cardsProvider);
     final rawSelectedCard = ref.read(selectedCardProvider);
     final cardIndex = (rawSelectedCard >= 0 && rawSelectedCard < cards.length) ? rawSelectedCard : 0;
-    final sourceLabel = _result?.source == ReceiptScanSource.online ? 'AI online' : 'offline';
     ref.read(transactionsProvider.notifier).add(
           title: _titleCtrl.text.trim(),
           amount: amount,
           income: false,
           category: Strings.t(AppLang.en, 'cat_shopping'),
-          note: 'Hasil pindai struk ($sourceLabel)',
+          note: _buildReceiptNote(),
           date: _selectedDate,
           cardIndex: cardIndex,
         );
@@ -961,6 +993,35 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
           ]),
         ),
       ),
+      if (result.items.isNotEmpty) ...[
+        const SizedBox(height: 16),
+        Text('Daftar belanja terdeteksi', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: context.textMuted)),
+        const SizedBox(height: 8),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: context.isDark ? Colors.white.withOpacity(0.04) : const Color(0xFFF1EEF7),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: result.items.map((item) {
+              final qtyLabel = item.quantity != null && item.quantity! > 0 ? '${item.quantity!.toStringAsFixed(item.quantity! == item.quantity!.roundToDouble() ? 0 : 1)}x ' : '';
+              final priceLabel = item.price != null ? rupiah(item.price!) : '';
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(
+                  children: [
+                    Expanded(child: Text('$qtyLabel${item.name}', style: TextStyle(fontSize: 12.5, color: context.textPrimary))),
+                    Text(priceLabel, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: context.textMuted)),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ],
       if (result.rawText.trim().isNotEmpty) ...[
         const SizedBox(height: 12),
         Theme(

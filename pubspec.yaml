@@ -29,8 +29,9 @@ dependencies:
     path: packages/telegram_image_cropper
   video_player: ^2.9.5
   ffmpeg_kit_flutter_new_min_gpl: ^2.6.2
-  google_mlkit_text_recognition: ^0.13.0
   http: ^1.6.0
+  flutter_tesseract_ocr: ^0.4.24
+  cunning_document_scanner: ^1.3.0
 
 dev_dependencies:
   flutter_test:
@@ -41,6 +42,11 @@ flutter:
   uses-material-design: true
   assets:
     - assets/lottie/ai.json
+    # NOTE: taruh file *.traineddata (mis. ind.traineddata, eng.traineddata
+    # dari https://github.com/tesseract-ocr/tessdata) di folder ini secara
+    # manual. flutter_tesseract_ocr butuh file ini untuk bisa membaca teks;
+    # tanpa file ini pemindaian offline akan gagal.
+    - assets/tessdata/
   fonts:
     - family: Satoshi
       fonts:

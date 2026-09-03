@@ -25,56 +25,27 @@
 # Jangan warning untuk class Android yang di-strip dev tools
 -dontwarn io.flutter.embedding.**
 
-# google_mlkit_text_recognition: plugin ini mereferensikan class recognizer
-# untuk SEMUA script (Cina, Jepang, Korea, Devanagari) walau app ini cuma
-# memakai TextRecognitionScript.latin (lihat receipt_scanner.dart). Karena
-# dependency Gradle untuk script-script lain sengaja tidak ditambahkan
-# (tidak dibutuhkan), R8 gagal minify di build release karena tidak
-# menemukan class-class tersebut. -dontwarn di sini aman: class-class itu
-# memang tidak pernah dipanggil selama hanya script Latin yang dipakai.
--dontwarn com.google.mlkit.vision.text.chinese.**
--dontwarn com.google.mlkit.vision.text.devanagari.**
--dontwarn com.google.mlkit.vision.text.japanese.**
--dontwarn com.google.mlkit.vision.text.korean.**
-
-# FIX: "Pindai Struk" gagal/crash saat processImage() di build release
-# (R8/minify aktif) dengan error "Attempt to invoke virtual method
-# 'java.lang.Class java.lang.Object.getClass()' on a null object reference".
-# Percobaan pertama (-keep com.google.mlkit.** & com.google.android.gms.**
-# secara PENUH, mencakup seluruh sub-paket) berhasil memperbaiki crash-nya,
-# TAPI membuat R8 tidak boleh memangkas kode yang tidak dipakai dari kedua
-# namespace besar itu, sehingga jumlah class/method yang harus di-dex jauh
-# lebih banyak dari yang sebenarnya dipakai aplikasi — inilah yang membuat
-# waktu build APK release melonjak dari ~3 menit menjadi ~6 menit.
+# cunning_document_scanner: memakai Google Play services ML Kit Document
+# Scanner (com.google.mlkit.vision.documentscanner) untuk auto-crop &
+# perspective-correction saat memindai struk. google_mlkit_text_recognition
+# sudah TIDAK dipakai lagi — OCR sekarang memakai Tesseract offline
+# (flutter_tesseract_ocr), sehingga seluruh rule khusus text recognition
+# yang sebelumnya ada di sini (chinese/devanagari/japanese/korean & keep
+# class vision.text.**) sudah dihapus karena tidak relevan lagi.
 #
-# Versi ini mempersempit keep HANYA ke sub-paket yang benar-benar dipakai
-# oleh google_mlkit_text_recognition (script Latin) & google_mlkit_commons:
-# API publik ML Kit vision/text/common, implementasi internal ML Kit di
-# dalam GMS, serta infrastruktur Play Services (tasks/common api/dynamite)
-# yang dipakai ML Kit untuk memuat model & menjalankan callback. Paket GMS
-# lain yang tidak dipakai sama sekali (auth, ads, maps, wallet, dst) TIDAK
-# ikut di-keep, sehingga R8 tetap bebas memangkasnya seperti biasa.
-#
-# PENTING: jika crash NPE offline scan ("Pindai Struk") muncul lagi setelah
-# ini di-build & diuji ulang di perangkat yang bermasalah, revert ke versi
-# sebelumnya (keep penuh com.google.mlkit.** & com.google.android.gms.**)
-# — build lebih lambat tapi terbukti stabil.
--keep class com.google.mlkit.vision.text.** { *; }
--keep class com.google.mlkit.vision.common.** { *; }
--keep class com.google.mlkit.common.** { *; }
--keep class com.google.android.odml.** { *; }
--keep class com.google.android.gms.internal.mlkit_vision_text_common.** { *; }
--keep class com.google.android.gms.internal.mlkit_vision_text_bundled_common.** { *; }
--keep class com.google.android.gms.internal.mlkit_common.** { *; }
--keep class com.google.android.gms.internal.mlkit_vision_common.** { *; }
+# Class document scanner tetap di-keep sebagai langkah preventif,
+# berdasarkan pengalaman sebelumnya: R8 pernah menyebabkan fitur ML Kit
+# lain crash di build release karena class terkait ikut terpangkas walau
+# sebenarnya dipanggil secara native/reflection. Infrastruktur Play
+# Services generik (tasks/common api/dynamite) tetap di-keep karena dipakai
+# document scanner untuk memuat modul & menjalankan callback.
+-keep class com.google.mlkit.vision.documentscanner.** { *; }
+-keep class com.google.android.gms.internal.mlkit_vision_document_scanner.** { *; }
 -keep class com.google.android.gms.common.internal.** { *; }
 -keep class com.google.android.gms.common.api.** { *; }
 -keep class com.google.android.gms.tasks.** { *; }
 -keep class com.google.android.gms.dynamite.** { *; }
 -keep class com.google.android.gms.common.GoogleApiAvailability { *; }
 -keep class com.google.android.gms.common.ConnectionResult { *; }
--keepclassmembers class com.google.mlkit.** { *; }
--keepclassmembers class com.google.android.gms.internal.** { *; }
--dontwarn com.google.mlkit.**
+-dontwarn com.google.mlkit.vision.documentscanner.**
 -dontwarn com.google.android.gms.**
--dontwarn com.google.android.odml.**
