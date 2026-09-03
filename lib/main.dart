@@ -1088,7 +1088,6 @@ class _VideoTrimPageState extends State<_VideoTrimPage> {
     );
   }
 }
-}
 
 class _VideoCropPage extends StatefulWidget {
   final String videoPath;
