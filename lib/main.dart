@@ -637,7 +637,15 @@ class ProfileVideoManager {
     final file = File(path);
     if (!file.existsSync()) return null;
     
-    final newController = VideoPlayerController.file(file);
+    // mixWithOthers: true mencegah video ini merebut audio focus dari
+    // sistem. Tanpa ini, video_player di Android tetap meminta audio
+    // focus begitu play() dipanggil walau volume di-set 0 (senyap) —
+    // itulah yang memaksa musik dari aplikasi lain (Spotify dll) pause
+    // setiap kali avatar/preview video profil ini diputar.
+    final newController = VideoPlayerController.file(
+      file,
+      videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+    );
     try {
       await newController.initialize();
       await newController.setLooping(true);
@@ -1040,7 +1048,10 @@ class _VideoCropPageState extends State<_VideoCropPage> {
   }
 
   Future<void> _setup() async {
-    final controller = VideoPlayerController.file(File(widget.videoPath));
+    final controller = VideoPlayerController.file(
+      File(widget.videoPath),
+      videoPlayerOptions: VideoPlayerOptions(mixWithOthers: true),
+    );
     try {
       await controller.initialize();
       await controller.setLooping(true);
