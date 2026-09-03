@@ -364,6 +364,11 @@ class ReceiptScannerService {
       'Kamu membaca foto struk belanja. Balas HANYA dengan JSON valid tanpa markdown, '
       'format persis: {"merchant": string atau null, "date": "YYYY-MM-DD" atau null, "total": number atau null, '
       '"items": [{"name": string, "qty": number atau null, "price": number atau null}]}. '
+      '"merchant" adalah nama toko yang tertera pada struk. Jika nama toko TIDAK terlihat/tidak tercetak '
+      'pada struk, JANGAN balas null untuk field ini — sebagai gantinya isi dengan judul singkat (maksimal '
+      '5 kata, Bahasa Indonesia) yang merangkum KEBUTUHAN/KATEGORI belanja berdasarkan daftar barang yang '
+      'dibeli, contoh: "Belanja Kebutuhan Dapur", "Belanja Alat Tulis", "Belanja Perlengkapan Mandi" — bukan '
+      'sekadar menyebutkan nama barang satu per satu. '
       '"total" adalah jumlah akhir yang harus dibayar (grand total), dalam angka tanpa simbol mata uang. '
       '"items" adalah daftar SEMUA barang/produk yang dibeli beserta jumlah (qty) dan harga/subtotal (price) '
       'masing-masing jika terlihat pada struk; jika struk tidak memuat rincian barang, balas items sebagai array kosong.';
