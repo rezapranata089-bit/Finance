@@ -256,6 +256,22 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
   DateTime _selectedDate = DateTime.now();
 
   @override
+  void initState() {
+    super.initState();
+    // Langsung buka kamera begitu halaman ini dibuka (dipicu dari tombol
+    // scan di navbar), tanpa menampilkan sheet pilihan kamera/galeri
+    // terlebih dahulu. Sebagian besar aplikasi kamera bawaan (terutama
+    // kamera OEM non-AOSP) menampilkan thumbnail foto terakhir di pojok
+    // viewfinder yang bisa dibuka untuk memilih gambar dari galeri —
+    // jadi user tetap bisa "pakai gambar aja" tanpa harus balik ke sheet
+    // pilihan manual di app ini. Kalau kamera dibatalkan, halaman jatuh
+    // ke empty state dengan tombol fallback (kamera/galeri manual).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _pickAndScan(ImageSource.camera);
+    });
+  }
+
+  @override
   void dispose() {
     _titleCtrl.dispose();
     _amountCtrl.dispose();
