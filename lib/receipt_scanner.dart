@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -228,8 +229,14 @@ class ReceiptScannerService {
     try {
       final bytes = await imageFile.readAsBytes();
       final base64Image = base64Encode(bytes);
+      // CATATAN: sebelumnya pakai "gemini-1.5-flash" yang sudah RESMI
+      // DIMATIKAN Google sejak 24 September 2025 (semua request ke model
+      // itu sekarang balas HTTP 404) — inilah sebab AI scan selalu gagal
+      // diam-diam. Pakai alias "gemini-flash-latest" (bukan versi
+      // bertanggal spesifik) supaya Google otomatis mengarahkannya ke model
+      // flash yang masih aktif, jadi tidak mati mendadak lagi seperti ini.
       final uri = Uri.parse(
-        'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey.trim()}',
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey.trim()}',
       );
       const prompt = 'Kamu membaca foto struk belanja. Balas HANYA dengan JSON valid tanpa markdown, '
           'format persis: {"merchant": string atau null, "date": "YYYY-MM-DD" atau null, "total": number atau null}. '
@@ -279,6 +286,48 @@ class ReceiptScannerService {
       );
     } catch (_) {
       return null;
+    }
+  }
+
+  /// Melakukan panggilan ringan (teks saja, tanpa gambar) ke Gemini API
+  /// untuk memverifikasi API key & konektivitas, dan mengembalikan pesan
+  /// yang jelas (bukan diam-diam gagal) supaya pengguna tahu persis kenapa
+  /// kalau gagal — mis. key salah, kuota habis, atau tidak ada internet.
+  Future<({bool success, String message})> testApiKey(String apiKey) async {
+    final trimmed = apiKey.trim();
+    if (trimmed.isEmpty) {
+      return (success: false, message: 'API key masih kosong.');
+    }
+    try {
+      final uri = Uri.parse(
+        'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=$trimmed',
+      );
+      final response = await http.post(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'contents': [
+            {
+              'parts': [
+                {'text': 'Balas hanya dengan kata OK.'}
+              ],
+            }
+          ],
+        }),
+      ).timeout(const Duration(seconds: 15));
+      if (response.statusCode == 200) {
+        return (success: true, message: 'Berhasil! API key valid dan bisa terhubung ke Gemini.');
+      }
+      String detail = response.body;
+      try {
+        final decoded = jsonDecode(response.body) as Map<String, dynamic>;
+        detail = (decoded['error']?['message'] as String?) ?? response.body;
+      } catch (_) {}
+      return (success: false, message: 'Gagal (kode ${response.statusCode}): $detail');
+    } on TimeoutException {
+      return (success: false, message: 'Waktu tunggu habis. Cek koneksi internet perangkat.');
+    } catch (e) {
+      return (success: false, message: 'Gagal terhubung: $e');
     }
   }
 
@@ -698,6 +747,9 @@ class ReceiptScanApiKeySettingsPage extends ConsumerStatefulWidget {
 class _ReceiptScanApiKeySettingsPageState extends ConsumerState<ReceiptScanApiKeySettingsPage> {
   late final TextEditingController _keyCtrl;
   bool _obscure = true;
+  bool _testing = false;
+  bool? _testSuccess;
+  String? _testMessage;
 
   @override
   void initState() {
@@ -716,6 +768,21 @@ class _ReceiptScanApiKeySettingsPageState extends ConsumerState<ReceiptScanApiKe
     ref.read(prefsProvider).setString('gemini_api_key', value);
     ref.read(geminiApiKeyProvider.notifier).state = value;
     showGlassSnackBar(context, 'API key disimpan', icon: Icons.check_circle_outline);
+  }
+
+  Future<void> _testApiKey() async {
+    setState(() {
+      _testing = true;
+      _testSuccess = null;
+      _testMessage = null;
+    });
+    final result = await ReceiptScannerService().testApiKey(_keyCtrl.text);
+    if (!mounted) return;
+    setState(() {
+      _testing = false;
+      _testSuccess = result.success;
+      _testMessage = result.message;
+    });
   }
 
   @override
@@ -799,7 +866,57 @@ class _ReceiptScanApiKeySettingsPageState extends ConsumerState<ReceiptScanApiKe
                     style: TextStyle(fontSize: 11.5, color: context.textFaint, height: 1.4),
                   ),
                   const SizedBox(height: 20),
-                  SizedBox(width: double.infinity, child: FilledButton(onPressed: _save, child: const Text('Simpan API Key'))),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _testing ? null : _testApiKey,
+                          icon: _testing
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.wifi_tethering_rounded, size: 18),
+                          label: const Text('Tes API Key'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: FilledButton(onPressed: _save, child: const Text('Simpan API Key')),
+                      ),
+                    ],
+                  ),
+                  if (_testMessage != null) ...[
+                    const SizedBox(height: 14),
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: (_testSuccess == true ? const Color(0xFF24A148) : Colors.redAccent).withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: (_testSuccess == true ? const Color(0xFF24A148) : Colors.redAccent).withOpacity(0.3),
+                        ),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            _testSuccess == true ? Icons.check_circle_outline : Icons.error_outline,
+                            size: 18,
+                            color: _testSuccess == true ? const Color(0xFF24A148) : Colors.redAccent,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              _testMessage!,
+                              style: TextStyle(fontSize: 12.5, height: 1.4, color: context.textPrimary),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
