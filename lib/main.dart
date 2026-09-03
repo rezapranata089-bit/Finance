@@ -1018,14 +1018,14 @@ class _VideoTrimPageState extends State<_VideoTrimPage> {
     // tidak bisa ditangkap try-catch apa pun (proses mati sebelum sempat
     // fallback) — tapi ini risiko yang jauh lebih kecil lewat jalur FFmpeg.
     final hwCommand = '-y -i "${widget.sourcePath}" -ss $startSec -t $durationSec '
-        '-vf "scale=\'min(640,iw)\':-2" -c:v h264_mediacodec -b:v 2M '
+        '-vf "scale=\'min(1280,iw)\':-2" -c:v h264_mediacodec -b:v 2M '
         '-pix_fmt yuv420p -c:a aac -b:a 96k -movflags +faststart "$outputPath"';
 
     // Percobaan 2 (fallback): software encoder libx264 — lebih lambat tapi
     // tidak bergantung sama sekali ke driver hardware OEM, jadi selalu
     // portable lintas device kalau hardware encoder gagal/tidak didukung.
     final swCommand = '-y -i "${widget.sourcePath}" -ss $startSec -t $durationSec '
-        '-vf "scale=\'min(640,iw)\':-2" -c:v libx264 -preset ultrafast -crf 26 '
+        '-vf "scale=\'min(1280,iw)\':-2" -c:v libx264 -preset ultrafast -crf 26 '
         '-threads 0 -pix_fmt yuv420p -c:a aac -b:a 96k -movflags +faststart "$outputPath"';
 
     await _appendDartCrashLog('[Checkpoint ${DateTime.now()}] FFmpegTrim: START start=$startSec dur=$durationSec');
