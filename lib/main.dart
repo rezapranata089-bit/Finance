@@ -76,6 +76,32 @@ Future<void> _clearCrashLogs() async {
   } catch (_) {}
 }
 
+// Membersihkan berkas sementara sisa proses pilih foto/video & trim yang
+// tertinggal di cache (mis. sesi yang di-cancel pengguna di tengah jalan,
+// atau proses trim yang gagal sebelum sempat menghapus berkas perantaranya
+// sendiri). Dipanggil sekali setiap app startup karena tidak ada satupun
+// berkas berprefix ini yang seharusnya bertahan lintas sesi aplikasi —
+// semuanya perantara murni. Ini juga sekaligus membersihkan cache lama yang
+// sudah kadung menumpuk akibat bug sebelumnya (berkas asli hasil pilih
+// galeri yang tidak pernah dihapus).
+Future<void> _cleanupStaleTempFiles() async {
+  if (kIsWeb) return;
+  try {
+    final dir = await getTemporaryDirectory();
+    final entities = dir.listSync();
+    const stalePrefixes = ['picked_profile_', 'trimmed_', 'video_thumb_'];
+    for (final entity in entities) {
+      if (entity is! File) continue;
+      final name = entity.uri.pathSegments.last;
+      if (stalePrefixes.any((p) => name.startsWith(p))) {
+        try {
+          await entity.delete();
+        } catch (_) {}
+      }
+    }
+  } catch (_) {}
+}
+
 // Mengambil frame pertama dari video profil (setelah trim) sebagai
 // thumbnail JPEG lewat FFmpeg, lalu di-encode base64 agar bisa langsung
 // ditampilkan instan (lihat _ProfileVideoAvatarState) selagi
@@ -107,6 +133,7 @@ Future<String?> _extractVideoThumbnailBase64(String videoPath) async {
 void main() {
   runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
+    unawaited(_cleanupStaleTempFiles());
     FlutterError.onError = (FlutterErrorDetails details) {
       FlutterError.presentError(details);
       _appendDartCrashLog('[Flutter ${DateTime.now()}]\n${details.exceptionAsString()}\n${details.stack}');
@@ -1463,21 +1490,48 @@ Future<void> pickAndSetProfileMediaFromGallery(BuildContext context, WidgetRef r
   final pick = await _pickMediaFromGallery();
   if (pick == null || !context.mounted) return;
 
+  // Berkas asli yang disalin native chooser ke cacheDir (picked_profile_media_*)
+  // HARUS selalu dibersihkan di akhir alur ini, apa pun hasilnya (lanjut atau
+  // dibatalkan pengguna di tengah crop/trim). Sebelumnya berkas ini tidak
+  // pernah dihapus sama sekali, sehingga setiap kali memilih foto/video dari
+  // galeri menyisakan salinan penuh berkas asli di cache — lama-lama
+  // menumpuk sampai ratusan MB.
+  Future<void> cleanupSource() async {
+    final sourcePath = pick.path;
+    if (kIsWeb || sourcePath == null) return;
+    try {
+      final f = File(sourcePath);
+      if (await f.exists()) await f.delete();
+    } catch (_) {}
+  }
+
   if (pick.isVideo) {
     final sourcePath = pick.path;
-    if (sourcePath == null) return;
+    if (sourcePath == null) {
+      await cleanupSource();
+      return;
+    }
 
     final trimmedPath = await Navigator.push<String>(
       context,
       GlassPageRoute(builder: (_) => _VideoTrimPage(sourcePath: sourcePath)),
     );
-    if (trimmedPath == null || !context.mounted) return;
+    if (trimmedPath == null || !context.mounted) {
+      await cleanupSource();
+      return;
+    }
 
     final cropResult = await Navigator.push<_VideoCropResult>(
       context,
       GlassPageRoute(builder: (_) => _VideoCropPage(videoPath: trimmedPath)),
     );
-    if (cropResult == null) return;
+    if (cropResult == null) {
+      try {
+        await File(trimmedPath).delete();
+      } catch (_) {}
+      await cleanupSource();
+      return;
+    }
 
     final dir = await getApplicationDocumentsDirectory();
     final destPath = '${dir.path}/profile_video.mp4';
@@ -1491,6 +1545,7 @@ Future<void> pickAndSetProfileMediaFromGallery(BuildContext context, WidgetRef r
     try {
       await File(trimmedPath).delete();
     } catch (_) {}
+    await cleanupSource();
 
     final thumbnailBase64 = await _extractVideoThumbnailBase64(destPath);
 
@@ -1506,6 +1561,7 @@ Future<void> pickAndSetProfileMediaFromGallery(BuildContext context, WidgetRef r
     if (rawBytes == null && pick.path != null) {
       rawBytes = await File(pick.path!).readAsBytes();
     }
+    await cleanupSource();
     if (rawBytes == null || !context.mounted) return;
 
     final croppedBytes = await Navigator.push<Uint8List>(
