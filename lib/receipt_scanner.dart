@@ -1350,7 +1350,7 @@ class _ReceiptScanApiKeySettingsPageState extends ConsumerState<ReceiptScanApiKe
                   const SizedBox(height: 10),
                   GlassContainer(
                     shape: const LiquidRoundedRectangle(borderRadius: 20),
-                    useOwnLayer: false,
+                    useOwnLayer: true,
                     quality: GlassQuality.premium,
                     settings: LiquidGlassSettings(
                       glassColor: isDark ? Colors.white.withOpacity(0.03) : Colors.white.withOpacity(0.6),
