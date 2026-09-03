@@ -39,13 +39,8 @@
 # sebenarnya dipanggil secara native/reflection. Infrastruktur Play
 # Services generik (tasks/common api/dynamite) tetap di-keep karena dipakai
 # document scanner untuk memuat modul & menjalankan callback.
--keep class com.google.mlkit.vision.documentscanner.** { *; }
--keep class com.google.android.gms.internal.mlkit_vision_document_scanner.** { *; }
--keep class com.google.android.gms.common.internal.** { *; }
--keep class com.google.android.gms.common.api.** { *; }
--keep class com.google.android.gms.tasks.** { *; }
--keep class com.google.android.gms.dynamite.** { *; }
--keep class com.google.android.gms.common.GoogleApiAvailability { *; }
--keep class com.google.android.gms.common.ConnectionResult { *; }
--dontwarn com.google.mlkit.vision.documentscanner.**
--dontwarn com.google.android.gms.**
+-keep class com.google.mlkit.** { *; }
+-keep class com.google.android.gms.** { *; }
+-keep class com.google.firebase.** { *; }
+-keep class com.google.android.datatransport.** { *; }
+-dontwarn com.google.**
