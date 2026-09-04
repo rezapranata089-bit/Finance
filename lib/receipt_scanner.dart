@@ -1103,13 +1103,9 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
         backgroundColor: bg,
         body: Stack(
           children: [
-            Positioned(
-              left: 0,
-              right: 0,
-              bottom: 0,
+            Positioned.fill(
               child: IgnorePointer(
-                child: Container(
-                  height: 340,
+                child: DecoratedBox(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
@@ -1118,6 +1114,7 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
                         bg.withOpacity(0.0),
                         primary.withOpacity(isDark ? 0.16 : 0.10),
                       ],
+                      stops: const [0.0, 1.0],
                     ),
                   ),
                 ),
