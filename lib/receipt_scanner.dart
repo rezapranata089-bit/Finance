@@ -161,18 +161,24 @@ class ReceiptParser {
     return prev[b.length];
   }
 
-  // Toleransi typo OCR pada level kata: kata kunci panjang (>=9 huruf)
-  // boleh beda hingga 2 karakter, selebihnya hanya boleh beda 1 karakter —
-  // cukup untuk menutupi typo umum tanpa salah menangkap kata lain yang
-  // kebetulan mirip (mis. "tomat" tidak boleh ikut ke-exclude gara-gara
-  // mirip "total").
+  // Matching dilakukan per KATA UTUH, bukan substring mentah — sebelumnya
+  // "poin" (keyword loyalty points) memakai lower.contains() sehingga
+  // "Pointer" (nama barang) ikut ter-exclude hanya karena secara literal
+  // mengandung teks "poin" di awalnya. Toleransi typo OCR (fuzzy) hanya
+  // diberikan untuk kata kunci yang cukup panjang (>=5 huruf); kata kunci
+  // pendek (mis. "ppn", "tax", "poin") wajib cocok PERSIS agar tidak salah
+  // menangkap nama barang pendek yang kebetulan mirip (mis. "PPG" jangan
+  // sampai ke-exclude gara-gara mirip "ppn"). Kata kunci panjang (>=9
+  // huruf) boleh beda hingga 2 karakter, kata kunci sedang (5-8 huruf)
+  // boleh beda 1 karakter — cukup menutupi typo umum seperti
+  // "Kembali"→"Kenbali" tanpa salah menangkap kata lain yang kebetulan mirip.
   static bool _lineMatchesKeyword(String line, String keyword) {
-    final lower = line.toLowerCase();
-    if (lower.contains(keyword)) return true;
-    if (keyword.contains(' ')) return false;
-    final maxDist = keyword.length >= 9 ? 2 : 1;
-    final words = lower.split(RegExp(r'[^a-z]+')).where((w) => w.isNotEmpty);
+    if (keyword.contains(' ')) return line.toLowerCase().contains(keyword);
+    final maxDist = keyword.length >= 9 ? 2 : (keyword.length >= 5 ? 1 : 0);
+    final words = line.toLowerCase().split(RegExp(r'[^a-z0-9]+')).where((w) => w.isNotEmpty);
     for (final w in words) {
+      if (w == keyword) return true;
+      if (maxDist == 0) continue;
       if ((w.length - keyword.length).abs() > maxDist) continue;
       if (_levenshtein(w, keyword) <= maxDist) return true;
     }
