@@ -959,6 +959,14 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
   String? _scanStage;
   final ScrollController _scrollController = ScrollController();
   int _scanEpoch = 0;
+  // Saat true, panel kosong "Mulai Pindai" (_buildEmptyState) sengaja
+  // TIDAK ditampilkan sama sekali walau _imageFile masih null. Ini
+  // mencegah panel tersebut sempat "kelihatan sekilas" (flash satu frame)
+  // sebelum UI kamera native (CunningDocumentScanner) terbuka ketika
+  // dipicu dari tombol scan di bottom nav (autoStart), karena kamera
+  // hanya bisa dibuka lewat postFrameCallback setelah frame pertama
+  // ter-render.
+  bool _autoStarting = false;
 
   final _titleCtrl = TextEditingController();
   final _amountCtrl = TextEditingController();
@@ -981,6 +989,7 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
       // sebelum UI scanner native dibuka, supaya seluruh proses pilih
       // gambar berlangsung di atas halaman ini sendiri, bukan di atas tab
       // yang sedang aktif sebelumnya.
+      _autoStarting = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _pickAndScan();
       });
@@ -1045,7 +1054,14 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
 
   Future<void> _pickAndScan() async {
     final paths = await CunningDocumentScanner.getPictures(noOfPages: 1, isGalleryImportAllowed: true);
-    if (paths == null || paths.isEmpty) return;
+    if (!mounted) return;
+    if (paths == null || paths.isEmpty) {
+      // Pengguna membatalkan kamera/scanner tanpa mengambil foto apa pun —
+      // kembalikan panel ke tampilan awal ("Mulai Pindai") alih-alih
+      // membiarkannya kosong selamanya.
+      setState(() => _autoStarting = false);
+      return;
+    }
     await _runScan(File(paths.first));
   }
 
@@ -1137,7 +1153,11 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
               top: false,
               child: LayoutBuilder(
                 builder: (context, viewportConstraints) {
-                  const topPad = 78.0;
+                  // Jarak atas diperbesar (dari 78 sebelumnya) supaya ada
+                  // ruang napas yang cukup antara judul "Pindai Struk" di
+                  // header dan panel gambar/form struk di bawahnya —
+                  // sebelumnya keduanya terlalu berdempetan pada posisi awal.
+                  const topPad = 108.0;
                   final bottomPad = hasResult ? 116.0 : 24.0;
                   return SingleChildScrollView(
                     controller: _scrollController,
@@ -1164,7 +1184,9 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
                               ),
                             ),
                             child: _imageFile == null
-                                ? _buildEmptyState(context, key: const ValueKey('empty'))
+                                ? (_autoStarting
+                                    ? const SizedBox.shrink(key: ValueKey('autostarting'))
+                                    : _buildEmptyState(context, key: const ValueKey('empty')))
                                 : _buildPreview(context, key: ValueKey('preview_${_imageFile!.path}')),
                           ),
                           AnimatedSize(
