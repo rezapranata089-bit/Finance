@@ -1349,12 +1349,47 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
             ),
           ),
         ),
-        const SizedBox(height: 12),
-        Align(
-          alignment: Alignment.centerRight,
-          child: TextButton.icon(onPressed: _showSourceSheet, icon: const Icon(Icons.refresh, size: 16), label: const Text('Pindai ulang')),
+        const SizedBox(height: 10),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            (_result != null && !_scanning) ? _buildSourceBadge(context) : const SizedBox.shrink(),
+            TextButton.icon(onPressed: _showSourceSheet, icon: const Icon(Icons.refresh, size: 16), label: const Text('Pindai ulang')),
+          ],
         ),
       ],
+    );
+  }
+
+  // Pill "Dibaca offline"/"Dibaca via AI online" sekarang sejajar satu baris
+  // dengan tombol "Pindai ulang" tepat di bawah gambar struk, alih-alih
+  // terpisah sebagai baris tersendiri paling atas form hasil pindai seperti
+  // sebelumnya — supaya posisinya tidak "menggantung" jauh dari konteksnya.
+  Widget _buildSourceBadge(BuildContext context) {
+    final result = _result!;
+    final primary = Theme.of(context).colorScheme.primary;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: (result.source == ReceiptScanSource.online ? primary : Colors.grey).withOpacity(0.14),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(
+          result.source == ReceiptScanSource.online ? Icons.auto_awesome_rounded : Icons.offline_bolt_rounded,
+          size: 12,
+          color: result.source == ReceiptScanSource.online ? primary : Colors.grey.shade700,
+        ),
+        const SizedBox(width: 5),
+        Text(
+          result.source == ReceiptScanSource.online ? 'Dibaca via AI online' : 'Dibaca offline',
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.bold,
+            color: result.source == ReceiptScanSource.online ? primary : Colors.grey.shade700,
+          ),
+        ),
+      ]),
     );
   }
 
@@ -1406,33 +1441,12 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
     }
 
     return Padding(
-      padding: const EdgeInsets.only(top: 18),
+      // Dinaikkan (dari 18) karena pill sumber baca sudah dipindah ke atas
+      // (sejajar tombol "Pindai ulang"), sehingga form di sini bisa mulai
+      // lebih dekat ke gambar struk agar layout terasa lebih rapat & rapi.
+      padding: const EdgeInsets.only(top: 10),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        reveal(Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-          decoration: BoxDecoration(
-            color: (result.source == ReceiptScanSource.online ? primary : Colors.grey).withOpacity(0.14),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Row(mainAxisSize: MainAxisSize.min, children: [
-            Icon(
-              result.source == ReceiptScanSource.online ? Icons.auto_awesome_rounded : Icons.offline_bolt_rounded,
-              size: 12,
-              color: result.source == ReceiptScanSource.online ? primary : Colors.grey.shade700,
-            ),
-            const SizedBox(width: 5),
-            Text(
-              result.source == ReceiptScanSource.online ? 'Dibaca via AI online' : 'Dibaca offline',
-              style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                color: result.source == ReceiptScanSource.online ? primary : Colors.grey.shade700,
-              ),
-            ),
-          ]),
-        )),
         if (!result.confident) ...[
-          const SizedBox(height: 12),
           reveal(Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
@@ -1466,7 +1480,7 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
             ),
           )),
         ],
-        const SizedBox(height: 18),
+        const SizedBox(height: 14),
         reveal(TextField(
           controller: _titleCtrl,
           decoration: InputDecoration(labelText: 'Nama toko / judul transaksi', prefixIcon: Icon(Icons.storefront_outlined, size: 20, color: context.iconMuted)),
@@ -1506,7 +1520,11 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
                 width: double.infinity,
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: context.isDark ? Colors.white.withOpacity(0.04) : const Color(0xFFF1EEF7),
+                  // Warna fill lama (F1EEF7) di mode terang nyaris sama
+                  // dengan latar sekitarnya sehingga kotak daftar belanja
+                  // ini belum ikut kelihatan jelas — disamakan dengan tint
+                  // warna primer tema seperti form input lain di panel ini.
+                  color: context.isDark ? Colors.white.withOpacity(0.04) : Color.alphaBlend(Theme.of(context).colorScheme.primary.withOpacity(0.16), Colors.white),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Column(
