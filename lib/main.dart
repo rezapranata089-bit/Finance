@@ -3056,12 +3056,12 @@ class MyFinanceApp extends ConsumerWidget {
             .apply(fontFamily: 'Satoshi', bodyColor: const Color(0xFF25212E), displayColor: const Color(0xFF25212E)),
         appBarTheme: const AppBarTheme(backgroundColor: Colors.transparent, elevation: 0),
         inputDecorationTheme: InputDecorationTheme(
-          // Fill & border lama (F1EEF7 + grey200) nyaris sewarna dengan
-          // scaffoldBackgroundColor (nyaris putih), jadi kotak input
-          // terlihat "hilang"/menyatu dengan latar di mode terang. Fill
-          // sekarang memakai tint warna primer tema yang lebih terlihat,
-          // dan border dinaikkan ke grey300 agar tepi kotak tetap jelas.
-          filled: true, fillColor: Color.alphaBlend(theme.primary.withOpacity(0.07), const Color(0xFFFFFFFF)),
+          // Fill lama (F1EEF7, lalu tint tipis 0.07) masih nyaris menyatu
+          // dengan scaffoldBackgroundColor di mode terang. Opacity tint
+          // dinaikkan cukup jauh (0.16) supaya kotak input benar-benar
+          // tampak lebih gelap & kontras terhadap latar, bukan hanya
+          // mengandalkan border tipis untuk membedakannya.
+          filled: true, fillColor: Color.alphaBlend(theme.primary.withOpacity(0.16), const Color(0xFFFFFFFF)),
           hintStyle: TextStyle(color: Colors.grey.shade500),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey.shade300)),
           enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey.shade300)),
