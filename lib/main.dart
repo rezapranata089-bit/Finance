@@ -867,8 +867,14 @@ class _ProfileVideoAvatarState extends State<_ProfileVideoAvatar> {
 
   @override
   void dispose() {
-    if (!widget.isTransient) {
-      ProfileVideoManager.release();
+    _scrollController.dispose();
+    _titleCtrl.dispose();
+    _amountCtrl.dispose();
+    super.dispose();
+  }
+  }
+    for (final c in _groqKeyControllers) {
+      c.dispose();
     }
     super.dispose();
   }
@@ -5972,11 +5978,40 @@ class SettingList extends ConsumerWidget {
   }
 }
 
-class ThemeSelectionPage extends ConsumerWidget {
+class ScrollFadeTitle extends StatelessWidget {
+  final ScrollController controller;
+  final Widget child;
+  const ScrollFadeTitle({super.key, required this.controller, required this.child});
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: controller,
+      builder: (context, _) {
+        final offset = controller.hasClients ? controller.offset : 0.0;
+        final opacity = (1 - offset / 40).clamp(0.0, 1.0);
+        return Opacity(opacity: opacity, child: child);
+      },
+    );
+  }
+}
+
+class ThemeSelectionPage extends ConsumerStatefulWidget {
   const ThemeSelectionPage({super.key});
+  @override
+  ConsumerState<ThemeSelectionPage> createState() => _ThemeSelectionPageState();
+}
+
+class _ThemeSelectionPageState extends ConsumerState<ThemeSelectionPage> {
+  final ScrollController _scrollController = ScrollController();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final currentTheme = ref.watch(themeProvider);
     final currentMode = ref.watch(themeModeProvider);
     final lang = ref.watch(langProvider);
@@ -5990,6 +6025,7 @@ class ThemeSelectionPage extends ConsumerWidget {
         children: [
           SafeArea(
             child: ListView(
+              controller: _scrollController,
               padding: const EdgeInsets.fromLTRB(20, 78, 20, 8),
               children: [
                   Text(Strings.t(lang, 'screen_mode'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: context.textFaint, letterSpacing: 1.2)),
@@ -6124,7 +6160,7 @@ class ThemeSelectionPage extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(width: 16),
-                    Text(Strings.t(lang, 'appearance'), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                    ScrollFadeTitle(controller: _scrollController, child: Text(Strings.t(lang, 'appearance'), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold))),
                   ],
                 ),
               ),
@@ -6167,11 +6203,23 @@ class ThemeSelectionPage extends ConsumerWidget {
   }
 }
 
-class LanguageSelectionPage extends ConsumerWidget {
+class LanguageSelectionPage extends ConsumerStatefulWidget {
   const LanguageSelectionPage({super.key});
+  @override
+  ConsumerState<LanguageSelectionPage> createState() => _LanguageSelectionPageState();
+}
+
+class _LanguageSelectionPageState extends ConsumerState<LanguageSelectionPage> {
+  final ScrollController _scrollController = ScrollController();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final lang = ref.watch(langProvider);
     final isDark = context.isDark;
     final cardBg = context.cardColor;
@@ -6186,6 +6234,7 @@ class LanguageSelectionPage extends ConsumerWidget {
         children: [
           SafeArea(
             child: ListView(
+              controller: _scrollController,
               padding: const EdgeInsets.fromLTRB(20, 78, 20, 8),
               children: [
                   Container(
@@ -6239,8 +6288,9 @@ class LanguageSelectionPage extends ConsumerWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    Text(Strings.t(lang, 'language'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: context.textPrimary)),
+const SizedBox(width: 16),
+ScrollFadeTitle(controller: _scrollController, child: Text('Pindai Struk', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: context.textPrimary))),
+eight: FontWeight.bold, color: context.textPrimary))),
                   ],
                 ),
               ),
@@ -6252,11 +6302,23 @@ class LanguageSelectionPage extends ConsumerWidget {
   }
 }
 
-class CategorySettingsPage extends ConsumerWidget {
+class CategorySettingsPage extends ConsumerStatefulWidget {
   const CategorySettingsPage({super.key});
+  @override
+  ConsumerState<CategorySettingsPage> createState() => _CategorySettingsPageState();
+}
+
+class _CategorySettingsPageState extends ConsumerState<CategorySettingsPage> {
+  final ScrollController _scrollController = ScrollController();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final lang = ref.watch(langProvider);
     final enabled = ref.watch(categoryFeatureEnabledProvider);
     final customCategories = ref.watch(customCategoriesProvider);
@@ -6268,6 +6330,7 @@ class CategorySettingsPage extends ConsumerWidget {
         children: [
           SafeArea(
             child: ListView(
+              controller: _scrollController,
               padding: const EdgeInsets.fromLTRB(20, 78, 20, 8),
               children: [
                   Container(
@@ -6371,7 +6434,7 @@ class CategorySettingsPage extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(width: 16),
-                  Text(Strings.t(lang, 'category'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: context.textPrimary)),
+                  ScrollFadeTitle(controller: _scrollController, child: Text(Strings.t(lang, 'category'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: context.textPrimary))),
                 ]),
               ),
             ),
@@ -6382,11 +6445,23 @@ class CategorySettingsPage extends ConsumerWidget {
   }
 }
 
-class NotificationsPage extends ConsumerWidget {
+class NotificationsPage extends ConsumerStatefulWidget {
   const NotificationsPage({super.key});
+  @override
+  ConsumerState<NotificationsPage> createState() => _NotificationsPageState();
+}
+
+class _NotificationsPageState extends ConsumerState<NotificationsPage> {
+  final ScrollController _scrollController = ScrollController();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final lang = ref.watch(langProvider);
     final isDark = context.isDark;
     final bg = isDark ? const Color(0xFF121016) : const Color(0xFFF8F7FB);
@@ -6407,6 +6482,7 @@ class NotificationsPage extends ConsumerWidget {
             child: notifications.isEmpty
                   ? Center(child: Text(Strings.t(lang, 'not_available').replaceAll('{name}', Strings.t(lang, 'notifications')), style: TextStyle(color: context.textMuted)))
                   : ListView.separated(
+                      controller: _scrollController,
                       padding: const EdgeInsets.fromLTRB(20, 78, 20, 8),
                       cacheExtent: 600,
                       itemCount: notifications.length,
@@ -6473,7 +6549,7 @@ class NotificationsPage extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(width: 16),
-                    Text(Strings.t(lang, 'notifications'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: context.textPrimary)),
+                    ScrollFadeTitle(controller: _scrollController, child: Text(Strings.t(lang, 'notifications'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: context.textPrimary))),
                   ],
                 ),
               ),
@@ -6496,11 +6572,18 @@ class CrashLogPage extends StatefulWidget {
 class _CrashLogPageState extends State<CrashLogPage> {
   String _log = '';
   bool _loading = true;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     _load();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   Future<void> _load() async {
@@ -6537,6 +6620,7 @@ class _CrashLogPageState extends State<CrashLogPage> {
                   : !hasLog
                       ? Center(child: Text('Belum ada log error', style: TextStyle(color: context.textMuted)))
                       : SingleChildScrollView(
+                          controller: _scrollController,
                           padding: const EdgeInsets.symmetric(horizontal: 20),
                           child: SelectableText(
                             _log,
@@ -6585,7 +6669,7 @@ class _CrashLogPageState extends State<CrashLogPage> {
                       ),
                     ),
                     const SizedBox(width: 16),
-                    Expanded(child: Text('Log Aplikasi', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: context.textPrimary))),
+                    Expanded(child: ScrollFadeTitle(controller: _scrollController, child: Text('Log Aplikasi', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: context.textPrimary)))),
                     if (hasLog)
                       GestureDetector(
                         onTap: () {
@@ -7189,11 +7273,23 @@ Future<void> showCardForm({
   );
 }
 
-class CardManagementPage extends ConsumerWidget {
+class CardManagementPage extends ConsumerStatefulWidget {
   const CardManagementPage({super.key});
+  @override
+  ConsumerState<CardManagementPage> createState() => _CardManagementPageState();
+}
+
+class _CardManagementPageState extends ConsumerState<CardManagementPage> {
+  final ScrollController _scrollController = ScrollController();
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final lang = ref.watch(langProvider);
     final cards = ref.watch(cardsProvider);
     final loans = ref.watch(loansProvider);
@@ -7206,6 +7302,7 @@ class CardManagementPage extends ConsumerWidget {
         children: [
           SafeArea(
             child: ListView.separated(
+              controller: _scrollController,
               padding: const EdgeInsets.fromLTRB(20, 78, 20, 8),
               cacheExtent: 600,
               itemCount: cards.length,
@@ -7294,7 +7391,7 @@ class CardManagementPage extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(width: 16),
-                    Expanded(child: Text(Strings.t(lang, 'account_wallet'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: context.textPrimary))),
+                    Expanded(child: ScrollFadeTitle(controller: _scrollController, child: Text(Strings.t(lang, 'account_wallet'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: context.textPrimary)))),
                     GestureDetector(
                       onTap: () => showCardForm(context: context, ref: ref),
                       child: LiquidGlass(
@@ -7397,6 +7494,7 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
   String filter = 'all';
   static const filterKeys = ['all', 'loan_active', 'loan_paid', 'loan_inactive'];
   bool _autoOpenHandled = false;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
@@ -7404,6 +7502,12 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
     if (widget.initialLoanId != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _maybeAutoOpenDetail());
     }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   void _maybeAutoOpenDetail() {
@@ -7459,9 +7563,10 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
                       ),
                       Container(width: 1, height: 36, color: context.borderColor),
                       Expanded(
-                        child: Padding(
-                          padding: const EdgeInsets.only(left: 12),
-                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+child: SingleChildScrollView(
+  controller: _scrollController,
+  padding: const EdgeInsets.fromLTRB(20, 78, 20, 0),
+  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                             Text(Strings.t(lang, 'total_interest_collected'), style: TextStyle(color: context.textMuted, fontSize: 11)),
                             const SizedBox(height: 6),
                             NumberFlow(value: totalInterest, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), spring: NumberFlowSpring.ios, continuous: true, trend: 1, transformTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeInOut), opacityTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeOut), tabularNums: true, style: const TextStyle(fontFamily: 'Satoshi', color: Color(0xFF24A148), fontWeight: FontWeight.bold, fontSize: 15, letterSpacing: -0.2)),
@@ -7496,6 +7601,7 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
               child: filtered.isEmpty
                   ? Center(child: Text(Strings.t(lang, 'no_loans_yet'), style: TextStyle(color: context.textMuted)))
                   : ListView.separated(
+                      controller: _scrollController,
                       padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
                       cacheExtent: 600,
                       itemCount: filtered.length,
@@ -7616,8 +7722,11 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(child: Text(Strings.t(lang, 'loans_title'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: context.textPrimary))),
+const SizedBox(width: 16),
+Expanded(
+  child: ScrollFadeTitle(controller: _scrollController, child: Text(Strings.t(lang, 'ai_settings'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: context.textPrimary))),
+),
+ight: FontWeight.bold, color: context.textPrimary)))),
                     GestureDetector(
                       onTap: () => showLoanForm(context: context, ref: ref),
                       child: LiquidGlass(

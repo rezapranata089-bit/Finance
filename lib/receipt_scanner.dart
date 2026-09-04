@@ -952,6 +952,7 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
   ReceiptScanResult? _result;
   bool _scanning = false;
   String? _scanStage;
+  final ScrollController _scrollController = ScrollController();
 
   final _titleCtrl = TextEditingController();
   final _amountCtrl = TextEditingController();
@@ -1321,6 +1322,7 @@ class ReceiptScanApiKeySettingsPage extends ConsumerStatefulWidget {
 }
 
 class _ReceiptScanApiKeySettingsPageState extends ConsumerState<ReceiptScanApiKeySettingsPage> {
+  final ScrollController _scrollController = ScrollController();
   late List<TextEditingController> _geminiKeyControllers;
   late List<TextEditingController> _groqKeyControllers;
   String? _geminiSelectedModel;
@@ -1657,6 +1659,7 @@ class _ReceiptScanApiKeySettingsPageState extends ConsumerState<ReceiptScanApiKe
         children: [
           SafeArea(
             child: ListView(
+              controller: _scrollController,
               padding: const EdgeInsets.fromLTRB(20, 78, 20, 24),
               children: [
                   _SettingsSectionCard(
