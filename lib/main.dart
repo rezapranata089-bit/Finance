@@ -6596,9 +6596,11 @@ class _CrashLogPageState extends State<CrashLogPage> {
   @override
   Widget build(BuildContext context) {
     final isDark = context.isDark;
+    final bg = isDark ? const Color(0xFF121016) : const Color(0xFFF8F7FB);
     final primary = Theme.of(context).colorScheme.primary;
     final hasLog = _log.trim().isNotEmpty;
     return Scaffold(
+      backgroundColor: bg,
       body: Stack(
         children: [
           SafeArea(
@@ -7556,10 +7558,9 @@ class _LoanManagementPageState extends ConsumerState<LoanManagementPage> {
                       ),
                       Container(width: 1, height: 36, color: context.borderColor),
                       Expanded(
-child: SingleChildScrollView(
-  controller: _scrollController,
-  padding: const EdgeInsets.fromLTRB(20, 78, 20, 0),
-  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                        child: Padding(
+                          padding: const EdgeInsets.only(left: 14),
+                          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                             Text(Strings.t(lang, 'total_interest_collected'), style: TextStyle(color: context.textMuted, fontSize: 11)),
                             const SizedBox(height: 6),
                             NumberFlow(value: totalInterest, locale: 'id_ID', format: const NumberFlowFormat.currency(currencyCode: 'IDR', symbol: 'Rp '), spring: NumberFlowSpring.ios, continuous: true, trend: 1, transformTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeInOut), opacityTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeOut), tabularNums: true, style: const TextStyle(fontFamily: 'Satoshi', color: Color(0xFF24A148), fontWeight: FontWeight.bold, fontSize: 15, letterSpacing: -0.2)),

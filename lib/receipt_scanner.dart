@@ -1092,6 +1092,7 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
         children: [
           SafeArea(
             child: SingleChildScrollView(
+              controller: _scrollController,
               padding: const EdgeInsets.fromLTRB(20, 78, 20, 0),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   if (_imageFile == null) _buildEmptyState(context),
@@ -1124,7 +1125,7 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
                     ),
                   ),
                   const SizedBox(width: 16),
-                  Text('Pindai Struk', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: context.textPrimary)),
+                  ScrollFadeTitle(controller: _scrollController, child: Text('Pindai Struk', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: context.textPrimary))),
                 ]),
               ),
             ),
