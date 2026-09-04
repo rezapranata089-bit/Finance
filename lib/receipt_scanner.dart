@@ -1087,34 +1087,12 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
   Widget build(BuildContext context) {
     final isDark = context.isDark;
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-              child: Row(children: [
-                GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: LiquidGlass(
-                    borderRadius: 999,
-                    tint: isDark ? Colors.black : null,
-                    intensity: isDark ? 1.6 : 1.0,
-                    borderColor: isDark ? context.borderColor : null,
-                    child: Padding(
-                      padding: const EdgeInsets.all(10),
-                      child: Icon(SolarIconsOutline.arrowLeft, size: 20, color: context.textPrimary),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Text('Pindai Struk', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: context.textPrimary)),
-              ]),
-            ),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      body: Stack(
+        children: [
+          SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 78, 20, 0),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   if (_imageFile == null) _buildEmptyState(context),
                   if (_imageFile != null) _buildPreview(context),
                   if (_scanning) _buildScanningState(context),
@@ -1122,8 +1100,35 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
                 ]),
               ),
             ),
-          ],
-        ),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+                child: Row(children: [
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: LiquidGlass(
+                      borderRadius: 999,
+                      tint: isDark ? Colors.black : null,
+                      intensity: isDark ? 1.6 : 1.0,
+                      borderColor: isDark ? context.borderColor : null,
+                      child: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Icon(SolarIconsOutline.arrowLeft, size: 20, color: context.textPrimary),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Text('Pindai Struk', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: context.textPrimary)),
+                ]),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1648,36 +1653,12 @@ class _ReceiptScanApiKeySettingsPageState extends ConsumerState<ReceiptScanApiKe
     final selectedModel = _activeSelectedModel;
     final activeControllers = _activeKeyControllers;
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-              child: Row(children: [
-                GestureDetector(
-                  onTap: () => Navigator.pop(context),
-                  child: LiquidGlass(
-                    borderRadius: 999,
-                    tint: isDark ? Colors.black : null,
-                    intensity: isDark ? 1.6 : 1.0,
-                    borderColor: isDark ? context.borderColor : null,
-                    child: Padding(
-                      padding: const EdgeInsets.all(10),
-                      child: Icon(SolarIconsOutline.arrowLeft, size: 20, color: context.textPrimary),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(Strings.t(lang, 'ai_settings'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: context.textPrimary)),
-                ),
-              ]),
-            ),
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-                children: [
+      body: Stack(
+        children: [
+          SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(20, 78, 20, 24),
+              children: [
                   _SettingsSectionCard(
                     child: Row(children: [
                       Expanded(
@@ -1828,11 +1809,40 @@ class _ReceiptScanApiKeySettingsPageState extends ConsumerState<ReceiptScanApiKe
                     const SizedBox(height: 14),
                     _InlineStatusMessage(success: _testSuccess == true, message: _testMessage!),
                   ],
-                ],
+              ],
+            ),
+          ),
+          Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: SafeArea(
+              bottom: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+                child: Row(children: [
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: LiquidGlass(
+                      borderRadius: 999,
+                      tint: isDark ? Colors.black : null,
+                      intensity: isDark ? 1.6 : 1.0,
+                      borderColor: isDark ? context.borderColor : null,
+                      child: Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Icon(SolarIconsOutline.arrowLeft, size: 20, color: context.textPrimary),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Text(Strings.t(lang, 'ai_settings'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: context.textPrimary)),
+                  ),
+                ]),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
