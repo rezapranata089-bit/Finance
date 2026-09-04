@@ -6604,42 +6604,48 @@ class _CrashLogPageState extends State<CrashLogPage> {
       body: Stack(
         children: [
           SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 78),
-                    child: _loading
-                  ? const Center(child: CircularProgressIndicator())
-                  : !hasLog
-                      ? Center(child: Text('Belum ada log error', style: TextStyle(color: context.textMuted)))
-                      : SingleChildScrollView(
-                          controller: _scrollController,
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: SelectableText(
-                            _log,
-                            style: TextStyle(fontFamily: 'monospace', fontSize: 11.5, height: 1.4, color: context.textPrimary),
-                          ),
+            child: _loading
+                ? const Center(child: CircularProgressIndicator())
+                : !hasLog
+                    ? Center(child: Text('Belum ada log error', style: TextStyle(color: context.textMuted)))
+                    : SingleChildScrollView(
+                        controller: _scrollController,
+                        padding: EdgeInsets.fromLTRB(20, 78, 20, hasLog ? 92 : 24),
+                        child: SelectableText(
+                          _log,
+                          style: TextStyle(fontFamily: 'monospace', fontSize: 11.5, height: 1.4, color: context.textPrimary),
                         ),
-                  ),
-                ),
-                if (hasLog)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        style: OutlinedButton.styleFrom(foregroundColor: Colors.redAccent, side: const BorderSide(color: Colors.redAccent)),
-                        onPressed: _clear,
-                        icon: const Icon(Icons.delete_outline, size: 18),
-                        label: const Text('Hapus log'),
                       ),
+          ),
+          if (hasLog)
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: SafeArea(
+                top: false,
+                child: Container(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [bg.withOpacity(0.0), bg, bg],
+                      stops: const [0.0, 0.4, 1.0],
                     ),
                   ),
-              ],
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(foregroundColor: Colors.redAccent, side: const BorderSide(color: Colors.redAccent)),
+                      onPressed: _clear,
+                      icon: const Icon(Icons.delete_outline, size: 18),
+                      label: const Text('Hapus log'),
+                    ),
+                  ),
+                ),
+              ),
             ),
-          ),
           Positioned(
             top: 0,
             left: 0,
