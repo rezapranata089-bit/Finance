@@ -1130,7 +1130,18 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
       ),
       child: Scaffold(
         backgroundColor: bg,
-        body: Stack(
+        // Sebelumnya tidak ada penangan tap di area kosong halaman ini,
+        // sehingga fokus TextField (mis. "Nama toko / judul transaksi")
+        // tidak pernah dilepas ketika pengguna menekan area lain di luar
+        // input — perilaku bawaan Flutter memang begitu kecuali area
+        // kosong diberi GestureDetector yang eksplisit memanggil unfocus().
+        // opaque dipakai supaya tap di RUANG KOSONG (bukan tombol/input)
+        // ikut terdeteksi, tanpa memblokir tap pada widget anak (tombol,
+        // TextField, dsb.) yang tetap diproses seperti biasa.
+        body: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: () => FocusScope.of(context).unfocus(),
+          child: Stack(
           children: [
             Positioned.fill(
               child: IgnorePointer(
@@ -1238,6 +1249,7 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
               ),
             ),
           ],
+          ),
         ),
         floatingActionButton: AnimatedScale(
           duration: const Duration(milliseconds: 260),
