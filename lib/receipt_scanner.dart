@@ -1263,14 +1263,19 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
               child: Stack(
                 children: [
                   Image.file(_imageFile!, height: 240, width: double.infinity, fit: BoxFit.cover),
-                  Positioned.fill(
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          begin: Alignment.topCenter,
-                          end: Alignment.bottomCenter,
-                          colors: [Colors.transparent, Colors.black.withOpacity(0.32)],
-                          stops: const [0.55, 1.0],
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    height: 64,
+                    child: IgnorePointer(
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [Colors.transparent, Colors.black.withOpacity(0.34)],
+                          ),
                         ),
                       ),
                     ),
