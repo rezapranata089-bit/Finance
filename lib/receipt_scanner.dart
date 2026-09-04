@@ -921,27 +921,32 @@ class ReceiptScannerService {
   }
 }
 
-// Membuka cunning_document_scanner: pengguna memindai/mengambil struk lewat
-// UI scanner bawaan (kamera ATAU impor dari galeri, keduanya sudah
-// terintegrasi di dalam satu alur package ini), lalu package otomatis
-// mendeteksi tepi, meluruskan (perspective correction), dan meng-crop
-// hasilnya sebelum dikembalikan sebagai path gambar siap-OCR.
-Future<void> _pickReceiptImage(BuildContext context) async {
-  final paths = await CunningDocumentScanner.getPictures(noOfPages: 1, isGalleryImportAllowed: true);
-  if (paths == null || paths.isEmpty || !context.mounted) return;
-  Navigator.push(
-    context,
-    GlassPageRoute(builder: (_) => ReceiptScanPage(initialImageFile: File(paths.first))),
-  );
-}
-
 Future<void> pickReceiptFromCameraAndPush(BuildContext context) async {
-  await _pickReceiptImage(context);
+  // Push halaman Pindai Struk TERLEBIH DAHULU, sebelum membuka UI scanner
+  // native (cunning_document_scanner) untuk memilih/memotret gambar.
+  // Sebelumnya urutannya terbalik: UI scanner dibuka dulu selagi tab
+  // sebelumnya (mis. Home) masih aktif, dan Navigator.push baru dipanggil
+  // SETELAH proses pilih gambar selesai. Begitu kontrol kembali dari UI
+  // scanner native ke Flutter, ada satu frame di mana tab sebelumnya
+  // sempat ter-render ulang sebelum push benar-benar terjadi — terlihat
+  // seperti "sempat balik ke Home" sesaat sebelum akhirnya pindah ke
+  // panel Pindai Struk. Dengan push dulu (autoStart: true), seluruh
+  // proses pilih/scan gambar berjalan DI ATAS halaman Pindai Struk itu
+  // sendiri, jadi tidak ada tab lain yang sempat terlihat sama sekali.
+  await Navigator.push(
+    context,
+    GlassPageRoute(builder: (_) => const ReceiptScanPage(autoStart: true)),
+  );
 }
 
 class ReceiptScanPage extends ConsumerStatefulWidget {
   final File? initialImageFile;
-  const ReceiptScanPage({super.key, this.initialImageFile});
+  // Saat true dan initialImageFile null, halaman ini langsung membuka UI
+  // scanner native begitu tampil (dipakai tombol scan di bottom nav agar
+  // tidak perlu menunggu hasil pilih gambar sebelum berpindah halaman —
+  // lihat pickReceiptFromCameraAndPush).
+  final bool autoStart;
+  const ReceiptScanPage({super.key, this.initialImageFile, this.autoStart = false});
   @override
   ConsumerState<ReceiptScanPage> createState() => _ReceiptScanPageState();
 }
@@ -970,6 +975,14 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
       // sudah ada, tanpa membuka kamera lagi.
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _runScan(initialFile);
+      });
+    } else if (widget.autoStart) {
+      // Halaman ini di-push lebih dulu (lihat pickReceiptFromCameraAndPush)
+      // sebelum UI scanner native dibuka, supaya seluruh proses pilih
+      // gambar berlangsung di atas halaman ini sendiri, bukan di atas tab
+      // yang sedang aktif sebelumnya.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _pickAndScan();
       });
     }
   }
@@ -1121,6 +1134,7 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
               ),
             ),
             SafeArea(
+              top: false,
               child: LayoutBuilder(
                 builder: (context, viewportConstraints) {
                   const topPad = 78.0;
