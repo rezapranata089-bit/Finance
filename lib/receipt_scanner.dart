@@ -1124,38 +1124,51 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
               ),
             ),
             SafeArea(
-              child: SingleChildScrollView(
-                controller: _scrollController,
-                physics: const BouncingScrollPhysics(),
-                padding: EdgeInsets.fromLTRB(20, 78, 20, hasResult ? 116 : 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 340),
-                      switchInCurve: Curves.easeOutCubic,
-                      switchOutCurve: Curves.easeInCubic,
-                      transitionBuilder: (child, animation) => FadeTransition(
-                        opacity: animation,
-                        child: SlideTransition(
-                          position: Tween<Offset>(begin: const Offset(0, 0.04), end: Offset.zero).animate(animation),
-                          child: child,
-                        ),
+              child: LayoutBuilder(
+                builder: (context, viewportConstraints) {
+                  const topPad = 78.0;
+                  final bottomPad = hasResult ? 116.0 : 24.0;
+                  return SingleChildScrollView(
+                    controller: _scrollController,
+                    physics: const BouncingScrollPhysics(),
+                    padding: EdgeInsets.fromLTRB(20, topPad, 20, bottomPad),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        minHeight: (viewportConstraints.maxHeight - topPad - bottomPad).clamp(0, double.infinity),
                       ),
-                      child: _imageFile == null
-                          ? _buildEmptyState(context, key: const ValueKey('empty'))
-                          : _buildPreview(context, key: ValueKey('preview_${_imageFile!.path}')),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: hasResult ? MainAxisAlignment.start : MainAxisAlignment.center,
+                        mainAxisSize: MainAxisSize.max,
+                        children: [
+                          AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 340),
+                            switchInCurve: Curves.easeOutCubic,
+                            switchOutCurve: Curves.easeInCubic,
+                            transitionBuilder: (child, animation) => FadeTransition(
+                              opacity: animation,
+                              child: SlideTransition(
+                                position: Tween<Offset>(begin: const Offset(0, 0.04), end: Offset.zero).animate(animation),
+                                child: child,
+                              ),
+                            ),
+                            child: _imageFile == null
+                                ? _buildEmptyState(context, key: const ValueKey('empty'))
+                                : _buildPreview(context, key: ValueKey('preview_${_imageFile!.path}')),
+                          ),
+                          AnimatedSize(
+                            duration: const Duration(milliseconds: 320),
+                            curve: Curves.easeOutCubic,
+                            alignment: Alignment.topCenter,
+                            child: _scanning
+                                ? _buildScanningState(context)
+                                : (hasResult ? _buildResultForm(context) : const SizedBox(width: double.infinity)),
+                          ),
+                        ],
+                      ),
                     ),
-                    AnimatedSize(
-                      duration: const Duration(milliseconds: 320),
-                      curve: Curves.easeOutCubic,
-                      alignment: Alignment.topCenter,
-                      child: _scanning
-                          ? _buildScanningState(context)
-                          : (hasResult ? _buildResultForm(context) : const SizedBox(width: double.infinity)),
-                    ),
-                  ],
-                ),
+                  );
+                },
               ),
             ),
             Positioned(
