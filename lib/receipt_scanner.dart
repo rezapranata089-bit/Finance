@@ -405,10 +405,39 @@ class ReceiptParser {
   // digabung jadi satu item.
   static final RegExp _itemBulletRegex = RegExp(r'^(\d{1,3})\s*[.\):]\s+(.+)$');
 
-  // Baris "harga saja": pola qty x harga = subtotal TANPA nama barang di
+  // Baris "harga saja": rincian qty/harga/subtotal TANPA nama barang di
   // baris yang sama — sangat umum pada struk kasir warung/toko kelontong
-  // yang memisahkan baris nama barang dari baris rincian harganya.
-  static final RegExp _priceOnlyLineRegex = RegExp(r'^\d+\s*[xX]?\s*[\d.,]+\s*=\s*[\d.,\-—\s]*$');
+  // yang memisahkan baris nama barang dari baris rincian harganya. Dulu
+  // wajib ada tanda "=" (format "1 x 2000=2.000,00"), tapi banyak struk
+  // (mis. kasir toko elektronik) memakai format "500.000   X1   500.000"
+  // TANPA tanda "=" sama sekali — makanya dicek lewat _isPriceOnlyLine di
+  // bawah (baris murni angka/titik/koma/x/rp), bukan regex kaku.
+  static bool _isPriceOnlyLine(String line) {
+    var s = line.toLowerCase();
+    if (!RegExp(r'\d').hasMatch(s)) return false;
+    s = s.replaceAll('rp', '');
+    s = s.replaceAll(RegExp(r'[0-9.,xX\s=\-—:]'), '');
+    return s.isEmpty;
+  }
+
+  // Qty bisa ditulis dua arah: "1 X" (angka lalu X, format lama) atau "X1"
+  // (X lalu angka, format lain seperti struk toko elektronik). Dicoba
+  // berurutan, lalu fallback ke angka kecil di awal baris yang diikuti
+  // angka jauh lebih besar (format tanpa huruf X sama sekali, mis.
+  // "2    8000=    18.000,00").
+  static double? _extractQty(String line) {
+    final digitBeforeX = RegExp(r'(?:^|\s)(\d{1,3})\s*[xX]\b').firstMatch(line);
+    if (digitBeforeX != null) return double.tryParse(digitBeforeX.group(1)!);
+    final xBeforeDigit = RegExp(r'[xX]\s*(\d{1,3})(?!\d)').firstMatch(line);
+    if (xBeforeDigit != null) return double.tryParse(xBeforeDigit.group(1)!);
+    final leading = RegExp(r'^(\d{1,2})\s+(\d[\d.,]*)').firstMatch(line);
+    if (leading != null) {
+      final qty = double.tryParse(leading.group(1)!);
+      final rest = _normalizeNumber(leading.group(2)!.replaceAll(RegExp(r'[^0-9.,]'), ''));
+      if (qty != null && qty >= 1 && qty <= 99 && rest != null && rest > qty * 10) return qty;
+    }
+    return null;
+  }
 
   static const _unitWordsRegexPattern = r'\b(PCS|PC|PAK|PACK|BOX|BTL|LSN|LUSIN|KG|GR|GRAM|ML|LTR|L|BKS|BUAH|UNIT)\b';
 
@@ -442,10 +471,7 @@ class ReceiptParser {
         if (_looksLikeItemExcluded(line)) break;
         final amt = _extractAmount(line);
         if (amt != null && amt > 0 && (price == null || amt > price)) price = amt;
-        if (qty == null) {
-          final qtyMatch = RegExp(r'(\d+(?:[.,]\d+)?)\s*[a-zA-Z]*\s*[xX]', caseSensitive: false).firstMatch(line);
-          if (qtyMatch != null) qty = double.tryParse(qtyMatch.group(1)!.replaceAll(',', '.'));
-        }
+        if (qty == null) qty = _extractQty(line);
       }
       if (price == null || price <= 0) continue;
       items.add(ReceiptLineItem(name: name, quantity: qty, price: price));
@@ -465,14 +491,11 @@ class ReceiptParser {
         pendingName = null;
         continue;
       }
-      if (_priceOnlyLineRegex.hasMatch(line)) {
+      if (_isPriceOnlyLine(line)) {
         if (pendingName != null) {
           final amt = _extractAmount(line);
           if (amt != null && amt > 0) {
-            double? qty;
-            final qtyMatch = RegExp(r'(\d+(?:[.,]\d+)?)\s*[xX]').firstMatch(line);
-            if (qtyMatch != null) qty = double.tryParse(qtyMatch.group(1)!.replaceAll(',', '.'));
-            items.add(ReceiptLineItem(name: pendingName, quantity: qty, price: amt));
+            items.add(ReceiptLineItem(name: pendingName, quantity: _extractQty(line), price: amt));
           }
           pendingName = null;
         }
@@ -501,9 +524,7 @@ class ReceiptParser {
       namePart = namePart.replaceAll(RegExp(r'^[\d\.\s]+'), '').trim();
       final letters = namePart.replaceAll(RegExp(r'[^a-zA-Z]'), '');
       if (namePart.isEmpty || letters.length < 3) continue;
-      final qtyMatch = RegExp(r'(\d+)\s*[xX]\b').firstMatch(line);
-      final qty = qtyMatch != null ? double.tryParse(qtyMatch.group(1)!) : null;
-      items.add(ReceiptLineItem(name: namePart, quantity: qty, price: amount));
+      items.add(ReceiptLineItem(name: namePart, quantity: _extractQty(line), price: amount));
     }
     return items;
   }
