@@ -1158,7 +1158,12 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
                   // header dan panel gambar/form struk di bawahnya —
                   // sebelumnya keduanya terlalu berdempetan pada posisi awal.
                   const topPad = 108.0;
-                  final bottomPad = hasResult ? 116.0 : 24.0;
+                  // Dikurangi dari 116 — ruang kosong di bawah daftar
+                  // belanja terdeteksi sebelum mentok batas scroll terasu
+                  // terlalu jauh; 88 masih cukup menghindari konten
+                  // tertutup tombol "Simpan" (FAB) tanpa sisa jarak
+                  // kosong berlebih.
+                  final bottomPad = hasResult ? 88.0 : 24.0;
                   return SingleChildScrollView(
                     controller: _scrollController,
                     physics: const BouncingScrollPhysics(),
