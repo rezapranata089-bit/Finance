@@ -1008,6 +1008,7 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
     final apiKeys = provider == AIProvider.groq ? ref.read(groqApiKeysProvider) : ref.read(geminiApiKeysProvider);
     final model = provider == AIProvider.groq ? ref.read(groqModelProvider) : ref.read(geminiModelProvider);
     final onlineEnabled = ref.read(receiptOnlineFallbackEnabledProvider);
+    final lang = ref.read(langProvider);
     final providerLabel = provider == AIProvider.groq ? 'Groq' : 'Gemini';
     final hasKeys = apiKeys.any((k) => k.trim().isNotEmpty);
     // Kalau AI online tersedia (aktif, minimal satu API key & model
@@ -1021,7 +1022,9 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
       _result = null;
       _scanning = true;
       _scanEpoch++;
-      _scanStage = tryOnlineFirst ? 'Membaca struk dengan AI online ($providerLabel)...' : 'Membaca teks struk (offline)...';
+      _scanStage = tryOnlineFirst
+          ? Strings.t(lang, 'scan_stage_online').replaceAll('{provider}', providerLabel)
+          : Strings.t(lang, 'scan_stage_offline');
     });
     ReceiptScanResult finalResult;
     if (tryOnlineFirst) {
@@ -1031,8 +1034,8 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
       } else {
         if (mounted) {
           setState(() => _scanStage = onlineResult == null
-              ? 'AI online tidak tersedia (cek koneksi internet/model), mencoba pemindaian offline...'
-              : 'Hasil AI online kurang yakin, mencoba pemindaian offline...');
+              ? Strings.t(lang, 'scan_stage_online_unavailable')
+              : Strings.t(lang, 'scan_stage_online_unsure'));
         }
         final offlineResult = await _service.scanOffline(file);
         finalResult = offlineResult.confident ? offlineResult : (onlineResult ?? offlineResult);
@@ -1075,13 +1078,14 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
   // menjadi satu teks catatan, supaya rincian item ikut tersimpan di
   // riwayat transaksi, bukan hanya nominal totalnya saja.
   String _buildReceiptNote() {
+    final lang = ref.read(langProvider);
     final result = _result;
-    final sourceLabel = result?.source == ReceiptScanSource.online ? 'AI online' : 'offline';
-    final buffer = StringBuffer('Hasil pindai struk ($sourceLabel)');
+    final sourceLabel = Strings.t(lang, result?.source == ReceiptScanSource.online ? 'source_online_short' : 'source_offline_short');
+    final buffer = StringBuffer(Strings.t(lang, 'receipt_note_header').replaceAll('{source}', sourceLabel));
     final items = result?.items ?? const [];
     if (items.isNotEmpty) {
       buffer.writeln();
-      buffer.writeln('Daftar belanja:');
+      buffer.writeln(Strings.t(lang, 'receipt_note_shopping_list_label'));
       for (final item in items) {
         final qtyLabel = item.quantity != null && item.quantity! > 1
             ? '${item.quantity!.toStringAsFixed(item.quantity! == item.quantity!.roundToDouble() ? 0 : 1)}x '
@@ -1094,9 +1098,10 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
   }
 
   void _save() {
+    final lang = ref.read(langProvider);
     final amount = double.tryParse(_amountCtrl.text.replaceAll('.', '')) ?? 0;
     if (amount <= 0 || _titleCtrl.text.trim().isEmpty) {
-      showGlassSnackBar(context, 'Lengkapi judul & nominal terlebih dahulu', icon: Icons.warning_amber_rounded);
+      showGlassSnackBar(context, Strings.t(lang, 'fill_title_amount_first'), icon: Icons.warning_amber_rounded);
       return;
     }
     final cards = ref.read(cardsProvider);
@@ -1112,12 +1117,13 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
           cardIndex: cardIndex,
         );
     Navigator.pop(context);
-    showGlassSnackBar(context, 'Transaksi dari struk tersimpan', icon: Icons.check_circle_outline);
+    showGlassSnackBar(context, Strings.t(lang, 'receipt_transaction_saved'), icon: Icons.check_circle_outline);
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = context.isDark;
+    final lang = ref.watch(langProvider);
     final primary = Theme.of(context).colorScheme.primary;
     final bg = isDark ? const Color(0xFF121016) : const Color(0xFFF8F7FB);
     final hasResult = _result != null && !_scanning;
@@ -1243,7 +1249,7 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
                       ),
                     ),
                     const SizedBox(width: 16),
-                    ScrollFadeTitle(controller: _scrollController, child: Text('Pindai Struk', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: context.textPrimary))),
+                    ScrollFadeTitle(controller: _scrollController, child: Text(Strings.t(lang, 'scan_receipt'), style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: context.textPrimary))),
                   ]),
                 ),
               ),
@@ -1263,7 +1269,7 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
               child: FloatingActionButton.extended(
                 onPressed: _save,
                 icon: const Icon(Icons.check_rounded),
-                label: const Text('Simpan'),
+                label: Text(Strings.t(lang, 'save')),
               ),
             ),
           ),
@@ -1274,6 +1280,7 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
 
   Widget _buildEmptyState(BuildContext context, {Key? key}) {
     final primary = Theme.of(context).colorScheme.primary;
+    final lang = ref.watch(langProvider);
     return Column(
       key: key,
       children: [
@@ -1294,7 +1301,7 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
           ),
         ),
         const SizedBox(height: 22),
-        Text('Foto atau pilih struk belanja untuk dipindai otomatis',
+        Text(Strings.t(lang, 'receipt_empty_hint'),
             textAlign: TextAlign.center, style: TextStyle(color: context.textMuted, fontSize: 14, height: 1.4)),
         const SizedBox(height: 24),
         SizedBox(
@@ -1302,7 +1309,7 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
           child: FilledButton.icon(
             onPressed: _showSourceSheet,
             icon: const Icon(Icons.document_scanner_outlined),
-            label: const Text('Mulai Pindai'),
+            label: Text(Strings.t(lang, 'start_scan')),
           ),
         ),
       ],
@@ -1310,6 +1317,7 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
   }
 
   Widget _buildPreview(BuildContext context, {Key? key}) {
+    final lang = ref.watch(langProvider);
     return Column(
       key: key,
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1349,10 +1357,10 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                       decoration: BoxDecoration(color: Colors.black.withOpacity(0.45), borderRadius: BorderRadius.circular(20)),
-                      child: Row(mainAxisSize: MainAxisSize.min, children: const [
-                        Icon(Icons.fullscreen_rounded, size: 15, color: Colors.white),
-                        SizedBox(width: 4),
-                        Text('Lihat penuh', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
+                      child:                       Row(mainAxisSize: MainAxisSize.min, children: [
+                                              const Icon(Icons.fullscreen_rounded, size: 15, color: Colors.white),
+                        const SizedBox(width: 4),
+                        Text(Strings.t(lang, 'view_full'), style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
                       ]),
                     ),
                   ),
@@ -1366,7 +1374,7 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             (_result != null && !_scanning) ? _buildSourceBadge(context) : const SizedBox.shrink(),
-            TextButton.icon(onPressed: _showSourceSheet, icon: const Icon(Icons.refresh, size: 16), label: const Text('Pindai ulang')),
+            TextButton.icon(onPressed: _showSourceSheet, icon: const Icon(Icons.refresh, size: 16), label: Text(Strings.t(lang, 'rescan'))),
           ],
         ),
       ],
@@ -1379,6 +1387,7 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
   // sebelumnya — supaya posisinya tidak "menggantung" jauh dari konteksnya.
   Widget _buildSourceBadge(BuildContext context) {
     final result = _result!;
+    final lang = ref.watch(langProvider);
     final primary = Theme.of(context).colorScheme.primary;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
@@ -1394,7 +1403,7 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
         ),
         const SizedBox(width: 5),
         Text(
-          result.source == ReceiptScanSource.online ? 'Dibaca via AI online' : 'Dibaca offline',
+          Strings.t(lang, result.source == ReceiptScanSource.online ? 'read_via_online_ai' : 'read_offline'),
           style: TextStyle(
             fontSize: 10,
             fontWeight: FontWeight.bold,
@@ -1407,6 +1416,7 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
 
   Widget _buildScanningState(BuildContext context) {
     final primary = Theme.of(context).colorScheme.primary;
+    final lang = ref.watch(langProvider);
     return Padding(
       padding: const EdgeInsets.only(top: 18),
       child: TweenAnimationBuilder<double>(
@@ -1431,7 +1441,7 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
               child: CircularProgressIndicator(strokeWidth: 2.4, color: primary),
             ),
             const SizedBox(width: 14),
-            Expanded(child: Text(_scanStage ?? 'Memindai...', style: TextStyle(color: context.textMuted, fontSize: 13, fontWeight: FontWeight.w500))),
+            Expanded(child: Text(_scanStage ?? Strings.t(lang, 'scanning_generic'), style: TextStyle(color: context.textMuted, fontSize: 13, fontWeight: FontWeight.w500))),
           ]),
         ),
       ),
@@ -1441,6 +1451,7 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
   Widget _buildResultForm(BuildContext context) {
     final result = _result!;
     final primary = Theme.of(context).colorScheme.primary;
+    final lang = ref.watch(langProvider);
     var revealIndex = 0;
     Widget reveal(Widget child) {
       final i = revealIndex++;
@@ -1474,7 +1485,7 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Nominal & nama toko tidak terbaca otomatis. Silakan isi manual di bawah, atau aktifkan AI online agar pembacaan lebih akurat.',
+                      Strings.t(lang, 'receipt_low_confidence_warning'),
                       style: TextStyle(fontSize: 12, color: context.textMuted, height: 1.4),
                     ),
                   ),
@@ -1485,7 +1496,7 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
                   child: TextButton.icon(
                     onPressed: () => Navigator.push(context, GlassPageRoute(builder: (_) => const ReceiptScanApiKeySettingsPage())),
                     icon: const Icon(Icons.smart_toy_outlined, size: 16),
-                    label: const Text('Buka Pengaturan AI Scan', style: TextStyle(fontSize: 12)),
+                    label: Text(Strings.t(lang, 'open_ai_scan_settings'), style: const TextStyle(fontSize: 12)),
                   ),
                 ),
               ],
@@ -1495,14 +1506,14 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
         const SizedBox(height: 14),
         reveal(TextField(
           controller: _titleCtrl,
-          decoration: InputDecoration(labelText: 'Nama toko / judul transaksi', prefixIcon: Icon(Icons.storefront_outlined, size: 20, color: context.iconMuted)),
+          decoration: InputDecoration(labelText: Strings.t(lang, 'store_name_or_title'), prefixIcon: Icon(Icons.storefront_outlined, size: 20, color: context.iconMuted)),
         )),
         const SizedBox(height: 12),
         reveal(TextField(
           controller: _amountCtrl,
           keyboardType: TextInputType.number,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly, ThousandsInputFormatter()],
-          decoration: InputDecoration(labelText: 'Total belanja', prefixText: 'Rp ', prefixIcon: Icon(Icons.payments_outlined, size: 20, color: context.iconMuted)),
+          decoration: InputDecoration(labelText: Strings.t(lang, 'total_shopping'), prefixText: 'Rp ', prefixIcon: Icon(Icons.payments_outlined, size: 20, color: context.iconMuted)),
         )),
         const SizedBox(height: 12),
         reveal(GestureDetector(
@@ -1513,7 +1524,7 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
             }
           },
           child: InputDecorator(
-            decoration: const InputDecoration(labelText: 'Tanggal'),
+            decoration: InputDecoration(labelText: Strings.t(lang, 'date')),
             child: Row(children: [
               Icon(Icons.calendar_today_outlined, size: 16, color: context.iconMuted),
               const SizedBox(width: 10),
@@ -1526,7 +1537,7 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
           reveal(Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Daftar belanja terdeteksi', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: context.textMuted)),
+              Text(Strings.t(lang, 'detected_shopping_list'), style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: context.textMuted)),
               const SizedBox(height: 8),
               Container(
                 width: double.infinity,
@@ -1565,7 +1576,7 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
             data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
             child: ExpansionTile(
               tilePadding: EdgeInsets.zero,
-              title: Text('Lihat teks hasil pindai', style: TextStyle(fontSize: 12, color: context.textMuted)),
+              title: Text(Strings.t(lang, 'view_scanned_text'), style: TextStyle(fontSize: 12, color: context.textMuted)),
               children: [
                 Container(
                   width: double.infinity,
