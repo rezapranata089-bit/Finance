@@ -111,7 +111,8 @@ class ReceiptScanResult {
 class ReceiptParser {
   static final _totalKeywords = [
     'grand total', 'total belanja', 'total bayar', 'total tagihan',
-    'total pembayaran', 'jumlah bayar', 'total', 'jumlah',
+    'total pembayaran', 'jumlah bayar', 'total transaksi', 'jumlah harus dibayar',
+    'total', 'jumlah',
   ];
 
   // Baris yang mengandung salah satu kata ini TIDAK PERNAH dianggap sebagai
@@ -121,17 +122,84 @@ class ReceiptParser {
   // sebagai total kalau urutan baris hasil OCR tidak persis mengikuti
   // urutan visual struk (umum terjadi pada foto struk yang miring/tidak
   // rata).
-  static const _excludedFromTotalWords = ['tunai', 'kembali', 'cash', 'change'];
+  static const _excludedFromTotalWords = ['tunai', 'kembali', 'kembalian', 'cash', 'change'];
+
+  // Kata kunci yang menandai baris BUKAN item barang (baris total, bayar,
+  // header toko, dll). Dipakai juga oleh matcher fuzzy di bawah supaya
+  // typo hasil OCR pada kata-kata ini tetap terdeteksi.
+  static const _itemExclusionKeywords = [
+    'total', 'subtotal', 'sub total', 'tunai', 'kembali', 'cash', 'change',
+    'bayar', 'diskon', 'discount', 'pajak', 'ppn', 'tax', 'service',
+    'points', 'poin', 'kasir', 'cashier', 'no. transaksi', 'struk', 'invoice',
+    'npwp', 'telp', 'terima kasih', 'jumlah',
+  ];
+
+  // Levenshtein distance sederhana, dipakai untuk mentolerir typo hasil OCR
+  // pada kata kunci pendek (mis. "Kembali" yang terbaca "Kenbali", "Total"
+  // yang terbaca "Totai"). Tanpa toleransi ini, kata kunci exclusion gagal
+  // match hanya karena satu huruf salah baca, dan baris kembalian bisa
+  // lolos tertangkap sebagai nominal total atau nama item.
+  static int _levenshtein(String a, String b) {
+    if (a == b) return 0;
+    if (a.isEmpty) return b.length;
+    if (b.isEmpty) return a.length;
+    var prev = List<int>.generate(b.length + 1, (i) => i);
+    var curr = List<int>.filled(b.length + 1, 0);
+    for (var i = 1; i <= a.length; i++) {
+      curr[0] = i;
+      for (var j = 1; j <= b.length; j++) {
+        final cost = a[i - 1] == b[j - 1] ? 0 : 1;
+        final del = prev[j] + 1;
+        final ins = curr[j - 1] + 1;
+        final sub = prev[j - 1] + cost;
+        curr[j] = del < ins ? (del < sub ? del : sub) : (ins < sub ? ins : sub);
+      }
+      final tmp = prev;
+      prev = curr;
+      curr = tmp;
+    }
+    return prev[b.length];
+  }
+
+  // Toleransi typo OCR pada level kata: kata kunci panjang (>=9 huruf)
+  // boleh beda hingga 2 karakter, selebihnya hanya boleh beda 1 karakter —
+  // cukup untuk menutupi typo umum tanpa salah menangkap kata lain yang
+  // kebetulan mirip (mis. "tomat" tidak boleh ikut ke-exclude gara-gara
+  // mirip "total").
+  static bool _lineMatchesKeyword(String line, String keyword) {
+    final lower = line.toLowerCase();
+    if (lower.contains(keyword)) return true;
+    if (keyword.contains(' ')) return false;
+    final maxDist = keyword.length >= 9 ? 2 : 1;
+    final words = lower.split(RegExp(r'[^a-z]+')).where((w) => w.isNotEmpty);
+    for (final w in words) {
+      if ((w.length - keyword.length).abs() > maxDist) continue;
+      if (_levenshtein(w, keyword) <= maxDist) return true;
+    }
+    return false;
+  }
 
   static bool _isExcludedTotalLine(String line) {
-    final lower = line.toLowerCase();
-    return _excludedFromTotalWords.any((w) => lower.contains(w));
+    return _excludedFromTotalWords.any((w) => _lineMatchesKeyword(line, w));
+  }
+
+  static bool _looksLikeItemExcluded(String line) {
+    return _itemExclusionKeywords.any((w) => _lineMatchesKeyword(line, w));
   }
 
   static final _amountRegex = RegExp(
     r'(?:rp\.?\s*)?([0-9]{1,3}(?:[.,][0-9]{3})+(?:[.,][0-9]{2})?|[0-9]{4,})',
     caseSensitive: false,
   );
+
+  // Struk thermal yang buram/miring sering membuat OCR menyisipkan tanda
+  // pemisah ganda berurutan di tengah angka (mis. "54.,500,00" yang
+  // seharusnya "54.500,00"). Tanpa dibersihkan lebih dulu, angka seperti
+  // ini gagal cocok sama sekali dengan _amountRegex sehingga baris "Total"
+  // dianggap tidak mengandung nominal apa pun.
+  static String _cleanNumericNoise(String text) {
+    return text.replaceAllMapped(RegExp(r'(\d)[.,]{2,}(\d)'), (m) => '${m.group(1)}.${m.group(2)}');
+  }
 
   static double? _extractAmount(String line) {
     final matches = _amountRegex.allMatches(line);
@@ -190,24 +258,62 @@ class ReceiptParser {
     return double.tryParse(cleaned);
   }
 
+  // Baris yang tampak seperti rincian item (mengandung pola qty x harga =
+  // subtotal, atau minimal diakhiri "= nominal"), dipakai untuk memvalidasi
+  // kewajaran total & sebagai cadangan kalau baris "Total" gagal terbaca.
+  static bool _looksLikeItemAmountLine(String line) {
+    return RegExp(r'[xX]\s*[\d.,]+\s*=').hasMatch(line) || RegExp(r'=\s*[\d.,\-—\s]+$').hasMatch(line);
+  }
+
   static double? parseTotal(String text) {
-    final lines = text.split('\n').map((l) => l.trim()).where((l) => l.isNotEmpty).toList();
+    final cleanedText = _cleanNumericNoise(text);
+    final lines = cleanedText.split('\n').map((l) => l.trim()).where((l) => l.isNotEmpty).toList();
+
+    double? keywordTotal;
     for (final keyword in _totalKeywords) {
       for (final line in lines) {
         if (_isExcludedTotalLine(line)) continue;
-        if (line.toLowerCase().contains(keyword)) {
+        if (_lineMatchesKeyword(line, keyword)) {
           final amount = _extractAmount(line);
-          if (amount != null && amount > 0) return amount;
+          if (amount != null && amount > 0) {
+            keywordTotal = amount;
+            break;
+          }
         }
       }
+      if (keywordTotal != null) break;
     }
+
+    final itemAmounts = <double>[];
+    for (final line in lines) {
+      if (_isExcludedTotalLine(line) || _looksLikeItemExcluded(line)) continue;
+      if (_looksLikeItemAmountLine(line)) {
+        final amt = _extractAmount(line);
+        if (amt != null && amt > 0) itemAmounts.add(amt);
+      }
+    }
+    final sumItems = itemAmounts.fold<double>(0, (a, b) => a + b);
+
+    // Nominal "Total" hasil OCR kadang meleset jauh (mis. baris kembalian
+    // ikut terbaca sebagai baris total karena kata kuncinya typo). Kalau
+    // nilainya jauh di luar kewajaran dibanding jumlah rincian item yang
+    // berhasil terbaca, lebih percaya jumlah item daripada angka yang
+    // meleset itu.
+    bool implausible(double candidate) =>
+        sumItems > 0 && candidate > sumItems * 20 && (candidate - sumItems) > 100000;
+
+    if (keywordTotal != null) {
+      return implausible(keywordTotal) ? sumItems : keywordTotal;
+    }
+
     double? largest;
     for (final line in lines) {
       if (_isExcludedTotalLine(line)) continue;
       final amount = _extractAmount(line);
       if (amount != null && (largest == null || amount > largest)) largest = amount;
     }
-    return largest;
+    if (largest != null && implausible(largest)) return sumItems;
+    return largest ?? (sumItems > 0 ? sumItems : null);
   }
 
   // (?<!\d) dan (?!\d) mengunci batas angka: mencegah regex "mencuil"
@@ -267,25 +373,27 @@ class ReceiptParser {
     return null;
   }
 
+  // Simbol noise umum hasil OCR (garis pemisah struk yang terbaca sebagai
+  // tanda minus/pipe/kutip, dsb.) yang sering menempel di awal/akhir baris
+  // dan membuat baris judul (mis. nama toko) ikut kebawa kotor seperti
+  // "- Sal:" alih-alih "Sal:".
+  static final RegExp _lineNoiseEdges = RegExp(r'^[\-\*\|_~":;.,\s]+|[\-\*\|_~":;.,\s]+$');
+
   static String? parseMerchant(String text) {
     final lines = text.split('\n').map((l) => l.trim()).where((l) => l.isNotEmpty).toList();
-    for (final line in lines.take(5)) {
+    for (final rawLine in lines.take(6)) {
+      final line = rawLine.replaceAll(_lineNoiseEdges, '').trim();
+      if (line.isEmpty) continue;
       final letters = line.replaceAll(RegExp(r'[^a-zA-Z]'), '');
-      if (letters.length >= 3) return line;
+      // Butuh cukup huruf DAN mayoritas karakter baris berupa huruf (bukan
+      // simbol acak hasil noise OCR seperti '"l;t-:;').
+      if (letters.length >= 3 && letters.length / line.length >= 0.5) return line;
     }
-    return lines.isNotEmpty ? lines.first : null;
-  }
-
-  static const _itemExclusionKeywords = [
-    'total', 'subtotal', 'sub total', 'tunai', 'kembali', 'cash', 'change',
-    'bayar', 'diskon', 'discount', 'pajak', 'ppn', 'tax', 'service',
-    'points', 'poin', 'kasir', 'cashier', 'no. transaksi', 'struk', 'invoice',
-    'npwp', 'telp', 'terima kasih', 'jumlah',
-  ];
-
-  static bool _looksLikeItemExcluded(String line) {
-    final lower = line.toLowerCase();
-    return _itemExclusionKeywords.any((w) => lower.contains(w));
+    if (lines.isNotEmpty) {
+      final cleaned = lines.first.replaceAll(_lineNoiseEdges, '').trim();
+      return cleaned.isEmpty ? lines.first : cleaned;
+    }
+    return null;
   }
 
   // Baris bernomor urut (mis. "1. Indomie Goreng") dianggap AWAL blok
@@ -294,20 +402,33 @@ class ReceiptParser {
   // lama). Semua baris di antara satu nomor urut sampai nomor urut
   // berikutnya (atau sampai baris kata kunci total/pembayaran) dipindai
   // untuk mencari harga (nominal terbesar yang muncul) & qty, lalu
-  // digabung jadi satu item. Pendekatan lama (per-baris independen) gagal
-  // total menangkap nama barang begitu nama & harga terpisah baris: baris
-  // nama (tanpa nominal) dilewati, sementara baris qty/harga malah salah
-  // dianggap sebagai nama (mis. jadi "lusin x" alih-alih nama aslinya).
+  // digabung jadi satu item.
   static final RegExp _itemBulletRegex = RegExp(r'^(\d{1,3})\s*[.\):]\s+(.+)$');
 
+  // Baris "harga saja": pola qty x harga = subtotal TANPA nama barang di
+  // baris yang sama — sangat umum pada struk kasir warung/toko kelontong
+  // yang memisahkan baris nama barang dari baris rincian harganya.
+  static final RegExp _priceOnlyLineRegex = RegExp(r'^\d+\s*[xX]?\s*[\d.,]+\s*=\s*[\d.,\-—\s]*$');
+
+  static const _unitWordsRegexPattern = r'\b(PCS|PC|PAK|PACK|BOX|BTL|LSN|LUSIN|KG|GR|GRAM|ML|LTR|L|BKS|BUAH|UNIT)\b';
+
   static List<ReceiptLineItem> parseItems(String text) {
-    final lines = text.split('\n').map((l) => l.trim()).where((l) => l.isNotEmpty).toList();
+    final cleanedText = _cleanNumericNoise(text);
+    final lines = cleanedText.split('\n').map((l) => l.trim()).where((l) => l.isNotEmpty).toList();
     final bulletIndices = <int>[
       for (var i = 0; i < lines.length; i++)
         if (_itemBulletRegex.hasMatch(lines[i])) i,
     ];
-    if (bulletIndices.isEmpty) return _parseItemsFlatFallback(lines);
+    if (bulletIndices.isNotEmpty) {
+      final bulleted = _parseItemsBulleted(lines, bulletIndices);
+      if (bulleted.isNotEmpty) return bulleted;
+    }
+    final paired = _parseItemsPairedLines(lines);
+    if (paired.isNotEmpty) return paired;
+    return _parseItemsFlatFallback(lines);
+  }
 
+  static List<ReceiptLineItem> _parseItemsBulleted(List<String> lines, List<int> bulletIndices) {
     final items = <ReceiptLineItem>[];
     for (var b = 0; b < bulletIndices.length; b++) {
       final startIdx = bulletIndices[b];
@@ -332,10 +453,43 @@ class ReceiptParser {
     return items;
   }
 
-  // Fallback untuk struk yang TIDAK memakai penomoran item (format lama:
-  // satu baris berisi nama sekaligus nominal sekaligus). Logika ini persis
-  // sama seperti parseItems versi sebelumnya, dipakai kalau tidak ada satu
-  // pun baris bernomor terdeteksi pada hasil OCR.
+  // Format struk tanpa penomoran, tapi nama barang & rincian harganya
+  // berada di baris TERPISAH (mis. "nabati peach   PCS" lalu di baris
+  // berikutnya "1 x 2000= 2.000,00"). Baris nama ditahan sebagai
+  // "pendingName" sampai baris harga berikutnya ditemukan untuk dipasangkan.
+  static List<ReceiptLineItem> _parseItemsPairedLines(List<String> lines) {
+    final items = <ReceiptLineItem>[];
+    String? pendingName;
+    for (final line in lines) {
+      if (_isExcludedTotalLine(line) || _looksLikeItemExcluded(line)) {
+        pendingName = null;
+        continue;
+      }
+      if (_priceOnlyLineRegex.hasMatch(line)) {
+        if (pendingName != null) {
+          final amt = _extractAmount(line);
+          if (amt != null && amt > 0) {
+            double? qty;
+            final qtyMatch = RegExp(r'(\d+(?:[.,]\d+)?)\s*[xX]').firstMatch(line);
+            if (qtyMatch != null) qty = double.tryParse(qtyMatch.group(1)!.replaceAll(',', '.'));
+            items.add(ReceiptLineItem(name: pendingName, quantity: qty, price: amt));
+          }
+          pendingName = null;
+        }
+        continue;
+      }
+      final letters = line.replaceAll(RegExp(r'[^a-zA-Z]'), '');
+      final hasBigNumber = RegExp(r'\d{4,}').hasMatch(line);
+      if (letters.length >= 3 && !hasBigNumber) {
+        var candidate = line.replaceAll(RegExp(_unitWordsRegexPattern, caseSensitive: false), '').trim();
+        pendingName = candidate.isEmpty ? line : candidate;
+      }
+    }
+    return items;
+  }
+
+  // Fallback untuk struk yang TIDAK memakai penomoran item DAN nama+harga
+  // ada dalam satu baris yang sama (format lama).
   static List<ReceiptLineItem> _parseItemsFlatFallback(List<String> lines) {
     final items = <ReceiptLineItem>[];
     for (final line in lines) {
