@@ -6266,7 +6266,21 @@ class CategorySettingsPage extends ConsumerWidget {
     return Scaffold(
       body: Stack(
         children: [
-          SafeArea(                       const SizedBox(height: 4),
+          SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(20, 78, 20, 8),
+              children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(22), border: Border.all(color: context.borderColor)),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(Strings.t(lang, 'enable_category_feature'), style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14, color: context.textPrimary)),
+                              const SizedBox(height: 4),
                               Text(Strings.t(lang, 'enable_category_feature_desc'), style: TextStyle(fontSize: 12, color: context.textMuted, height: 1.3)),
                             ],
                           ),
