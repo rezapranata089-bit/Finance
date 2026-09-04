@@ -953,6 +953,7 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
   bool _scanning = false;
   String? _scanStage;
   final ScrollController _scrollController = ScrollController();
+  int _scanEpoch = 0;
 
   final _titleCtrl = TextEditingController();
   final _amountCtrl = TextEditingController();
@@ -997,6 +998,7 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
       _imageFile = file;
       _result = null;
       _scanning = true;
+      _scanEpoch++;
       _scanStage = tryOnlineFirst ? 'Membaca struk dengan AI online ($providerLabel)...' : 'Membaca teks struk (offline)...';
     });
     ReceiptScanResult finalResult;
@@ -1087,232 +1089,460 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
   @override
   Widget build(BuildContext context) {
     final isDark = context.isDark;
-    return Scaffold(
-      body: Stack(
-        children: [
-          SafeArea(
-            child: SingleChildScrollView(
-              controller: _scrollController,
-              padding: const EdgeInsets.fromLTRB(20, 78, 20, 0),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  if (_imageFile == null) _buildEmptyState(context),
-                  if (_imageFile != null) _buildPreview(context),
-                  if (_scanning) _buildScanningState(context),
-                  if (_result != null && !_scanning) _buildResultForm(context),
-                ]),
-              ),
-            ),
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
-                child: Row(children: [
-                  GestureDetector(
-                    onTap: () => Navigator.pop(context),
-                    child: LiquidGlass(
-                      borderRadius: 999,
-                      tint: isDark ? Colors.black : null,
-                      intensity: isDark ? 1.6 : 1.0,
-                      borderColor: isDark ? context.borderColor : null,
-                      child: Padding(
-                        padding: const EdgeInsets.all(10),
-                        child: Icon(SolarIconsOutline.arrowLeft, size: 20, color: context.textPrimary),
-                      ),
+    final primary = Theme.of(context).colorScheme.primary;
+    final bg = isDark ? const Color(0xFF121016) : const Color(0xFFF8F7FB);
+    final hasResult = _result != null && !_scanning;
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+        statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+      ),
+      child: Scaffold(
+        backgroundColor: bg,
+        body: Stack(
+          children: [
+            Positioned(
+              left: 0,
+              right: 0,
+              bottom: 0,
+              child: IgnorePointer(
+                child: Container(
+                  height: 340,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        bg.withOpacity(0.0),
+                        primary.withOpacity(isDark ? 0.16 : 0.10),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 16),
-                  ScrollFadeTitle(controller: _scrollController, child: Text('Pindai Struk', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: context.textPrimary))),
-                ]),
+                ),
+              ),
+            ),
+            SafeArea(
+              child: SingleChildScrollView(
+                controller: _scrollController,
+                physics: const BouncingScrollPhysics(),
+                padding: EdgeInsets.fromLTRB(20, 78, 20, hasResult ? 116 : 24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 340),
+                      switchInCurve: Curves.easeOutCubic,
+                      switchOutCurve: Curves.easeInCubic,
+                      transitionBuilder: (child, animation) => FadeTransition(
+                        opacity: animation,
+                        child: SlideTransition(
+                          position: Tween<Offset>(begin: const Offset(0, 0.04), end: Offset.zero).animate(animation),
+                          child: child,
+                        ),
+                      ),
+                      child: _imageFile == null
+                          ? _buildEmptyState(context, key: const ValueKey('empty'))
+                          : _buildPreview(context, key: ValueKey('preview_${_imageFile!.path}')),
+                    ),
+                    AnimatedSize(
+                      duration: const Duration(milliseconds: 320),
+                      curve: Curves.easeOutCubic,
+                      alignment: Alignment.topCenter,
+                      child: _scanning
+                          ? _buildScanningState(context)
+                          : (hasResult ? _buildResultForm(context) : const SizedBox(width: double.infinity)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              child: SafeArea(
+                bottom: false,
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+                  child: Row(children: [
+                    GestureDetector(
+                      onTap: () => Navigator.pop(context),
+                      child: LiquidGlass(
+                        borderRadius: 999,
+                        tint: isDark ? Colors.black : null,
+                        intensity: isDark ? 1.6 : 1.0,
+                        borderColor: isDark ? context.borderColor : null,
+                        child: Padding(
+                          padding: const EdgeInsets.all(10),
+                          child: Icon(SolarIconsOutline.arrowLeft, size: 20, color: context.textPrimary),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    ScrollFadeTitle(controller: _scrollController, child: Text('Pindai Struk', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: context.textPrimary))),
+                  ]),
+                ),
+              ),
+            ),
+          ],
+        ),
+        floatingActionButton: AnimatedScale(
+          duration: const Duration(milliseconds: 260),
+          curve: Curves.easeOutBack,
+          scale: hasResult ? 1.0 : 0.0,
+          child: AnimatedOpacity(
+            duration: const Duration(milliseconds: 200),
+            opacity: hasResult ? 1.0 : 0.0,
+            child: IgnorePointer(
+              ignoring: !hasResult,
+              child: FloatingActionButton.extended(
+                onPressed: _save,
+                icon: const Icon(Icons.check_rounded),
+                label: const Text('Simpan'),
               ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildEmptyState(BuildContext context) {
-    return Column(children: [
-      const SizedBox(height: 40),
-      Icon(Icons.receipt_long_outlined, size: 72, color: context.iconMuted),
-      const SizedBox(height: 20),
-      Text('Foto atau pilih struk belanja untuk dipindai otomatis',
-          textAlign: TextAlign.center, style: TextStyle(color: context.textMuted, fontSize: 14)),
-      const SizedBox(height: 24),
-      SizedBox(
-        width: double.infinity,
-        child: FilledButton.icon(
-          onPressed: _showSourceSheet,
-          icon: const Icon(Icons.document_scanner_outlined),
-          label: const Text('Mulai Pindai'),
+  Widget _buildEmptyState(BuildContext context, {Key? key}) {
+    final primary = Theme.of(context).colorScheme.primary;
+    return Column(
+      key: key,
+      children: [
+        const SizedBox(height: 40),
+        TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0.85, end: 1.0),
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeOutBack,
+          builder: (context, scale, child) => Transform.scale(scale: scale, child: child),
+          child: Container(
+            width: 96,
+            height: 96,
+            decoration: BoxDecoration(
+              color: primary.withOpacity(context.isDark ? 0.16 : 0.08),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.receipt_long_outlined, size: 44, color: primary),
+          ),
         ),
-      ),
-    ]);
+        const SizedBox(height: 22),
+        Text('Foto atau pilih struk belanja untuk dipindai otomatis',
+            textAlign: TextAlign.center, style: TextStyle(color: context.textMuted, fontSize: 14, height: 1.4)),
+        const SizedBox(height: 24),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            onPressed: _showSourceSheet,
+            icon: const Icon(Icons.document_scanner_outlined),
+            label: const Text('Mulai Pindai'),
+          ),
+        ),
+      ],
+    );
   }
 
-  Widget _buildPreview(BuildContext context) {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Image.file(_imageFile!, height: 220, width: double.infinity, fit: BoxFit.cover),
-      ),
-      const SizedBox(height: 12),
-      Align(
-        alignment: Alignment.centerRight,
-        child: TextButton.icon(onPressed: _showSourceSheet, icon: const Icon(Icons.refresh, size: 16), label: const Text('Pindai ulang')),
-      ),
-    ]);
+  Widget _buildPreview(BuildContext context, {Key? key}) {
+    return Column(
+      key: key,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GestureDetector(
+          onTap: () => Navigator.push(
+            context,
+            MediaPreviewRoute(builder: (_) => _ReceiptImagePreviewPage(imageFile: _imageFile!)),
+          ),
+          child: Hero(
+            tag: 'receipt-image-preview',
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: Stack(
+                children: [
+                  Image.file(_imageFile!, height: 240, width: double.infinity, fit: BoxFit.cover),
+                  Positioned.fill(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [Colors.transparent, Colors.black.withOpacity(0.32)],
+                          stops: const [0.55, 1.0],
+                        ),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    right: 12,
+                    bottom: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(color: Colors.black.withOpacity(0.45), borderRadius: BorderRadius.circular(20)),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: const [
+                        Icon(Icons.fullscreen_rounded, size: 15, color: Colors.white),
+                        SizedBox(width: 4),
+                        Text('Lihat penuh', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
+                      ]),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Align(
+          alignment: Alignment.centerRight,
+          child: TextButton.icon(onPressed: _showSourceSheet, icon: const Icon(Icons.refresh, size: 16), label: const Text('Pindai ulang')),
+        ),
+      ],
+    );
   }
 
   Widget _buildScanningState(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 24),
-      child: Row(children: [
-        const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2.4)),
-        const SizedBox(width: 14),
-        Expanded(child: Text(_scanStage ?? 'Memindai...', style: TextStyle(color: context.textMuted, fontSize: 13))),
-      ]),
+      padding: const EdgeInsets.only(top: 18),
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0.0, end: 1.0),
+        duration: const Duration(milliseconds: 320),
+        curve: Curves.easeOutCubic,
+        builder: (context, t, child) => Opacity(
+          opacity: t,
+          child: Transform.translate(offset: Offset(0, (1 - t) * 12), child: child),
+        ),
+        child: Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: context.cardColor,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: context.borderColor),
+          ),
+          child: Row(children: [
+            SizedBox(
+              width: 22,
+              height: 22,
+              child: CircularProgressIndicator(strokeWidth: 2.4, color: primary),
+            ),
+            const SizedBox(width: 14),
+            Expanded(child: Text(_scanStage ?? 'Memindai...', style: TextStyle(color: context.textMuted, fontSize: 13, fontWeight: FontWeight.w500))),
+          ]),
+        ),
+      ),
     );
   }
 
   Widget _buildResultForm(BuildContext context) {
     final result = _result!;
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      const SizedBox(height: 8),
-      Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(
-          color: (result.source == ReceiptScanSource.online ? Theme.of(context).colorScheme.primary : Colors.grey).withOpacity(0.14),
-          borderRadius: BorderRadius.circular(20),
-        ),
-        child: Text(
-          result.source == ReceiptScanSource.online ? 'Dibaca via AI online' : 'Dibaca offline',
-          style: TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
-            color: result.source == ReceiptScanSource.online ? Theme.of(context).colorScheme.primary : Colors.grey.shade700,
-          ),
-        ),
-      ),
-      if (!result.confident) ...[
-        const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.all(14),
+    final primary = Theme.of(context).colorScheme.primary;
+    var revealIndex = 0;
+    Widget reveal(Widget child) {
+      final i = revealIndex++;
+      return StaggeredReveal(
+        key: ValueKey('receipt_form_${_scanEpoch}_$i'),
+        index: i,
+        stagger: true,
+        child: child,
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 18),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        reveal(Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
-            color: Colors.orange.withOpacity(context.isDark ? 0.14 : 0.10),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.orange.withOpacity(0.3)),
+            color: (result.source == ReceiptScanSource.online ? primary : Colors.grey).withOpacity(0.14),
+            borderRadius: BorderRadius.circular(20),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(children: [
-                const Icon(Icons.info_outline_rounded, size: 16, color: Colors.orange),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Nominal & nama toko tidak terbaca otomatis. Silakan isi manual di bawah, atau aktifkan AI online agar pembacaan lebih akurat.',
-                    style: TextStyle(fontSize: 12, color: context.textMuted, height: 1.4),
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            Icon(
+              result.source == ReceiptScanSource.online ? Icons.auto_awesome_rounded : Icons.offline_bolt_rounded,
+              size: 12,
+              color: result.source == ReceiptScanSource.online ? primary : Colors.grey.shade700,
+            ),
+            const SizedBox(width: 5),
+            Text(
+              result.source == ReceiptScanSource.online ? 'Dibaca via AI online' : 'Dibaca offline',
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.bold,
+                color: result.source == ReceiptScanSource.online ? primary : Colors.grey.shade700,
+              ),
+            ),
+          ]),
+        )),
+        if (!result.confident) ...[
+          const SizedBox(height: 12),
+          reveal(Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.orange.withOpacity(context.isDark ? 0.14 : 0.10),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.orange.withOpacity(0.3)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(children: [
+                  const Icon(Icons.info_outline_rounded, size: 16, color: Colors.orange),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Nominal & nama toko tidak terbaca otomatis. Silakan isi manual di bawah, atau aktifkan AI online agar pembacaan lebih akurat.',
+                      style: TextStyle(fontSize: 12, color: context.textMuted, height: 1.4),
+                    ),
+                  ),
+                ]),
+                const SizedBox(height: 10),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    onPressed: () => Navigator.push(context, GlassPageRoute(builder: (_) => const ReceiptScanApiKeySettingsPage())),
+                    icon: const Icon(Icons.smart_toy_outlined, size: 16),
+                    label: const Text('Buka Pengaturan AI Scan', style: TextStyle(fontSize: 12)),
                   ),
                 ),
-              ]),
-              const SizedBox(height: 10),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton.icon(
-                  onPressed: () => Navigator.push(context, GlassPageRoute(builder: (_) => const ReceiptScanApiKeySettingsPage())),
-                  icon: const Icon(Icons.smart_toy_outlined, size: 16),
-                  label: const Text('Buka Pengaturan AI Scan', style: TextStyle(fontSize: 12)),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-      const SizedBox(height: 16),
-      TextField(controller: _titleCtrl, decoration: const InputDecoration(labelText: 'Nama toko / judul transaksi')),
-      const SizedBox(height: 12),
-      TextField(
-        controller: _amountCtrl,
-        keyboardType: TextInputType.number,
-        inputFormatters: [FilteringTextInputFormatter.digitsOnly, ThousandsInputFormatter()],
-        decoration: const InputDecoration(labelText: 'Total belanja', prefixText: 'Rp '),
-      ),
-      const SizedBox(height: 12),
-      GestureDetector(
-        onTap: () async {
-          final picked = await showDatePicker(context: context, initialDate: _selectedDate, firstDate: DateTime(2000), lastDate: DateTime(2100));
-          if (picked != null) {
-            setState(() => _selectedDate = DateTime(picked.year, picked.month, picked.day, _selectedDate.hour, _selectedDate.minute));
-          }
-        },
-        child: InputDecorator(
-          decoration: const InputDecoration(labelText: 'Tanggal'),
-          child: Row(children: [
-            Icon(Icons.calendar_today_outlined, size: 16, color: context.iconMuted),
-            const SizedBox(width: 10),
-            Text(AppFormatters.dateOnly.format(_selectedDate), style: TextStyle(fontSize: 14, color: context.textPrimary, fontWeight: FontWeight.w500)),
-          ]),
-        ),
-      ),
-      if (result.items.isNotEmpty) ...[
-        const SizedBox(height: 16),
-        Text('Daftar belanja terdeteksi', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: context.textMuted)),
-        const SizedBox(height: 8),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: context.isDark ? Colors.white.withOpacity(0.04) : const Color(0xFFF1EEF7),
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: result.items.map((item) {
-              final qtyLabel = item.quantity != null && item.quantity! > 0 ? '${item.quantity!.toStringAsFixed(item.quantity! == item.quantity!.roundToDouble() ? 0 : 1)}x ' : '';
-              final priceLabel = item.price != null ? rupiah(item.price!) : '';
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 6),
-                child: Row(
-                  children: [
-                    Expanded(child: Text('$qtyLabel${item.name}', style: TextStyle(fontSize: 12.5, color: context.textPrimary))),
-                    Text(priceLabel, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: context.textMuted)),
-                  ],
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-      ],
-      if (result.rawText.trim().isNotEmpty) ...[
+              ],
+            ),
+          )),
+        ],
+        const SizedBox(height: 18),
+        reveal(TextField(
+          controller: _titleCtrl,
+          decoration: InputDecoration(labelText: 'Nama toko / judul transaksi', prefixIcon: Icon(Icons.storefront_outlined, size: 20, color: context.iconMuted)),
+        )),
         const SizedBox(height: 12),
-        Theme(
-          data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
-          child: ExpansionTile(
-            tilePadding: EdgeInsets.zero,
-            title: Text('Lihat teks hasil pindai', style: TextStyle(fontSize: 12, color: context.textMuted)),
+        reveal(TextField(
+          controller: _amountCtrl,
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.digitsOnly, ThousandsInputFormatter()],
+          decoration: InputDecoration(labelText: 'Total belanja', prefixText: 'Rp ', prefixIcon: Icon(Icons.payments_outlined, size: 20, color: context.iconMuted)),
+        )),
+        const SizedBox(height: 12),
+        reveal(GestureDetector(
+          onTap: () async {
+            final picked = await showDatePicker(context: context, initialDate: _selectedDate, firstDate: DateTime(2000), lastDate: DateTime(2100));
+            if (picked != null) {
+              setState(() => _selectedDate = DateTime(picked.year, picked.month, picked.day, _selectedDate.hour, _selectedDate.minute));
+            }
+          },
+          child: InputDecorator(
+            decoration: const InputDecoration(labelText: 'Tanggal'),
+            child: Row(children: [
+              Icon(Icons.calendar_today_outlined, size: 16, color: context.iconMuted),
+              const SizedBox(width: 10),
+              Text(AppFormatters.dateOnly.format(_selectedDate), style: TextStyle(fontSize: 14, color: context.textPrimary, fontWeight: FontWeight.w500)),
+            ]),
+          ),
+        )),
+        if (result.items.isNotEmpty) ...[
+          const SizedBox(height: 18),
+          reveal(Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Text('Daftar belanja terdeteksi', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: context.textMuted)),
+              const SizedBox(height: 8),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                   color: context.isDark ? Colors.white.withOpacity(0.04) : const Color(0xFFF1EEF7),
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(14),
                 ),
-                child: Text(result.rawText, style: TextStyle(fontFamily: 'monospace', fontSize: 11, color: context.textMuted)),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: result.items.map((item) {
+                    final qtyLabel = item.quantity != null && item.quantity! > 0 ? '${item.quantity!.toStringAsFixed(item.quantity! == item.quantity!.roundToDouble() ? 0 : 1)}x ' : '';
+                    final priceLabel = item.price != null ? rupiah(item.price!) : '';
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 6),
+                      child: Row(
+                        children: [
+                          Expanded(child: Text('$qtyLabel${item.name}', style: TextStyle(fontSize: 12.5, color: context.textPrimary))),
+                          Text(priceLabel, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: context.textMuted)),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ),
               ),
             ],
-          ),
+          )),
+        ],
+        if (result.rawText.trim().isNotEmpty) ...[
+          const SizedBox(height: 12),
+          reveal(Theme(
+            data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+            child: ExpansionTile(
+              tilePadding: EdgeInsets.zero,
+              title: Text('Lihat teks hasil pindai', style: TextStyle(fontSize: 12, color: context.textMuted)),
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: context.isDark ? Colors.white.withOpacity(0.04) : const Color(0xFFF1EEF7),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(result.rawText, style: TextStyle(fontFamily: 'monospace', fontSize: 11, color: context.textMuted)),
+                ),
+              ],
+            ),
+          )),
+        ],
+        const SizedBox(height: 12),
+      ]),
+    );
+  }
+}
+
+class _ReceiptImagePreviewPage extends StatelessWidget {
+  final File imageFile;
+  const _ReceiptImagePreviewPage({required this.imageFile});
+
+  @override
+  Widget build(BuildContext context) {
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.light,
+        statusBarBrightness: Brightness.dark,
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: Stack(
+          children: [
+            Center(
+              child: Hero(
+                tag: 'receipt-image-preview',
+                child: InteractiveViewer(
+                  maxScale: 4,
+                  child: Image.file(imageFile, fit: BoxFit.contain, width: double.infinity),
+                ),
+              ),
+            ),
+            SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: GestureDetector(
+                  onTap: () => Navigator.pop(context),
+                  child: Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(color: Colors.black.withOpacity(0.32), shape: BoxShape.circle),
+                    child: const Icon(Icons.close_rounded, size: 18, color: Colors.white),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
-      ],
-      const SizedBox(height: 20),
-      SizedBox(width: double.infinity, child: FilledButton(onPressed: _save, child: const Text('Simpan sebagai pengeluaran'))),
-      const SizedBox(height: 30),
-    ]);
+      ),
+    );
   }
 }
 
