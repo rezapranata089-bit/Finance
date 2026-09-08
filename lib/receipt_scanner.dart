@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_tesseract_ocr/flutter_tesseract_ocr.dart';
 import 'package:http/http.dart' as http;
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
+import 'package:lottie/lottie.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:solar_icons/solar_icons.dart';
 
@@ -1038,17 +1039,28 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
 
   // ==================== DEBUG PREVIEW (HAPUS METHOD INI UNTUK KEMBALI KE ASLI) ====================
   void _loadDebugMockResult() {
-    final mock = buildDebugMockScanResult();
     setState(() {
       _debugPreviewActive = true;
-      _result = mock;
-      _scanning = false;
+      _result = null;
+      _scanning = true;
       _scanEpoch++;
-      _titleCtrl.text = mock.merchant ?? '';
-      _amountCtrl.text = mock.total != null
-          ? AppFormatters.thousands.format(mock.total).replaceAll(',', '.')
-          : '';
-      _selectedDate = mock.date ?? DateTime.now();
+      _scanStage = 'Mode DEBUG PREVIEW — mensimulasikan proses pemindaian...';
+    });
+    // Delay buatan supaya animasi Lottie & teks informatif di
+    // _buildScanningState sempat terlihat sebelum panel hasil ditampilkan,
+    // meniru alur scan asli (bukan langsung loncat ke hasil).
+    Future.delayed(const Duration(milliseconds: 1800), () {
+      if (!mounted || !_debugPreviewActive) return;
+      final mock = buildDebugMockScanResult();
+      setState(() {
+        _result = mock;
+        _scanning = false;
+        _titleCtrl.text = mock.merchant ?? '';
+        _amountCtrl.text = mock.total != null
+            ? AppFormatters.thousands.format(mock.total).replaceAll(',', '.')
+            : '';
+        _selectedDate = mock.date ?? DateTime.now();
+      });
     });
   }
   // ==================== END DEBUG PREVIEW ====================
@@ -1416,6 +1428,7 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
               onPressed: () => setState(() {
                 _debugPreviewActive = false;
                 _result = null;
+                _scanning = false;
                 _titleCtrl.clear();
                 _amountCtrl.clear();
               }),
@@ -1528,7 +1541,6 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
   }
 
   Widget _buildScanningState(BuildContext context) {
-    final primary = Theme.of(context).colorScheme.primary;
     final lang = ref.watch(langProvider);
     return Padding(
       padding: const EdgeInsets.only(top: 18),
@@ -1541,21 +1553,29 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
           child: Transform.translate(offset: Offset(0, (1 - t) * 12), child: child),
         ),
         child: Container(
-          padding: const EdgeInsets.all(18),
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 18),
           decoration: BoxDecoration(
             color: context.cardColor,
             borderRadius: BorderRadius.circular(20),
             border: Border.all(color: context.borderColor),
           ),
-          child: Row(children: [
-            SizedBox(
-              width: 22,
-              height: 22,
-              child: CircularProgressIndicator(strokeWidth: 2.4, color: primary),
-            ),
-            const SizedBox(width: 14),
-            Expanded(child: Text(_scanStage ?? Strings.t(lang, 'scanning_generic'), style: TextStyle(color: context.textMuted, fontSize: 13, fontWeight: FontWeight.w500))),
-          ]),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              SizedBox(
+                width: 150,
+                height: 150,
+                child: Lottie.asset('assets/lottie/cari.json', repeat: true, fit: BoxFit.contain),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                _scanStage ?? Strings.t(lang, 'scanning_generic'),
+                textAlign: TextAlign.center,
+                style: TextStyle(color: context.textMuted, fontSize: 13, fontWeight: FontWeight.w500, height: 1.4),
+              ),
+            ],
+          ),
         ),
       ),
     );

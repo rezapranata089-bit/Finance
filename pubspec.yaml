@@ -42,6 +42,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/lottie/ai.json
+    - assets/lottie/cari.json
     # NOTE: taruh file *.traineddata (mis. ind.traineddata, eng.traineddata
     # dari https://github.com/tesseract-ocr/tessdata) di folder ini secara
     # manual. flutter_tesseract_ocr butuh file ini untuk bisa membaca teks;
