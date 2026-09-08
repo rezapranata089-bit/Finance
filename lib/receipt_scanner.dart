@@ -1039,12 +1039,16 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
 
   // ==================== DEBUG PREVIEW (HAPUS METHOD INI UNTUK KEMBALI KE ASLI) ====================
   void _loadDebugMockResult() {
+    final lang = ref.read(langProvider);
     setState(() {
       _debugPreviewActive = true;
       _result = null;
       _scanning = true;
       _scanEpoch++;
-      _scanStage = 'Mode DEBUG PREVIEW — mensimulasikan proses pemindaian...';
+      // Pakai teks tahap pemindaian yang sama seperti alur scan asli (bukan
+      // teks bertuliskan "debug"), supaya tampilannya persis seperti yang
+      // akan dilihat pengguna sesungguhnya.
+      _scanStage = Strings.t(lang, 'scan_stage_offline');
     });
     // Delay buatan supaya animasi Lottie & teks informatif di
     // _buildScanningState sempat terlihat sebelum panel hasil ditampilkan,
@@ -1169,7 +1173,7 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
   void _save() {
     // ==================== DEBUG PREVIEW (HAPUS BLOK INI UNTUK KEMBALI KE ASLI) ====================
     if (_debugPreviewActive) {
-      showGlassSnackBar(context, 'Mode DEBUG PREVIEW — transaksi tidak benar-benar disimpan.', icon: Icons.bug_report_outlined);
+      showGlassSnackBar(context, 'Ini hanya pratinjau tampilan, transaksi belum benar-benar tersimpan.', icon: Icons.info_outline);
       return;
     }
     // ==================== END DEBUG PREVIEW ====================
@@ -1281,8 +1285,11 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
                               ),
                             ),
                             // ==================== DEBUG PREVIEW (HAPUS KONDISI INI UNTUK KEMBALI KE ASLI) ====================
+                            // Mode debug tidak punya foto struk asli, jadi area foto ini
+                            // dikosongkan total (tanpa placeholder/label apa pun) — panel
+                            // loading & hasil di bawah sudah menampilkan tampilan asli.
                             child: _debugPreviewActive
-                                ? _buildDebugPreviewHeader(context, key: const ValueKey('debug_preview_header'))
+                                ? const SizedBox.shrink(key: ValueKey('debug_no_photo'))
                                 : (_imageFile == null
                                     ? (_autoStarting
                                         ? const SizedBox.shrink(key: ValueKey('autostarting'))
@@ -1394,53 +1401,6 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
       ],
     );
   }
-
-  // ==================== DEBUG PREVIEW (HAPUS METHOD INI UNTUK KEMBALI KE ASLI) ====================
-  Widget _buildDebugPreviewHeader(BuildContext context, {Key? key}) {
-    final primary = Theme.of(context).colorScheme.primary;
-    return Column(
-      key: key,
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          height: 240,
-          width: double.infinity,
-          decoration: BoxDecoration(
-            color: primary.withOpacity(context.isDark ? 0.18 : 0.10),
-            borderRadius: BorderRadius.circular(24),
-          ),
-          alignment: Alignment.center,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.bug_report_outlined, size: 40, color: primary),
-              const SizedBox(height: 8),
-              Text('DEBUG PREVIEW', style: TextStyle(color: primary, fontWeight: FontWeight.bold, letterSpacing: 1.2)),
-            ],
-          ),
-        ),
-        const SizedBox(height: 10),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            (_result != null && !_scanning) ? _buildSourceBadge(context) : const SizedBox.shrink(),
-            TextButton.icon(
-              onPressed: () => setState(() {
-                _debugPreviewActive = false;
-                _result = null;
-                _scanning = false;
-                _titleCtrl.clear();
-                _amountCtrl.clear();
-              }),
-              icon: const Icon(Icons.close_rounded, size: 16),
-              label: const Text('Keluar Debug'),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-  // ==================== END DEBUG PREVIEW ====================
 
   Widget _buildPreview(BuildContext context, {Key? key}) {
     final lang = ref.watch(langProvider);
