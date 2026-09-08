@@ -6716,6 +6716,29 @@ class _CrashLogPageState extends State<CrashLogPage> {
                           ),
                         ),
                       ),
+                    // ==================== DEBUG PREVIEW (HAPUS BLOK INI UNTUK KEMBALI KE ASLI) ====================
+                    // Tombol khusus untuk melihat panel "Pindai Struk" dengan data
+                    // contoh (mock), tanpa kamera/document scanner native — supaya
+                    // desain panel bisa langsung dicek di preview Flutter Web tanpa
+                    // build APK dulu. Hapus seluruh blok ini (dan bagian debugMock
+                    // lain di lib/receipt_scanner.dart) untuk kembali seperti semula.
+                    if (kIsWeb) ...[
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: () => Navigator.push(context, GlassPageRoute(builder: (_) => const ReceiptScanPage(debugMock: true))),
+                        child: LiquidGlass(
+                          borderRadius: 999,
+                          tint: isDark ? Colors.black : null,
+                          intensity: isDark ? 1.6 : 1.0,
+                          borderColor: isDark ? context.borderColor : null,
+                          child: Padding(
+                            padding: const EdgeInsets.all(10),
+                            child: Icon(Icons.bug_report_outlined, size: 18, color: primary),
+                          ),
+                        ),
+                      ),
+                    ],
+                    // ==================== END DEBUG PREVIEW ====================
                   ],
                 ),
               ),
