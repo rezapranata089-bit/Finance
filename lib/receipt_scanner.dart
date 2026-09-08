@@ -984,16 +984,13 @@ class ReceiptScanPage extends ConsumerStatefulWidget {
   ConsumerState<ReceiptScanPage> createState() => _ReceiptScanPageState();
 }
 
-class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> with TickerProviderStateMixin {
+class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
   final _service = ReceiptScannerService();
   File? _imageFile;
   ReceiptScanResult? _result;
   bool _scanning = false;
   String? _scanStage;
   final ScrollController _scrollController = ScrollController();
-  // Animasi garis laser yang menyapu foto struk selagi proses scan berjalan.
-  late final AnimationController _scanLineController =
-      AnimationController(vsync: this, duration: const Duration(milliseconds: 1600))..repeat();
   int _scanEpoch = 0;
   // Saat true, panel kosong "Mulai Pindai" (_buildEmptyState) sengaja
   // TIDAK ditampilkan sama sekali walau _imageFile masih null. Ini
@@ -1077,7 +1074,6 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> with TickerPr
   void dispose() {
     _titleCtrl.dispose();
     _amountCtrl.dispose();
-    _scanLineController.dispose();
     super.dispose();
   }
 
@@ -1430,34 +1426,7 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> with TickerPr
                   if (_scanning)
                     Positioned.fill(
                       child: IgnorePointer(
-                        child: AnimatedBuilder(
-                          animation: _scanLineController,
-                          builder: (context, child) {
-                            final progress = _scanLineController.value;
-                            return Stack(
-                              children: [
-                                const DecoratedBox(decoration: BoxDecoration(color: Color(0x38000000))),
-                                Align(
-                                  alignment: Alignment(0, -1 + progress * 2),
-                                  child: Container(
-                                    height: 56,
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        begin: Alignment.topCenter,
-                                        end: Alignment.bottomCenter,
-                                        colors: [
-                                          Colors.transparent,
-                                          Theme.of(context).colorScheme.primary.withOpacity(0.55),
-                                          Colors.transparent,
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            );
-                          },
-                        ),
+                        child: _ReceiptScanFxOverlay(color: Theme.of(context).colorScheme.primary),
                       ),
                     ),
                   Positioned(
@@ -1904,6 +1873,117 @@ class _PulsingScanIconState extends State<_PulsingScanIcon> with SingleTickerPro
       },
     );
   }
+}
+
+// Overlay efek "biometric scan" saat memindai: garis pindai bergerak
+// ping-pong (naik-turun, reverse: true) dengan kurva easeInOutSine sehingga
+// melambat halus di titik balik — tidak pernah melompat/patah seperti
+// gerakan satu-arah yang di-reset paksa. Dilengkapi bintik partikel yang
+// berkedip & melayang halus dengan fase acak per titik agar terasa organik,
+// menyerupai animasi pemindai sidik jari/wajah.
+class _ReceiptScanFxOverlay extends StatefulWidget {
+  final Color color;
+  const _ReceiptScanFxOverlay({required this.color});
+  @override
+  State<_ReceiptScanFxOverlay> createState() => _ReceiptScanFxOverlayState();
+}
+
+class _ReceiptScanFxOverlayState extends State<_ReceiptScanFxOverlay> with TickerProviderStateMixin {
+  late final AnimationController _lineController =
+      AnimationController(vsync: this, duration: const Duration(milliseconds: 2100))..repeat(reverse: true);
+  late final Animation<double> _lineCurve = CurvedAnimation(parent: _lineController, curve: Curves.easeInOutSine);
+
+  late final AnimationController _particleController =
+      AnimationController(vsync: this, duration: const Duration(milliseconds: 3200))..repeat();
+
+  late final List<_ScanParticle> _particles = _generateParticles();
+
+  List<_ScanParticle> _generateParticles() {
+    final rnd = Random(7);
+    return List.generate(22, (i) => _ScanParticle(
+          dx: rnd.nextDouble(),
+          dy: rnd.nextDouble(),
+          phase: rnd.nextDouble() * pi * 2,
+          speed: 0.6 + rnd.nextDouble() * 0.9,
+          radius: 1.2 + rnd.nextDouble() * 1.8,
+        ));
+  }
+
+  @override
+  void dispose() {
+    _lineController.dispose();
+    _particleController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: Listenable.merge([_lineCurve, _particleController]),
+      builder: (context, child) => SizedBox.expand(
+        child: CustomPaint(
+          painter: _ScanFxPainter(
+            color: widget.color,
+            lineProgress: _lineCurve.value,
+            particleTime: _particleController.value,
+            particles: _particles,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ScanParticle {
+  final double dx, dy, phase, speed, radius;
+  const _ScanParticle({required this.dx, required this.dy, required this.phase, required this.speed, required this.radius});
+}
+
+class _ScanFxPainter extends CustomPainter {
+  final Color color;
+  final double lineProgress;
+  final double particleTime;
+  final List<_ScanParticle> particles;
+  _ScanFxPainter({required this.color, required this.lineProgress, required this.particleTime, required this.particles});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    canvas.drawRect(Offset.zero & size, Paint()..color = const Color(0x2E000000));
+
+    for (final p in particles) {
+      final wave = sin((particleTime * 2 * pi * p.speed) + p.phase);
+      final opacity = (0.15 + 0.45 * ((wave + 1) / 2)).clamp(0.0, 0.6);
+      final floatOffset = sin((particleTime * 2 * pi * p.speed * 0.5) + p.phase) * 3.0;
+      final center = Offset(p.dx * size.width, p.dy * size.height + floatOffset);
+      final paint = Paint()
+        ..color = color.withOpacity(opacity)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.4);
+      canvas.drawCircle(center, p.radius, paint);
+    }
+
+    final lineY = lineProgress * size.height;
+    final glowRect = Rect.fromLTWH(0, lineY - 46, size.width, 92);
+    final glowPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [color.withOpacity(0.0), color.withOpacity(0.22), color.withOpacity(0.0)],
+        stops: const [0.0, 0.5, 1.0],
+      ).createShader(glowRect);
+    canvas.drawRect(glowRect, glowPaint);
+
+    final coreRect = Rect.fromLTWH(0, lineY - 1.4, size.width, 2.8);
+    final corePaint = Paint()
+      ..shader = LinearGradient(
+        colors: [color.withOpacity(0.0), color.withOpacity(0.95), color.withOpacity(0.0)],
+      ).createShader(Rect.fromLTWH(0, 0, size.width, 1))
+      ..blendMode = BlendMode.plus;
+    canvas.drawRect(coreRect, corePaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _ScanFxPainter oldDelegate) =>
+      oldDelegate.lineProgress != lineProgress || oldDelegate.particleTime != particleTime || oldDelegate.color != color;
 }
 
 class ReceiptScanApiKeySettingsPage extends ConsumerStatefulWidget {
