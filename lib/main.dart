@@ -2617,6 +2617,74 @@ class _PressScaleState extends State<PressScale> {
   }
 }
 
+// Tombol scan di bottom nav dengan glow pulsing lembut agar terasa
+// "hidup"/mengundang untuk disentuh, sekaligus tetap punya efek tekan.
+class _ScanNavButton extends StatefulWidget {
+  const _ScanNavButton();
+  @override
+  State<_ScanNavButton> createState() => _ScanNavButtonState();
+}
+
+class _ScanNavButtonState extends State<_ScanNavButton> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller =
+      AnimationController(vsync: this, duration: const Duration(milliseconds: 1800))..repeat();
+  double _pressScale = 1.0;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = Theme.of(context).colorScheme.secondary;
+    return GestureDetector(
+      onTapDown: (_) => setState(() => _pressScale = 0.9),
+      onTapUp: (_) => setState(() => _pressScale = 1.0),
+      onTapCancel: () => setState(() => _pressScale = 1.0),
+      onTap: () {
+        HapticFeedback.selectionClick();
+        pickReceiptFromCameraAndPush(context);
+      },
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedScale(
+        scale: _pressScale,
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOut,
+        child: SizedBox(
+          width: 58,
+          height: 58,
+          child: AnimatedBuilder(
+            animation: _controller,
+            builder: (context, child) {
+              final glow = (0.5 + 0.5 * sin(_controller.value * pi * 2)).clamp(0.0, 1.0);
+              return Stack(
+                alignment: Alignment.center,
+                children: [
+                  Container(
+                    width: 58,
+                    height: 58,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [BoxShadow(color: accent.withOpacity(0.25 + glow * 0.2), blurRadius: 14 + glow * 8, spreadRadius: 1)],
+                    ),
+                  ),
+                  Container(
+                    width: 48, height: 48,
+                    decoration: BoxDecoration(color: accent, borderRadius: BorderRadius.circular(16)),
+                    child: const Icon(SolarIconsOutline.scanner, color: Colors.black),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class Strings {
   static const Map<String, Map<AppLang, String>> _s = {
     'skip': {AppLang.en: 'Skip', AppLang.id: 'Lewati'},
@@ -2690,6 +2758,7 @@ class Strings {
     'start_scan': {AppLang.en: 'Start Scan', AppLang.id: 'Mulai Pindai'},
     'view_full': {AppLang.en: 'View full', AppLang.id: 'Lihat penuh'},
     'rescan': {AppLang.en: 'Rescan', AppLang.id: 'Pindai ulang'},
+    'scan_success_banner': {AppLang.en: 'Receipt read successfully — check the details below', AppLang.id: 'Struk berhasil dibaca — cek detailnya di bawah'},
     'scan_stage_online': {AppLang.en: 'Reading receipt with online AI ({provider})...', AppLang.id: 'Membaca struk dengan AI online ({provider})...'},
     'scan_stage_offline': {AppLang.en: 'Reading receipt text (offline)...', AppLang.id: 'Membaca teks struk (offline)...'},
     'scan_stage_online_unavailable': {AppLang.en: 'Online AI unavailable (check internet/model), trying offline scan...', AppLang.id: 'AI online tidak tersedia (cek koneksi internet/model), mencoba pemindaian offline...'},
@@ -3541,17 +3610,7 @@ class _FinanceShellState extends ConsumerState<FinanceShell> with SingleTickerPr
                   children: [
                     _navItem(context, 0, SolarIconsOutline.home, SolarIconsBold.home, Strings.t(lang, 'nav_home'), tab, ref),
                     _navItem(context, 1, SolarIconsOutline.chart, SolarIconsBold.chart, Strings.t(lang, 'nav_statistic'), tab, ref),
-                    GestureDetector(
-                      onTap: () => pickReceiptFromCameraAndPush(context),
-                      child: Container(
-                        width: 48, height: 48,
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.secondary,
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: const Icon(SolarIconsOutline.scanner, color: Colors.black),
-                      ),
-                    ),
+                    const _ScanNavButton(),
                     _navItem(context, 2, SolarIconsOutline.billList, SolarIconsBold.billList, Strings.t(lang, 'nav_card'), tab, ref),
                     _navItem(context, 3, SolarIconsOutline.user, SolarIconsBold.user, Strings.t(lang, 'nav_profile'), tab, ref, onLongPress: () => toggleDummyData(context, ref)),
                   ],

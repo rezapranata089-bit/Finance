@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:cunning_document_scanner/cunning_document_scanner.dart';
 import 'package:flutter/material.dart';
@@ -983,13 +984,16 @@ class ReceiptScanPage extends ConsumerStatefulWidget {
   ConsumerState<ReceiptScanPage> createState() => _ReceiptScanPageState();
 }
 
-class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
+class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> with TickerProviderStateMixin {
   final _service = ReceiptScannerService();
   File? _imageFile;
   ReceiptScanResult? _result;
   bool _scanning = false;
   String? _scanStage;
   final ScrollController _scrollController = ScrollController();
+  // Animasi garis laser yang menyapu foto struk selagi proses scan berjalan.
+  late final AnimationController _scanLineController =
+      AnimationController(vsync: this, duration: const Duration(milliseconds: 1600))..repeat();
   int _scanEpoch = 0;
   // Saat true, panel kosong "Mulai Pindai" (_buildEmptyState) sengaja
   // TIDAK ditampilkan sama sekali walau _imageFile masih null. Ini
@@ -1073,6 +1077,7 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
   void dispose() {
     _titleCtrl.dispose();
     _amountCtrl.dispose();
+    _scanLineController.dispose();
     super.dispose();
   }
 
@@ -1183,6 +1188,7 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
       showGlassSnackBar(context, Strings.t(lang, 'fill_title_amount_first'), icon: Icons.warning_amber_rounded);
       return;
     }
+    HapticFeedback.mediumImpact();
     final cards = ref.read(cardsProvider);
     final rawSelectedCard = ref.read(selectedCardProvider);
     final cardIndex = (rawSelectedCard >= 0 && rawSelectedCard < cards.length) ? rawSelectedCard : 0;
@@ -1370,32 +1376,33 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
     return Column(
       key: key,
       children: [
-        const SizedBox(height: 40),
-        TweenAnimationBuilder<double>(
-          tween: Tween(begin: 0.85, end: 1.0),
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.easeOutBack,
-          builder: (context, scale, child) => Transform.scale(scale: scale, child: child),
-          child: Container(
-            width: 96,
-            height: 96,
-            decoration: BoxDecoration(
-              color: primary.withOpacity(context.isDark ? 0.16 : 0.08),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(Icons.receipt_long_outlined, size: 44, color: primary),
-          ),
-        ),
-        const SizedBox(height: 22),
+        const SizedBox(height: 28),
+        _PulsingScanIcon(color: primary),
+        const SizedBox(height: 26),
         Text(Strings.t(lang, 'receipt_empty_hint'),
             textAlign: TextAlign.center, style: TextStyle(color: context.textMuted, fontSize: 14, height: 1.4)),
-        const SizedBox(height: 24),
+        const SizedBox(height: 26),
         SizedBox(
           width: double.infinity,
-          child: FilledButton.icon(
-            onPressed: _showSourceSheet,
-            icon: const Icon(Icons.document_scanner_outlined),
-            label: Text(Strings.t(lang, 'start_scan')),
+          height: 52,
+          child: PressScale(
+            onTap: _showSourceSheet,
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                gradient: LinearGradient(colors: [primary, primary.withOpacity(0.78)]),
+                boxShadow: [BoxShadow(color: primary.withOpacity(0.35), blurRadius: 18, offset: const Offset(0, 8))],
+              ),
+              alignment: Alignment.center,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.document_scanner_outlined, color: Colors.white, size: 20),
+                  const SizedBox(width: 10),
+                  Text(Strings.t(lang, 'start_scan'), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                ],
+              ),
+            ),
           ),
         ),
       ],
@@ -1420,6 +1427,39 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
               child: Stack(
                 children: [
                   Image.file(_imageFile!, height: 240, width: double.infinity, fit: BoxFit.cover),
+                  if (_scanning)
+                    Positioned.fill(
+                      child: IgnorePointer(
+                        child: AnimatedBuilder(
+                          animation: _scanLineController,
+                          builder: (context, child) {
+                            final progress = _scanLineController.value;
+                            return Stack(
+                              children: [
+                                const DecoratedBox(decoration: BoxDecoration(color: Color(0x38000000))),
+                                Align(
+                                  alignment: Alignment(0, -1 + progress * 2),
+                                  child: Container(
+                                    height: 56,
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.topCenter,
+                                        end: Alignment.bottomCenter,
+                                        colors: [
+                                          Colors.transparent,
+                                          Theme.of(context).colorScheme.primary.withOpacity(0.55),
+                                          Colors.transparent,
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                      ),
+                    ),
                   Positioned(
                     left: 0,
                     right: 0,
@@ -1456,12 +1496,19 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
           ),
         ),
         const SizedBox(height: 10),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            (_result != null && !_scanning) ? _buildSourceBadge(context) : const SizedBox.shrink(),
-            TextButton.icon(onPressed: _showSourceSheet, icon: const Icon(Icons.refresh, size: 16), label: Text(Strings.t(lang, 'rescan'))),
-          ],
+        AnimatedOpacity(
+          duration: const Duration(milliseconds: 220),
+          opacity: _scanning ? 0.0 : 1.0,
+          child: IgnorePointer(
+            ignoring: _scanning,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                (_result != null && !_scanning) ? _buildSourceBadge(context) : const SizedBox.shrink(),
+                TextButton.icon(onPressed: _showSourceSheet, icon: const Icon(Icons.refresh, size: 16), label: Text(Strings.t(lang, 'rescan'))),
+              ],
+            ),
+          ),
         ),
       ],
     );
@@ -1502,6 +1549,7 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
 
   Widget _buildScanningState(BuildContext context) {
     final lang = ref.watch(langProvider);
+    final primary = Theme.of(context).colorScheme.primary;
     return Padding(
       padding: const EdgeInsets.only(top: 18),
       child: TweenAnimationBuilder<double>(
@@ -1514,25 +1562,55 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
         ),
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 18),
+          padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
           decoration: BoxDecoration(
             color: context.cardColor,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(24),
             border: Border.all(color: context.borderColor),
+            boxShadow: [BoxShadow(color: primary.withOpacity(context.isDark ? 0.12 : 0.10), blurRadius: 30, offset: const Offset(0, 12))],
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              SizedBox(
-                width: 150,
-                height: 150,
-                child: Lottie.asset('assets/lottie/cari.json', repeat: true, fit: BoxFit.contain),
+              TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.94, end: 1.0),
+                duration: const Duration(milliseconds: 900),
+                curve: Curves.easeInOut,
+                builder: (context, scale, child) => Transform.scale(scale: scale, child: child),
+                child: SizedBox(
+                  width: 160,
+                  height: 160,
+                  child: Lottie.asset('assets/lottie/cari.json', repeat: true, fit: BoxFit.contain),
+                ),
               ),
-              const SizedBox(height: 12),
-              Text(
-                _scanStage ?? Strings.t(lang, 'scanning_generic'),
-                textAlign: TextAlign.center,
-                style: TextStyle(color: context.textMuted, fontSize: 13, fontWeight: FontWeight.w500, height: 1.4),
+              const SizedBox(height: 6),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 260),
+                transitionBuilder: (child, animation) => FadeTransition(
+                  opacity: animation,
+                  child: SlideTransition(
+                    position: Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero).animate(animation),
+                    child: child,
+                  ),
+                ),
+                child: Text(
+                  _scanStage ?? Strings.t(lang, 'scanning_generic'),
+                  key: ValueKey(_scanStage ?? Strings.t(lang, 'scanning_generic')),
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: context.textMuted, fontSize: 13, fontWeight: FontWeight.w500, height: 1.4),
+                ),
+              ),
+              const SizedBox(height: 16),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: SizedBox(
+                  width: 140,
+                  height: 5,
+                  child: LinearProgressIndicator(
+                    backgroundColor: primary.withOpacity(context.isDark ? 0.14 : 0.10),
+                    valueColor: AlwaysStoppedAnimation(primary),
+                  ),
+                ),
               ),
             ],
           ),
@@ -1562,6 +1640,33 @@ class _ReceiptScanPageState extends ConsumerState<ReceiptScanPage> {
       // lebih dekat ke gambar struk agar layout terasa lebih rapat & rapi.
       padding: const EdgeInsets.only(top: 10),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        if (result.confident) ...[
+          reveal(Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            decoration: BoxDecoration(
+              color: const Color(0xFF24A148).withOpacity(context.isDark ? 0.16 : 0.10),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: const Color(0xFF24A148).withOpacity(0.3)),
+            ),
+            child: Row(children: [
+              TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0.4, end: 1.0),
+                duration: const Duration(milliseconds: 420),
+                curve: Curves.elasticOut,
+                builder: (context, scale, child) => Transform.scale(scale: scale, child: child),
+                child: const Icon(Icons.check_circle_rounded, size: 18, color: Color(0xFF24A148)),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  Strings.t(lang, 'scan_success_banner'),
+                  style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700, color: Color(0xFF24A148)),
+                ),
+              ),
+            ]),
+          )),
+          const SizedBox(height: 14),
+        ],
         if (!result.confident) ...[
           reveal(Container(
             padding: const EdgeInsets.all(14),
@@ -1732,6 +1837,71 @@ class _ReceiptImagePreviewPage extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+// Ikon scanner dengan efek ring pulsing menyebar & sedikit melayang naik-turun,
+// dipakai di panel kosong "Mulai Pindai" agar terasa hidup & mengundang.
+class _PulsingScanIcon extends StatefulWidget {
+  final Color color;
+  const _PulsingScanIcon({required this.color});
+  @override
+  State<_PulsingScanIcon> createState() => _PulsingScanIconState();
+}
+
+class _PulsingScanIconState extends State<_PulsingScanIcon> with SingleTickerProviderStateMixin {
+  late final AnimationController _controller =
+      AnimationController(vsync: this, duration: const Duration(milliseconds: 2200))..repeat();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final t = _controller.value;
+        return SizedBox(
+          width: 132,
+          height: 132,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              for (final delay in [0.0, 0.33, 0.66])
+                Builder(builder: (context) {
+                  final localT = (t + delay) % 1.0;
+                  final scale = 0.7 + localT * 0.6;
+                  final opacity = (1.0 - localT).clamp(0.0, 1.0) * 0.35;
+                  return Opacity(
+                    opacity: opacity,
+                    child: Transform.scale(
+                      scale: scale,
+                      child: Container(
+                        width: 96,
+                        height: 96,
+                        decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: widget.color, width: 1.4)),
+                      ),
+                    ),
+                  );
+                }),
+              Transform.translate(
+                offset: Offset(0, sin(t * pi * 2) * 4),
+                child: Container(
+                  width: 96,
+                  height: 96,
+                  decoration: BoxDecoration(color: widget.color.withOpacity(0.12), shape: BoxShape.circle),
+                  child: Icon(Icons.document_scanner_outlined, size: 44, color: widget.color),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
