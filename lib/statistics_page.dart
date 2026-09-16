@@ -650,11 +650,17 @@ Widget _buildTotalAndTrend(BuildContext context, AppLang lang, List<StatsPoint> 
       transformTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeInOut),
       opacityTiming: const TimingConfig(duration: Duration(milliseconds: 450), curve: Curves.easeOut),
       tabularNums: true,
+      // FontWeight Flutter hanya berjenjang per 100 (700 → 800), dan 800
+      // sebelumnya sudah terbukti terlalu tebal untuk ukuran ini — jadi
+      // "sedikit lebih tebal" di sini dicapai lewat menaikkan ukuran font
+      // (bukan lompat ke weight berikutnya), karena strip garis angka pada
+      // ukuran lebih besar otomatis terlihat lebih solid tanpa mengganti
+      // weight sama sekali.
       style: TextStyle(
         fontFamily: 'Satoshi',
-        fontSize: 32,
+        fontSize: 34,
         fontWeight: FontWeight.w700,
-        letterSpacing: -1.2,
+        letterSpacing: -1.3,
         color: finalVal >= 0 ? context.textPrimary : _colorNegative,
       ),
     ),
@@ -1162,17 +1168,11 @@ Widget _buildBreakdownSection(
   return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
     Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
       Expanded(
-        child: Row(children: [
-          Icon(Icons.pie_chart_rounded, size: 18, color: primary),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              '${_l(lang, 'Ringkasan', 'Summary')} ${AppFormatters.monthYear(lang).format(focus)}',
-              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: context.textPrimary),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-        ]),
+        child: Text(
+          '${_l(lang, 'Ringkasan', 'Summary')} ${AppFormatters.monthYear(lang).format(focus)}',
+          style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: context.textPrimary),
+          overflow: TextOverflow.ellipsis,
+        ),
       ),
       const SizedBox(width: 8),
       GestureDetector(
