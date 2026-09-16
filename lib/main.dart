@@ -30,6 +30,7 @@ import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 
 import 'receipt_scanner.dart';
+import 'statistics_page.dart';
 
 Future<String> _appDocsPath() async {
   final dir = await getApplicationDocumentsDirectory();
@@ -3527,7 +3528,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
 
 class FinanceShell extends ConsumerStatefulWidget {
   const FinanceShell({super.key});
-  static const pages = [HomePage(), ReportsPage(), TransactionsPage(), ProfilePage()];
+  static const pages = [HomePage(), StatisticsPage(), TransactionsPage(), ProfilePage()];
 
   @override
   ConsumerState<FinanceShell> createState() => _FinanceShellState();

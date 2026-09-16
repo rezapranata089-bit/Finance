@@ -3,13 +3,9 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
-  ffmpeg_kit_flutter_new_min_gpl
-  file_selector_windows
-  permission_handler_windows
 )
 
 list(APPEND FLUTTER_FFI_PLUGIN_LIST
-  jni
 )
 
 set(PLUGIN_BUNDLED_LIBRARIES)
