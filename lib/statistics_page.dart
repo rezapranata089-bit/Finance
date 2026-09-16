@@ -741,7 +741,7 @@ class _TrendHeroChartState extends State<_TrendHeroChart> with SingleTickerProvi
   void _selectFromDx(double dx, double width) {
     final points = widget.points;
     if (points.isEmpty) return;
-    const padL = 14.0, padR = 14.0;
+    const padL = 26.0, padR = 26.0;
     final usable = (width - padL - padR).clamp(1.0, double.infinity);
     var rel = (dx - padL) / usable;
     rel = rel.clamp(0.0, 1.0);
@@ -785,7 +785,7 @@ class _TrendHeroChartState extends State<_TrendHeroChart> with SingleTickerProvi
     // padL/padR, sehingga background/grid tetap full-bleed ke tepi kiri-
     // kanan layar sementara garis trennya sendiri punya sedikit "napas".
     const chartHeight = 150.0;
-    const padL = 14.0, padR = 14.0, padT = 16.0, padB = 10.0;
+    const padL = 26.0, padR = 26.0, padT = 16.0, padB = 10.0;
 
     return LayoutBuilder(builder: (context, constraints) {
       final width = constraints.maxWidth;
