@@ -398,64 +398,66 @@ class StatisticsPage extends ConsumerWidget {
       child: Listener(
         behavior: HitTestBehavior.translucent,
         onPointerDown: _handleStatsPointerDown,
-        child: Stack(
-          children: [
-            Positioned.fill(child: Container(color: context.cardColor)),
-            ListView(
-        padding: EdgeInsets.zero,
-        children: [
-          // Hero: full-bleed background (edge-to-edge, flush dengan bagian
-          // paling atas layar) berisi header + chart tren. Gradasi memakai
-          // context.cardColor asli (bukan warna hardcode nyaris hitam)
-          // supaya mengikuti tema aplikasi yang sebenarnya: ungu muda di
-          // mode terang (sama seperti kartu hero lama), ungu gelap di mode
-          // gelap — tidak dipaksa dark terlepas dari mode aktif.
-          Container(
-            width: double.infinity,
-            padding: EdgeInsets.fromLTRB(20, topInset + 16, 20, 56),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Color.alphaBlend(primary.withOpacity(isDark ? 0.22 : 0.14), context.cardColor),
-                  Color.alphaBlend(primary.withOpacity(isDark ? 0.14 : 0.06), context.cardColor),
-                ],
+        child: CustomScrollView(
+          slivers: [
+            SliverToBoxAdapter(
+              // Hero: full-bleed background (edge-to-edge, flush dengan bagian
+              // paling atas layar) berisi header + chart tren. Gradasi memakai
+              // context.cardColor asli (bukan warna hardcode nyaris hitam)
+              // supaya mengikuti tema aplikasi yang sebenarnya: ungu muda di
+              // mode terang (sama seperti kartu hero lama), ungu gelap di mode
+              // gelap — tidak dipaksa dark terlepas dari mode aktif.
+              child: Container(
+                width: double.infinity,
+                padding: EdgeInsets.fromLTRB(20, topInset + 16, 20, 56),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Color.alphaBlend(primary.withOpacity(isDark ? 0.22 : 0.14), context.cardColor),
+                      Color.alphaBlend(primary.withOpacity(isDark ? 0.14 : 0.06), context.cardColor),
+                    ],
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildHeader(context, lang, cards, isAllAccounts, safeSelectedCard),
+                    const SizedBox(height: 18),
+                    _buildHeroCard(context, ref, lang, mode, focus, points),
+                  ],
+                ),
               ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHeader(context, lang, cards, isAllAccounts, safeSelectedCard),
-                const SizedBox(height: 18),
-                _buildHeroCard(context, ref, lang, mode, focus, points),
-              ],
-            ),
-          ),
-          // Sheet ringkasan overlap ke atas menutupi bagian bawah hero.
-          // EdgeInsets tidak boleh negatif (itu penyebab assertion error
-          // sebelumnya) — overlap sekarang lewat Transform.translate, yang
-          // hanya menggeser posisi gambar (paint), bukan ukuran layout.
-          Transform.translate(
-            offset: const Offset(0, -24),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(20, 28, 20, 24),
-              decoration: BoxDecoration(
-                color: context.cardColor,
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(context.isDark ? 0.35 : 0.10), blurRadius: 24, offset: const Offset(0, -8))],
+            // Sheet ringkasan overlap ke atas menutupi bagian bawah hero, dan
+            // SELALU meregang mengisi sisa tinggi viewport lewat
+            // SliverFillRemaining(hasScrollBody: false) — kalau konten sheet
+            // lebih pendek dari layar, tingginya otomatis ditarik memenuhi
+            // sisa ruang (tidak ada lagi celah warna scaffold di bawahnya);
+            // kalau kontennya lebih panjang dari layar, sliver ini otomatis
+            // kembali membiarkan seluruh CustomScrollView scroll normal.
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: Transform.translate(
+                offset: const Offset(0, -24),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(20, 28, 20, 24),
+                  decoration: BoxDecoration(
+                    color: context.cardColor,
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(context.isDark ? 0.35 : 0.10), blurRadius: 24, offset: const Offset(0, -8))],
+                  ),
+                  child: Column(
+                    children: [
+                      _buildBreakdownSection(context, ref, lang, focus, monthKey, budget, saving, spend, bunga),
+                      const SizedBox(height: 16),
+                      _buildQuickActionButton(context, ref, lang),
+                    ],
+                  ),
+                ),
               ),
-              child: Column(
-                children: [
-                  _buildBreakdownSection(context, ref, lang, focus, monthKey, budget, saving, spend, bunga),
-                  const SizedBox(height: 16),
-                  _buildQuickActionButton(context, ref, lang),
-                ],
-              ),
-            ),
-          ),
-        ],
             ),
           ],
         ),
