@@ -408,12 +408,6 @@ class StatisticsPage extends ConsumerWidget {
           Transform.translate(
             offset: const Offset(0, -24),
             child: Container(
-          ),
-        ],
-      ),
-    );
-  }
-}
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(20, 28, 20, 24),
               decoration: BoxDecoration(
