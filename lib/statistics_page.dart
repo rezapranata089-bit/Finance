@@ -689,70 +689,84 @@ class _TrendHeroChart extends StatefulWidget {
   State<_TrendHeroChart> createState() => _TrendHeroChartState();
 }
 
+// Jumlah titik yang terlihat sekaligus dalam satu layar (jendela geser).
+const int _chartVisibleCount = 7;
+
 class _TrendHeroChartState extends State<_TrendHeroChart> with SingleTickerProviderStateMixin {
-  int? _selectedIndex;
-  Timer? _hideTimer;
+  final ScrollController _scrollController = ScrollController();
   late final AnimationController _growCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 550));
   late final Animation<double> _growAnim = CurvedAnimation(parent: _growCtrl, curve: Curves.easeOutCubic);
+  bool _pendingJump = true;
 
   @override
   void initState() {
     super.initState();
     _growCtrl.forward();
+    _scrollController.addListener(_onScroll);
   }
 
-  bool _sameSeries(List<StatsPoint> a, List<StatsPoint> b) {
+  bool _sameStructure(List<StatsPoint> a, List<StatsPoint> b) {
     if (a.length != b.length) return false;
-    for (var i = 0; i < a.length; i++) {
-      if (a[i].value != b[i].value || a[i].label != b[i].label) return false;
-    }
-    return true;
+    if (a.isEmpty) return true;
+    return a.first.label == b.first.label && a.last.label == b.last.label;
   }
 
   @override
   void didUpdateWidget(covariant _TrendHeroChart oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!_sameSeries(oldWidget.points, widget.points)) {
-      _hideTimer?.cancel();
-      _selectedIndex = null;
+    // Hanya reset posisi geser & putar ulang animasi reveal saat sumbu data
+    // benar-benar berganti (mis. pindah mode Hari/Bulan/Tahun atau pindah
+    // fokus bulan/kartu). Perubahan nilai transaksi pada sumbu yang sama
+    // (mis. edit transaksi) sengaja TIDAK menggeser posisi scroll pengguna.
+    if (!_sameStructure(oldWidget.points, widget.points)) {
+      _pendingJump = true;
       _growCtrl.forward(from: 0);
     }
   }
 
   @override
   void dispose() {
-    _hideTimer?.cancel();
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
     _growCtrl.dispose();
     super.dispose();
   }
 
-  // Menyembunyikan tooltip otomatis & halus setelah beberapa saat tanpa
-  // interaksi, supaya tooltip tidak terus menempel di layar.
-  void _scheduleAutoHide() {
-    _hideTimer?.cancel();
-    _hideTimer = Timer(const Duration(seconds: 3), () {
-      if (mounted) setState(() => _selectedIndex = null);
-    });
+  void _onScroll() {
+    if (mounted) setState(() {});
   }
 
-  // Dipanggil dari luar (lihat Listener pembungkus halaman) saat pengguna
-  // menekan area di luar grafik/strip hari atau menekan tombol lain di
-  // tab ini — tooltip langsung disembunyikan dengan fade halus.
-  void clearSelection() {
-    _hideTimer?.cancel();
-    if (_selectedIndex != null) setState(() => _selectedIndex = null);
-  }
+  // Tidak melakukan apa pun lagi: tooltip sekarang selalu menempel pada
+  // titik yang berada tepat di tengah viewport (lihat crosshair), jadi
+  // tidak ada lagi konsep "seleksi" yang perlu disembunyikan saat menekan
+  // di luar area chart. Method ini dipertahankan karena masih dipanggil
+  // dari Listener pembungkus halaman (lihat _handleStatsPointerDown).
+  void clearSelection() {}
 
-  void _selectFromDx(double dx, double width) {
+  void _performJump(double itemWidth, double effVisible) {
+    if (!mounted || !_scrollController.hasClients || itemWidth <= 0) return;
+    _pendingJump = false;
     final points = widget.points;
     if (points.isEmpty) return;
-    const padL = 26.0, padR = 26.0;
-    final usable = (width - padL - padR).clamp(1.0, double.infinity);
-    var rel = (dx - padL) / usable;
-    rel = rel.clamp(0.0, 1.0);
-    final idx = (rel * (points.length - 1)).round().clamp(0, points.length - 1);
-    _scheduleAutoHide();
-    if (idx != _selectedIndex) setState(() => _selectedIndex = idx);
+    final idx0 = () {
+      final todayIdx = points.indexWhere((p) => p.isToday);
+      return todayIdx != -1 ? todayIdx : points.length - 1;
+    }();
+    final target = (idx0 - (effVisible - 1) / 2) * itemWidth;
+    final maxExtent = _scrollController.position.maxScrollExtent;
+    _scrollController.jumpTo(target.clamp(0.0, maxExtent < 0 ? 0.0 : maxExtent));
+  }
+
+  void _animateToIndex(int idx, double itemWidth, double effVisible) {
+    if (!_scrollController.hasClients) return;
+    final target = (idx - (effVisible - 1) / 2) * itemWidth;
+    final maxExtent = _scrollController.position.maxScrollExtent;
+    HapticFeedback.selectionClick();
+    _scrollController.animateTo(
+      target.clamp(0.0, maxExtent < 0 ? 0.0 : maxExtent),
+      duration: const Duration(milliseconds: 380),
+      curve: Curves.easeOutCubic,
+    );
   }
 
   @override
@@ -774,28 +788,22 @@ class _TrendHeroChartState extends State<_TrendHeroChart> with SingleTickerProvi
       );
     }
 
-    final finalVal = points.last.value;
-    final lineColor = finalVal >= 0 ? _colorPositive : _colorNegative;
-    final effectiveIndex = _selectedIndex ??
-        (() {
-          final idx = points.indexWhere((p) => p.isToday);
-          return idx != -1 ? idx : points.length - 1;
-        })();
-
-    // padL/padR di sini HANYA mengatur inset posisi TITIK DATA (garis &
-    // dot pertama/terakhir digeser sedikit ke dalam agar tidak terpotong
-    // tepat di tepi), BUKAN lebar area gambar chart itu sendiri — grid
-    // horizontal & garis putus-putus nol (lihat _TrendChartPainter.paint)
-    // sengaja digambar dari 0 sampai size.width penuh, independen dari
-    // padL/padR, sehingga background/grid tetap full-bleed ke tepi kiri-
-    // kanan layar sementara garis trennya sendiri punya sedikit "napas".
     const chartHeight = 150.0;
-    const padL = 26.0, padR = 26.0, padT = 16.0, padB = 10.0;
+    const labelHeight = 46.0;
+    const padT = 16.0, padB = 10.0;
+    final innerH = chartHeight - padT - padB;
 
     return LayoutBuilder(builder: (context, constraints) {
-      final width = constraints.maxWidth;
-      final innerW = (width - padL - padR).clamp(1.0, double.infinity);
-      final innerH = chartHeight - padT - padB;
+      final viewportWidth = constraints.maxWidth;
+      final n = points.length;
+      final effVisible = n < _chartVisibleCount ? n.toDouble() : _chartVisibleCount.toDouble();
+      final itemWidth = viewportWidth / effVisible;
+      final totalWidth = itemWidth * n;
+
+      if (_pendingJump) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _performJump(itemWidth, effVisible));
+      }
+
       final values = points.map((p) => p.value).toList();
       double minV = values.reduce(min);
       double maxV = values.reduce(max);
@@ -803,84 +811,138 @@ class _TrendHeroChartState extends State<_TrendHeroChart> with SingleTickerProvi
       if (maxV < 0) maxV = 0;
       if (minV == maxV) maxV = minV + 1;
       final range = maxV - minV;
-      final targetCoords = List.generate(points.length, (i) {
-        final x = padL + (points.length == 1 ? innerW / 2 : innerW * i / (points.length - 1));
+
+      final dotCoords = List.generate(n, (i) {
+        final x = i * itemWidth + itemWidth / 2;
         final y = padT + innerH - ((points[i].value - minV) / range) * innerH;
         return Offset(x, y);
       });
       final zeroY = padT + innerH - ((0 - minV) / range) * innerH;
 
+      final offset = _scrollController.hasClients ? _scrollController.offset : 0.0;
+      final centerIdx = ((offset / itemWidth) + (effVisible - 1) / 2).clamp(0.0, (n - 1).toDouble());
+      final lowIdx = centerIdx.floor().clamp(0, n - 1);
+      final highIdx = centerIdx.ceil().clamp(0, n - 1);
+      final frac = centerIdx - lowIdx;
+      final interpValue = _lerp(points[lowIdx].value, points[highIdx].value, frac);
+      final crosshairY = padT + innerH - ((interpValue - minV) / range) * innerH;
+      final nearestIdx = centerIdx.round().clamp(0, n - 1);
+      final nearestPoint = points[nearestIdx];
+
+      final finalVal = points.last.value;
+      final lineColor = finalVal >= 0 ? _colorPositive : _colorNegative;
+      final highlightColor = nearestPoint.hasTx ? _colorForDomCat(nearestPoint.domCat) : lineColor;
+
       final txDots = <MapEntry<int, Color>>[];
-      for (var i = 0; i < points.length; i++) {
+      for (var i = 0; i < n; i++) {
         if (points[i].hasTx) txDots.add(MapEntry(i, _colorForDomCat(points[i].domCat)));
       }
 
-      final selectedAnchor = effectiveIndex >= 0 && effectiveIndex < targetCoords.length ? targetCoords[effectiveIndex] : null;
-      final selectedColor = points[effectiveIndex].hasTx ? _colorForDomCat(points[effectiveIndex].domCat) : lineColor;
+      final scrollableWidth = totalWidth < viewportWidth ? viewportWidth : totalWidth;
 
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            height: chartHeight,
-            width: double.infinity,
-            child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onPanDown: (d) => _selectFromDx(d.localPosition.dx, width),
-              onPanUpdate: (d) => _selectFromDx(d.localPosition.dx, width),
-              onTapDown: (d) => _selectFromDx(d.localPosition.dx, width),
-              child: AnimatedBuilder(
-                animation: _growAnim,
-                builder: (context, _) {
-                  final animatedCoords = List.generate(
-                    targetCoords.length,
-                    (i) => Offset(targetCoords[i].dx, _lerp(zeroY, targetCoords[i].dy, _growAnim.value)),
-                  );
-                  // Dot data pertama/terakhir sengaja punya inset (padL/padR)
-                  // agar terlihat jelas & tidak terpotong di tepi. Tapi garis
-                  // GRAFIK-nya sendiri diminta tetap full menyentuh tepi kiri-
-                  // kanan layar — makanya di sini path GARIS/area (bukan posisi
-                  // dot) diperpanjang secara flat (rata) dari dot pertama
-                  // menuju x=0, dan dari dot terakhir menuju x=lebar penuh,
-                  // pada ketinggian y yang sama seperti dot tersebut.
-                  final lineCoords = <Offset>[
-                    Offset(0, animatedCoords.first.dy),
-                    ...animatedCoords,
-                    Offset(width, animatedCoords.last.dy),
-                  ];
-                  return Stack(
-                    clipBehavior: Clip.none,
-                    children: [
-                      CustomPaint(
-                        size: Size(width, chartHeight),
-                        painter: _TrendChartPainter(
-                          lineCoords: lineCoords,
-                          dotCoords: animatedCoords,
-                          zeroY: zeroY,
-                          lineColor: lineColor,
-                          txDots: txDots,
-                          selectedAnchor: selectedAnchor,
-                          selectedColor: selectedColor,
-                          gridColor: (isDark ? Colors.white : Colors.black).withOpacity(0.07),
+      return SizedBox(
+        height: chartHeight + labelHeight,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            SingleChildScrollView(
+              controller: _scrollController,
+              scrollDirection: Axis.horizontal,
+              physics: n > effVisible
+                  ? _ChartSnapPhysics(itemExtent: itemWidth)
+                  : const NeverScrollableScrollPhysics(),
+              child: SizedBox(
+                width: scrollableWidth,
+                height: chartHeight + labelHeight,
+                child: AnimatedBuilder(
+                  animation: _growAnim,
+                  builder: (context, _) {
+                    final animatedCoords = List.generate(
+                      n,
+                      (i) => Offset(dotCoords[i].dx, _lerp(zeroY, dotCoords[i].dy, _growAnim.value)),
+                    );
+                    // Garis diperpanjang rata (flat) dari titik data pertama
+                    // & terakhir sampai ke tepi TOTAL konten geser (bukan
+                    // hanya tepi viewport), sehingga jendela manapun yang
+                    // sedang terlihat saat digeser selalu menampilkan garis
+                    // yang menyentuh penuh sisi kiri-kanan.
+                    final lineCoords = <Offset>[
+                      Offset(0, animatedCoords.first.dy),
+                      ...animatedCoords,
+                      Offset(totalWidth, animatedCoords.last.dy),
+                    ];
+                    return Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        CustomPaint(
+                          size: Size(totalWidth, chartHeight),
+                          painter: _TrendChartPainter(
+                            lineCoords: lineCoords,
+                            dotCoords: animatedCoords,
+                            zeroY: zeroY,
+                            lineColor: lineColor,
+                            txDots: txDots,
+                            highlightIndex: nearestIdx,
+                            highlightColor: highlightColor,
+                            gridColor: (isDark ? Colors.white : Colors.black).withOpacity(0.07),
+                            dotCoreColor: context.cardColor,
+                          ),
+                        ),
+                        for (var i = 0; i < n; i++)
+                          Positioned(
+                            left: i * itemWidth,
+                            top: chartHeight,
+                            width: itemWidth,
+                            height: labelHeight,
+                            child: _DateLabel(
+                              point: points[i],
+                              active: i == nearestIdx,
+                              onTap: () => _animateToIndex(i, itemWidth, effVisible),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
+                ),
+              ),
+            ),
+            // Crosshair & tooltip tetap diam di tengah viewport (tidak ikut
+            // scroll) — kontennya (garis & titik) yang bergeser di
+            // belakangnya, meniru pola chart scrubber pada aplikasi
+            // saham/finansial: nilai & posisi vertikal titik terpilih
+            // meluncur mengikuti bentuk kurva secara mulus selama digeser.
+            IgnorePointer(
+              child: SizedBox(
+                height: chartHeight,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
+                    Positioned(
+                      left: viewportWidth / 2,
+                      top: 0,
+                      bottom: 0,
+                      child: CustomPaint(
+                        size: const Size(1, chartHeight),
+                        painter: _CrosshairPainter(
+                          y: crosshairY,
+                          color: highlightColor,
+                          dashColor: (isDark ? Colors.white : Colors.black).withOpacity(0.18),
                           dotCoreColor: context.cardColor,
                         ),
                       ),
-                      if (selectedAnchor != null)
-                        _buildTooltip(context, selectedAnchor, points[effectiveIndex], width, isDark, selectedColor, _selectedIndex != null),
-                    ],
-                  );
-                },
+                    ),
+                    _buildTooltip(context, Offset(viewportWidth / 2, crosshairY), nearestPoint, viewportWidth, isDark, highlightColor),
+                  ],
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 14),
-          _buildDayStrip(context, points, effectiveIndex),
-        ],
+          ],
+        ),
       );
     });
   }
 
-  Widget _buildTooltip(BuildContext context, Offset anchor, StatsPoint point, double chartWidth, bool isDark, Color accentColor, bool visible) {
+  Widget _buildTooltip(BuildContext context, Offset anchor, StatsPoint point, double chartWidth, bool isDark, Color accentColor) {
     final bg = point.hasTx ? accentColor : (isDark ? const Color(0xFF2C2C2E) : context.cardColor);
     final textColor = point.hasTx ? Colors.white : context.textPrimary;
     final rows = <Widget>[];
@@ -909,86 +971,122 @@ class _TrendHeroChartState extends State<_TrendHeroChart> with SingleTickerProvi
     var top = anchor.dy - estimatedHeight - 14;
     if (top < 0) top = anchor.dy + 14;
 
-    // Tooltip SELALU dipasang di tree (supaya transisi tampil/hilangnya
-    // bisa animasi halus lewat AnimatedOpacity/AnimatedSlide alih-alih
-    // muncul/hilang mendadak), tapi hanya benar-benar terlihat & bisa
-    // diinteraksi saat `visible` true (ada seleksi aktif dari pengguna).
     return Positioned(
       left: left,
       top: top,
       width: tooltipWidth,
-      child: IgnorePointer(
-        child: AnimatedOpacity(
-          duration: const Duration(milliseconds: 240),
-          curve: Curves.easeOut,
-          opacity: visible ? 1.0 : 0.0,
-          child: AnimatedSlide(
-            duration: const Duration(milliseconds: 240),
-            curve: Curves.easeOut,
-            offset: visible ? Offset.zero : const Offset(0, 0.06),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-              decoration: BoxDecoration(
-                color: bg,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.22), blurRadius: 16, offset: const Offset(0, 6))],
-              ),
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Text(AppFormatters.rupiah(point.value), textAlign: TextAlign.center, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: textColor)),
-                if (rows.isNotEmpty) ...[
-                  Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: Divider(height: 1, color: textColor.withOpacity(0.25))),
-                  ...rows,
-                ],
-              ]),
-            ),
-          ),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.22), blurRadius: 16, offset: const Offset(0, 6))],
         ),
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Text(AppFormatters.rupiah(point.value), textAlign: TextAlign.center, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: textColor)),
+          if (rows.isNotEmpty) ...[
+            Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: Divider(height: 1, color: textColor.withOpacity(0.25))),
+            ...rows,
+          ],
+        ]),
       ),
     );
   }
+}
 
-  Widget _buildDayStrip(BuildContext context, List<StatsPoint> points, int activeIdx) {
-    final visible = min(7, points.length);
-    final start = max(0, min(points.length - visible, activeIdx - visible ~/ 2));
-    final slice = points.sublist(start, start + visible);
+// Fisika geser custom: memakai momentum & inersia bawaan Flutter seperti
+// scroll biasa (fluid), tapi begitu jari dilepas, posisi akhir "diloncatkan"
+// (snap) ke kelipatan lebar-satu-titik terdekat lewat spring simulation —
+// supaya chart selalu berhenti tepat dengan satu titik data pas di tengah
+// viewport, bukan berhenti di posisi acak di antara dua titik.
+class _ChartSnapPhysics extends ScrollPhysics {
+  final double itemExtent;
+  const _ChartSnapPhysics({required this.itemExtent, super.parent});
+
+  @override
+  _ChartSnapPhysics applyTo(ScrollPhysics? ancestor) {
+    return _ChartSnapPhysics(itemExtent: itemExtent, parent: buildParent(ancestor));
+  }
+
+  @override
+  Simulation? createBallisticSimulation(ScrollMetrics position, double velocity) {
+    if (itemExtent <= 0) return super.createBallisticSimulation(position, velocity);
+    final tolerance = toleranceFor(position);
+    final page = position.pixels / itemExtent;
+    final targetPage = velocity.abs() > 300 ? (velocity > 0 ? page.ceilToDouble() : page.floorToDouble()) : page.roundToDouble();
+    final target = (targetPage * itemExtent).clamp(position.minScrollExtent, position.maxScrollExtent);
+    if ((target - position.pixels).abs() < 0.5 && velocity.abs() < tolerance.velocity) return null;
+    return ScrollSpringSimulation(spring, position.pixels, target, velocity, tolerance: tolerance);
+  }
+}
+
+// Garis vertikal putus-putus + titik crosshair yang diam di tengah
+// viewport; posisi Y-nya sendiri (parameter `y`) berubah setiap rebuild
+// pemicu scroll, sehingga terasa "mengikuti" bentuk kurva secara halus
+// selagi konten di belakangnya digeser.
+class _CrosshairPainter extends CustomPainter {
+  final double y;
+  final Color color;
+  final Color dashColor;
+  final Color dotCoreColor;
+  _CrosshairPainter({required this.y, required this.color, required this.dashColor, required this.dotCoreColor});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    _drawDashedLine(canvas, Offset(0, 0), Offset(0, size.height), dashColor, dash: 4, gap: 4, strokeWidth: 1.4);
+    final c = Offset(0, y);
+    canvas.drawCircle(c, 7, Paint()..color = color.withOpacity(0.20));
+    canvas.drawCircle(c, 4.8, Paint()..color = dotCoreColor);
+    canvas.drawCircle(
+      c,
+      4.8,
+      Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2.4,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _CrosshairPainter oldDelegate) => oldDelegate.y != y || oldDelegate.color != color;
+}
+
+// Label tanggal per titik, digambar sebagai widget (bukan lewat
+// CustomPainter) agar bisa memakai warna tema (context.textPrimary dkk)
+// dan tetap bisa di-tap untuk langsung meloncat ke titik tersebut.
+class _DateLabel extends StatelessWidget {
+  final StatsPoint point;
+  final bool active;
+  final VoidCallback onTap;
+  const _DateLabel({required this.point, required this.active, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
     final isDark = context.isDark;
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: List.generate(slice.length, (i) {
-        final realIdx = start + i;
-        final isActive = realIdx == activeIdx;
-        return Expanded(
-          child: GestureDetector(
-            onTap: () {
-              _scheduleAutoHide();
-              setState(() => _selectedIndex = realIdx);
-            },
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              margin: const EdgeInsets.symmetric(horizontal: 2),
-              decoration: BoxDecoration(
-                color: isActive ? (isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05)) : Colors.transparent,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Text(slice[i].label,
-                    style: TextStyle(fontSize: 13, fontWeight: isActive ? FontWeight.w800 : FontWeight.w600, color: isActive ? context.textPrimary : context.textFaint)),
-                if (slice[i].sub.isNotEmpty) ...[
-                  const SizedBox(height: 2),
-                  Text(slice[i].sub, style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w600, color: isActive ? context.textMuted : context.textFaint)),
-                ],
-                const SizedBox(height: 3),
-                Container(
-                  width: 4,
-                  height: 4,
-                  decoration: BoxDecoration(shape: BoxShape.circle, color: isActive ? Theme.of(context).colorScheme.primary : Colors.transparent),
-                ),
-              ]),
-            ),
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Center(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 6),
+          decoration: BoxDecoration(
+            color: active ? (isDark ? Colors.white.withOpacity(0.08) : Colors.black.withOpacity(0.05)) : Colors.transparent,
+            borderRadius: BorderRadius.circular(14),
           ),
-        );
-      }),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Text(point.label,
+                style: TextStyle(fontSize: 13, fontWeight: active ? FontWeight.w800 : FontWeight.w600, color: active ? context.textPrimary : context.textFaint)),
+            if (point.sub.isNotEmpty) ...[
+              const SizedBox(height: 2),
+              Text(point.sub, style: TextStyle(fontSize: 9.5, fontWeight: FontWeight.w600, color: active ? context.textMuted : context.textFaint)),
+            ],
+            const SizedBox(height: 3),
+            Container(width: 4, height: 4, decoration: BoxDecoration(shape: BoxShape.circle, color: active ? primary : Colors.transparent)),
+          ]),
+        ),
+      ),
     );
   }
 }
@@ -1031,19 +1129,20 @@ void _drawDashedLine(Canvas canvas, Offset a, Offset b, Color color, {double das
 
 class _TrendChartPainter extends CustomPainter {
   // lineCoords: dipakai untuk menggambar GARIS & area gradasi — sudah
-  // diperpanjang rata (flat) sampai x=0 dan x=lebar penuh (lihat
-  // pemanggilnya di _TrendHeroChartState.build), sehingga garis selalu
-  // menyentuh tepi kiri-kanan layar.
-  // dotCoords: posisi ASLI titik data (dengan inset padL/padR) — dipakai
-  // khusus untuk menggambar dot transaksi & anchor terpilih, supaya dot
-  // pertama/terakhir tidak terpotong di tepi.
+  // diperpanjang rata (flat) sampai x=0 dan x=lebar total konten geser
+  // (lihat pemanggilnya di _TrendHeroChartState.build), sehingga jendela
+  // manapun yang sedang terlihat saat digeser selalu menampilkan garis
+  // yang menyentuh penuh sisi kiri-kanan.
+  // dotCoords: posisi ASLI setiap titik data di dalam konten geser —
+  // dipakai untuk menggambar dot transaksi & dot titik yang sedang aktif
+  // (nearestIdx / highlightIndex).
   final List<Offset> lineCoords;
   final List<Offset> dotCoords;
   final double zeroY;
   final Color lineColor;
   final List<MapEntry<int, Color>> txDots;
-  final Offset? selectedAnchor;
-  final Color selectedColor;
+  final int highlightIndex;
+  final Color highlightColor;
   final Color gridColor;
   final Color dotCoreColor;
 
@@ -1053,8 +1152,8 @@ class _TrendChartPainter extends CustomPainter {
     required this.zeroY,
     required this.lineColor,
     required this.txDots,
-    required this.selectedAnchor,
-    required this.selectedColor,
+    required this.highlightIndex,
+    required this.highlightColor,
     required this.gridColor,
     required this.dotCoreColor,
   });
@@ -1111,27 +1210,30 @@ class _TrendChartPainter extends CustomPainter {
     for (final entry in txDots) {
       if (entry.key < 0 || entry.key >= dotCoords.length) continue;
       final c = dotCoords[entry.key];
-      canvas.drawCircle(c, 4.2, Paint()..color = dotCoreColor);
+      final isHighlight = entry.key == highlightIndex;
+      final r = isHighlight ? 5.6 : 4.2;
+      canvas.drawCircle(c, r, Paint()..color = dotCoreColor);
       canvas.drawCircle(
         c,
-        4.2,
+        r,
         Paint()
           ..color = entry.value
           ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.8,
+          ..strokeWidth = isHighlight ? 2.4 : 1.8,
       );
     }
 
-    if (selectedAnchor != null) {
-      final c = selectedAnchor!;
-      _drawDashedLine(canvas, Offset(c.dx, 0), Offset(c.dx, size.height), gridColor.withOpacity(0.9));
-      canvas.drawCircle(c, 7, Paint()..color = selectedColor.withOpacity(0.20));
+    // Titik aktif (nearestIdx) yang BUKAN hari bertransaksi tetap perlu
+    // ditandai lingkaran kecil, supaya crosshair selalu terlihat "menempel"
+    // pada satu titik data yang jelas di sepanjang kurva.
+    if (highlightIndex >= 0 && highlightIndex < dotCoords.length && !txDots.any((e) => e.key == highlightIndex)) {
+      final c = dotCoords[highlightIndex];
       canvas.drawCircle(c, 4.6, Paint()..color = dotCoreColor);
       canvas.drawCircle(
         c,
         4.6,
         Paint()
-          ..color = selectedColor
+          ..color = highlightColor
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2.2,
       );
