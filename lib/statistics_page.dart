@@ -501,7 +501,16 @@ Widget _buildHeroCard(
     children: [
       _buildTotalAndTrend(context, lang, points),
       const SizedBox(height: 16),
-      _TrendHeroChart(key: _statsChartKey, points: points, lang: lang),
+      // Padding negatif membatalkan padding horizontal 20px milik
+      // Container hero di atasnya (lihat StatisticsPage.build), sehingga
+      // chart ini "bocor" sampai menempel ke tepi kiri-kanan layar tanpa
+      // ikut mengubah lebar Column induk (ukuran akhir widget ini tetap
+      // sama seperti tanpa padding negatif, hanya area gambarnya yang
+      // melebar).
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: -20),
+        child: _TrendHeroChart(key: _statsChartKey, points: points, lang: lang),
+      ),
       const SizedBox(height: 16),
       _buildSegControl(context, ref, lang, mode),
     ],
