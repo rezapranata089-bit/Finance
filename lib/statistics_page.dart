@@ -11,6 +11,7 @@
 // dan memakai gaya header yang sama seperti halaman lain di app.
 // ============================================================
 
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
@@ -44,6 +45,30 @@ final statsFocusProvider = StateProvider<DateTime>((ref) {
   final now = DateTime.now();
   return DateTime(now.year, now.month, 1);
 });
+
+// Kunci global tunggal untuk chart tren statistik: dipakai Listener
+// pembungkus halaman ini untuk memeriksa apakah tekanan jari berada di
+// dalam area grafik (termasuk strip hari) atau di luar, tanpa perlu
+// mengubah StatisticsPage jadi StatefulWidget. Aman sebagai variabel
+// tingkat modul karena hanya ada SATU instance tab Statistik yang aktif
+// (semua tab di FinanceShell dibangun sekaligus lewat PageView).
+final GlobalKey<_TrendHeroChartState> _statsChartKey = GlobalKey<_TrendHeroChartState>();
+
+// Menyembunyikan tooltip chart tren secara langsung saat pengguna menekan
+// di luar area grafik — termasuk saat menekan tombol/kontrol lain di tab
+// ini — sesuai permintaan agar tooltip tidak terus menempel di layar.
+void _handleStatsPointerDown(PointerDownEvent event) {
+  final renderObject = _statsChartKey.currentContext?.findRenderObject();
+  if (renderObject is! RenderBox || !renderObject.attached) {
+    _statsChartKey.currentState?.clearSelection();
+    return;
+  }
+  final local = renderObject.globalToLocal(event.position);
+  final inside = local.dx >= 0 && local.dy >= 0 && local.dx <= renderObject.size.width && local.dy <= renderObject.size.height;
+  if (!inside) {
+    _statsChartKey.currentState?.clearSelection();
+  }
+}
 
 String _monthKey(DateTime d) => '${d.year}-${d.month.toString().padLeft(2, '0')}';
 
@@ -370,7 +395,10 @@ class StatisticsPage extends ConsumerWidget {
 
     return SafeArea(
       top: false,
-      child: ListView(
+      child: Listener(
+        behavior: HitTestBehavior.translucent,
+        onPointerDown: _handleStatsPointerDown,
+        child: ListView(
         padding: EdgeInsets.zero,
         children: [
           // Hero: full-bleed background (edge-to-edge, flush dengan bagian
@@ -426,6 +454,7 @@ class StatisticsPage extends ConsumerWidget {
           ),
         ],
       ),
+      ),
     );
   }
 }
@@ -440,12 +469,14 @@ Widget _buildHeader(BuildContext context, AppLang lang, List<FinanceCard> cards,
         children: [
           Text(Strings.t(lang, 'nav_statistic'),
               style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 32, color: context.textPrimary)),
-          const CardSelectorButton(),
+          const CardSelectorButton(menuAlignment: GlassMenuAlignment.topRight),
         ],
       ),
       const SizedBox(height: 6),
       Text(
-        isAllAccounts ? Strings.t(lang, 'all_accounts') : (cards.isEmpty ? '' : cards[safeSelectedCard].name),
+        isAllAccounts
+            ? Strings.t(lang, 'stats_subtitle_all')
+            : Strings.t(lang, 'stats_subtitle_card').replaceAll('{name}', cards.isEmpty ? '' : cards[safeSelectedCard].name),
         style: TextStyle(color: context.textFaint, fontSize: 12, fontWeight: FontWeight.w600),
       ),
     ],
@@ -483,7 +514,7 @@ Widget _buildHeroCard(
       const SizedBox(height: 2),
       _buildTotalAndTrend(context, lang, points),
       const SizedBox(height: 16),
-      _TrendHeroChart(points: points, lang: lang),
+      _TrendHeroChart(key: _statsChartKey, points: points, lang: lang),
       const SizedBox(height: 16),
       _buildSegControl(context, ref, lang, mode),
     ],
@@ -647,7 +678,7 @@ Widget _buildTotalAndTrend(BuildContext context, AppLang lang, List<StatsPoint> 
 class _TrendHeroChart extends StatefulWidget {
   final List<StatsPoint> points;
   final AppLang lang;
-  const _TrendHeroChart({required this.points, required this.lang});
+  const _TrendHeroChart({super.key, required this.points, required this.lang});
 
   @override
   State<_TrendHeroChart> createState() => _TrendHeroChartState();
@@ -655,6 +686,7 @@ class _TrendHeroChart extends StatefulWidget {
 
 class _TrendHeroChartState extends State<_TrendHeroChart> with SingleTickerProviderStateMixin {
   int? _selectedIndex;
+  Timer? _hideTimer;
   late final AnimationController _growCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 550));
   late final Animation<double> _growAnim = CurvedAnimation(parent: _growCtrl, curve: Curves.easeOutCubic);
 
@@ -676,6 +708,7 @@ class _TrendHeroChartState extends State<_TrendHeroChart> with SingleTickerProvi
   void didUpdateWidget(covariant _TrendHeroChart oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!_sameSeries(oldWidget.points, widget.points)) {
+      _hideTimer?.cancel();
       _selectedIndex = null;
       _growCtrl.forward(from: 0);
     }
@@ -683,8 +716,26 @@ class _TrendHeroChartState extends State<_TrendHeroChart> with SingleTickerProvi
 
   @override
   void dispose() {
+    _hideTimer?.cancel();
     _growCtrl.dispose();
     super.dispose();
+  }
+
+  // Menyembunyikan tooltip otomatis & halus setelah beberapa saat tanpa
+  // interaksi, supaya tooltip tidak terus menempel di layar.
+  void _scheduleAutoHide() {
+    _hideTimer?.cancel();
+    _hideTimer = Timer(const Duration(seconds: 3), () {
+      if (mounted) setState(() => _selectedIndex = null);
+    });
+  }
+
+  // Dipanggil dari luar (lihat Listener pembungkus halaman) saat pengguna
+  // menekan area di luar grafik/strip hari atau menekan tombol lain di
+  // tab ini — tooltip langsung disembunyikan dengan fade halus.
+  void clearSelection() {
+    _hideTimer?.cancel();
+    if (_selectedIndex != null) setState(() => _selectedIndex = null);
   }
 
   void _selectFromDx(double dx, double width) {
@@ -695,6 +746,7 @@ class _TrendHeroChartState extends State<_TrendHeroChart> with SingleTickerProvi
     var rel = (dx - padL) / usable;
     rel = rel.clamp(0.0, 1.0);
     final idx = (rel * (points.length - 1)).round().clamp(0, points.length - 1);
+    _scheduleAutoHide();
     if (idx != _selectedIndex) setState(() => _selectedIndex = idx);
   }
 
@@ -789,7 +841,7 @@ class _TrendHeroChartState extends State<_TrendHeroChart> with SingleTickerProvi
                         ),
                       ),
                       if (selectedAnchor != null)
-                        _buildTooltip(context, selectedAnchor, points[effectiveIndex], width, isDark, selectedColor),
+                        _buildTooltip(context, selectedAnchor, points[effectiveIndex], width, isDark, selectedColor, _selectedIndex != null),
                     ],
                   );
                 },
@@ -803,7 +855,7 @@ class _TrendHeroChartState extends State<_TrendHeroChart> with SingleTickerProvi
     });
   }
 
-  Widget _buildTooltip(BuildContext context, Offset anchor, StatsPoint point, double chartWidth, bool isDark, Color accentColor) {
+  Widget _buildTooltip(BuildContext context, Offset anchor, StatsPoint point, double chartWidth, bool isDark, Color accentColor, bool visible) {
     final bg = point.hasTx ? accentColor : (isDark ? const Color(0xFF2C2C2E) : context.cardColor);
     final textColor = point.hasTx ? Colors.white : context.textPrimary;
     final rows = <Widget>[];
@@ -832,25 +884,39 @@ class _TrendHeroChartState extends State<_TrendHeroChart> with SingleTickerProvi
     var top = anchor.dy - estimatedHeight - 14;
     if (top < 0) top = anchor.dy + 14;
 
+    // Tooltip SELALU dipasang di tree (supaya transisi tampil/hilangnya
+    // bisa animasi halus lewat AnimatedOpacity/AnimatedSlide alih-alih
+    // muncul/hilang mendadak), tapi hanya benar-benar terlihat & bisa
+    // diinteraksi saat `visible` true (ada seleksi aktif dari pengguna).
     return Positioned(
       left: left,
       top: top,
       width: tooltipWidth,
       child: IgnorePointer(
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.22), blurRadius: 16, offset: const Offset(0, 6))],
+        child: AnimatedOpacity(
+          duration: const Duration(milliseconds: 240),
+          curve: Curves.easeOut,
+          opacity: visible ? 1.0 : 0.0,
+          child: AnimatedSlide(
+            duration: const Duration(milliseconds: 240),
+            curve: Curves.easeOut,
+            offset: visible ? Offset.zero : const Offset(0, 0.06),
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              decoration: BoxDecoration(
+                color: bg,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.22), blurRadius: 16, offset: const Offset(0, 6))],
+              ),
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Text(AppFormatters.rupiah(point.value), textAlign: TextAlign.center, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: textColor)),
+                if (rows.isNotEmpty) ...[
+                  Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: Divider(height: 1, color: textColor.withOpacity(0.25))),
+                  ...rows,
+                ],
+              ]),
+            ),
           ),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Text(AppFormatters.rupiah(point.value), textAlign: TextAlign.center, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: textColor)),
-            if (rows.isNotEmpty) ...[
-              Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: Divider(height: 1, color: textColor.withOpacity(0.25))),
-              ...rows,
-            ],
-          ]),
         ),
       ),
     );
@@ -868,7 +934,10 @@ class _TrendHeroChartState extends State<_TrendHeroChart> with SingleTickerProvi
         final isActive = realIdx == activeIdx;
         return Expanded(
           child: GestureDetector(
-            onTap: () => setState(() => _selectedIndex = realIdx),
+            onTap: () {
+              _scheduleAutoHide();
+              setState(() => _selectedIndex = realIdx);
+            },
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
               padding: const EdgeInsets.symmetric(vertical: 8),

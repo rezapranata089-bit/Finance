@@ -2900,6 +2900,8 @@ class Strings {
     'set_username_desc': {AppLang.en: 'Enter your name to personalize your experience.', AppLang.id: 'Masukkan nama untuk mempersonalisasi pengalaman Anda.'},
     'finish': {AppLang.en: 'Finish', AppLang.id: 'Selesai'},
     'profile_picture_required': {AppLang.en: 'Please set a profile picture first', AppLang.id: 'Silakan atur foto profil terlebih dahulu'},
+    'stats_subtitle_all': {AppLang.en: 'Financial trend summary · All Accounts', AppLang.id: 'Ringkasan tren keuangan · Semua Akun'},
+    'stats_subtitle_card': {AppLang.en: 'Financial trend summary · {name}', AppLang.id: 'Ringkasan tren keuangan · {name}'},
   };
 
   static String t(AppLang lang, String key) => _s[key]?[lang] ?? key;
@@ -4284,7 +4286,8 @@ class _MoreMorphMenuState extends ConsumerState<MoreMorphMenu> {
 }
 
 class CardSelectorButton extends ConsumerStatefulWidget {
-  const CardSelectorButton({super.key});
+  final GlassMenuAlignment menuAlignment;
+  const CardSelectorButton({super.key, this.menuAlignment = GlassMenuAlignment.topCenter});
 
   @override
   ConsumerState<CardSelectorButton> createState() => _CardSelectorButtonState();
@@ -4413,11 +4416,11 @@ class _CardSelectorButtonState extends ConsumerState<CardSelectorButton> {
         fresnelStrength: isDark ? 0.0 : 1.0,
         glowIntensity: isDark ? 0.0 : 0.75,
       ),
-      menuAlignment: GlassMenuAlignment.topCenter,
+      menuAlignment: widget.menuAlignment,
       menuWidth: 198,
       menuHeight: menuTotalHeight,
       trigger: _ClosedCardChip(
-        cardLabel: selected == -1 ? Strings.t(lang, 'all_accounts') : cards[selected].number,
+        cardLabel: selected == -1 ? Strings.t(lang, 'all_accounts') : cards[selected].name,
         showArrow: true,
       ),
     );
