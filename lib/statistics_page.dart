@@ -409,7 +409,7 @@ class StatisticsPage extends ConsumerWidget {
               // gelap — tidak dipaksa dark terlepas dari mode aktif.
               child: Container(
                 width: double.infinity,
-                padding: EdgeInsets.fromLTRB(20, topInset + 16, 20, 56),
+                padding: EdgeInsets.fromLTRB(20, topInset + 16, 20, 40),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
