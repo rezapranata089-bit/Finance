@@ -831,13 +831,26 @@ class _TrendHeroChartState extends State<_TrendHeroChart> with SingleTickerProvi
                     targetCoords.length,
                     (i) => Offset(targetCoords[i].dx, _lerp(zeroY, targetCoords[i].dy, _growAnim.value)),
                   );
+                  // Dot data pertama/terakhir sengaja punya inset (padL/padR)
+                  // agar terlihat jelas & tidak terpotong di tepi. Tapi garis
+                  // GRAFIK-nya sendiri diminta tetap full menyentuh tepi kiri-
+                  // kanan layar — makanya di sini path GARIS/area (bukan posisi
+                  // dot) diperpanjang secara flat (rata) dari dot pertama
+                  // menuju x=0, dan dari dot terakhir menuju x=lebar penuh,
+                  // pada ketinggian y yang sama seperti dot tersebut.
+                  final lineCoords = <Offset>[
+                    Offset(0, animatedCoords.first.dy),
+                    ...animatedCoords,
+                    Offset(width, animatedCoords.last.dy),
+                  ];
                   return Stack(
                     clipBehavior: Clip.none,
                     children: [
                       CustomPaint(
                         size: Size(width, chartHeight),
                         painter: _TrendChartPainter(
-                          coords: animatedCoords,
+                          lineCoords: lineCoords,
+                          dotCoords: animatedCoords,
                           zeroY: zeroY,
                           lineColor: lineColor,
                           txDots: txDots,
@@ -1012,7 +1025,15 @@ void _drawDashedLine(Canvas canvas, Offset a, Offset b, Color color, {double das
 }
 
 class _TrendChartPainter extends CustomPainter {
-  final List<Offset> coords;
+  // lineCoords: dipakai untuk menggambar GARIS & area gradasi — sudah
+  // diperpanjang rata (flat) sampai x=0 dan x=lebar penuh (lihat
+  // pemanggilnya di _TrendHeroChartState.build), sehingga garis selalu
+  // menyentuh tepi kiri-kanan layar.
+  // dotCoords: posisi ASLI titik data (dengan inset padL/padR) — dipakai
+  // khusus untuk menggambar dot transaksi & anchor terpilih, supaya dot
+  // pertama/terakhir tidak terpotong di tepi.
+  final List<Offset> lineCoords;
+  final List<Offset> dotCoords;
   final double zeroY;
   final Color lineColor;
   final List<MapEntry<int, Color>> txDots;
@@ -1022,7 +1043,8 @@ class _TrendChartPainter extends CustomPainter {
   final Color dotCoreColor;
 
   _TrendChartPainter({
-    required this.coords,
+    required this.lineCoords,
+    required this.dotCoords,
     required this.zeroY,
     required this.lineColor,
     required this.txDots,
@@ -1034,7 +1056,7 @@ class _TrendChartPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (coords.isEmpty) return;
+    if (dotCoords.isEmpty) return;
 
     final gridPaint = Paint()
       ..color = gridColor
@@ -1045,10 +1067,10 @@ class _TrendChartPainter extends CustomPainter {
     }
     _drawDashedLine(canvas, Offset(0, zeroY), Offset(size.width, zeroY), gridColor.withOpacity(0.9));
 
-    final linePath = _smoothPath(coords);
+    final linePath = _smoothPath(lineCoords);
     final areaPath = Path.from(linePath)
-      ..lineTo(coords.last.dx, zeroY)
-      ..lineTo(coords.first.dx, zeroY)
+      ..lineTo(lineCoords.last.dx, zeroY)
+      ..lineTo(lineCoords.first.dx, zeroY)
       ..close();
 
     canvas.drawPath(
@@ -1082,8 +1104,8 @@ class _TrendChartPainter extends CustomPainter {
     );
 
     for (final entry in txDots) {
-      if (entry.key < 0 || entry.key >= coords.length) continue;
-      final c = coords[entry.key];
+      if (entry.key < 0 || entry.key >= dotCoords.length) continue;
+      final c = dotCoords[entry.key];
       canvas.drawCircle(c, 4.2, Paint()..color = dotCoreColor);
       canvas.drawCircle(
         c,
