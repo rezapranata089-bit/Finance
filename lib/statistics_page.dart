@@ -439,23 +439,20 @@ class StatisticsPage extends ConsumerWidget {
             // kembali membiarkan seluruh CustomScrollView scroll normal.
             SliverFillRemaining(
               hasScrollBody: false,
-              child: Transform.translate(
-                offset: const Offset(0, -24),
-                child: Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.fromLTRB(20, 28, 20, 24),
-                  decoration: BoxDecoration(
-                    color: context.cardColor,
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(context.isDark ? 0.35 : 0.10), blurRadius: 24, offset: const Offset(0, -8))],
-                  ),
-                  child: Column(
-                    children: [
-                      _buildBreakdownSection(context, ref, lang, focus, monthKey, budget, saving, spend, bunga),
-                      const SizedBox(height: 16),
-                      _buildQuickActionButton(context, ref, lang),
-                    ],
-                  ),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(20, 28, 20, 24),
+                decoration: BoxDecoration(
+                  color: context.cardColor,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(context.isDark ? 0.35 : 0.10), blurRadius: 24, offset: const Offset(0, -8))],
+                ),
+                child: Column(
+                  children: [
+                    _buildBreakdownSection(context, ref, lang, focus, monthKey, budget, saving, spend, bunga),
+                    const SizedBox(height: 16),
+                    _buildQuickActionButton(context, ref, lang),
+                  ],
                 ),
               ),
             ),
