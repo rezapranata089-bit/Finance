@@ -700,6 +700,13 @@ class _TrendHeroChartState extends State<_TrendHeroChart> with SingleTickerProvi
   late final Animation<double> _growAnim = CurvedAnimation(parent: _growCtrl, curve: Curves.easeOutCubic);
   bool _pendingJump = true;
   bool _tooltipVisible = true;
+  // Indeks titik yang sedang dipilih untuk crosshair/tooltip. Dipisah dari
+  // posisi scroll (_scrollController.offset) supaya men-tap label tanggal
+  // lain yang MASIH berada dalam jendela 7 titik yang sedang terlihat hanya
+  // memindahkan crosshair ke titik itu, TANPA ikut menggeser (scroll)
+  // grafiknya. Grafik hanya boleh benar-benar bergeser kalau pengguna
+  // sendiri yang men-drag area chart-nya secara langsung.
+  int? _selectedIndex;
 
   @override
   void initState() {
@@ -714,15 +721,23 @@ class _TrendHeroChartState extends State<_TrendHeroChart> with SingleTickerProvi
     return a.first.label == b.first.label && a.last.label == b.last.label;
   }
 
+  int _defaultIndex(List<StatsPoint> points) {
+    if (points.isEmpty) return 0;
+    final todayIdx = points.indexWhere((p) => p.isToday);
+    return todayIdx != -1 ? todayIdx : points.length - 1;
+  }
+
   @override
   void didUpdateWidget(covariant _TrendHeroChart oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Hanya reset posisi geser & putar ulang animasi reveal saat sumbu data
-    // benar-benar berganti (mis. pindah mode Hari/Bulan/Tahun atau pindah
-    // fokus bulan/kartu). Perubahan nilai transaksi pada sumbu yang sama
-    // (mis. edit transaksi) sengaja TIDAK menggeser posisi scroll pengguna.
+    // Hanya reset posisi geser & pilihan saat sumbu data benar-benar
+    // berganti (mis. pindah mode Hari/Bulan/Tahun atau pindah fokus
+    // bulan/kartu). Perubahan nilai transaksi pada sumbu yang sama (mis.
+    // edit transaksi) sengaja TIDAK menggeser posisi scroll maupun
+    // mengubah titik yang sedang dipilih pengguna.
     if (!_sameStructure(oldWidget.points, widget.points)) {
       _pendingJump = true;
+      _selectedIndex = null;
       _growCtrl.forward(from: 0);
     }
   }
@@ -758,10 +773,7 @@ class _TrendHeroChartState extends State<_TrendHeroChart> with SingleTickerProvi
     _pendingJump = false;
     final points = widget.points;
     if (points.isEmpty) return;
-    final idx0 = () {
-      final todayIdx = points.indexWhere((p) => p.isToday);
-      return todayIdx != -1 ? todayIdx : points.length - 1;
-    }();
+    final idx0 = _defaultIndex(points);
     // Dengan padding kiri/kanan pada konten chart (lihat build()), offset
     // yang tepat memusatkan titik ke-idx pada viewport selalu idx*itemWidth
     // — tidak perlu lagi dikurangi (effVisible-1)/2 secara manual di sini.
@@ -770,16 +782,14 @@ class _TrendHeroChartState extends State<_TrendHeroChart> with SingleTickerProvi
     _scrollController.jumpTo(target.clamp(0.0, maxExtent < 0 ? 0.0 : maxExtent));
   }
 
-  void _animateToIndex(int idx, double itemWidth, double effVisible) {
-    if (!_scrollController.hasClients) return;
-    final target = idx * itemWidth;
-    final maxExtent = _scrollController.position.maxScrollExtent;
+  // Memilih titik ke-idx untuk crosshair/tooltip TANPA menggeser scroll
+  // sama sekali. Dipanggil saat pengguna men-tap label tanggal — karena
+  // label yang bisa di-tap sudah pasti berada di jendela yang sedang
+  // terlihat, memindahkan crosshair ke posisinya cukup dengan mengganti
+  // state pilihan, bukan dengan mengimasikan scroll ke posisi baru.
+  void _selectIndex(int idx) {
     HapticFeedback.selectionClick();
-    _scrollController.animateTo(
-      target.clamp(0.0, maxExtent < 0 ? 0.0 : maxExtent),
-      duration: const Duration(milliseconds: 380),
-      curve: Curves.easeOutCubic,
-    );
+    setState(() => _selectedIndex = idx);
   }
 
   @override
@@ -812,17 +822,6 @@ class _TrendHeroChartState extends State<_TrendHeroChart> with SingleTickerProvi
       final effVisible = n < _chartVisibleCount ? n.toDouble() : _chartVisibleCount.toDouble();
       final itemWidth = viewportWidth / effVisible;
       final totalWidth = itemWidth * n;
-      // Saat titik data lebih banyak dari jendela yang terlihat sekaligus
-      // (scrollable), area konten diberi bantalan (pad) kosong di kiri &
-      // kanan sebesar setengah jendela dikurangi setengah item. Tanpa ini,
-      // titik-titik di ujung awal/akhir (mis. tanggal 1-3 & 3 hari
-      // terakhir) TIDAK PERNAH bisa berada tepat di tengah viewport
-      // (crosshair), karena offset scroll yang dibutuhkan untuk
-      // memusatkannya negatif (di awal) atau melebihi maxScrollExtent (di
-      // akhir) — keduanya di luar jangkauan scroll yang valid, sehingga
-      // di-clamp dan macet di titik ke-4 dari awal/akhir. Dengan pad ini,
-      // offset 0 kini tepat memusatkan titik pertama, dan maxScrollExtent
-      // tepat memusatkan titik terakhir.
       final bool scrollable = n > effVisible;
       final double pad = scrollable ? (effVisible - 1) / 2 * itemWidth : 0.0;
       final double contentWidth = totalWidth + pad * 2;
@@ -846,18 +845,18 @@ class _TrendHeroChartState extends State<_TrendHeroChart> with SingleTickerProvi
       });
       final zeroY = padT + innerH - ((0 - minV) / range) * innerH;
 
+      final selIdx = (_selectedIndex ?? _defaultIndex(points)).clamp(0, n - 1);
+      final nearestPoint = points[selIdx];
+
       final offset = _scrollController.hasClients ? _scrollController.offset : 0.0;
-      final centerIdx = (scrollable
-              ? (offset / itemWidth)
-              : ((offset / itemWidth) + (effVisible - 1) / 2))
-          .clamp(0.0, (n - 1).toDouble());
-      final lowIdx = centerIdx.floor().clamp(0, n - 1);
-      final highIdx = centerIdx.ceil().clamp(0, n - 1);
-      final frac = centerIdx - lowIdx;
-      final interpValue = _lerp(points[lowIdx].value, points[highIdx].value, frac);
-      final crosshairY = padT + innerH - ((interpValue - minV) / range) * innerH;
-      final nearestIdx = centerIdx.round().clamp(0, n - 1);
-      final nearestPoint = points[nearestIdx];
+      // Posisi X crosshair diturunkan dari titik yang DIPILIH (selIdx)
+      // relatif terhadap offset scroll saat ini — BUKAN selalu dipatok di
+      // tengah viewport. Dengan ini, men-drag chart hanya menggeser posisi
+      // crosshair di layar mengikuti titik yang sama (karena kontennya yang
+      // bergerak), bukan memaksa titik lain menjadi terpusat.
+      final crosshairX = dotCoords[selIdx].dx - offset;
+      final crosshairY = dotCoords[selIdx].dy;
+      final crosshairVisible = crosshairX >= -1 && crosshairX <= viewportWidth + 1;
 
       final finalVal = points.last.value;
       final lineColor = finalVal >= 0 ? _colorPositive : _colorNegative;
@@ -891,11 +890,6 @@ class _TrendHeroChartState extends State<_TrendHeroChart> with SingleTickerProvi
                       n,
                       (i) => Offset(dotCoords[i].dx, _lerp(zeroY, dotCoords[i].dy, _growAnim.value)),
                     );
-                    // Garis diperpanjang rata (flat) dari titik data pertama
-                    // & terakhir sampai ke tepi TOTAL konten geser (bukan
-                    // hanya tepi viewport), sehingga jendela manapun yang
-                    // sedang terlihat saat digeser selalu menampilkan garis
-                    // yang menyentuh penuh sisi kiri-kanan.
                     final lineCoords = <Offset>[
                       Offset(0, animatedCoords.first.dy),
                       ...animatedCoords,
@@ -912,7 +906,7 @@ class _TrendHeroChartState extends State<_TrendHeroChart> with SingleTickerProvi
                             zeroY: zeroY,
                             lineColor: lineColor,
                             txDots: txDots,
-                            highlightIndex: nearestIdx,
+                            highlightIndex: selIdx,
                             highlightColor: highlightColor,
                             gridColor: (isDark ? Colors.white : Colors.black).withOpacity(0.07),
                             dotCoreColor: context.cardColor,
@@ -926,8 +920,8 @@ class _TrendHeroChartState extends State<_TrendHeroChart> with SingleTickerProvi
                             height: labelHeight,
                             child: _DateLabel(
                               point: points[i],
-                              active: i == nearestIdx,
-                              onTap: () => _animateToIndex(i, itemWidth, effVisible),
+                              active: i == selIdx,
+                              onTap: () => _selectIndex(i),
                             ),
                           ),
                       ],
@@ -936,37 +930,33 @@ class _TrendHeroChartState extends State<_TrendHeroChart> with SingleTickerProvi
                 ),
               ),
             ),
-            // Crosshair & tooltip tetap diam di tengah viewport (tidak ikut
-            // scroll) — kontennya (garis & titik) yang bergeser di
-            // belakangnya, meniru pola chart scrubber pada aplikasi
-            // saham/finansial: nilai & posisi vertikal titik terpilih
-            // meluncur mengikuti bentuk kurva secara mulus selama digeser.
-            IgnorePointer(
-              child: SizedBox(
-                height: chartHeight,
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Positioned(
-                      left: viewportWidth / 2,
-                      top: 0,
-                      bottom: 0,
-                      child: CustomPaint(
-                        size: const Size(1, chartHeight),
-                        painter: _CrosshairPainter(
-                          y: crosshairY,
-                          color: highlightColor,
-                          dashColor: (isDark ? Colors.white : Colors.black).withOpacity(0.18),
-                          dotCoreColor: context.cardColor,
+            if (crosshairVisible)
+              IgnorePointer(
+                child: SizedBox(
+                  height: chartHeight,
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Positioned(
+                        left: crosshairX,
+                        top: 0,
+                        bottom: 0,
+                        child: CustomPaint(
+                          size: const Size(1, chartHeight),
+                          painter: _CrosshairPainter(
+                            y: crosshairY,
+                            color: highlightColor,
+                            dashColor: (isDark ? Colors.white : Colors.black).withOpacity(0.18),
+                            dotCoreColor: context.cardColor,
+                          ),
                         ),
                       ),
-                    ),
-                    if (_tooltipVisible)
-                      _buildTooltip(context, Offset(viewportWidth / 2, crosshairY), nearestPoint, viewportWidth, isDark, highlightColor),
-                  ],
+                      if (_tooltipVisible)
+                        _buildTooltip(context, Offset(crosshairX, crosshairY), nearestPoint, viewportWidth, isDark, highlightColor),
+                    ],
+                  ),
                 ),
               ),
-            ),
           ],
         ),
       );
