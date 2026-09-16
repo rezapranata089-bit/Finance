@@ -398,7 +398,10 @@ class StatisticsPage extends ConsumerWidget {
       child: Listener(
         behavior: HitTestBehavior.translucent,
         onPointerDown: _handleStatsPointerDown,
-        child: ListView(
+        child: Stack(
+          children: [
+            Positioned.fill(child: Container(color: context.cardColor)),
+            ListView(
         padding: EdgeInsets.zero,
         children: [
           // Hero: full-bleed background (edge-to-edge, flush dengan bagian
@@ -453,7 +456,9 @@ class StatisticsPage extends ConsumerWidget {
             ),
           ),
         ],
-      ),
+            ),
+          ],
+        ),
       ),
     );
   }
