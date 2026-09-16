@@ -65,7 +65,9 @@ void _handleStatsPointerDown(PointerDownEvent event) {
   }
   final local = renderObject.globalToLocal(event.position);
   final inside = local.dx >= 0 && local.dy >= 0 && local.dx <= renderObject.size.width && local.dy <= renderObject.size.height;
-  if (!inside) {
+  if (inside) {
+    _statsChartKey.currentState?.showSelection();
+  } else {
     _statsChartKey.currentState?.clearSelection();
   }
 }
@@ -697,6 +699,7 @@ class _TrendHeroChartState extends State<_TrendHeroChart> with SingleTickerProvi
   late final AnimationController _growCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 550));
   late final Animation<double> _growAnim = CurvedAnimation(parent: _growCtrl, curve: Curves.easeOutCubic);
   bool _pendingJump = true;
+  bool _tooltipVisible = true;
 
   @override
   void initState() {
@@ -736,12 +739,19 @@ class _TrendHeroChartState extends State<_TrendHeroChart> with SingleTickerProvi
     if (mounted) setState(() {});
   }
 
-  // Tidak melakukan apa pun lagi: tooltip sekarang selalu menempel pada
-  // titik yang berada tepat di tengah viewport (lihat crosshair), jadi
-  // tidak ada lagi konsep "seleksi" yang perlu disembunyikan saat menekan
-  // di luar area chart. Method ini dipertahankan karena masih dipanggil
-  // dari Listener pembungkus halaman (lihat _handleStatsPointerDown).
-  void clearSelection() {}
+  // Tooltip disembunyikan saat pengguna menekan di LUAR area chart (lihat
+  // _handleStatsPointerDown), dan ditampilkan kembali saat pengguna
+  // menyentuh/menggeser di DALAM area chart lewat showSelection(). Tanpa
+  // ini tooltip akan menempel permanen di layar tanpa bisa dihilangkan.
+  void showSelection() {
+    if (!mounted || _tooltipVisible) return;
+    setState(() => _tooltipVisible = true);
+  }
+
+  void clearSelection() {
+    if (!mounted || !_tooltipVisible) return;
+    setState(() => _tooltipVisible = false);
+  }
 
   void _performJump(double itemWidth, double effVisible) {
     if (!mounted || !_scrollController.hasClients || itemWidth <= 0) return;
@@ -752,14 +762,17 @@ class _TrendHeroChartState extends State<_TrendHeroChart> with SingleTickerProvi
       final todayIdx = points.indexWhere((p) => p.isToday);
       return todayIdx != -1 ? todayIdx : points.length - 1;
     }();
-    final target = (idx0 - (effVisible - 1) / 2) * itemWidth;
+    // Dengan padding kiri/kanan pada konten chart (lihat build()), offset
+    // yang tepat memusatkan titik ke-idx pada viewport selalu idx*itemWidth
+    // — tidak perlu lagi dikurangi (effVisible-1)/2 secara manual di sini.
+    final target = idx0 * itemWidth;
     final maxExtent = _scrollController.position.maxScrollExtent;
     _scrollController.jumpTo(target.clamp(0.0, maxExtent < 0 ? 0.0 : maxExtent));
   }
 
   void _animateToIndex(int idx, double itemWidth, double effVisible) {
     if (!_scrollController.hasClients) return;
-    final target = (idx - (effVisible - 1) / 2) * itemWidth;
+    final target = idx * itemWidth;
     final maxExtent = _scrollController.position.maxScrollExtent;
     HapticFeedback.selectionClick();
     _scrollController.animateTo(
@@ -799,6 +812,20 @@ class _TrendHeroChartState extends State<_TrendHeroChart> with SingleTickerProvi
       final effVisible = n < _chartVisibleCount ? n.toDouble() : _chartVisibleCount.toDouble();
       final itemWidth = viewportWidth / effVisible;
       final totalWidth = itemWidth * n;
+      // Saat titik data lebih banyak dari jendela yang terlihat sekaligus
+      // (scrollable), area konten diberi bantalan (pad) kosong di kiri &
+      // kanan sebesar setengah jendela dikurangi setengah item. Tanpa ini,
+      // titik-titik di ujung awal/akhir (mis. tanggal 1-3 & 3 hari
+      // terakhir) TIDAK PERNAH bisa berada tepat di tengah viewport
+      // (crosshair), karena offset scroll yang dibutuhkan untuk
+      // memusatkannya negatif (di awal) atau melebihi maxScrollExtent (di
+      // akhir) — keduanya di luar jangkauan scroll yang valid, sehingga
+      // di-clamp dan macet di titik ke-4 dari awal/akhir. Dengan pad ini,
+      // offset 0 kini tepat memusatkan titik pertama, dan maxScrollExtent
+      // tepat memusatkan titik terakhir.
+      final bool scrollable = n > effVisible;
+      final double pad = scrollable ? (effVisible - 1) / 2 * itemWidth : 0.0;
+      final double contentWidth = totalWidth + pad * 2;
 
       if (_pendingJump) {
         WidgetsBinding.instance.addPostFrameCallback((_) => _performJump(itemWidth, effVisible));
@@ -813,14 +840,17 @@ class _TrendHeroChartState extends State<_TrendHeroChart> with SingleTickerProvi
       final range = maxV - minV;
 
       final dotCoords = List.generate(n, (i) {
-        final x = i * itemWidth + itemWidth / 2;
+        final x = i * itemWidth + itemWidth / 2 + pad;
         final y = padT + innerH - ((points[i].value - minV) / range) * innerH;
         return Offset(x, y);
       });
       final zeroY = padT + innerH - ((0 - minV) / range) * innerH;
 
       final offset = _scrollController.hasClients ? _scrollController.offset : 0.0;
-      final centerIdx = ((offset / itemWidth) + (effVisible - 1) / 2).clamp(0.0, (n - 1).toDouble());
+      final centerIdx = (scrollable
+              ? (offset / itemWidth)
+              : ((offset / itemWidth) + (effVisible - 1) / 2))
+          .clamp(0.0, (n - 1).toDouble());
       final lowIdx = centerIdx.floor().clamp(0, n - 1);
       final highIdx = centerIdx.ceil().clamp(0, n - 1);
       final frac = centerIdx - lowIdx;
@@ -838,7 +868,7 @@ class _TrendHeroChartState extends State<_TrendHeroChart> with SingleTickerProvi
         if (points[i].hasTx) txDots.add(MapEntry(i, _colorForDomCat(points[i].domCat)));
       }
 
-      final scrollableWidth = totalWidth < viewportWidth ? viewportWidth : totalWidth;
+      final scrollableWidth = contentWidth < viewportWidth ? viewportWidth : contentWidth;
 
       return SizedBox(
         height: chartHeight + labelHeight,
@@ -848,7 +878,7 @@ class _TrendHeroChartState extends State<_TrendHeroChart> with SingleTickerProvi
             SingleChildScrollView(
               controller: _scrollController,
               scrollDirection: Axis.horizontal,
-              physics: n > effVisible
+              physics: scrollable
                   ? _ChartSnapPhysics(itemExtent: itemWidth)
                   : const NeverScrollableScrollPhysics(),
               child: SizedBox(
@@ -869,13 +899,13 @@ class _TrendHeroChartState extends State<_TrendHeroChart> with SingleTickerProvi
                     final lineCoords = <Offset>[
                       Offset(0, animatedCoords.first.dy),
                       ...animatedCoords,
-                      Offset(totalWidth, animatedCoords.last.dy),
+                      Offset(contentWidth, animatedCoords.last.dy),
                     ];
                     return Stack(
                       clipBehavior: Clip.none,
                       children: [
                         CustomPaint(
-                          size: Size(totalWidth, chartHeight),
+                          size: Size(contentWidth, chartHeight),
                           painter: _TrendChartPainter(
                             lineCoords: lineCoords,
                             dotCoords: animatedCoords,
@@ -890,7 +920,7 @@ class _TrendHeroChartState extends State<_TrendHeroChart> with SingleTickerProvi
                         ),
                         for (var i = 0; i < n; i++)
                           Positioned(
-                            left: i * itemWidth,
+                            left: i * itemWidth + pad,
                             top: chartHeight,
                             width: itemWidth,
                             height: labelHeight,
@@ -931,7 +961,8 @@ class _TrendHeroChartState extends State<_TrendHeroChart> with SingleTickerProvi
                         ),
                       ),
                     ),
-                    _buildTooltip(context, Offset(viewportWidth / 2, crosshairY), nearestPoint, viewportWidth, isDark, highlightColor),
+                    if (_tooltipVisible)
+                      _buildTooltip(context, Offset(viewportWidth / 2, crosshairY), nearestPoint, viewportWidth, isDark, highlightColor),
                   ],
                 ),
               ),
