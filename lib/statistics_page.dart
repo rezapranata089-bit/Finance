@@ -508,12 +508,22 @@ Widget _buildHeroCard(
       // (menutupi padding kiri+kanan) lalu digeser -20px ke kiri supaya
       // hasilnya tepat menempel ke tepi layar tanpa mengubah lebar Column
       // induk itu sendiri.
+      // OverflowBox (bukan Transform.translate + SizedBox) dipakai karena
+      // SizedBox biasa akan di-clamp balik ke lebar maksimum yang diberikan
+      // Column induknya (constraint tidak bisa dilanggar dengan sekadar
+      // memaksa width lebih besar). OverflowBox secara eksplisit
+      // mengizinkan child lebih lebar dari induknya dan otomatis
+      // menengahkannya (alignment default: center), sehingga breakout
+      // 20px di kiri & 20px di kanan (menutupi padding horizontal 20px
+      // milik Container hero) selalu simetris.
       LayoutBuilder(
         builder: (context, constraints) {
-          return Transform.translate(
-            offset: const Offset(-20, 0),
+          final fullWidth = constraints.maxWidth + 40;
+          return OverflowBox(
+            minWidth: fullWidth,
+            maxWidth: fullWidth,
             child: SizedBox(
-              width: constraints.maxWidth + 40,
+              width: fullWidth,
               child: _TrendHeroChart(key: _statsChartKey, points: points, lang: lang),
             ),
           );
