@@ -409,7 +409,7 @@ class StatisticsPage extends ConsumerWidget {
               // gelap — tidak dipaksa dark terlepas dari mode aktif.
               child: Container(
                 width: double.infinity,
-                padding: EdgeInsets.fromLTRB(20, topInset + 16, 20, 40),
+                padding: EdgeInsets.fromLTRB(0, topInset + 16, 0, 40),
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
@@ -423,7 +423,10 @@ class StatisticsPage extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _buildHeader(context, lang, cards, isAllAccounts, safeSelectedCard),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: _buildHeader(context, lang, cards, isAllAccounts, safeSelectedCard),
+                    ),
                     const SizedBox(height: 18),
                     _buildHeroCard(context, ref, lang, mode, focus, points),
                   ],
@@ -496,41 +499,24 @@ Widget _buildHeroCard(
 ) {
   // Tidak lagi membungkus diri dalam Container/kartu sendiri — konten ini
   // sekarang duduk langsung di atas background ungu full-bleed yang
-  // disiapkan oleh caller (StatisticsPage.build).
+  // disiapkan oleh caller (StatisticsPage.build). Container hero itu
+  // sekarang TIDAK punya padding horizontal lagi, jadi chart tren di
+  // bawah ini otomatis melebar penuh sampai ke tepi layar tanpa perlu
+  // widget breakout apa pun — bagian lain (total saldo & segmented
+  // control) yang tetap perlu inset diberi Padding horizontal sendiri.
   return Column(
     children: [
-      _buildTotalAndTrend(context, lang, points),
-      const SizedBox(height: 16),
-      // Flutter tidak mengizinkan padding negatif, jadi breakout dari
-      // padding horizontal 20px milik Container hero di atasnya (lihat
-      // StatisticsPage.build) dilakukan lewat kombinasi LayoutBuilder +
-      // Transform.translate: lebar chart dipaksa lebih besar 40px
-      // (menutupi padding kiri+kanan) lalu digeser -20px ke kiri supaya
-      // hasilnya tepat menempel ke tepi layar tanpa mengubah lebar Column
-      // induk itu sendiri.
-      // OverflowBox (bukan Transform.translate + SizedBox) dipakai karena
-      // SizedBox biasa akan di-clamp balik ke lebar maksimum yang diberikan
-      // Column induknya (constraint tidak bisa dilanggar dengan sekadar
-      // memaksa width lebih besar). OverflowBox secara eksplisit
-      // mengizinkan child lebih lebar dari induknya dan otomatis
-      // menengahkannya (alignment default: center), sehingga breakout
-      // 20px di kiri & 20px di kanan (menutupi padding horizontal 20px
-      // milik Container hero) selalu simetris.
-      LayoutBuilder(
-        builder: (context, constraints) {
-          final fullWidth = constraints.maxWidth + 40;
-          return OverflowBox(
-            minWidth: fullWidth,
-            maxWidth: fullWidth,
-            child: SizedBox(
-              width: fullWidth,
-              child: _TrendHeroChart(key: _statsChartKey, points: points, lang: lang),
-            ),
-          );
-        },
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: _buildTotalAndTrend(context, lang, points),
       ),
       const SizedBox(height: 16),
-      _buildSegControl(context, ref, lang, mode),
+      _TrendHeroChart(key: _statsChartKey, points: points, lang: lang),
+      const SizedBox(height: 16),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: _buildSegControl(context, ref, lang, mode),
+      ),
     ],
   );
 }
