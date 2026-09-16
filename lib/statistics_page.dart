@@ -364,18 +364,69 @@ class StatisticsPage extends ConsumerWidget {
       }
     }
 
+    final topInset = MediaQuery.paddingOf(context).top;
+    final primary = Theme.of(context).colorScheme.primary;
+
     return SafeArea(
       top: false,
       child: ListView(
-        padding: EdgeInsets.fromLTRB(20, MediaQuery.paddingOf(context).top + 22, 20, 24),
+        padding: EdgeInsets.zero,
         children: [
-          _buildHeader(context, lang, cards, isAllAccounts, safeSelectedCard),
-          const SizedBox(height: 18),
-          _buildHeroCard(context, ref, lang, mode, focus, points),
-          const SizedBox(height: 20),
-          _buildBreakdownSection(context, ref, lang, focus, monthKey, budget, saving, spend, bunga),
-          const SizedBox(height: 16),
-          _buildQuickActionButton(context, ref, lang),
+          // Hero: full-bleed background (edge-to-edge, flush dengan bagian
+          // paling atas layar) berisi header + chart tren. Dibungkus Theme
+          // dark override supaya semua context.textPrimary/textMuted/
+          // cardColor di dalamnya otomatis pakai varian light-on-dark,
+          // terlepas dari mode tema asli aplikasi.
+          Theme(
+            data: Theme.of(context).copyWith(brightness: Brightness.dark),
+            child: Builder(builder: (context) {
+              return Container(
+                width: double.infinity,
+                padding: EdgeInsets.fromLTRB(20, topInset + 16, 20, 34),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Color.alphaBlend(primary.withOpacity(0.42), const Color(0xFF14111C)),
+                      Color.alphaBlend(primary.withOpacity(0.22), const Color(0xFF14111C)),
+                    ],
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildHeader(context, lang, cards, isAllAccounts, safeSelectedCard),
+                    const SizedBox(height: 18),
+                    _buildHeroCard(context, ref, lang, mode, focus, points),
+                  ],
+                ),
+              );
+            }),
+          ),
+          // Sheet ringkasan overlap ke atas menutupi bagian bawah hero —
+          // top padding negatif menggeser sheet ke atas sekaligus
+          // mengecilkan ruang yang dipesan di ListView, jadi tidak
+          // meninggalkan celah kosong.
+          Padding(
+            padding: const EdgeInsets.only(top: -24),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(20, 28, 20, 24),
+              decoration: BoxDecoration(
+                color: context.cardColor,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(context.isDark ? 0.35 : 0.10), blurRadius: 24, offset: const Offset(0, -8))],
+              ),
+              child: Column(
+                children: [
+                  _buildBreakdownSection(context, ref, lang, focus, monthKey, budget, saving, spend, bunga),
+                  const SizedBox(height: 16),
+                  _buildQuickActionButton(context, ref, lang),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -413,47 +464,32 @@ Widget _buildHeroCard(
   DateTime focus,
   List<StatsPoint> points,
 ) {
-  final primary = Theme.of(context).colorScheme.primary;
-  final isDark = context.isDark;
-  return Container(
-    padding: const EdgeInsets.fromLTRB(18, 16, 18, 14),
-    decoration: BoxDecoration(
-      borderRadius: BorderRadius.circular(28),
-      gradient: LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          Color.alphaBlend(primary.withOpacity(isDark ? 0.22 : 0.14), context.cardColor),
-          Color.alphaBlend(primary.withOpacity(isDark ? 0.14 : 0.06), context.cardColor),
+  // Tidak lagi membungkus diri dalam Container/kartu sendiri — konten ini
+  // sekarang duduk langsung di atas background ungu full-bleed yang
+  // disiapkan oleh caller (StatisticsPage.build).
+  return Column(
+    children: [
+      Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          _navChevron(context, icon: Icons.chevron_left_rounded, onTap: mode == StatsMode.year ? null : () => _shiftFocus(ref, mode, -1)),
+          GestureDetector(
+            onTap: () => _showFocusPickerSheet(context, ref, lang, mode, focus),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              child: Text(_focusLabel(lang, mode, focus), style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: context.textMuted)),
+            ),
+          ),
+          _navChevron(context, icon: Icons.chevron_right_rounded, onTap: mode == StatsMode.year ? null : () => _shiftFocus(ref, mode, 1)),
         ],
       ),
-      border: Border.all(color: context.borderColor),
-      boxShadow: [BoxShadow(color: Colors.black.withOpacity(isDark ? 0.28 : 0.06), blurRadius: 22, offset: const Offset(0, 10))],
-    ),
-    child: Column(
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            _navChevron(context, icon: Icons.chevron_left_rounded, onTap: mode == StatsMode.year ? null : () => _shiftFocus(ref, mode, -1)),
-            GestureDetector(
-              onTap: () => _showFocusPickerSheet(context, ref, lang, mode, focus),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                child: Text(_focusLabel(lang, mode, focus), style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: context.textMuted)),
-              ),
-            ),
-            _navChevron(context, icon: Icons.chevron_right_rounded, onTap: mode == StatsMode.year ? null : () => _shiftFocus(ref, mode, 1)),
-          ],
-        ),
-        const SizedBox(height: 2),
-        _buildTotalAndTrend(context, lang, points),
-        const SizedBox(height: 16),
-        _TrendHeroChart(points: points, lang: lang),
-        const SizedBox(height: 16),
-        _buildSegControl(context, ref, lang, mode),
-      ],
-    ),
+      const SizedBox(height: 2),
+      _buildTotalAndTrend(context, lang, points),
+      const SizedBox(height: 16),
+      _TrendHeroChart(points: points, lang: lang),
+      const SizedBox(height: 16),
+      _buildSegControl(context, ref, lang, mode),
+    ],
   );
 }
 
@@ -1027,60 +1063,58 @@ Widget _buildBreakdownSection(
   final int pctBunga = budget.targetSave > 0 ? ((bunga / budget.targetSave) * 100).round() : 0;
   final spendOver = pctSpend > 100;
 
-  return Container(
-    padding: const EdgeInsets.all(18),
-    decoration: BoxDecoration(color: context.cardColor, borderRadius: BorderRadius.circular(26), border: Border.all(color: context.borderColor)),
-    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-        Expanded(
-          child: Row(children: [
-            Icon(Icons.pie_chart_rounded, size: 18, color: primary),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                '${_l(lang, 'Ringkasan', 'Summary')} ${AppFormatters.monthYear(lang).format(focus)}',
-                style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 15, color: context.textPrimary),
-                overflow: TextOverflow.ellipsis,
-              ),
+  // Tidak lagi membungkus diri dalam kartu sendiri — sheet cardColor yang
+  // sudah disiapkan oleh caller (StatisticsPage.build) menjadi permukaannya.
+  return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+      Expanded(
+        child: Row(children: [
+          Icon(Icons.pie_chart_rounded, size: 18, color: primary),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              '${_l(lang, 'Ringkasan', 'Summary')} ${AppFormatters.monthYear(lang).format(focus)}',
+              style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 15, color: context.textPrimary),
+              overflow: TextOverflow.ellipsis,
             ),
-          ]),
-        ),
-        const SizedBox(width: 8),
-        GestureDetector(
-          onTap: () => _showBudgetSheet(context, ref, lang, monthKey, budget),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(color: primary.withOpacity(isDark ? 0.18 : 0.1), borderRadius: BorderRadius.circular(14)),
-            child: Text(_l(lang, 'Atur Target', 'Set Target'), style: TextStyle(color: primary, fontSize: 11.5, fontWeight: FontWeight.w700)),
           ),
+        ]),
+      ),
+      const SizedBox(width: 8),
+      GestureDetector(
+        onTap: () => _showBudgetSheet(context, ref, lang, monthKey, budget),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(color: primary.withOpacity(isDark ? 0.18 : 0.1), borderRadius: BorderRadius.circular(14)),
+          child: Text(_l(lang, 'Atur Target', 'Set Target'), style: TextStyle(color: primary, fontSize: 11.5, fontWeight: FontWeight.w700)),
         ),
-      ]),
-      const SizedBox(height: 16),
-      _breakdownCard(context,
-          icon: Icons.savings_rounded,
-          color: _colorPositive,
-          label: _l(lang, 'Total Saving', 'Total Saving'),
-          value: saving,
-          pct: pctSaving,
-          onTap: () => _showBudgetSheet(context, ref, lang, monthKey, budget)),
-      const SizedBox(height: 12),
-      _breakdownCard(context,
-          icon: Icons.shopping_bag_rounded,
-          color: spendOver ? const Color(0xFF8B0000) : _colorNegative,
-          label: _l(lang, 'Pengeluaran', 'Expense'),
-          value: spend,
-          pct: pctSpend,
-          onTap: () => _showBudgetSheet(context, ref, lang, monthKey, budget)),
-      const SizedBox(height: 12),
-      _breakdownCard(context,
-          icon: Icons.trending_up_rounded,
-          color: _colorInterest,
-          label: _l(lang, 'Hasil Bunga', 'Interest Earned'),
-          value: bunga,
-          pct: pctBunga,
-          onTap: () => _showBudgetSheet(context, ref, lang, monthKey, budget)),
+      ),
     ]),
-  );
+    const SizedBox(height: 16),
+    _breakdownCard(context,
+        icon: Icons.savings_rounded,
+        color: _colorPositive,
+        label: _l(lang, 'Total Saving', 'Total Saving'),
+        value: saving,
+        pct: pctSaving,
+        onTap: () => _showBudgetSheet(context, ref, lang, monthKey, budget)),
+    const SizedBox(height: 12),
+    _breakdownCard(context,
+        icon: Icons.shopping_bag_rounded,
+        color: spendOver ? const Color(0xFF8B0000) : _colorNegative,
+        label: _l(lang, 'Pengeluaran', 'Expense'),
+        value: spend,
+        pct: pctSpend,
+        onTap: () => _showBudgetSheet(context, ref, lang, monthKey, budget)),
+    const SizedBox(height: 12),
+    _breakdownCard(context,
+        icon: Icons.trending_up_rounded,
+        color: _colorInterest,
+        label: _l(lang, 'Hasil Bunga', 'Interest Earned'),
+        value: bunga,
+        pct: pctBunga,
+        onTap: () => _showBudgetSheet(context, ref, lang, monthKey, budget)),
+  ]);
 }
 
 Widget _breakdownCard(
