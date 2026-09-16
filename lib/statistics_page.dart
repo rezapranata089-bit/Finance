@@ -366,6 +366,7 @@ class StatisticsPage extends ConsumerWidget {
 
     final topInset = MediaQuery.paddingOf(context).top;
     final primary = Theme.of(context).colorScheme.primary;
+    final isDark = context.isDark;
 
     return SafeArea(
       top: false,
@@ -373,44 +374,46 @@ class StatisticsPage extends ConsumerWidget {
         padding: EdgeInsets.zero,
         children: [
           // Hero: full-bleed background (edge-to-edge, flush dengan bagian
-          // paling atas layar) berisi header + chart tren. Dibungkus Theme
-          // dark override supaya semua context.textPrimary/textMuted/
-          // cardColor di dalamnya otomatis pakai varian light-on-dark,
-          // terlepas dari mode tema asli aplikasi.
-          Theme(
-            data: Theme.of(context).copyWith(brightness: Brightness.dark),
-            child: Builder(builder: (context) {
-              return Container(
-                width: double.infinity,
-                padding: EdgeInsets.fromLTRB(20, topInset + 16, 20, 34),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Color.alphaBlend(primary.withOpacity(0.42), const Color(0xFF14111C)),
-                      Color.alphaBlend(primary.withOpacity(0.22), const Color(0xFF14111C)),
-                    ],
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _buildHeader(context, lang, cards, isAllAccounts, safeSelectedCard),
-                    const SizedBox(height: 18),
-                    _buildHeroCard(context, ref, lang, mode, focus, points),
-                  ],
-                ),
-              );
-            }),
+          // paling atas layar) berisi header + chart tren. Gradasi memakai
+          // context.cardColor asli (bukan warna hardcode nyaris hitam)
+          // supaya mengikuti tema aplikasi yang sebenarnya: ungu muda di
+          // mode terang (sama seperti kartu hero lama), ungu gelap di mode
+          // gelap — tidak dipaksa dark terlepas dari mode aktif.
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.fromLTRB(20, topInset + 16, 20, 34),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Color.alphaBlend(primary.withOpacity(isDark ? 0.22 : 0.14), context.cardColor),
+                  Color.alphaBlend(primary.withOpacity(isDark ? 0.14 : 0.06), context.cardColor),
+                ],
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildHeader(context, lang, cards, isAllAccounts, safeSelectedCard),
+                const SizedBox(height: 18),
+                _buildHeroCard(context, ref, lang, mode, focus, points),
+              ],
+            ),
           ),
-          // Sheet ringkasan overlap ke atas menutupi bagian bawah hero —
-          // top padding negatif menggeser sheet ke atas sekaligus
-          // mengecilkan ruang yang dipesan di ListView, jadi tidak
-          // meninggalkan celah kosong.
-          Padding(
-            padding: const EdgeInsets.only(top: -24),
+          // Sheet ringkasan overlap ke atas menutupi bagian bawah hero.
+          // EdgeInsets tidak boleh negatif (itu penyebab assertion error
+          // sebelumnya) — overlap sekarang lewat Transform.translate, yang
+          // hanya menggeser posisi gambar (paint), bukan ukuran layout.
+          Transform.translate(
+            offset: const Offset(0, -24),
             child: Container(
+          ),
+        ],
+      ),
+    );
+  }
+}
               width: double.infinity,
               padding: const EdgeInsets.fromLTRB(20, 28, 20, 24),
               decoration: BoxDecoration(
