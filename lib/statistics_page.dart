@@ -479,10 +479,9 @@ Widget _buildHeader(BuildContext context, AppLang lang, List<FinanceCard> cards,
           const CardSelectorButton(menuAlignment: GlassMenuAlignment.topRight),
         ],
       ),
-      const SizedBox(height: 6),
       Text(
         Strings.t(lang, 'stats_subtitle_all'),
-        style: TextStyle(color: context.textFaint, fontSize: 12, fontWeight: FontWeight.w600),
+        style: TextStyle(color: context.textMuted),
       ),
     ],
   );
