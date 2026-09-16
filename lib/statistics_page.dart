@@ -741,7 +741,7 @@ class _TrendHeroChartState extends State<_TrendHeroChart> with SingleTickerProvi
   void _selectFromDx(double dx, double width) {
     final points = widget.points;
     if (points.isEmpty) return;
-    const padL = 0.0, padR = 0.0;
+    const padL = 14.0, padR = 14.0;
     final usable = (width - padL - padR).clamp(1.0, double.infinity);
     var rel = (dx - padL) / usable;
     rel = rel.clamp(0.0, 1.0);
@@ -777,8 +777,15 @@ class _TrendHeroChartState extends State<_TrendHeroChart> with SingleTickerProvi
           return idx != -1 ? idx : points.length - 1;
         })();
 
+    // padL/padR di sini HANYA mengatur inset posisi TITIK DATA (garis &
+    // dot pertama/terakhir digeser sedikit ke dalam agar tidak terpotong
+    // tepat di tepi), BUKAN lebar area gambar chart itu sendiri — grid
+    // horizontal & garis putus-putus nol (lihat _TrendChartPainter.paint)
+    // sengaja digambar dari 0 sampai size.width penuh, independen dari
+    // padL/padR, sehingga background/grid tetap full-bleed ke tepi kiri-
+    // kanan layar sementara garis trennya sendiri punya sedikit "napas".
     const chartHeight = 150.0;
-    const padL = 0.0, padR = 0.0, padT = 16.0, padB = 10.0;
+    const padL = 14.0, padR = 14.0, padT = 16.0, padB = 10.0;
 
     return LayoutBuilder(builder: (context, constraints) {
       final width = constraints.maxWidth;
