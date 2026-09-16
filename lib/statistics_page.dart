@@ -653,7 +653,7 @@ Widget _buildTotalAndTrend(BuildContext context, AppLang lang, List<StatsPoint> 
       style: TextStyle(
         fontFamily: 'Satoshi',
         fontSize: 32,
-        fontWeight: FontWeight.w800,
+        fontWeight: FontWeight.w700,
         letterSpacing: -1.2,
         color: finalVal >= 0 ? context.textPrimary : _colorNegative,
       ),
@@ -1168,7 +1168,7 @@ Widget _buildBreakdownSection(
           Expanded(
             child: Text(
               '${_l(lang, 'Ringkasan', 'Summary')} ${AppFormatters.monthYear(lang).format(focus)}',
-              style: TextStyle(fontFamily: 'DM Serif Display', fontSize: 15, color: context.textPrimary),
+              style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800, color: context.textPrimary),
               overflow: TextOverflow.ellipsis,
             ),
           ),
