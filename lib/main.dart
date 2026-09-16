@@ -2900,8 +2900,8 @@ class Strings {
     'set_username_desc': {AppLang.en: 'Enter your name to personalize your experience.', AppLang.id: 'Masukkan nama untuk mempersonalisasi pengalaman Anda.'},
     'finish': {AppLang.en: 'Finish', AppLang.id: 'Selesai'},
     'profile_picture_required': {AppLang.en: 'Please set a profile picture first', AppLang.id: 'Silakan atur foto profil terlebih dahulu'},
-    'stats_subtitle_all': {AppLang.en: 'Financial trend summary · All Accounts', AppLang.id: 'Ringkasan tren keuangan · Semua Akun'},
-    'stats_subtitle_card': {AppLang.en: 'Financial trend summary · {name}', AppLang.id: 'Ringkasan tren keuangan · {name}'},
+    'stats_subtitle_all': {AppLang.en: 'Financial trend summary', AppLang.id: 'Ringkasan tren keuangan'},
+    'stats_subtitle_card': {AppLang.en: 'Financial trend summary', AppLang.id: 'Ringkasan tren keuangan'},
   };
 
   static String t(AppLang lang, String key) => _s[key]?[lang] ?? key;

@@ -409,7 +409,7 @@ class StatisticsPage extends ConsumerWidget {
           // gelap — tidak dipaksa dark terlepas dari mode aktif.
           Container(
             width: double.infinity,
-            padding: EdgeInsets.fromLTRB(20, topInset + 16, 20, 34),
+            padding: EdgeInsets.fromLTRB(20, topInset + 16, 20, 56),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
@@ -474,9 +474,7 @@ Widget _buildHeader(BuildContext context, AppLang lang, List<FinanceCard> cards,
       ),
       const SizedBox(height: 6),
       Text(
-        isAllAccounts
-            ? Strings.t(lang, 'stats_subtitle_all')
-            : Strings.t(lang, 'stats_subtitle_card').replaceAll('{name}', cards.isEmpty ? '' : cards[safeSelectedCard].name),
+        Strings.t(lang, 'stats_subtitle_all'),
         style: TextStyle(color: context.textFaint, fontSize: 12, fontWeight: FontWeight.w600),
       ),
     ],
@@ -497,21 +495,6 @@ Widget _buildHeroCard(
   // disiapkan oleh caller (StatisticsPage.build).
   return Column(
     children: [
-      Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          _navChevron(context, icon: Icons.chevron_left_rounded, onTap: mode == StatsMode.year ? null : () => _shiftFocus(ref, mode, -1)),
-          GestureDetector(
-            onTap: () => _showFocusPickerSheet(context, ref, lang, mode, focus),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              child: Text(_focusLabel(lang, mode, focus), style: TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: context.textMuted)),
-            ),
-          ),
-          _navChevron(context, icon: Icons.chevron_right_rounded, onTap: mode == StatsMode.year ? null : () => _shiftFocus(ref, mode, 1)),
-        ],
-      ),
-      const SizedBox(height: 2),
       _buildTotalAndTrend(context, lang, points),
       const SizedBox(height: 16),
       _TrendHeroChart(key: _statsChartKey, points: points, lang: lang),
