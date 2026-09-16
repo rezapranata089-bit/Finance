@@ -898,18 +898,34 @@ class _TrendHeroChartState extends State<_TrendHeroChart> with SingleTickerProvi
                     return Stack(
                       clipBehavior: Clip.none,
                       children: [
-                        CustomPaint(
-                          size: Size(contentWidth, chartHeight),
-                          painter: _TrendChartPainter(
-                            lineCoords: lineCoords,
-                            dotCoords: animatedCoords,
-                            zeroY: zeroY,
-                            lineColor: lineColor,
-                            txDots: txDots,
-                            highlightIndex: selIdx,
-                            highlightColor: highlightColor,
-                            gridColor: (isDark ? Colors.white : Colors.black).withOpacity(0.07),
-                            dotCoreColor: context.cardColor,
+                        GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTapUp: (details) {
+                            final local = details.localPosition;
+                            var nearestIdx = 0;
+                            var nearestDist = double.infinity;
+                            for (var i = 0; i < dotCoords.length; i++) {
+                              final d = (dotCoords[i] - local).distance;
+                              if (d < nearestDist) {
+                                nearestDist = d;
+                                nearestIdx = i;
+                              }
+                            }
+                            if (nearestDist <= 26.0) _selectIndex(nearestIdx);
+                          },
+                          child: CustomPaint(
+                            size: Size(contentWidth, chartHeight),
+                            painter: _TrendChartPainter(
+                              lineCoords: lineCoords,
+                              dotCoords: animatedCoords,
+                              zeroY: zeroY,
+                              lineColor: lineColor,
+                              txDots: txDots,
+                              highlightIndex: selIdx,
+                              highlightColor: highlightColor,
+                              gridColor: (isDark ? Colors.white : Colors.black).withOpacity(0.07),
+                              dotCoreColor: context.cardColor,
+                            ),
                           ),
                         ),
                         for (var i = 0; i < n; i++)
@@ -1055,17 +1071,6 @@ class _CrosshairPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     _drawDashedLine(canvas, Offset(0, 0), Offset(0, size.height), dashColor, dash: 4, gap: 4, strokeWidth: 1.4);
-    final c = Offset(0, y);
-    canvas.drawCircle(c, 7, Paint()..color = color.withOpacity(0.20));
-    canvas.drawCircle(c, 4.8, Paint()..color = dotCoreColor);
-    canvas.drawCircle(
-      c,
-      4.8,
-      Paint()
-        ..color = color
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.4,
-    );
   }
 
   @override
