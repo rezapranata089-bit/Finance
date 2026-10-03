@@ -112,6 +112,11 @@ class StatsBudgetsNotifier extends StateNotifier<Map<String, StatsBudget>> {
     prefs.setString(_key, jsonEncode(state.map((k, v) => MapEntry(k, v.toJson()))));
   }
 
+  void replaceAll(Map<String, StatsBudget> budgets) {
+    state = budgets;
+    _persist();
+  }
+
   void setBudget(String monthKey, {required double targetSave, required double limitSpend}) {
     state = {...state, monthKey: StatsBudget(targetSave: targetSave, limitSpend: limitSpend)};
     _persist();

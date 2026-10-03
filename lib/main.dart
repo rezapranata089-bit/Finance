@@ -31,6 +31,7 @@ import 'package:flex_color_scheme/flex_color_scheme.dart';
 
 import 'receipt_scanner.dart';
 import 'statistics_page.dart';
+import 'backup_restore.dart';
 
 Future<String> _appDocsPath() async {
   final dir = await getApplicationDocumentsDirectory();
@@ -1710,6 +1711,11 @@ class CardsNotifier extends StateNotifier<List<FinanceCard>> {
     _persist();
   }
 
+  void replaceAll(List<FinanceCard> cards) {
+    state = cards;
+    _persist();
+  }
+
   int ensurePiutangCard() {
     final idx = state.indexWhere((c) => c.type == CardType.piutang);
     if (idx != -1) return idx;
@@ -1898,6 +1904,11 @@ class LoansNotifier extends StateNotifier<List<Loan>> {
 
   void _persist() {
     prefs.setString(_key, jsonEncode(state.map((e) => e.toJson()).toList()));
+  }
+
+  void replaceAll(List<Loan> loans) {
+    state = loans;
+    _persist();
   }
 
   void addLoan({
@@ -2141,6 +2152,11 @@ class CustomCategoriesNotifier extends StateNotifier<List<String>> {
     final trimmed = category.trim();
     if (trimmed.isEmpty || state.contains(trimmed)) return;
     state = [...state, trimmed];
+    _persist();
+  }
+
+  void replaceAll(List<String> categories) {
+    state = categories;
     _persist();
   }
 
@@ -2994,6 +3010,11 @@ class TransactionNotifier extends StateNotifier<List<FinanceTransaction>> {
 
   void remove(FinanceTransaction item) {
     state = state.where((t) => t.id != item.id).toList();
+    _persist();
+  }
+
+  void replaceAll(List<FinanceTransaction> items) {
+    state = items;
     _persist();
   }
 
@@ -6041,6 +6062,8 @@ class SettingList extends ConsumerWidget {
                       Navigator.push(context, GlassPageRoute(builder: (_) => const CategorySettingsPage()));
                     } else if (item.$1 == 'ai_settings') {
                       Navigator.push(context, GlassPageRoute(builder: (_) => const ReceiptScanApiKeySettingsPage()));
+                    } else if (item.$1 == 'backup_data') {
+                      Navigator.push(context, GlassPageRoute(builder: (_) => const BackupRestorePage()));
                     } else if (item.$1 == 'debug_log') {
                       Navigator.push(context, GlassPageRoute(builder: (_) => const CrashLogPage()));
                     } else {

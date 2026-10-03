@@ -75,6 +75,10 @@ class MainActivity : FlutterActivity() {
     private val pickImageRequestCode = 9001
     private val pickMediaRequestCode = 9002
     private var pendingResult: MethodChannel.Result? = null
+    private val exportBackupRequestCode = 9003
+    private val importBackupRequestCode = 9004
+    private var pendingBackupResult: MethodChannel.Result? = null
+    private var pendingBackupContent: String? = null
 
     // Menampung satu aplikasi galeri kandidat beserta Intent siap-pakai untuk
     // membukanya. Disimpan sebagai Intent lengkap (bukan hanya ResolveInfo)
@@ -243,6 +247,24 @@ class MainActivity : FlutterActivity() {
             } else if (call.method == "pickMediaWithChooser") {
                 pendingResult = result
                 launchGalleryChooser(resolveGalleryCandidates(imageOnly = false), pickMediaRequestCode, "Pilih Foto atau Video Profil")
+            } else if (call.method == "exportBackup") {
+                val fileName = call.argument<String>("fileName") ?: "my_finance_backup.json"
+                val content = call.argument<String>("content") ?: ""
+                pendingBackupResult = result
+                pendingBackupContent = content
+                val exportIntent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                    type = "application/json"
+                    putExtra(Intent.EXTRA_TITLE, fileName)
+                }
+                startActivityForResult(exportIntent, exportBackupRequestCode)
+            } else if (call.method == "importBackup") {
+                pendingBackupResult = result
+                val importIntent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                    type = "*/*"
+                }
+                startActivityForResult(importIntent, importBackupRequestCode)
             } else {
                 result.notImplemented()
             }
@@ -300,6 +322,44 @@ class MainActivity : FlutterActivity() {
                 result?.success(outputFile.absolutePath)
             } catch (e: Exception) {
                 result?.error("COPY_FAILED", e.message, null)
+            }
+        } else if (requestCode == exportBackupRequestCode) {
+            val result = pendingBackupResult
+            val content = pendingBackupContent
+            pendingBackupResult = null
+            pendingBackupContent = null
+            val uri = data?.data
+            if (resultCode != Activity.RESULT_OK || uri == null || content == null) {
+                result?.success(null)
+                return
+            }
+            try {
+                contentResolver.openOutputStream(uri, "wt")?.use { out ->
+                    out.write(content.toByteArray(Charsets.UTF_8))
+                }
+                result?.success(uri.toString())
+            } catch (e: Exception) {
+                result?.error("WRITE_FAILED", e.message, null)
+            }
+        } else if (requestCode == importBackupRequestCode) {
+            val result = pendingBackupResult
+            pendingBackupResult = null
+            val uri = data?.data
+            if (resultCode != Activity.RESULT_OK || uri == null) {
+                result?.success(null)
+                return
+            }
+            try {
+                val text = contentResolver.openInputStream(uri)?.use { input ->
+                    input.readBytes().toString(Charsets.UTF_8)
+                }
+                if (text == null) {
+                    result?.error("READ_FAILED", "Tidak bisa membaca file backup", null)
+                } else {
+                    result?.success(text)
+                }
+            } catch (e: Exception) {
+                result?.error("READ_FAILED", e.message, null)
             }
         } else {
             super.onActivityResult(requestCode, resultCode, data)
