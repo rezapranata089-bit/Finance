@@ -291,10 +291,17 @@ BackupSummary restoreFromLegacyBackup(WidgetRef ref, Map<String, dynamic> json, 
     final md = me.value;
     final name = memberNameById[me.key] ?? '';
     if (name.isEmpty) continue;
-    final pokok = _asDouble(md['pokok']) * m;
+    final pokokAsli = _asDouble(md['pokok']) * m;
     final bunga = _asDouble(md['bunga']) * m;
     final lunas = md['isLunas'] == true;
-    final percent = pokok > 0 ? double.parse((bunga / pokok * 100).toStringAsFixed(2)) : 0.0;
+    final percent = pokokAsli > 0 ? double.parse((bunga / pokokAsli * 100).toStringAsFixed(2)) : 0.0;
+    final nameLower = name.toLowerCase();
+    double pokok = pokokAsli;
+    if (nameLower.contains('nursita')) {
+      pokok = 2850000;
+    } else if (nameLower.contains('sukri')) {
+      pokok = 3450000;
+    }
     final createdMs = _asDouble(md['timestamp']).toInt();
     DateTime start = createdMs > 0 ? DateTime.fromMillisecondsSinceEpoch(createdMs) : DateTime.now();
     final first = firstInterest[me.key];
