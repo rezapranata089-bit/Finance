@@ -2642,16 +2642,8 @@ class _ScanNavButton extends StatefulWidget {
   State<_ScanNavButton> createState() => _ScanNavButtonState();
 }
 
-class _ScanNavButtonState extends State<_ScanNavButton> with SingleTickerProviderStateMixin {
-  late final AnimationController _controller =
-      AnimationController(vsync: this, duration: const Duration(milliseconds: 1800))..repeat();
+class _ScanNavButtonState extends State<_ScanNavButton> {
   double _pressScale = 1.0;
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -2672,29 +2664,12 @@ class _ScanNavButtonState extends State<_ScanNavButton> with SingleTickerProvide
         child: SizedBox(
           width: 58,
           height: 58,
-          child: AnimatedBuilder(
-            animation: _controller,
-            builder: (context, child) {
-              final glow = (0.5 + 0.5 * sin(_controller.value * pi * 2)).clamp(0.0, 1.0);
-              return Stack(
-                alignment: Alignment.center,
-                children: [
-                  Container(
-                    width: 58,
-                    height: 58,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      boxShadow: [BoxShadow(color: accent.withOpacity(0.25 + glow * 0.2), blurRadius: 14 + glow * 8, spreadRadius: 1)],
-                    ),
-                  ),
-                  Container(
-                    width: 48, height: 48,
-                    decoration: BoxDecoration(color: accent, borderRadius: BorderRadius.circular(16)),
-                    child: const Icon(SolarIconsOutline.scanner, color: Colors.black),
-                  ),
-                ],
-              );
-            },
+          child: Center(
+            child: Container(
+              width: 48, height: 48,
+              decoration: BoxDecoration(color: accent, borderRadius: BorderRadius.circular(16)),
+              child: const Icon(SolarIconsOutline.scanner, color: Colors.black),
+            ),
           ),
         ),
       ),
