@@ -315,7 +315,20 @@ BackupSummary restoreFromLegacyBackup(WidgetRef ref, Map<String, dynamic> json, 
       if (shortfall > 0) {
         final sortedDates = loanPayments.map((p) => p.date).toList()..sort();
         final adjustDate = sortedDates.isNotEmpty ? sortedDates.last : start;
+        final adjustTxId = 'adjust-${me.key}';
+        txList.add(FinanceTransaction(
+          id: adjustTxId,
+          title: 'Bunga · $name',
+          category: 'Bunga Pinjaman',
+          note: 'Penyesuaian total bunga',
+          amount: shortfall,
+          income: true,
+          date: adjustDate,
+          cardIndex: piutangIdx,
+          loanId: me.key,
+        ));
         loanPayments.add(LoanPayment(
+          transactionId: adjustTxId,
           date: adjustDate,
           interestAmount: shortfall,
           principalAmount: 0,
@@ -337,6 +350,8 @@ BackupSummary restoreFromLegacyBackup(WidgetRef ref, Map<String, dynamic> json, 
       payments: loanPayments,
     ));
   }
+
+  txList.sort((a, b) => b.date.compareTo(a.date));
 
   final budgets = <String, StatsBudget>{};
   for (final e in budgetsRaw.entries) {
