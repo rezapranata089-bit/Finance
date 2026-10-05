@@ -296,16 +296,33 @@ BackupSummary restoreFromLegacyBackup(WidgetRef ref, Map<String, dynamic> json, 
     final lunas = md['isLunas'] == true;
     final percent = pokokAsli > 0 ? double.parse((bunga / pokokAsli * 100).toStringAsFixed(2)) : 0.0;
     final nameLower = name.toLowerCase();
-    double pokok = pokokAsli;
+    final double pokok = pokokAsli;
+    // Target total bunga terkumpul (bukan pokok) untuk peminjam tertentu.
+    double? targetInterest;
     if (nameLower.contains('nursita')) {
-      pokok = 2850000;
+      targetInterest = 2850000;
     } else if (nameLower.contains('sukri')) {
-      pokok = 3450000;
+      targetInterest = 3450000;
     }
     final createdMs = _asDouble(md['timestamp']).toInt();
     DateTime start = createdMs > 0 ? DateTime.fromMillisecondsSinceEpoch(createdMs) : DateTime.now();
     final first = firstInterest[me.key];
     if (first != null && first.isBefore(start)) start = first;
+    final loanPayments = [...(paymentsByLoan[me.key] ?? const <LoanPayment>[])];
+    if (targetInterest != null) {
+      final collected = loanPayments.fold<double>(0, (a, p) => a + p.interestAmount);
+      final shortfall = targetInterest - collected;
+      if (shortfall > 0) {
+        final sortedDates = loanPayments.map((p) => p.date).toList()..sort();
+        final adjustDate = sortedDates.isNotEmpty ? sortedDates.last : start;
+        loanPayments.add(LoanPayment(
+          date: adjustDate,
+          interestAmount: shortfall,
+          principalAmount: 0,
+          note: 'Penyesuaian total bunga',
+        ));
+      }
+    }
     loans.add(Loan(
       id: me.key,
       borrowerName: name,
@@ -317,7 +334,7 @@ BackupSummary restoreFromLegacyBackup(WidgetRef ref, Map<String, dynamic> json, 
       status: lunas ? LoanStatus.paid : LoanStatus.active,
       cardIndex: piutangIdx,
       sourceCardIndex: 0,
-      payments: paymentsByLoan[me.key] ?? const [],
+      payments: loanPayments,
     ));
   }
 
